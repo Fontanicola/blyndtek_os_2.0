@@ -1,6 +1,5 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import { buildSupabaseRestUrl, normalizeSupabaseUrl } from "@/lib/supabase/config";
 import type { Rol } from "@/types/auth";
 import type { Database } from "@/types/supabase";
 
@@ -18,6 +17,17 @@ function canRoleAccess(rol: Rol, pathname: string): boolean {
 
 function getDefaultRouteForRole(rol: Rol): string {
   return rol === "admin" ? "/dashboard" : "/proyectos";
+}
+
+function normalizeSupabaseUrl(url: string): string {
+  return url.replace(/\/rest\/v1\/?$/, "").replace(/\/+$/, "");
+}
+
+function buildSupabaseRestUrl(url: string, path: string): string {
+  const normalizedBaseUrl = normalizeSupabaseUrl(url);
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+
+  return `${normalizedBaseUrl}/rest/v1${normalizedPath}`;
 }
 
 function getSupabaseEnv() {
