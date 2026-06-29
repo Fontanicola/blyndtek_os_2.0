@@ -1,0 +1,46 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    font-family: theme("fontFamily.sans");
+  }
+
+  body {
+    margin: 0;
+    background-color: theme("colors.paper");
+    color: theme("colors.carbon");
+  }
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  #pdf-preview-container,
+  #pdf-preview-container * {
+    visibility: visible;
+  }
+
+  #pdf-preview-container {
+    position: absolute;
+    left: 0;
+    top: 0;
+    display: block !important;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+  }
+
+  .page-break {
+    break-after: page;
+  }
+}

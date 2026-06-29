@@ -1,0 +1,12 @@
+export { OutboundIcon } from "./OutboundIcon";
+export { InboundIcon } from "./InboundIcon";
+export { ClientesIcon } from "./ClientesIcon";
+export { CotizadorIcon } from "./CotizadorIcon";
+export { ProyectosIcon } from "./ProyectosIcon";
+export { TareasIcon } from "./TareasIcon";
+export { CalendarioIcon } from "./CalendarioIcon";
+export { FinanzasIcon } from "./FinanzasIcon";
+export { DashboardIcon } from "./DashboardIcon";
+export { MenuIcon } from "./MenuIcon";
+export { BellIcon } from "./BellIcon";
+export { LogoutIcon } from "./LogoutIcon";
