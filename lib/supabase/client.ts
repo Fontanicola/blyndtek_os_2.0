@@ -1,4 +1,5 @@
 import { createBrowserClient } from "@supabase/ssr";
+import { normalizeSupabaseUrl } from "@/lib/supabase/config";
 import type { Database } from "@/types/supabase";
 
 function getSupabaseBrowserEnv() {
@@ -13,7 +14,7 @@ function getSupabaseBrowserEnv() {
     throw new Error("Missing environment variable: NEXT_PUBLIC_SUPABASE_ANON_KEY");
   }
 
-  return { url, anonKey };
+  return { url: normalizeSupabaseUrl(url), anonKey };
 }
 
 export function createClient() {

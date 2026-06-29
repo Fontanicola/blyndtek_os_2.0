@@ -1,6 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
-import { createClient } from "@supabase/supabase-js";
 import { NextResponse, type NextRequest } from "next/server";
+import { buildSupabaseRestUrl, normalizeSupabaseUrl } from "@/lib/supabase/config";
 import type { Rol } from "@/types/auth";
 import type { Database } from "@/types/supabase";
 
@@ -32,7 +32,7 @@ function getSupabaseEnv() {
     throw new Error("Missing environment variable: NEXT_PUBLIC_SUPABASE_ANON_KEY");
   }
 
-  return { url, anonKey };
+  return { url: normalizeSupabaseUrl(url), anonKey };
 }
 
 function getSupabaseServiceRoleKey() {
@@ -96,91 +96,116 @@ function copySupabaseResponse(source: NextResponse, target: NextResponse) {
   return target;
 }
 
+async function fetchUserRole(url: string, serviceRoleKey: string, userId: string): Promise<Rol | null> {
+  const response = await fetch(
+    buildSupabaseRestUrl(url, `/usuarios?select=rol&id=eq.${encodeURIComponent(userId)}&limit=1`),
+    {
+      headers: {
+        apikey: serviceRoleKey,
+        Authorization: `Bearer ${serviceRoleKey}`
+      },
+      cache: "no-store"
+    }
+  );
+
+  if (!response.ok) {
+    return null;
+  }
+
+  const payload = (await response.json()) as Array<{ rol?: string }>;
+  const rol = payload[0]?.rol;
+
+  return rol === "admin" || rol === "miembro" ? rol : null;
+}
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  if (isEarlyReturnPublicPath(pathname)) {
-    return NextResponse.next();
-  }
-
-  const { url, anonKey } = getSupabaseEnv();
-  let supabaseResponse = NextResponse.next({
-    request: {
-      headers: request.headers
+  try {
+    if (isEarlyReturnPublicPath(pathname)) {
+      return NextResponse.next();
     }
-  });
 
-  const supabase = createServerClient<Database>(url, anonKey, {
-    cookies: {
-      getAll() {
-        return request.cookies.getAll().map((cookie) => ({
-          name: cookie.name,
-          value: cookie.value
-        }));
-      },
-      setAll(cookiesToSet, headers) {
-        supabaseResponse = NextResponse.next({
-          request: {
-            headers: request.headers
-          }
-        });
-
-        cookiesToSet.forEach(({ name, value, options }) => {
-          supabaseResponse.cookies.set(name, value, options);
-        });
-
-        Object.entries(headers).forEach(([key, value]) => {
-          supabaseResponse.headers.set(key, value);
-        });
+    const { url, anonKey } = getSupabaseEnv();
+    let supabaseResponse = NextResponse.next({
+      request: {
+        headers: request.headers
       }
+    });
+
+    const supabase = createServerClient<Database>(url, anonKey, {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll().map((cookie) => ({
+            name: cookie.name,
+            value: cookie.value
+          }));
+        },
+        setAll(cookiesToSet, headers) {
+          supabaseResponse = NextResponse.next({
+            request: {
+              headers: request.headers
+            }
+          });
+
+          cookiesToSet.forEach(({ name, value, options }) => {
+            supabaseResponse.cookies.set(name, value, options);
+          });
+
+          Object.entries(headers).forEach(([key, value]) => {
+            supabaseResponse.headers.set(key, value);
+          });
+        }
+      }
+    });
+
+    const {
+      data: { session }
+    } = await supabase.auth.getSession();
+
+    if (pathname === "/login") {
+      if (!session) {
+        return supabaseResponse;
+      }
+
+      const redirectResponse = NextResponse.redirect(new URL("/dashboard", request.url));
+      return copySupabaseResponse(supabaseResponse, redirectResponse);
     }
-  });
 
-  const {
-    data: { session }
-  } = await supabase.auth.getSession();
-
-  if (pathname === "/login") {
-    if (!session) {
+    if (!isProtectedAppPath(pathname)) {
       return supabaseResponse;
     }
 
-    const redirectResponse = NextResponse.redirect(new URL("/dashboard", request.url));
-    return copySupabaseResponse(supabaseResponse, redirectResponse);
-  }
+    if (!session) {
+      const redirectResponse = NextResponse.redirect(new URL("/login", request.url));
+      return copySupabaseResponse(supabaseResponse, redirectResponse);
+    }
 
-  if (!isProtectedAppPath(pathname)) {
+    const rol = await fetchUserRole(url, getSupabaseServiceRoleKey(), session.user.id);
+
+    if (!rol) {
+      const redirectResponse = NextResponse.redirect(new URL("/login", request.url));
+      return copySupabaseResponse(supabaseResponse, redirectResponse);
+    }
+
+    if (!canRoleAccess(rol, pathname)) {
+      const fallbackPath = getDefaultRouteForRole(rol);
+      const redirectResponse = NextResponse.redirect(new URL(fallbackPath, request.url));
+      return copySupabaseResponse(supabaseResponse, redirectResponse);
+    }
+
     return supabaseResponse;
+  } catch {
+    if (pathname === "/login") {
+      return NextResponse.next();
+    }
+
+    if (isProtectedAppPath(pathname)) {
+      return NextResponse.redirect(new URL("/login", request.url));
+    }
+
+    return NextResponse.next();
   }
-
-  if (!session) {
-    const redirectResponse = NextResponse.redirect(new URL("/login", request.url));
-    return copySupabaseResponse(supabaseResponse, redirectResponse);
-  }
-
-  const supabaseAdmin = createClient<Database>(url, getSupabaseServiceRoleKey());
-  const { data: usuarioData } = await supabaseAdmin
-    .from("usuarios")
-    .select("rol")
-    .eq("id", session.user.id)
-    .single();
-
-  const rol = usuarioData?.rol ?? null;
-
-  if (!rol) {
-    const redirectResponse = NextResponse.redirect(new URL("/login", request.url));
-    return copySupabaseResponse(supabaseResponse, redirectResponse);
-  }
-
-  const normalizedRole: Rol = rol === "admin" || rol === "miembro" ? rol : "miembro";
-
-  if (!canRoleAccess(normalizedRole, pathname)) {
-    const fallbackPath = getDefaultRouteForRole(normalizedRole);
-    const redirectResponse = NextResponse.redirect(new URL(fallbackPath, request.url));
-    return copySupabaseResponse(supabaseResponse, redirectResponse);
-  }
-
-  return supabaseResponse;
 }
 
 export const config = {

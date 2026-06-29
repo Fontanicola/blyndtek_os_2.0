@@ -1,4 +1,5 @@
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
+import { normalizeSupabaseUrl } from "@/lib/supabase/config";
 import type { Database } from "@/types/supabase";
 
 function getSupabaseAdminEnv() {
@@ -13,7 +14,7 @@ function getSupabaseAdminEnv() {
     throw new Error("Missing environment variable: SUPABASE_SERVICE_ROLE_KEY");
   }
 
-  return { url, serviceRoleKey };
+  return { url: normalizeSupabaseUrl(url), serviceRoleKey };
 }
 
 export function createAdminClient() {

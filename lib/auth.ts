@@ -2,6 +2,7 @@ import {
   createClient as createClient_supabase,
   type SupabaseClient
 } from "@supabase/supabase-js";
+import { normalizeSupabaseUrl } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/server";
 import type { AuthSession, Rol, Usuario } from "@/types/auth";
 import type { Database } from "@/types/supabase";
@@ -80,7 +81,10 @@ export async function getCurrentUser(): Promise<Usuario | null> {
       return null;
     }
 
-    const supabaseAdmin = createClient_supabase<Database>(supabaseUrl, serviceRoleKey);
+    const supabaseAdmin = createClient_supabase<Database>(
+      normalizeSupabaseUrl(supabaseUrl),
+      serviceRoleKey
+    );
     const { data, error } = await supabaseAdmin
       .from("usuarios")
       .select("id, nombre, email, rol, google_calendar_token, activo, created_at")

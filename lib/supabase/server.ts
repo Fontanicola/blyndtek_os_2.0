@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { normalizeSupabaseUrl } from "@/lib/supabase/config";
 import type { Database } from "@/types/supabase";
 
 function getSupabaseServerEnv() {
@@ -14,7 +15,7 @@ function getSupabaseServerEnv() {
     throw new Error("Missing environment variable: NEXT_PUBLIC_SUPABASE_ANON_KEY");
   }
 
-  return { url, anonKey };
+  return { url: normalizeSupabaseUrl(url), anonKey };
 }
 
 export function createClient() {
