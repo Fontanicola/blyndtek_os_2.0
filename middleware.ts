@@ -1,9 +1,24 @@
 import { createServerClient } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
 import { NextResponse, type NextRequest } from "next/server";
-import { canRoleAccess, getDefaultRouteForRole } from "@/lib/auth";
 import type { Rol } from "@/types/auth";
 import type { Database } from "@/types/supabase";
+
+const memberAllowedPrefixes = ["/proyectos", "/tareas", "/calendario"] as const;
+
+function canRoleAccess(rol: Rol, pathname: string): boolean {
+  if (rol === "admin") {
+    return true;
+  }
+
+  return memberAllowedPrefixes.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
+  );
+}
+
+function getDefaultRouteForRole(rol: Rol): string {
+  return rol === "admin" ? "/dashboard" : "/proyectos";
+}
 
 function getSupabaseEnv() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
