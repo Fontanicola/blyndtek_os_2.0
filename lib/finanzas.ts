@@ -37,6 +37,35 @@ export function formatMonthLabel(date: Date) {
   }).format(date);
 }
 
+function startOfDay(date: Date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+function parseDateOnly(dateString: string) {
+  const [yearPart, monthPart, dayPart] = dateString.split("-");
+  const year = Number(yearPart ?? "1970");
+  const month = Number(monthPart ?? "1");
+  const day = Number(dayPart ?? "1");
+  return new Date(year, month - 1, day);
+}
+
+export function getCobroEffectiveDueDate(cobro: Pick<Cobro, "fecha_vencimiento" | "tolerancia_dias">) {
+  const effectiveDate = parseDateOnly(cobro.fecha_vencimiento);
+  effectiveDate.setDate(effectiveDate.getDate() + (cobro.tolerancia_dias ?? 0));
+  return effectiveDate;
+}
+
+export function isCobroVencido(
+  cobro: Pick<Cobro, "estado" | "fecha_vencimiento" | "tolerancia_dias">,
+  reference = new Date()
+) {
+  if (cobro.estado === "cobrado") {
+    return false;
+  }
+
+  return getCobroEffectiveDueDate(cobro) < startOfDay(reference);
+}
+
 export function getLastMonths(count: number, from = new Date()) {
   return Array.from({ length: count }, (_value, index) => addMonths(startOfMonth(from), index - (count - 1)));
 }

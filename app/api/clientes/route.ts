@@ -5,7 +5,7 @@ import type { Cliente, CreateClienteInput, EstadoCliente } from "@/types/cliente
 function parseEstado(searchParams: URLSearchParams): EstadoCliente | null {
   const estado = searchParams.get("estado");
 
-  if (estado === "activo" || estado === "inactivo") {
+  if (estado === "activo" || estado === "pausado" || estado === "inactivo") {
     return estado;
   }
 

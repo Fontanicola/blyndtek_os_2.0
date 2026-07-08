@@ -1,4 +1,13 @@
-export type CategoriaEgreso = "sueldos" | "pauta" | "fijos" | "dev" | "otro";
+import type { CuentaMedio } from "@/types/cobros";
+
+export type CategoriaEgreso =
+  | "dominios"
+  | "hosting_infraestructura"
+  | "herramientas_software"
+  | "marketing_ads"
+  | "impuestos_contable"
+  | "sueldos_honorarios"
+  | "otro";
 
 export type Egreso = {
   id: string;
@@ -7,6 +16,10 @@ export type Egreso = {
   monto: number;
   fecha: string;
   recurrente: boolean;
+  cuenta_medio: CuentaMedio | null;
+  pagado: boolean;
+  fecha_pago: string | null;
+  proyecto_id: string | null;
   notas: string | null;
   created_at: string;
 };
@@ -17,6 +30,10 @@ export type CreateEgresoInput = {
   monto: number;
   fecha: string;
   recurrente?: boolean;
+  cuenta_medio?: CuentaMedio | null;
+  pagado?: boolean;
+  fecha_pago?: string | null;
+  proyecto_id?: string | null;
   notas?: string | null;
 };
 

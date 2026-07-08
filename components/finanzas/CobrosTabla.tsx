@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { Badge, Button, Card, Input } from "@/components/ui";
 import { cn } from "@/lib/cn";
+import { isCobroVencido } from "@/lib/finanzas";
 import { formatFecha, formatUSD } from "@/lib/utils/formatters";
 import type { Cobro, EstadoCobro } from "@/types/cobros";
 
@@ -47,6 +48,30 @@ function getTipoLabel(tipo: Cobro["tipo"]) {
     return "Brick";
   }
   return "Hito";
+}
+
+function getCuentaMedioLabel(cuentaMedio: Cobro["cuenta_medio"]) {
+  if (!cuentaMedio) {
+    return "Sin medio";
+  }
+
+  if (cuentaMedio === "mercadopago") {
+    return "Mercado Pago";
+  }
+
+  if (cuentaMedio === "transferencia") {
+    return "Transferencia";
+  }
+
+  if (cuentaMedio === "efectivo") {
+    return "Efectivo";
+  }
+
+  if (cuentaMedio === "stripe") {
+    return "Stripe";
+  }
+
+  return "Otro";
 }
 
 export function CobrosTabla({ cobros, onMarkCobrado, onNew, onEdit }: CobrosTablaProps) {
@@ -124,7 +149,7 @@ export function CobrosTabla({ cobros, onMarkCobrado, onNew, onEdit }: CobrosTabl
             </thead>
             <tbody className="divide-y divide-line-soft bg-white">
               {filteredCobros.map((cobro) => {
-                const isDue = cobro.estado !== "cobrado" && new Date(cobro.fecha_vencimiento) < new Date();
+                const isDue = isCobroVencido(cobro);
 
                 return (
                   <tr key={cobro.id} className={cn(isDue && "bg-danger-light/40")}>
@@ -142,7 +167,12 @@ export function CobrosTabla({ cobros, onMarkCobrado, onNew, onEdit }: CobrosTabl
                     <td className="px-4 py-3 text-sm font-label text-carbon">{formatUSD(cobro.monto)}</td>
                     <td className="px-4 py-3 text-sm text-graphite">{formatFecha(cobro.fecha_vencimiento)}</td>
                     <td className="px-4 py-3">
-                      <Badge variant={getEstadoVariant(cobro.estado)}>{estadoLabels[cobro.estado]}</Badge>
+                      <div className="flex flex-col gap-2">
+                        <Badge variant={getEstadoVariant(cobro.estado)}>{estadoLabels[cobro.estado]}</Badge>
+                        {cobro.estado === "cobrado" && cobro.cuenta_medio ? (
+                          <Badge variant="default">{getCuentaMedioLabel(cobro.cuenta_medio)}</Badge>
+                        ) : null}
+                      </div>
                     </td>
                     <td className="px-4 py-3 text-right">
                       <Button

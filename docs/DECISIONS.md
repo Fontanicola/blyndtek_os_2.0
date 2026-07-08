@@ -136,6 +136,7 @@
 - `sync-google-calendar` se dejó como stub documentado hasta que la sincronización bidireccional completa quede consolidada en un runtime compartido.
 - Los cron jobs quedaron definidos en SQL con placeholders explícitos para `YOUR_PROJECT_REF` y `YOUR_SERVICE_ROLE_KEY`, para que el usuario los active manualmente con la configuración real del proyecto.
 - El calendario agregado deduplica recordatorios de leads cuando ya existe un evento generado por trigger, para evitar que el mismo seguimiento aparezca dos veces en la UI.
+- La detección de cobros vencidos se centralizó sobre `fecha_vencimiento + tolerancia_dias` para que UI, métricas y jobs compartan la misma definición de vencimiento real.
 
 ## 2026-06-27 — Preparación de producción y Vercel
 

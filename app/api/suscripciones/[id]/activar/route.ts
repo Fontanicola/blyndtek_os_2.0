@@ -72,6 +72,8 @@ export async function POST(_request: NextRequest, context: RouteContext) {
           monto: actual.monto_mensual,
           fecha_emision: fechaInicio,
           fecha_vencimiento: fechaInicio,
+          cuenta_medio: null,
+          tolerancia_dias: 0,
           estado: "pendiente"
         })
         .select("*")

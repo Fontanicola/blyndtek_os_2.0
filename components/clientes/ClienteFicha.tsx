@@ -8,7 +8,7 @@ import { formatFecha, formatUSD } from "@/lib/utils/formatters";
 import { useFinanzas } from "@/lib/hooks/useFinanzas";
 import { useProyectos } from "@/lib/hooks/useProyectos";
 import type { Cobro } from "@/types/cobros";
-import type { Cliente, DatosFacturacion, UpdateClienteInput } from "@/types/clientes";
+import type { Cliente, DatosFacturacion, EstadoCliente, UpdateClienteInput } from "@/types/clientes";
 import type { Proyecto } from "@/types/proyectos";
 import type { Suscripcion } from "@/types/suscripciones";
 
@@ -129,6 +129,18 @@ function SuscripcionBadge({ estado }: { estado: Suscripcion["estado"] }) {
 
   return <Badge variant={variant}>{estado}</Badge>;
 }
+
+const estadoLabels: Record<EstadoCliente, string> = {
+  activo: "Activo",
+  pausado: "Pausado",
+  inactivo: "Inactivo"
+};
+
+const estadoVariants: Record<EstadoCliente, "success" | "warning" | "default"> = {
+  activo: "success",
+  pausado: "warning",
+  inactivo: "default"
+};
 
 export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
   const router = useRouter();
@@ -292,8 +304,8 @@ export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
             <div className="space-y-2">
               <div className="flex flex-wrap items-center gap-3">
                 <h2 className="text-2xl font-title text-carbon">{cliente.empresa}</h2>
-                <Badge variant={cliente.estado === "activo" ? "success" : "default"}>
-                  {cliente.estado}
+                <Badge variant={estadoVariants[cliente.estado]}>
+                  {estadoLabels[cliente.estado]}
                 </Badge>
               </div>
               <p className="text-sm text-graphite">{cliente.pais ?? "Sin país"}</p>
@@ -386,18 +398,17 @@ export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
               </p>
             </section>
 
-            <div className="pt-2">
-              <Button
-                variant="ghost"
-                className="w-full"
-                onClick={() =>
-                  void onUpdate({
-                    estado: cliente.estado === "activo" ? "inactivo" : "activo"
-                  })
-                }
+            <div className="space-y-2 pt-2">
+              <p className="text-xs font-label uppercase tracking-[0.08em] text-graphite">Estado</p>
+              <select
+                value={cliente.estado}
+                onChange={(event) => void onUpdate({ estado: event.target.value as EstadoCliente })}
+                className="w-full rounded-component border border-line bg-white px-3 py-2 text-sm text-carbon focus:border-signal focus:outline-none focus:ring-2 focus:ring-signal/20"
               >
-                {cliente.estado === "activo" ? "Marcar como inactivo" : "Marcar como activo"}
-              </Button>
+                <option value="activo">Activo</option>
+                <option value="pausado">Pausado</option>
+                <option value="inactivo">Inactivo</option>
+              </select>
             </div>
           </Card>
         </div>

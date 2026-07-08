@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Button, EntitySelect, Input, Modal } from "@/components/ui";
-import type { CreateCobroInput, Cobro } from "@/types/cobros";
+import type { CuentaMedio, CreateCobroInput, Cobro } from "@/types/cobros";
 import type { Cliente } from "@/types/clientes";
 import type { Proyecto } from "@/types/proyectos";
 import type { Cotizacion } from "@/types/cotizaciones";
@@ -19,6 +19,14 @@ type CobroModalProps = {
   suscripciones: Array<Pick<Suscripcion, "id" | "tipo" | "estado" | "monto_mensual">>;
 };
 
+const cuentaMedioOptions: Array<{ value: CuentaMedio; label: string }> = [
+  { value: "transferencia", label: "Transferencia" },
+  { value: "mercadopago", label: "Mercado Pago" },
+  { value: "efectivo", label: "Efectivo" },
+  { value: "stripe", label: "Stripe" },
+  { value: "otro", label: "Otro" }
+];
+
 export function CobroModal({
   isOpen,
   onClose,
@@ -34,6 +42,8 @@ export function CobroModal({
   const [fechaEmision, setFechaEmision] = useState(cobro?.fecha_emision ?? new Date().toISOString().slice(0, 10));
   const [fechaVencimiento, setFechaVencimiento] = useState(cobro?.fecha_vencimiento ?? new Date().toISOString().slice(0, 10));
   const [tipo, setTipo] = useState<CreateCobroInput["tipo"]>(cobro?.tipo ?? "hito");
+  const [cuentaMedio, setCuentaMedio] = useState<CreateCobroInput["cuenta_medio"]>(cobro?.cuenta_medio ?? "transferencia");
+  const [toleranciaDias, setToleranciaDias] = useState(String(cobro?.tolerancia_dias ?? 0));
   const [clienteId, setClienteId] = useState(cobro?.cliente_id ?? "");
   const [proyectoId, setProyectoId] = useState(cobro?.proyecto_id ?? "");
   const [suscripcionId, setSuscripcionId] = useState(cobro?.suscripcion_id ?? "");
@@ -45,6 +55,8 @@ export function CobroModal({
     setFechaEmision(cobro?.fecha_emision ?? new Date().toISOString().slice(0, 10));
     setFechaVencimiento(cobro?.fecha_vencimiento ?? new Date().toISOString().slice(0, 10));
     setTipo(cobro?.tipo ?? "hito");
+    setCuentaMedio(cobro?.cuenta_medio ?? "transferencia");
+    setToleranciaDias(String(cobro?.tolerancia_dias ?? 0));
     setClienteId(cobro?.cliente_id ?? "");
     setProyectoId(cobro?.proyecto_id ?? "");
     setSuscripcionId(cobro?.suscripcion_id ?? "");
@@ -82,6 +94,28 @@ export function CobroModal({
               <option value="brick">Brick</option>
             </select>
           </div>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="space-y-1">
+            <label className="text-sm font-label text-carbon">Cuenta / medio de cobro</label>
+            <select
+              value={cuentaMedio ?? "transferencia"}
+              onChange={(event) => setCuentaMedio(event.target.value as CuentaMedio)}
+              className="w-full rounded-component border border-line bg-white px-3 py-2 text-sm text-carbon focus:border-signal focus:outline-none focus:ring-2 focus:ring-signal/20"
+            >
+              {cuentaMedioOptions.map((item) => (
+                <option key={item.value} value={item.value}>
+                  {item.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <Input
+            label="Tolerancia (días)"
+            type="number"
+            value={toleranciaDias}
+            onChange={(event) => setToleranciaDias(event.target.value)}
+          />
         </div>
         <div className="grid gap-4 md:grid-cols-2">
           <Input label="Fecha emisión" type="date" value={fechaEmision} onChange={(event) => setFechaEmision(event.target.value)} />
@@ -146,6 +180,8 @@ export function CobroModal({
                 proyecto_id: proyectoId.trim() || null,
                 suscripcion_id: suscripcionId.trim() || null,
                 cotizacion_id: cotizacionId.trim() || null,
+                cuenta_medio: cuentaMedio ?? null,
+                tolerancia_dias: Number(toleranciaDias || 0),
                 estado: cobro?.estado ?? "pendiente"
               });
             }}

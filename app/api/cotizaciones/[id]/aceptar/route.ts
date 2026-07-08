@@ -424,6 +424,8 @@ export async function POST(_request: NextRequest, { params }: RouteContext) {
           fecha_emision: toIsoDateOnly(today),
           fecha_vencimiento: toIsoDateOnly(addUtcDays(today, dueOffsetDays)),
           fecha_cobro: null,
+          cuenta_medio: null,
+          tolerancia_dias: 0,
           estado: "pendiente"
         })
         .select("id")

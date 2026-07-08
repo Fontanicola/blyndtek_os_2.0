@@ -10,6 +10,9 @@ type ClienteCardProps = {
 };
 
 export function ClienteCard({ cliente, onClick, selected = false }: ClienteCardProps) {
+  const variant =
+    cliente.estado === "activo" ? "success" : cliente.estado === "pausado" ? "warning" : "default";
+
   return (
     <Card
       padding="md"
@@ -24,8 +27,8 @@ export function ClienteCard({ cliente, onClick, selected = false }: ClienteCardP
           </p>
         </div>
 
-        <Badge variant={cliente.estado === "activo" ? "success" : "default"}>
-          {cliente.estado}
+        <Badge variant={variant}>
+          {cliente.estado === "activo" ? "Activo" : cliente.estado === "pausado" ? "Pausado" : "Inactivo"}
         </Badge>
       </div>
     </Card>

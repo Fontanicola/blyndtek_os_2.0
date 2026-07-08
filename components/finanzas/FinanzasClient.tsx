@@ -19,6 +19,7 @@ import { EgresosTabla } from "./EgresosTabla";
 import { MetricaCard } from "./MetricaCard";
 import { PLChart } from "./PLChart";
 import { RunwayChart } from "./RunwayChart";
+import { TesoreriaCard } from "./TesoreriaCard";
 import { SuscripcionModal } from "./SuscripcionModal";
 import { SuscripcionesLista } from "./SuscripcionesLista";
 
@@ -104,6 +105,42 @@ export function FinanzasClient() {
     () => buildRunwaySeries(metricas?.caja_actual ?? 0, metricas?.quema_neta ?? 0, 12),
     [metricas?.caja_actual, metricas?.quema_neta]
   );
+  const tesoreria = useMemo(() => {
+    const breakdown = new Map<string, { cuenta_medio: string; label: string; monto: number; cantidad: number }>();
+
+    for (const cobro of cobros) {
+      if (cobro.estado !== "cobrado") {
+        continue;
+      }
+
+      const cuentaMedio = cobro.cuenta_medio ?? "";
+      const label =
+        cobro.cuenta_medio === "mercadopago"
+          ? "Mercado Pago"
+          : cobro.cuenta_medio === "transferencia"
+            ? "Transferencia"
+            : cobro.cuenta_medio === "efectivo"
+              ? "Efectivo"
+              : cobro.cuenta_medio === "stripe"
+                ? "Stripe"
+                : cobro.cuenta_medio === "otro"
+                  ? "Otro"
+                  : "Sin asignar";
+
+      const current = breakdown.get(cuentaMedio) ?? {
+        cuenta_medio: cuentaMedio,
+        label,
+        monto: 0,
+        cantidad: 0
+      };
+
+      current.monto += cobro.monto;
+      current.cantidad += 1;
+      breakdown.set(cuentaMedio, current);
+    }
+
+    return [...breakdown.values()].sort((first, second) => second.monto - first.monto);
+  }, [cobros]);
 
   const lastSeries = monthlySeries[monthlySeries.length - 1] ?? null;
   const previousSeries = monthlySeries[monthlySeries.length - 2] ?? null;
@@ -261,6 +298,8 @@ export function FinanzasClient() {
             <PLChart data={monthlySeries} />
             <RunwayChart data={runwaySeries} />
           </div>
+
+          <TesoreriaCard items={tesoreria} />
         </div>
       ) : null}
 
@@ -407,6 +446,7 @@ export function FinanzasClient() {
           setSelectedEgreso(null);
         }}
         egreso={selectedEgreso}
+        proyectos={proyectos}
         onSave={async (input) => {
           try {
             if (selectedEgreso) {

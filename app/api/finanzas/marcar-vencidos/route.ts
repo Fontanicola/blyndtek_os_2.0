@@ -1,10 +1,7 @@
 import { NextResponse } from "next/server";
+import { isCobroVencido } from "@/lib/finanzas";
 import { getAdminUser } from "@/lib/require-admin";
 import { createAdminClient } from "@/lib/supabase/admin";
-
-function todayISO() {
-  return new Date().toISOString().slice(0, 10);
-}
 
 export async function POST() {
   try {
@@ -14,20 +11,32 @@ export async function POST() {
     }
 
     const supabase = createAdminClient();
-    const hoy = todayISO();
-
-    const { data, error } = await supabase
+    const { data: cobrosPendientes, error: cobrosError } = await supabase
       .from("cobros")
-      .update({ estado: "vencido" })
-      .eq("estado", "pendiente")
-      .lt("fecha_vencimiento", hoy)
-      .select("id");
+      .select("id, estado, fecha_vencimiento, tolerancia_dias")
+      .eq("estado", "pendiente");
 
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+    if (cobrosError) {
+      return NextResponse.json({ error: cobrosError.message }, { status: 500 });
     }
 
-    return NextResponse.json({ data: { vencidos: data?.length ?? 0 } });
+    const vencidos = (cobrosPendientes ?? []).filter((cobro) => isCobroVencido(cobro));
+
+    if (vencidos.length > 0) {
+      const { error: updateError } = await supabase
+        .from("cobros")
+        .update({ estado: "vencido" })
+        .in(
+          "id",
+          vencidos.map((cobro) => cobro.id)
+        );
+
+      if (updateError) {
+        return NextResponse.json({ error: updateError.message }, { status: 500 });
+      }
+    }
+
+    return NextResponse.json({ data: { vencidos: vencidos.length } });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unexpected error";
     return NextResponse.json({ error: message }, { status: 500 });

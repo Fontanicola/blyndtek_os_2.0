@@ -66,6 +66,8 @@ export async function POST() {
         monto: suscripcion.monto_mensual,
         fecha_emision: hoy,
         fecha_vencimiento: hoy,
+        cuenta_medio: null,
+        tolerancia_dias: 0,
         estado: "pendiente" as const
       };
 

@@ -625,3 +625,18 @@ Estado general actual: Fase 0 completa. Cimientos técnicos listos: documentaci�
 - Actualizado: se completó la integración de Claude para que genere la propuesta comercial completa, con editores inline en el paso 3 para entender, ajustar y persistir la narrativa antes del preview; además, se rediseñó la propuesta PDF con una estructura más formal, limpia y comercial y se blindó la carga de cotizaciones viejas con defaults seguros.
 - También se actualizó `docs/DATABASE.md` para reflejar los nuevos campos JSONB/text de `cotizaciones` y se mantuvieron los defaults de Blyndtek para nuevas cotizaciones.
 - Estado actual: sistema listo para deploy. Las fases 1, 2 y 3 del roadmap original están terminadas.
+
+## 2026-07-08 — Finanzas y clientes: nuevos campos operativos
+
+- Se expusieron `cobros.cuenta_medio` y `cobros.tolerancia_dias` en modales, tablas y rutas administrativas.
+- El cálculo de vencimientos ahora usa `fecha_vencimiento + tolerancia_dias` en `marcar-vencidos`, métricas financieras y dashboard.
+- Se actualizaron `egresos` con las nuevas categorías, medio de pago, estado pagado, fecha de pago y vínculo opcional a proyecto.
+- El módulo Clientes incorporó el estado `pausado` en el filtro lateral, la ficha 360° y el badge de listado.
+- Se agregó la tab Tesorería en Finanzas con desglose de cobros cobrados por medio de cobro.
+- Estado actual: cambios funcionales listos para build/lint y documentados en el esquema y la memoria del proyecto.
+
+## Última actualización
+
+- Fecha: 2026-07-08
+- Actualizado: se extendió la UI existente de Finanzas y Clientes para exponer los nuevos campos operativos, y se normalizó la lógica de vencimiento con tolerancia.
+- Estado actual: sistema funcional con los nuevos campos reflejados en la UI y la documentación alineada al esquema real.

@@ -62,7 +62,7 @@
 | contacto_email | text | No especificado |  |
 | contacto_whatsapp | text | No especificado |  |
 | datos_facturacion | jsonb | No especificado | CUIT, razón social, etc. |
-| estado | enum (`activo|inactivo`) | No especificado |  |
+| estado | enum (`activo|pausado|inactivo`) | No especificado |  |
 | notas | text | No especificado |  |
 | created_at | timestamptz | No especificado |  |
 
@@ -229,6 +229,8 @@
 | fecha_emision | date | No especificado |  |
 | fecha_vencimiento | date | No especificado |  |
 | fecha_cobro | date | No especificado | cuándo entró la plata |
+| cuenta_medio | text | No especificado | medio de cobro |
+| tolerancia_dias | int | No especificado | días extra para considerar vencido |
 | estado | enum (`pendiente|facturado|cobrado|vencido`) | No especificado |  |
 | created_at | timestamptz | No especificado |  |
 
@@ -244,10 +246,14 @@
 | --- | --- | --- | --- |
 | id | uuid | No | PK |
 | concepto | text | No especificado |  |
-| categoria | enum (`sueldos|pauta|fijos|dev|otro`) | No especificado |  |
+| categoria | enum (`dominios|hosting_infraestructura|herramientas_software|marketing_ads|impuestos_contable|sueldos_honorarios|otro`) | No especificado |  |
 | monto | numeric (USD) | No especificado |  |
 | fecha | date | No especificado |  |
 | recurrente | bool | No especificado |  |
+| cuenta_medio | text | No especificado | medio de pago |
+| pagado | bool | No especificado | si el egreso ya fue abonado |
+| fecha_pago | date | No especificado | fecha en que se pagó |
+| proyecto_id | uuid | No especificado | imputación opcional a proyecto |
 | notas | text | No especificado |  |
 | created_at | timestamptz | No especificado |  |
 

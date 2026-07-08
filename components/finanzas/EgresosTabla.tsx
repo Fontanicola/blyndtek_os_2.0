@@ -4,19 +4,40 @@ import { useMemo, useState } from "react";
 import { Badge, Button, Card, Input } from "@/components/ui";
 import { formatFecha, formatUSD } from "@/lib/utils/formatters";
 import type { CategoriaEgreso, Egreso } from "@/types/egresos";
+import type { CuentaMedio } from "@/types/cobros";
 
 type EgresosTablaProps = {
   egresos: Egreso[];
-  onCreate: (input: { concepto: string; categoria: CategoriaEgreso; monto: number; fecha: string; recurrente: boolean; notas?: string | null }) => Promise<void> | void;
+  onCreate: (input: {
+    concepto: string;
+    categoria: CategoriaEgreso;
+    monto: number;
+    fecha: string;
+    recurrente: boolean;
+    cuenta_medio?: CuentaMedio | null;
+    pagado?: boolean;
+    fecha_pago?: string | null;
+    notas?: string | null;
+  }) => Promise<void> | void;
   onEdit?: (egreso: Egreso) => void;
   onDelete?: (egreso: Egreso) => Promise<void> | void;
 };
 
 const categorias: Array<{ value: CategoriaEgreso; label: string }> = [
-  { value: "sueldos", label: "Sueldos" },
-  { value: "pauta", label: "Pauta" },
-  { value: "fijos", label: "Fijos" },
-  { value: "dev", label: "Dev" },
+  { value: "dominios", label: "Dominios" },
+  { value: "hosting_infraestructura", label: "Hosting/Infraestructura" },
+  { value: "herramientas_software", label: "Herramientas/Software" },
+  { value: "marketing_ads", label: "Marketing/Ads" },
+  { value: "impuestos_contable", label: "Impuestos/Contable" },
+  { value: "sueldos_honorarios", label: "Sueldos/Honorarios" },
+  { value: "otro", label: "Otro" }
+];
+
+const cuentaMedioOptions: Array<{ value: CuentaMedio; label: string }> = [
+  { value: "transferencia", label: "Transferencia" },
+  { value: "mercadopago", label: "Mercado Pago" },
+  { value: "efectivo", label: "Efectivo" },
+  { value: "stripe", label: "Stripe" },
   { value: "otro", label: "Otro" }
 ];
 
@@ -29,6 +50,9 @@ export function EgresosTabla({ egresos, onCreate, onEdit, onDelete }: EgresosTab
   const [categoria, setCategoria] = useState<CategoriaEgreso>("otro");
   const [monto, setMonto] = useState("");
   const [fecha, setFecha] = useState(new Date().toISOString().slice(0, 10));
+  const [cuentaMedio, setCuentaMedio] = useState<CuentaMedio>("transferencia");
+  const [pagado, setPagado] = useState(false);
+  const [fechaPago, setFechaPago] = useState(new Date().toISOString().slice(0, 10));
   const [recurrente, setRecurrente] = useState(false);
   const [notas, setNotas] = useState("");
 
@@ -60,7 +84,35 @@ export function EgresosTabla({ egresos, onCreate, onEdit, onDelete }: EgresosTab
           </div>
           <Input label="Monto" type="number" value={monto} onChange={(event) => setMonto(event.target.value)} />
           <Input label="Fecha" type="date" value={fecha} onChange={(event) => setFecha(event.target.value)} />
-          <div className="flex items-end">
+          <div className="space-y-1">
+            <label className="text-sm font-label text-carbon">Cuenta / medio de pago</label>
+            <select
+              value={cuentaMedio}
+              onChange={(event) => setCuentaMedio(event.target.value as CuentaMedio)}
+              className="w-full rounded-component border border-line bg-white px-3 py-2 text-sm text-carbon focus:border-signal focus:outline-none focus:ring-2 focus:ring-signal/20"
+            >
+              {cuentaMedioOptions.map((item) => (
+                <option key={item.value} value={item.value}>
+                  {item.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="flex items-end gap-4">
+            <label className="inline-flex items-center gap-2 text-sm text-carbon">
+              <input
+                type="checkbox"
+                checked={pagado}
+                onChange={(event) => {
+                  setPagado(event.target.checked);
+                  if (event.target.checked && !fechaPago) {
+                    setFechaPago(new Date().toISOString().slice(0, 10));
+                  }
+                }}
+                className="h-4 w-4 rounded border-line text-signal focus:ring-signal/20"
+              />
+              Pagado
+            </label>
             <label className="inline-flex items-center gap-2 text-sm text-carbon">
               <input
                 type="checkbox"
@@ -70,6 +122,15 @@ export function EgresosTabla({ egresos, onCreate, onEdit, onDelete }: EgresosTab
               />
               Recurrente
             </label>
+          </div>
+          <div className="space-y-1">
+            <label className="text-sm font-label text-carbon">Fecha de pago</label>
+            <Input
+              type="date"
+              value={pagado ? fechaPago : ""}
+              onChange={(event) => setFechaPago(event.target.value)}
+              disabled={!pagado}
+            />
           </div>
           <div className="space-y-1 md:col-span-2 xl:col-span-1">
             <label className="text-sm font-label text-carbon">Notas</label>
@@ -95,12 +156,18 @@ export function EgresosTabla({ egresos, onCreate, onEdit, onDelete }: EgresosTab
                 monto: Number(monto),
                 fecha,
                 recurrente,
+                cuenta_medio: cuentaMedio,
+                pagado,
+                fecha_pago: pagado ? fechaPago : null,
                 notas: notas.trim() || null
               });
 
               setConcepto("");
               setMonto("");
               setNotas("");
+              setCuentaMedio("transferencia");
+              setPagado(false);
+              setFechaPago(new Date().toISOString().slice(0, 10));
               setRecurrente(false);
             }}
           >
@@ -116,6 +183,8 @@ export function EgresosTabla({ egresos, onCreate, onEdit, onDelete }: EgresosTab
               <tr className="text-left text-xs font-label uppercase tracking-[0.08em] text-graphite">
                 <th className="px-4 py-3">Concepto</th>
                 <th className="px-4 py-3">Categoría</th>
+                <th className="px-4 py-3">Estado</th>
+                <th className="px-4 py-3">Medio</th>
                 <th className="px-4 py-3">Monto</th>
                 <th className="px-4 py-3">Fecha</th>
                 <th className="px-4 py-3">Recurrente</th>
@@ -128,6 +197,12 @@ export function EgresosTabla({ egresos, onCreate, onEdit, onDelete }: EgresosTab
                   <td className="px-4 py-3 text-sm font-label text-carbon">{egreso.concepto}</td>
                   <td className="px-4 py-3">
                     <Badge variant="default">{categoryLabel(egreso.categoria)}</Badge>
+                  </td>
+                  <td className="px-4 py-3">
+                    <Badge variant={egreso.pagado ? "success" : "warning"}>{egreso.pagado ? "Pagado" : "Pendiente"}</Badge>
+                  </td>
+                  <td className="px-4 py-3">
+                    <Badge variant="default">{egreso.cuenta_medio ?? "Sin medio"}</Badge>
                   </td>
                   <td className="px-4 py-3 text-sm font-label text-carbon">{formatUSD(egreso.monto)}</td>
                   <td className="px-4 py-3 text-sm text-graphite">{formatFecha(egreso.fecha)}</td>
@@ -150,7 +225,7 @@ export function EgresosTabla({ egresos, onCreate, onEdit, onDelete }: EgresosTab
               ))}
               {egresos.length === 0 ? (
                 <tr>
-                  <td className="px-4 py-8 text-center text-sm text-graphite" colSpan={6}>
+                  <td className="px-4 py-8 text-center text-sm text-graphite" colSpan={8}>
                     No hay egresos cargados todavía.
                   </td>
                 </tr>

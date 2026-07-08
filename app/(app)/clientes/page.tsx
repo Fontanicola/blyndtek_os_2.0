@@ -36,6 +36,11 @@ export default function ClientesPage() {
   const [selectedClienteId, setSelectedClienteId] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [mobileView, setMobileView] = useState<"list" | "detail">("list");
+  const estadoLabels: Record<EstadoCliente, string> = {
+    activo: "Activos",
+    pausado: "Pausados",
+    inactivo: "Inactivos"
+  };
 
   useEffect(() => {
     void fetchClientes({ estado });
@@ -107,7 +112,7 @@ export default function ClientesPage() {
             />
 
             <div className="inline-flex rounded-pill bg-paper p-1">
-              {(["activo", "inactivo"] as const).map((value) => (
+              {(["activo", "pausado", "inactivo"] as const).map((value) => (
                 <button
                   key={value}
                   type="button"
@@ -119,7 +124,7 @@ export default function ClientesPage() {
                       : "text-graphite hover:text-carbon"
                   ].join(" ")}
                 >
-                  {value === "activo" ? "Activos" : "Inactivos"}
+                  {estadoLabels[value]}
                 </button>
               ))}
             </div>

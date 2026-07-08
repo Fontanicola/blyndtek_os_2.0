@@ -6,5 +6,6 @@ export { FinanzasClient } from "./FinanzasClient";
 export { MetricaCard } from "./MetricaCard";
 export { PLChart } from "./PLChart";
 export { RunwayChart } from "./RunwayChart";
+export { TesoreriaCard } from "./TesoreriaCard";
 export { SuscripcionModal } from "./SuscripcionModal";
 export { SuscripcionesLista } from "./SuscripcionesLista";

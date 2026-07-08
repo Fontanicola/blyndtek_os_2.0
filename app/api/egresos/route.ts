@@ -6,10 +6,12 @@ import type { CreateEgresoInput, Egreso, CategoriaEgreso } from "@/types/egresos
 function parseCategoria(searchParams: URLSearchParams): CategoriaEgreso | null {
   const categoria = searchParams.get("categoria");
   if (
-    categoria === "sueldos" ||
-    categoria === "pauta" ||
-    categoria === "fijos" ||
-    categoria === "dev" ||
+    categoria === "dominios" ||
+    categoria === "hosting_infraestructura" ||
+    categoria === "herramientas_software" ||
+    categoria === "marketing_ads" ||
+    categoria === "impuestos_contable" ||
+    categoria === "sueldos_honorarios" ||
     categoria === "otro"
   ) {
     return categoria;
@@ -86,6 +88,10 @@ export async function POST(request: NextRequest) {
     const payload: CreateEgresoInput = {
       ...body,
       concepto: body.concepto.trim(),
+      cuenta_medio: body.cuenta_medio ?? null,
+      pagado: body.pagado ?? false,
+      fecha_pago: body.pagado ? body.fecha_pago ?? null : null,
+      proyecto_id: body.proyecto_id ?? null,
       notas: body.notas ?? null,
       recurrente: body.recurrente ?? false
     };

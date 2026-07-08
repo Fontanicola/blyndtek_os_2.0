@@ -118,7 +118,7 @@ export type Database = {
           contacto_email: string | null;
           contacto_whatsapp: string | null;
           datos_facturacion: Json | null;
-          estado: "activo" | "inactivo";
+          estado: "activo" | "pausado" | "inactivo";
           notas: string | null;
           created_at: string;
         };
@@ -131,7 +131,7 @@ export type Database = {
           contacto_email?: string | null;
           contacto_whatsapp?: string | null;
           datos_facturacion?: Json | null;
-          estado?: "activo" | "inactivo";
+          estado?: "activo" | "pausado" | "inactivo";
           notas?: string | null;
           created_at?: string;
         };
@@ -144,7 +144,7 @@ export type Database = {
           contacto_email?: string | null;
           contacto_whatsapp?: string | null;
           datos_facturacion?: Json | null;
-          estado?: "activo" | "inactivo";
+          estado?: "activo" | "pausado" | "inactivo";
           notas?: string | null;
           created_at?: string;
         };
@@ -171,6 +171,8 @@ export type Database = {
           fecha_emision: string;
           fecha_vencimiento: string;
           fecha_cobro: string | null;
+          cuenta_medio: string | null;
+          tolerancia_dias: number;
           estado: "pendiente" | "facturado" | "cobrado" | "vencido";
           created_at: string;
         };
@@ -186,6 +188,8 @@ export type Database = {
           fecha_emision: string;
           fecha_vencimiento: string;
           fecha_cobro?: string | null;
+          cuenta_medio?: string | null;
+          tolerancia_dias?: number;
           estado?: "pendiente" | "facturado" | "cobrado" | "vencido";
           created_at?: string;
         };
@@ -201,6 +205,8 @@ export type Database = {
           fecha_emision?: string;
           fecha_vencimiento?: string;
           fecha_cobro?: string | null;
+          cuenta_medio?: string | null;
+          tolerancia_dias?: number;
           estado?: "pendiente" | "facturado" | "cobrado" | "vencido";
           created_at?: string;
         };
@@ -346,30 +352,63 @@ export type Database = {
         Row: {
           id: string;
           concepto: string;
-          categoria: "sueldos" | "pauta" | "fijos" | "dev" | "otro";
+          categoria:
+            | "dominios"
+            | "hosting_infraestructura"
+            | "herramientas_software"
+            | "marketing_ads"
+            | "impuestos_contable"
+            | "sueldos_honorarios"
+            | "otro";
           monto: number;
           fecha: string;
           recurrente: boolean;
+          cuenta_medio: string | null;
+          pagado: boolean;
+          fecha_pago: string | null;
+          proyecto_id: string | null;
           notas: string | null;
           created_at: string;
         };
         Insert: {
           id?: string;
           concepto: string;
-          categoria: "sueldos" | "pauta" | "fijos" | "dev" | "otro";
+          categoria:
+            | "dominios"
+            | "hosting_infraestructura"
+            | "herramientas_software"
+            | "marketing_ads"
+            | "impuestos_contable"
+            | "sueldos_honorarios"
+            | "otro";
           monto: number;
           fecha: string;
           recurrente?: boolean;
+          cuenta_medio?: string | null;
+          pagado?: boolean;
+          fecha_pago?: string | null;
+          proyecto_id?: string | null;
           notas?: string | null;
           created_at?: string;
         };
         Update: {
           id?: string;
           concepto?: string;
-          categoria?: "sueldos" | "pauta" | "fijos" | "dev" | "otro";
+          categoria?:
+            | "dominios"
+            | "hosting_infraestructura"
+            | "herramientas_software"
+            | "marketing_ads"
+            | "impuestos_contable"
+            | "sueldos_honorarios"
+            | "otro";
           monto?: number;
           fecha?: string;
           recurrente?: boolean;
+          cuenta_medio?: string | null;
+          pagado?: boolean;
+          fecha_pago?: string | null;
+          proyecto_id?: string | null;
           notas?: string | null;
           created_at?: string;
         };

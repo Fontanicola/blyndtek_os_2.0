@@ -1,4 +1,4 @@
-export type EstadoCliente = "activo" | "inactivo";
+export type EstadoCliente = "activo" | "pausado" | "inactivo";
 
 export type DatosFacturacion = {
   cuit?: string;

@@ -119,6 +119,8 @@ export async function POST(request: NextRequest) {
       cliente_id: body.cliente_id.trim(),
       concepto: body.concepto.trim(),
       estado: body.estado ?? "pendiente",
+      cuenta_medio: body.cuenta_medio ?? null,
+      tolerancia_dias: body.tolerancia_dias ?? 0,
       proyecto_id: body.proyecto_id ?? null,
       suscripcion_id: body.suscripcion_id ?? null,
       cotizacion_id: body.cotizacion_id ?? null,

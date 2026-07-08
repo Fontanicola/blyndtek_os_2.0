@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { buildRunwaySeries } from "@/lib/finanzas";
+import { buildRunwaySeries, isCobroVencido } from "@/lib/finanzas";
 import { getCurrentWeekRange, getDashboardPeriodRange, isInRange } from "@/lib/dashboard";
 import { getAdminUser } from "@/lib/require-admin";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -278,9 +278,7 @@ export async function GET(request: NextRequest) {
     const netNewMrrMes = grossNewMrr - churn;
 
     const cobrosPendientes = cobros.filter((cobro) => cobro.estado === "pendiente").reduce((total, cobro) => total + cobro.monto, 0);
-    const cobrosVencidos = cobros
-      .filter((cobro) => cobro.estado === "vencido" || (cobro.estado === "pendiente" && new Date(cobro.fecha_vencimiento) < new Date()))
-      .reduce((total, cobro) => total + cobro.monto, 0);
+    const cobrosVencidos = cobros.filter((cobro) => isCobroVencido(cobro)).reduce((total, cobro) => total + cobro.monto, 0);
 
     const ingresosActual = cobros
       .filter((cobro) => cobro.estado === "cobrado" && cobro.fecha_cobro && isInRange(cobro.fecha_cobro, range.start, range.end))

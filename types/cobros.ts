@@ -1,5 +1,6 @@
 export type TipoCobro = "one_pay" | "hito" | "mantenimiento" | "brick";
 export type EstadoCobro = "pendiente" | "facturado" | "cobrado" | "vencido";
+export type CuentaMedio = "transferencia" | "mercadopago" | "efectivo" | "stripe" | "otro";
 
 export type Cobro = {
   id: string;
@@ -13,6 +14,8 @@ export type Cobro = {
   fecha_emision: string;
   fecha_vencimiento: string;
   fecha_cobro: string | null;
+  cuenta_medio: CuentaMedio | null;
+  tolerancia_dias: number;
   estado: EstadoCobro;
   created_at: string;
 };
@@ -28,6 +31,8 @@ export type CreateCobroInput = {
   fecha_emision: string;
   fecha_vencimiento: string;
   fecha_cobro?: string | null;
+  cuenta_medio?: CuentaMedio | null;
+  tolerancia_dias?: number;
   estado?: EstadoCobro;
 };
 

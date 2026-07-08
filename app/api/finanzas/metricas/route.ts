@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { isCobroVencido } from "@/lib/finanzas";
 import { getAdminUser } from "@/lib/require-admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Cobro } from "@/types/cobros";
@@ -47,22 +48,13 @@ export async function GET() {
 
     const today = new Date();
     const { start: monthStart, end: monthEnd } = currentMonthBounds(today);
-    const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-
     const mrr = suscripciones.reduce((total, item) => total + item.monto_mensual, 0);
 
     const cobrosPendientes = cobros
       .filter((cobro) => cobro.estado === "pendiente")
       .reduce((total, cobro) => total + cobro.monto, 0);
 
-    const cobrosVencidos = cobros
-      .filter((cobro) => {
-        const vencida =
-          cobro.estado === "vencido" ||
-          (cobro.estado === "pendiente" && new Date(cobro.fecha_vencimiento) < todayStart);
-        return vencida;
-      })
-      .reduce((total, cobro) => total + cobro.monto, 0);
+    const cobrosVencidos = cobros.filter((cobro) => isCobroVencido(cobro, today)).reduce((total, cobro) => total + cobro.monto, 0);
 
     const ingresosMes = cobros
       .filter((cobro) => cobro.estado === "cobrado" && cobro.fecha_cobro)
