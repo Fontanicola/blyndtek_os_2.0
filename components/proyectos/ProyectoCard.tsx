@@ -1,7 +1,6 @@
 "use client";
 
 import { Badge, Card } from "@/components/ui";
-import { formatFecha } from "@/lib/utils/formatters";
 import { PROYECTO_ESTADO_LABELS } from "@/lib/proyectos";
 import type { Proyecto } from "@/types/proyectos";
 
@@ -28,6 +27,34 @@ function getEstadoVariant(estado: Proyecto["estado"]) {
   return "default" as const;
 }
 
+function formatShortDate(value: string | null | undefined) {
+  if (!value) {
+    return "Sin fecha";
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "Sin fecha";
+  }
+
+  return new Intl.DateTimeFormat("es-AR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "2-digit"
+  }).format(date);
+}
+
+function abbreviateClienteName(value: string) {
+  const normalized = value.trim().replace(/\s+/g, " ");
+
+  if (normalized.length <= 30) {
+    return normalized;
+  }
+
+  return `${normalized.slice(0, 27).trimEnd()}...`;
+}
+
 export function ProyectoCard({
   proyecto,
   clienteNombre,
@@ -38,13 +65,15 @@ export function ProyectoCard({
     <Card
       padding="md"
       onClick={onClick}
-      className={selected ? "border-l-2 border-signal bg-signal-light" : undefined}
+      className={selected ? "h-full border-l-2 border-signal bg-signal-light" : "h-full"}
     >
       <div className="space-y-3">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <p className="truncate text-base font-label text-carbon">{proyecto.nombre}</p>
-            <p className="mt-1 text-sm text-graphite">{clienteNombre}</p>
+            <p className="mt-1 truncate text-sm text-graphite" title={clienteNombre}>
+              {abbreviateClienteName(clienteNombre)}
+            </p>
           </div>
           <Badge variant={getEstadoVariant(proyecto.estado)}>
             {PROYECTO_ESTADO_LABELS[proyecto.estado]}
@@ -61,8 +90,7 @@ export function ProyectoCard({
           <div className="flex items-center justify-between gap-3 text-xs text-graphite">
             <span>{proyecto.avance_pct}% completado</span>
             <span>
-              Entrega comprometida:{" "}
-              {proyecto.entrega_comprometida ? formatFecha(proyecto.entrega_comprometida) : "Sin fecha"}
+              Entrega comprometida: {formatShortDate(proyecto.entrega_comprometida)}
             </span>
           </div>
         </div>

@@ -638,5 +638,5 @@ Estado general actual: Fase 0 completa. Cimientos técnicos listos: documentaci�
 ## Última actualización
 
 - Fecha: 2026-07-08
-- Actualizado: se extendió la UI existente de Finanzas y Clientes para exponer los nuevos campos operativos, y se normalizó la lógica de vencimiento con tolerancia.
-- Estado actual: sistema funcional con los nuevos campos reflejados en la UI y la documentación alineada al esquema real.
+- Actualizado: se ajustó la vista de `/proyectos` para agrupar filtros en un desplegable, estabilizar la altura de las cards, hacer scroll interno en la lista y mostrar la entrega comprometida en formato corto.
+- Estado actual: sistema funcional con la UI de proyectos más compacta y consistente visualmente.

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Button, Card, EntityMultiSelect, EntitySelect, Input, Modal } from "@/components/ui";
 import { useFeatures } from "@/lib/hooks/useFeatures";
 import { useProyectos } from "@/lib/hooks/useProyectos";
@@ -19,6 +19,7 @@ type ProyectosClientProps = {
 };
 
 type ProyectosViewMode = "list" | "detail";
+type EstadoFilter = Proyecto["estado"] | "todos";
 
 function getClienteNombre(clienteId: string, clientes: ProyectosClientProps["clientes"]) {
   return clientes.find((cliente) => cliente.id === clienteId)?.empresa ?? "Cliente";
@@ -37,10 +38,12 @@ export function ProyectosClient({ usuario, clientes, cotizaciones, usuarios }: P
   const isAdmin = usuario?.rol === "admin";
   const { proyectos, loading, error, setProyectos, createProyecto, updateProyecto } = useProyectos();
   const { features, fetchFeatures, createFeature, updateFeature, deleteFeature } = useFeatures();
+  const filtersRef = useRef<HTMLDivElement | null>(null);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [mobileMode, setMobileMode] = useState<ProyectosViewMode>("list");
   const [search, setSearch] = useState("");
-  const [estadoFilter, setEstadoFilter] = useState<Proyecto["estado"] | "todos">("todos");
+  const [estadoFilter, setEstadoFilter] = useState<EstadoFilter>("todos");
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [newProjectOpen, setNewProjectOpen] = useState(false);
   const [projectForm, setProjectForm] = useState<CreateProyectoInput>({
     cotizacion_id: "",
@@ -73,6 +76,21 @@ export function ProyectosClient({ usuario, clientes, cotizaciones, usuarios }: P
       void fetchFeatures(selectedProject.id);
     }
   }, [fetchFeatures, selectedProject]);
+
+  useEffect(() => {
+    function handlePointerDown(event: MouseEvent) {
+      if (!filtersRef.current) {
+        return;
+      }
+
+      if (!filtersRef.current.contains(event.target as Node)) {
+        setFiltersOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handlePointerDown);
+    return () => document.removeEventListener("mousedown", handlePointerDown);
+  }, []);
 
   const filteredProjects = useMemo(() => {
     return proyectos.filter((proyecto) => {
@@ -130,37 +148,80 @@ export function ProyectosClient({ usuario, clientes, cotizaciones, usuarios }: P
       </div>
 
       <div className="grid gap-4 md:grid-cols-[320px_minmax(0,1fr)]">
-        <Card padding="lg" className="space-y-4 md:sticky md:top-0 md:h-[calc(100vh-160px)]">
-          <div className="space-y-3">
-            <Input
-              label="Buscar"
-              placeholder="Buscar por nombre o cliente"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-            />
+        <Card
+          padding="lg"
+          className="flex min-h-0 flex-col overflow-visible md:sticky md:top-0 md:h-[calc(100vh-160px)]"
+        >
+          <div ref={filtersRef} className="relative space-y-3">
+            <div className="flex items-end gap-2">
+              <Input
+                label="Buscar"
+                placeholder="Buscar por nombre o cliente"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                className="flex-1"
+              />
 
-            <div className="flex flex-wrap gap-2">
-              {(["todos", "por_empezar", "en_desarrollo", "implementacion", "entregado", "soporte", "pausado"] as const).map(
-                (estado) => (
-                  <button
-                    key={estado}
-                    type="button"
-                    onClick={() => setEstadoFilter(estado)}
-                    className={[
-                      "rounded-pill px-3 py-1.5 text-sm font-label transition-colors duration-fast ease-fast",
-                      estadoFilter === estado
-                        ? "bg-signal-light text-signal"
-                        : "bg-paper text-graphite hover:bg-white hover:text-carbon"
-                    ].join(" ")}
-                  >
-                    {estado === "todos" ? "Todos" : estado.replaceAll("_", " ")}
-                  </button>
-                )
-              )}
+              <Button
+                variant="secondary"
+                size="md"
+                className="shrink-0 whitespace-nowrap"
+                onClick={() => setFiltersOpen((current) => !current)}
+              >
+                Filtros
+              </Button>
             </div>
+
+            {filtersOpen ? (
+              <div className="absolute left-0 right-0 top-full z-30 mt-2 rounded-card border border-line-soft bg-white p-3 shadow-modal">
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-xs font-label uppercase tracking-[0.16em] text-graphite">Estado</p>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {(["todos", "por_empezar", "en_desarrollo", "implementacion", "entregado", "soporte", "pausado"] as const).map(
+                        (estado) => (
+                          <button
+                            key={estado}
+                            type="button"
+                            onClick={() => {
+                              setEstadoFilter(estado);
+                              setFiltersOpen(false);
+                            }}
+                            className={[
+                              "rounded-pill px-3 py-1.5 text-sm font-label transition-colors duration-fast ease-fast",
+                              estadoFilter === estado
+                                ? "bg-signal-light text-signal"
+                                : "bg-paper text-graphite hover:bg-white hover:text-carbon"
+                            ].join(" ")}
+                          >
+                            {estado === "todos" ? "Todos" : estado.replaceAll("_", " ")}
+                          </button>
+                        )
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-3 border-t border-line-soft pt-3">
+                    <p className="text-xs text-graphite">
+                      {estadoFilter === "todos" ? "Sin filtro de estado" : `Estado: ${estadoFilter.replaceAll("_", " ")}`}
+                    </p>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setEstadoFilter("todos");
+                        setFiltersOpen(false);
+                      }}
+                    >
+                      Limpiar
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ) : null}
           </div>
 
-          <div className="min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">
+          <div className="mt-4 min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">
             {filteredProjects.length > 0 ? (
               filteredProjects.map((proyecto) => (
                 <ProyectoCard
