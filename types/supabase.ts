@@ -752,6 +752,7 @@ export type Database = {
           id: string;
           titulo: string;
           proyecto_id: string | null;
+          feature_id: string | null;
           responsable_id: string;
           prioridad: "alta" | "media" | "baja";
           fecha_limite: string | null;
@@ -763,6 +764,7 @@ export type Database = {
           id?: string;
           titulo: string;
           proyecto_id?: string | null;
+          feature_id?: string | null;
           responsable_id: string;
           prioridad?: "alta" | "media" | "baja";
           fecha_limite?: string | null;
@@ -774,6 +776,7 @@ export type Database = {
           id?: string;
           titulo?: string;
           proyecto_id?: string | null;
+          feature_id?: string | null;
           responsable_id?: string;
           prioridad?: "alta" | "media" | "baja";
           fecha_limite?: string | null;
@@ -787,6 +790,13 @@ export type Database = {
             columns: ["proyecto_id"];
             isOneToOne: false;
             referencedRelation: "proyectos";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "tareas_feature_id_fkey";
+            columns: ["feature_id"];
+            isOneToOne: false;
+            referencedRelation: "features";
             referencedColumns: ["id"];
           },
           {

@@ -71,6 +71,11 @@ export function TareaCard({
             <p className="mt-1 text-xs text-graphite">
               {proyectoNombre ? proyectoNombre : "Sin proyecto"}
             </p>
+            {tarea.feature_id ? (
+              <Badge variant="ghost" className="mt-2 inline-flex">
+                🔗 {proyectoNombre ?? "Vinculada a proyecto"}
+              </Badge>
+            ) : null}
           </div>
           <Badge variant={getPrioridadVariant(tarea.prioridad)}>{TAREA_PRIORIDAD_LABELS[tarea.prioridad]}</Badge>
         </div>

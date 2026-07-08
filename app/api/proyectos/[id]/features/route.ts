@@ -1,36 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { calculateAvancePct } from "@/lib/proyectos";
+import { FEATURE_A_TAREA } from "@/lib/proyectos/sincronizarFeatureTarea";
+import { recalcularAvanceProyecto } from "@/lib/proyectos/recalcularAvance";
 import type { CreateFeatureInput, Feature } from "@/types/features";
 import type { Proyecto } from "@/types/proyectos";
+import type { Tarea } from "@/types/tareas";
 
 type RouteContext = {
   params: {
     id: string;
   };
 };
-
-async function recalculateProject(
-  supabase: ReturnType<typeof createAdminClient>,
-  proyectoId: string
-): Promise<Proyecto | null> {
-  const { data: features } = await supabase
-    .from("features")
-    .select("estado")
-    .eq("proyecto_id", proyectoId);
-
-  const avance_pct = calculateAvancePct((features ?? []) as Array<Pick<Feature, "estado">>);
-
-  const { data: updatedProject } = await supabase
-    .from("proyectos")
-    .update({ avance_pct })
-    .eq("id", proyectoId)
-    .select("*")
-    .single();
-
-  return (updatedProject as Proyecto) ?? null;
-}
 
 export async function GET(_request: NextRequest, { params }: RouteContext) {
   try {
@@ -76,6 +57,17 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     }
 
     const supabase = createAdminClient();
+    const { data: projectData, error: projectError } = await supabase
+      .from("proyectos")
+      .select("responsable_id")
+      .eq("id", params.id)
+      .single();
+
+    if (projectError || !projectData) {
+      const status = projectError?.code === "PGRST116" ? 404 : 500;
+      return NextResponse.json({ error: projectError?.message ?? "Not found" }, { status });
+    }
+
     const { data: created, error } = await supabase
       .from("features")
       .insert({
@@ -94,8 +86,37 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    const project = await recalculateProject(supabase, params.id);
-    return NextResponse.json({ data: created as Feature, project });
+    let tarea: Tarea | null = null;
+    const feature = created as Feature;
+
+    try {
+      const { data: createdTask, error: taskError } = await supabase
+        .from("tareas")
+        .insert({
+          titulo: feature.nombre,
+          proyecto_id: params.id,
+          feature_id: feature.id,
+          responsable_id: feature.responsable_id ?? (projectData.responsable_id ?? currentUser.id),
+          prioridad: "media",
+          fecha_limite: null,
+          estado: FEATURE_A_TAREA[feature.estado],
+          notas: null
+        })
+        .select("*")
+        .single();
+
+      if (taskError) {
+        console.error("No se pudo crear la tarea vinculada a la feature:", taskError.message);
+      } else if (createdTask) {
+        tarea = createdTask as Tarea;
+      }
+    } catch (taskError) {
+      const message = taskError instanceof Error ? taskError.message : "Unexpected task error";
+      console.error("No se pudo crear la tarea vinculada a la feature:", message);
+    }
+
+    const project = await recalcularAvanceProyecto(supabase, params.id);
+    return NextResponse.json({ data: { feature, tarea }, project });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unexpected error";
     return NextResponse.json({ error: message }, { status: 500 });

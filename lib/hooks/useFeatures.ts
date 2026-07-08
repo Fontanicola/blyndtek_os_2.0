@@ -10,6 +10,11 @@ type ApiResponse<T> = {
   error?: string;
 };
 
+type FeatureCreationResult = {
+  feature: Feature;
+  tarea?: unknown | null;
+};
+
 type ApiDeleteResponse = {
   success?: boolean;
   project?: Proyecto | null;
@@ -56,15 +61,21 @@ export function useFeatures() {
       body: JSON.stringify(input)
     });
     const payload = (await response.json()) as ApiResponse<Feature>;
+    const creationPayload = payload.data as Feature | FeatureCreationResult | undefined;
 
-    if (!response.ok || !payload.data) {
+    if (!response.ok || !creationPayload) {
       const message = payload.error ?? "No se pudo crear la feature.";
       setError(message);
       throw new Error(message);
     }
 
-    setFeatures((current) => [...current, payload.data as Feature]);
-    return payload;
+    const feature = "feature" in creationPayload ? creationPayload.feature : creationPayload;
+
+    setFeatures((current) => [...current, feature]);
+    return {
+      ...payload,
+      data: creationPayload
+    };
   }, []);
 
   const updateFeature = useCallback(async (id: string, input: UpdateFeatureInput) => {

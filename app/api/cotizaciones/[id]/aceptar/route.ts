@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { FEATURE_A_TAREA } from "@/lib/proyectos/sincronizarFeatureTarea";
 import type { Cotizacion, ResultadoCascada } from "@/types/cotizaciones";
 import type { Lead } from "@/types/leads";
 
@@ -355,7 +356,7 @@ export async function POST(_request: NextRequest, { params }: RouteContext) {
             responsable_id: currentUser.id,
             orden: featureOrder
           })
-          .select("id")
+          .select("id, responsable_id, estado, nombre")
           .single();
 
         if (featureError) {
@@ -364,6 +365,29 @@ export async function POST(_request: NextRequest, { params }: RouteContext) {
 
         if (feature?.id) {
           created.featureIds.push(feature.id);
+
+          try {
+            const { error: tareaError } = await supabase.from("tareas").insert({
+              titulo: feature.nombre,
+              proyecto_id: proyectoId,
+              feature_id: feature.id,
+              responsable_id: currentUser.id,
+              prioridad: "media",
+              fecha_limite: null,
+              estado: FEATURE_A_TAREA[feature.estado ?? "pendiente"],
+              notas: null
+            });
+
+            if (tareaError) {
+              console.error(
+                "No se pudo crear la tarea vinculada a la feature de la cascada:",
+                tareaError.message
+              );
+            }
+          } catch (taskError) {
+            const message = taskError instanceof Error ? taskError.message : "Unexpected task error";
+            console.error("No se pudo crear la tarea vinculada a la feature de la cascada:", message);
+          }
         }
 
         featureOrder += 1;

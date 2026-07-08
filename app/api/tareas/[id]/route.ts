@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { sincronizarDesdeTarea } from "@/lib/proyectos/sincronizarFeatureTarea";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Tarea, UpdateTareaInput } from "@/types/tareas";
 
@@ -33,6 +34,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
     const payload = {
       titulo: body.titulo?.trim() || body.titulo,
       proyecto_id: body.proyecto_id === "" ? null : body.proyecto_id,
+      feature_id: body.feature_id === "" ? null : body.feature_id,
       responsable_id: body.responsable_id?.trim() || body.responsable_id,
       prioridad: body.prioridad,
       fecha_limite: body.fecha_limite === "" ? null : body.fecha_limite,
@@ -50,6 +52,10 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
     if (error) {
       const status = error.code === "PGRST116" ? 404 : 500;
       return NextResponse.json({ error: error.message }, { status });
+    }
+
+    if (typeof body.estado !== "undefined") {
+      await sincronizarDesdeTarea(params.id, body.estado);
     }
 
     return NextResponse.json({ data: data as Tarea });

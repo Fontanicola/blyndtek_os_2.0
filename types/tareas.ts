@@ -6,6 +6,7 @@ export type Tarea = {
   id: string;
   titulo: string;
   proyecto_id: string | null;
+  feature_id: string | null;
   responsable_id: string;
   prioridad: PrioridadTarea;
   fecha_limite: string | null;
@@ -17,6 +18,7 @@ export type Tarea = {
 export type CreateTareaInput = {
   titulo: string;
   proyecto_id?: string | null;
+  feature_id?: string | null;
   responsable_id?: string;
   prioridad?: PrioridadTarea;
   fecha_limite?: string | null;

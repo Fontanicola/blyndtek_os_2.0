@@ -4,18 +4,14 @@ import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { Sidebar, Topbar } from "@/components/layout";
-import { QuickTaskButton } from "@/components/layout/QuickTaskButton";
-import type { TaskProjectOption, TaskUserOption } from "@/lib/task-support";
 import type { Usuario } from "@/types/auth";
 
 type AppShellProps = {
   children: ReactNode;
   usuario: Usuario | null;
-  taskProjects: TaskProjectOption[];
-  taskUsers: TaskUserOption[];
 };
 
-export function AppShell({ children, usuario, taskProjects, taskUsers }: AppShellProps) {
+export function AppShell({ children, usuario }: AppShellProps) {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
 
@@ -38,8 +34,6 @@ export function AppShell({ children, usuario, taskProjects, taskUsers }: AppShel
           <main className="flex-1 overflow-y-auto p-6">{children}</main>
         </div>
       </div>
-
-      <QuickTaskButton usuario={usuario} proyectos={taskProjects} usuarios={taskUsers} />
     </div>
   );
 }

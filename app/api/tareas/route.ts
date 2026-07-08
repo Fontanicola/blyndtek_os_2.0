@@ -82,6 +82,7 @@ export async function POST(request: NextRequest) {
     const payload = {
       titulo: body.titulo.trim(),
       proyecto_id: body.proyecto_id?.trim() || null,
+      feature_id: body.feature_id?.trim() || null,
       responsable_id: responsableId,
       prioridad: body.prioridad ?? "media",
       fecha_limite: body.fecha_limite ?? null,

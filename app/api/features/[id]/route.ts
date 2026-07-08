@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { calculateAvancePct } from "@/lib/proyectos";
+import { recalcularAvanceProyecto } from "@/lib/proyectos/recalcularAvance";
+import { sincronizarDesdeFeature } from "@/lib/proyectos/sincronizarFeatureTarea";
 import type { Feature, UpdateFeatureInput } from "@/types/features";
 import type { Proyecto } from "@/types/proyectos";
 
@@ -9,27 +10,6 @@ type RouteContext = {
     id: string;
   };
 };
-
-async function recalculateProject(
-  supabase: ReturnType<typeof createAdminClient>,
-  proyectoId: string
-): Promise<Proyecto | null> {
-  const { data: features } = await supabase
-    .from("features")
-    .select("estado")
-    .eq("proyecto_id", proyectoId);
-
-  const avance_pct = calculateAvancePct((features ?? []) as Array<Pick<Feature, "estado">>);
-
-  const { data: updatedProject } = await supabase
-    .from("proyectos")
-    .update({ avance_pct })
-    .eq("id", proyectoId)
-    .select("*")
-    .single();
-
-  return (updatedProject as Proyecto) ?? null;
-}
 
 export async function PATCH(request: NextRequest, { params }: RouteContext) {
   try {
@@ -75,7 +55,12 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
       return NextResponse.json({ error: error.message }, { status });
     }
 
-    const project = await recalculateProject(supabase, current.proyecto_id as string);
+    const project = await recalcularAvanceProyecto(supabase, current.proyecto_id as string);
+
+    if (typeof body.estado !== "undefined") {
+      await sincronizarDesdeFeature(params.id, body.estado);
+    }
+
     return NextResponse.json({ data: data as Feature, project });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unexpected error";
@@ -104,7 +89,7 @@ export async function DELETE(_request: NextRequest, { params }: RouteContext) {
       return NextResponse.json({ error: error.message }, { status });
     }
 
-    const project = await recalculateProject(supabase, current.proyecto_id as string);
+    const project = await recalcularAvanceProyecto(supabase, current.proyecto_id as string);
     return NextResponse.json({ success: true, project });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unexpected error";
