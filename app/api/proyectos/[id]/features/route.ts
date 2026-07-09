@@ -4,7 +4,6 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { FEATURE_A_TAREA } from "@/lib/proyectos/sincronizarFeatureTarea";
 import { recalcularAvanceProyecto } from "@/lib/proyectos/recalcularAvance";
 import type { CreateFeatureInput, Feature } from "@/types/features";
-import type { Proyecto } from "@/types/proyectos";
 import type { Tarea } from "@/types/tareas";
 
 type RouteContext = {

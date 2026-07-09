@@ -171,3 +171,12 @@
 - La topbar quedó integrada dentro de ese panel flotante como header interno del contenido, en lugar de quedar fuera como barra global separada.
 - Se incorporó `EntitySelect` como selector reusable searchable por nombre, y el principio general pasó a ser que ningún formulario del sistema pide UUIDs manuales; los IDs se resuelven por detrás a partir de selecciones legibles.
 - Para selección múltiple se agregó una variante `EntityMultiSelect`, usada sobre todo en asignación de devs y otros campos multivalor.
+
+## 2026-07-09 — Sync bidireccional entre features y tareas
+
+- Se decidió vincular cada feature del Lab con una tarea automática mediante `tareas.feature_id`, para que el trabajo técnico y la visualización de proyecto compartan la misma unidad de seguimiento.
+- La sincronización quedó bidireccional y directa contra Supabase con `service_role`, no por HTTP, para evitar loops entre routes y mantener el avance del proyecto consistente.
+- El estado se mapea entre ambos módulos de forma determinística: `pendiente ↔ nueva`, `en_curso ↔ en_proceso`, `lista ↔ terminada`.
+- El recálculo de `proyectos.avance_pct` se centralizó en un helper compartido para que tanto el PATCH de features como la sync desde tareas usen la misma lógica.
+- El drag & drop entre fases se reemplazó por un selector “Mover a fase” dentro de cada subtarea, porque el flujo real es más claro cuando la fase se cambia explícitamente y no por arrastre.
+- La cascada de aceptación del Cotizador también crea la tarea vinculada por cada feature generada, para que el proyecto arranque con trabajo trazable desde el día uno.

@@ -9,9 +9,9 @@ import { FaseColumn, type FaseProyecto } from "./FaseColumn";
 type LabCanvasProps = {
   projectId: string;
   features: Feature[];
-  onCreateFeature: (input: CreateFeatureInput) => Promise<void> | void;
-  onUpdateFeature: (id: string, input: UpdateFeatureInput) => Promise<void> | void;
-  onDeleteFeature: (id: string) => Promise<void> | void;
+  onCreateFeature: (input: CreateFeatureInput) => Promise<unknown> | void;
+  onUpdateFeature: (id: string, input: UpdateFeatureInput) => Promise<unknown> | void;
+  onDeleteFeature: (id: string) => Promise<unknown> | void;
   onMoveFeature: (id: string, estado: EstadoFeature) => Promise<{ project?: unknown } | void>;
 };
 
@@ -77,7 +77,6 @@ export function LabCanvas({
             onUpdateFeature={async (id, input) => {
               await onUpdateFeature(id, input);
             }}
-            onDeleteFeature={onDeleteFeature}
             onFeatureClick={(feature) => setSelectedFeature(feature)}
           />
         ))}

@@ -3,7 +3,6 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { recalcularAvanceProyecto } from "@/lib/proyectos/recalcularAvance";
 import { sincronizarDesdeFeature } from "@/lib/proyectos/sincronizarFeatureTarea";
 import type { Feature, UpdateFeatureInput } from "@/types/features";
-import type { Proyecto } from "@/types/proyectos";
 
 type RouteContext = {
   params: {

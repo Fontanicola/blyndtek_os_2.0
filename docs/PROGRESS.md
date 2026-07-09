@@ -635,8 +635,18 @@ Estado general actual: Fase 0 completa. Cimientos técnicos listos: documentaci�
 - Se agregó la tab Tesorería en Finanzas con desglose de cobros cobrados por medio de cobro.
 - Estado actual: cambios funcionales listos para build/lint y documentados en el esquema y la memoria del proyecto.
 
+## 2026-07-09 — Lab de proyectos y sincronización feature↔tarea
+
+- Se introdujo `feature_id` en el tipo de tareas y en las rutas de API para reflejar el vínculo con subtareas del Lab.
+- Se extrajo el recálculo de avance del proyecto a un helper compartido y se reutilizó tanto en features como en la sincronización bidireccional.
+- La creación de una feature ahora intenta crear también su tarea asociada, y la cascada de aceptación de cotizaciones hace lo mismo por cada feature generada.
+- Se agregaron helpers de sincronización directa entre features y tareas (`sincronizarDesdeFeature` / `sincronizarDesdeTarea`) sin pasar por HTTP, para evitar loops y mantener el avance del proyecto en sync.
+- El panel de fases de proyectos se rearmó como un Lab con columnas colapsables, checklist de subtareas y selector “Mover a fase” en cada item.
+- La vista de tareas ahora distingue las tareas vinculadas a subtareas/proyectos con un badge visual.
+- Verificación: `npm run lint` limpio y `npm run build` compilando sin errores.
+
 ## Última actualización
 
-- Fecha: 2026-07-08
-- Actualizado: se ajustó la vista de `/proyectos` para agrupar filtros en un desplegable, estabilizar la altura de las cards, hacer scroll interno en la lista y mostrar la entrega comprometida en formato corto.
-- Estado actual: sistema funcional con la UI de proyectos más compacta y consistente visualmente.
+- Fecha: 2026-07-09
+- Actualizado: se implementó la sincronización bidireccional entre subtareas del Lab y tareas del módulo Tareas, con columnas colapsables y selector de fase en cada subtarea.
+- Estado actual: sistema funcional con el Lab de proyectos y Tareas sincronizados en ambos sentidos.

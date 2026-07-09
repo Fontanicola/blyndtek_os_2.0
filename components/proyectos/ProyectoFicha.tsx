@@ -22,8 +22,11 @@ type ProyectoFichaProps = {
   proyectos: Array<Pick<Proyecto, "id" | "nombre" | "estado">>;
   onProyectoUpdated: (proyecto: Proyecto) => void | Promise<void>;
   onUpdateProyecto: (input: UpdateProyectoInput) => Promise<Proyecto>;
-  onCreateFeature: (input: CreateFeatureInput) => Promise<{ data?: Feature; project?: Proyecto | null }>;
-  onUpdateFeature: (id: string, input: UpdateFeatureInput) => Promise<{ data?: Feature; project?: Proyecto | null }>;
+  onCreateFeature: (input: CreateFeatureInput) => Promise<{ data?: unknown; project?: Proyecto | null }>;
+  onUpdateFeature: (
+    id: string,
+    input: UpdateFeatureInput
+  ) => Promise<{ data?: unknown; project?: Proyecto | null }>;
   onDeleteFeature: (id: string) => Promise<{ success?: boolean; project?: Proyecto | null }>;
 };
 

@@ -1,19 +1,21 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Badge, Button, Card } from "@/components/ui";
+import { Button, Card } from "@/components/ui";
 import { cn } from "@/lib/cn";
-import type { CreateFeatureInput, EstadoFeature, Feature, UpdateFeatureInput } from "@/types/features";
+import type { CreateFeatureInput, Feature, UpdateFeatureInput } from "@/types/features";
 import { SubtareaChecklistItem, type FaseProyecto } from "./SubtareaChecklistItem";
+
+export type { FaseProyecto } from "./SubtareaChecklistItem";
 
 type FaseColumnProps = {
   projectId: string;
   fase: FaseProyecto;
   features: Feature[];
   fasesDisponibles: FaseProyecto[];
-  onCreateFeature: (input: CreateFeatureInput) => Promise<void> | void;
-  onUpdateFeature: (id: string, input: UpdateFeatureInput) => Promise<void> | void;
-  onDeleteFeature: (id: string) => Promise<void> | void;
+  onCreateFeature: (input: CreateFeatureInput) => Promise<unknown> | void;
+  onUpdateFeature: (id: string, input: UpdateFeatureInput) => Promise<unknown> | void;
+  onDeleteFeature?: (id: string) => Promise<unknown> | void;
   onFeatureClick: (feature: Feature) => void;
 };
 
@@ -86,6 +88,7 @@ export function FaseColumn({
   onDeleteFeature,
   onFeatureClick
 }: FaseColumnProps) {
+  void onDeleteFeature;
   const completed = useMemo(() => features.filter((feature) => feature.estado === "lista").length, [features]);
   const total = features.length;
   const [isExpanded, setIsExpanded] = useState(() => features.some((feature) => feature.estado !== "pendiente"));
