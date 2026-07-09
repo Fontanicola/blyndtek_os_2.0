@@ -15,7 +15,6 @@ type FaseColumnProps = {
   fasesDisponibles: FaseProyecto[];
   onCreateFeature: (input: CreateFeatureInput) => Promise<unknown> | void;
   onUpdateFeature: (id: string, input: UpdateFeatureInput) => Promise<unknown> | void;
-  onDeleteFeature?: (id: string) => Promise<unknown> | void;
   onFeatureClick: (feature: Feature) => void;
 };
 
@@ -85,10 +84,8 @@ export function FaseColumn({
   fasesDisponibles,
   onCreateFeature,
   onUpdateFeature,
-  onDeleteFeature,
   onFeatureClick
 }: FaseColumnProps) {
-  void onDeleteFeature;
   const completed = useMemo(() => features.filter((feature) => feature.estado === "lista").length, [features]);
   const total = features.length;
   const [isExpanded, setIsExpanded] = useState(() => features.some((feature) => feature.estado !== "pendiente"));

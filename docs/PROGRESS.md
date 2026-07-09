@@ -645,8 +645,13 @@ Estado general actual: Fase 0 completa. Cimientos técnicos listos: documentaci�
 - La vista de tareas ahora distingue las tareas vinculadas a subtareas/proyectos con un badge visual.
 - Verificación: `npm run lint` limpio y `npm run build` compilando sin errores.
 
+## 2026-07-09 — Limpieza ESLint para Vercel
+
+- Se removieron imports y props heredadas que habían quedado sin uso en las rutas de features y en el Lab de proyectos.
+- El ajuste no cambió comportamiento funcional: solo eliminó ruido de lint para que Vercel no falle por `no-unused-vars`.
+
 ## Última actualización
 
 - Fecha: 2026-07-09
-- Actualizado: se implementó la sincronización bidireccional entre subtareas del Lab y tareas del módulo Tareas, con columnas colapsables y selector de fase en cada subtarea.
-- Estado actual: sistema funcional con el Lab de proyectos y Tareas sincronizados en ambos sentidos.
+- Actualizado: se limpiaron los últimos `no-unused-vars` detectados por Vercel en las rutas de features y el Lab de proyectos.
+- Estado actual: build y lint alineados con el despliegue en Vercel.
