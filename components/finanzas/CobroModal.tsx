@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Button, EntitySelect, Input, Modal } from "@/components/ui";
+import { getProyectoDisplayLabel } from "@/lib/proyectos/labels";
 import type { CuentaMedio, CreateCobroInput, Cobro } from "@/types/cobros";
 import type { Cliente } from "@/types/clientes";
 import type { Proyecto } from "@/types/proyectos";
@@ -14,7 +15,7 @@ type CobroModalProps = {
   onSave: (input: CreateCobroInput) => Promise<void> | void;
   cobro?: Cobro | null;
   clientes: Array<Pick<Cliente, "id" | "empresa" | "pais" | "estado">>;
-  proyectos: Array<Pick<Proyecto, "id" | "nombre" | "estado">>;
+  proyectos: Array<Pick<Proyecto, "id" | "nombre" | "estado" | "cliente_id"> & { clienteNombre?: string | null }>;
   cotizaciones: Array<Pick<Cotizacion, "id" | "empresa" | "precio_total">>;
   suscripciones: Array<Pick<Suscripcion, "id" | "tipo" | "estado" | "monto_mensual">>;
 };
@@ -129,7 +130,10 @@ export function CobroModal({
             placeholder="Sin proyecto"
             options={proyectos.map((proyecto) => ({
               id: proyecto.id,
-              label: proyecto.nombre,
+              label: getProyectoDisplayLabel({
+                nombre: proyecto.nombre,
+                clienteNombre: proyecto.clienteNombre
+              }),
               sublabel: proyecto.estado.replaceAll("_", " ")
             }))}
             onChange={(id) => setProyectoId(id ?? "")}

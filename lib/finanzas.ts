@@ -41,7 +41,11 @@ function startOfDay(date: Date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
 
-function parseDateOnly(dateString: string) {
+function parseDateOnly(dateString: string | null | undefined) {
+  if (!dateString) {
+    return new Date(NaN);
+  }
+
   const [yearPart, monthPart, dayPart] = dateString.split("-");
   const year = Number(yearPart ?? "1970");
   const month = Number(monthPart ?? "1");
@@ -51,6 +55,11 @@ function parseDateOnly(dateString: string) {
 
 export function getCobroEffectiveDueDate(cobro: Pick<Cobro, "fecha_vencimiento" | "tolerancia_dias">) {
   const effectiveDate = parseDateOnly(cobro.fecha_vencimiento);
+
+  if (Number.isNaN(effectiveDate.getTime())) {
+    return effectiveDate;
+  }
+
   effectiveDate.setDate(effectiveDate.getDate() + (cobro.tolerancia_dias ?? 0));
   return effectiveDate;
 }
@@ -60,6 +69,10 @@ export function isCobroVencido(
   reference = new Date()
 ) {
   if (cobro.estado === "cobrado") {
+    return false;
+  }
+
+  if (!cobro.fecha_vencimiento) {
     return false;
   }
 

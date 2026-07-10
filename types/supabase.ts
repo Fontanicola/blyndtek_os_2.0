@@ -677,6 +677,53 @@ export type Database = {
           }
         ];
       };
+      fases_proyecto: {
+        Row: {
+          id: string;
+          proyecto_id: string;
+          nombre: string;
+          estado: "pendiente" | "en_curso" | "lista";
+          orden: number;
+          fecha_inicio_estimada: string | null;
+          fecha_fin_estimada: string | null;
+          descripcion: string | null;
+          entregables: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          proyecto_id: string;
+          nombre: string;
+          estado?: "pendiente" | "en_curso" | "lista";
+          orden?: number;
+          fecha_inicio_estimada?: string | null;
+          fecha_fin_estimada?: string | null;
+          descripcion?: string | null;
+          entregables?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          proyecto_id?: string;
+          nombre?: string;
+          estado?: "pendiente" | "en_curso" | "lista";
+          orden?: number;
+          fecha_inicio_estimada?: string | null;
+          fecha_fin_estimada?: string | null;
+          descripcion?: string | null;
+          entregables?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "fases_proyecto_proyecto_id_fkey";
+            columns: ["proyecto_id"];
+            isOneToOne: false;
+            referencedRelation: "proyectos";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
       suscripciones: {
         Row: {
           id: string;

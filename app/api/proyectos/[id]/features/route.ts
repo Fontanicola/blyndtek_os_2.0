@@ -51,10 +51,6 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       return NextResponse.json({ error: "descripcion is required" }, { status: 400 });
     }
 
-    if (!body.fase?.trim()) {
-      return NextResponse.json({ error: "fase is required" }, { status: 400 });
-    }
-
     const supabase = createAdminClient();
     const { data: projectData, error: projectError } = await supabase
       .from("proyectos")
@@ -73,7 +69,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
         proyecto_id: params.id,
         nombre: body.nombre.trim(),
         descripcion: body.descripcion.trim(),
-        fase: body.fase.trim(),
+        fase: body.fase?.trim() ?? "",
         estado: body.estado ?? "pendiente",
         responsable_id: body.responsable_id ?? currentUser.id,
         orden: body.orden ?? 0

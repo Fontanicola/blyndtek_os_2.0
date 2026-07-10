@@ -191,33 +191,6 @@ export function CalendarioClient({ usuario, usuarios }: CalendarioClientProps) {
         onHide={() => setToast((current) => ({ ...current, visible: false }))}
       />
 
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-title text-carbon">Calendario</h1>
-          <p className="mt-1 text-sm text-graphite">
-            Agenda unificada con eventos locales, tareas y recordatorios de leads.
-          </p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2">
-          {canSyncGoogle ? (
-            <Button variant="secondary" size="sm" onClick={handleGoogleSync} loading={syncing}>
-              Sincronizar ahora
-            </Button>
-          ) : (
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => {
-                window.location.href = "/api/auth/google";
-              }}
-            >
-              Conectar Google Calendar
-            </Button>
-          )}
-        </div>
-      </div>
-
       <CalendarioControls
         mode={viewMode}
         currentDate={currentDate}
@@ -255,6 +228,24 @@ export function CalendarioClient({ usuario, usuarios }: CalendarioClientProps) {
           setModalOpen(true);
         }}
       />
+
+      <div className="flex justify-end">
+        {canSyncGoogle ? (
+          <Button variant="secondary" size="sm" onClick={handleGoogleSync} loading={syncing}>
+            Sincronizar ahora
+          </Button>
+        ) : (
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => {
+              window.location.href = "/api/auth/google";
+            }}
+          >
+            Conectar Google Calendar
+          </Button>
+        )}
+      </div>
 
       <div className="flex flex-wrap items-center gap-2">
         <Badge variant="signal">Tarea</Badge>

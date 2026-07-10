@@ -29,8 +29,25 @@ export default function CotizadorPage() {
 
   return (
     <div className="flex h-full flex-col gap-6">
-      <div className="flex items-center justify-between gap-4">
-        <h1 className="text-2xl font-title text-carbon">Cotizador</h1>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap gap-2">
+          {estadoTabs.map((tab) => (
+            <button
+              key={tab.value}
+              type="button"
+              onClick={() => setEstadoFiltro(tab.value)}
+              className={[
+                "rounded-pill px-3 py-1.5 text-sm font-label transition-colors duration-fast ease-fast",
+                estadoFiltro === tab.value
+                  ? "bg-signal-light text-signal"
+                  : "bg-white text-graphite hover:text-carbon"
+              ].join(" ")}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
         <Button
           onClick={async () => {
             const cotizacion = await createCotizacion(
@@ -41,24 +58,6 @@ export default function CotizadorPage() {
         >
           Nueva cotización
         </Button>
-      </div>
-
-      <div className="flex flex-wrap gap-2">
-        {estadoTabs.map((tab) => (
-          <button
-            key={tab.value}
-            type="button"
-            onClick={() => setEstadoFiltro(tab.value)}
-            className={[
-              "rounded-pill px-3 py-1.5 text-sm font-label transition-colors duration-fast ease-fast",
-              estadoFiltro === tab.value
-                ? "bg-signal-light text-signal"
-                : "bg-white text-graphite hover:text-carbon"
-            ].join(" ")}
-          >
-            {tab.label}
-          </button>
-        ))}
       </div>
 
       {error ? (
@@ -74,16 +73,6 @@ export default function CotizadorPage() {
       {!loading && cotizaciones.length === 0 ? (
         <Card padding="lg" className="flex flex-col items-center gap-4 text-center">
           <p className="text-sm text-graphite">No hay cotizaciones todavía</p>
-          <Button
-            onClick={async () => {
-              const cotizacion = await createCotizacion(
-                createCotizacionDraft({ empresa: "Nueva cotización" })
-              );
-              router.push(`/cotizador/${cotizacion.id}`);
-            }}
-          >
-            Nueva cotización
-          </Button>
         </Card>
       ) : (
         <div className="grid gap-4 md:grid-cols-2">

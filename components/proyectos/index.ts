@@ -5,3 +5,4 @@ export { FeatureCard } from "./FeatureCard";
 export { CuentaServicioCard } from "./CuentaServicioCard";
 export { CuentaServicioModal } from "./CuentaServicioModal";
 export { ProyectosClient } from "./ProyectosClient";
+export { FasesEstadoKanban } from "./features-kanban";

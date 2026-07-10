@@ -2,11 +2,9 @@
 
 import type { Feature, EstadoFeature } from "@/types/features";
 import { cn } from "@/lib/cn";
+import type { FaseProyecto } from "@/types/fases-proyecto";
 
-export type FaseProyecto = {
-  id: string;
-  nombre: string;
-};
+export type { FaseProyecto } from "@/types/fases-proyecto";
 
 type SubtareaChecklistItemProps = {
   subtarea: Feature;
@@ -113,6 +111,7 @@ export function SubtareaChecklistItem({
           }}
           className="max-w-[140px] rounded-component border border-line bg-white px-2 py-1 text-xs text-carbon focus:border-signal focus:outline-none focus:ring-2 focus:ring-signal/20"
         >
+          <option value="">Sin fase</option>
           {fasesDisponibles.map((fase) => (
             <option key={fase.id} value={fase.id}>
               {fase.nombre}

@@ -9,10 +9,20 @@ export async function recalcularAvanceProyecto(
   supabase: SupabaseAdminClient,
   proyectoId: string
 ): Promise<Proyecto | null> {
+  const { data: currentProject } = await supabase
+    .from("proyectos")
+    .select("*")
+    .eq("id", proyectoId)
+    .single();
+
   const { data: features } = await supabase
     .from("features")
     .select("estado")
     .eq("proyecto_id", proyectoId);
+
+  if (!features || features.length === 0) {
+    return (currentProject as Proyecto) ?? null;
+  }
 
   const avance_pct = calculateAvancePct((features ?? []) as Array<Pick<Feature, "estado">>);
 

@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Button, Input, Modal } from "@/components/ui";
+import { Button, EntitySelect, Input, Modal } from "@/components/ui";
+import type { Usuario } from "@/types/auth";
 import type { EstadoFeature, Feature, UpdateFeatureInput } from "@/types/features";
 import type { FaseProyecto } from "./SubtareaChecklistItem";
 
@@ -9,6 +10,10 @@ type FeatureModalProps = {
   isOpen: boolean;
   feature: Feature | null;
   fasesDisponibles: FaseProyecto[];
+  usuarios?: Array<Pick<Usuario, "id" | "nombre" | "email" | "rol">>;
+  defaultEstado?: EstadoFeature;
+  defaultFaseId?: string;
+  defaultResponsableId?: string;
   onClose: () => void;
   onSave: (input: UpdateFeatureInput) => Promise<void> | void;
   onDelete: (id: string) => Promise<void> | void;
@@ -18,6 +23,10 @@ export function FeatureModal({
   isOpen,
   feature,
   fasesDisponibles,
+  usuarios = [],
+  defaultEstado = "pendiente",
+  defaultFaseId = "",
+  defaultResponsableId = "",
   onClose,
   onSave,
   onDelete
@@ -26,10 +35,11 @@ export function FeatureModal({
     () => ({
       nombre: feature?.nombre ?? "",
       descripcion: feature?.descripcion ?? "",
-      fase: feature?.fase ?? fasesDisponibles[0]?.id ?? "",
-      estado: feature?.estado ?? ("pendiente" as EstadoFeature)
+      fase: feature?.fase ?? defaultFaseId ?? "",
+      estado: feature?.estado ?? defaultEstado,
+      responsable_id: feature?.responsable_id ?? defaultResponsableId ?? ""
     }),
-    [feature, fasesDisponibles]
+    [defaultEstado, defaultFaseId, defaultResponsableId, feature]
   );
 
   const [form, setForm] = useState(initialForm);
@@ -47,7 +57,7 @@ export function FeatureModal({
         className="space-y-4"
         onSubmit={async (event) => {
           event.preventDefault();
-          if (!form.nombre.trim() || !form.descripcion.trim() || !form.fase.trim()) {
+          if (!form.nombre.trim() || !form.descripcion.trim()) {
             return;
           }
 
@@ -57,7 +67,8 @@ export function FeatureModal({
               nombre: form.nombre.trim(),
               descripcion: form.descripcion.trim(),
               fase: form.fase,
-              estado: form.estado
+              estado: form.estado,
+              responsable_id: form.responsable_id || undefined
             });
             onClose();
           } finally {
@@ -70,6 +81,19 @@ export function FeatureModal({
           required
           value={form.nombre}
           onChange={(event) => setForm((current) => ({ ...current, nombre: event.target.value }))}
+        />
+
+        <EntitySelect
+          label="Responsable"
+          value={form.responsable_id || null}
+          allowEmpty
+          placeholder="Sin responsable"
+          options={usuarios.map((usuario) => ({
+            id: usuario.id,
+            label: usuario.nombre,
+            sublabel: usuario.email
+          }))}
+          onChange={(value) => setForm((current) => ({ ...current, responsable_id: value ?? "" }))}
         />
 
         <div className="space-y-1">
@@ -89,12 +113,14 @@ export function FeatureModal({
               onChange={(event) => setForm((current) => ({ ...current, fase: event.target.value }))}
               className="w-full rounded-component border border-line bg-white px-3 py-2 text-sm text-carbon focus:border-signal focus:outline-none focus:ring-2 focus:ring-signal/20"
             >
+              <option value="">Sin fase</option>
               {fasesDisponibles.map((fase) => (
                 <option key={fase.id} value={fase.id}>
                   {fase.nombre}
                 </option>
               ))}
             </select>
+            <p className="text-xs text-graphite">La fase es opcional y se puede asignar después.</p>
           </div>
 
           <div className="space-y-1">

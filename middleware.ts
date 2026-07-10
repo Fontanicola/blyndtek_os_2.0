@@ -19,17 +19,6 @@ function getDefaultRouteForRole(rol: Rol): string {
   return rol === "admin" ? "/dashboard" : "/proyectos";
 }
 
-function normalizeSupabaseUrl(url: string): string {
-  return url.replace(/\/rest\/v1\/?$/, "").replace(/\/+$/, "");
-}
-
-function buildSupabaseRestUrl(url: string, path: string): string {
-  const normalizedBaseUrl = normalizeSupabaseUrl(url);
-  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
-
-  return `${normalizedBaseUrl}/rest/v1${normalizedPath}`;
-}
-
 function getSupabaseEnv() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -42,17 +31,7 @@ function getSupabaseEnv() {
     throw new Error("Missing environment variable: NEXT_PUBLIC_SUPABASE_ANON_KEY");
   }
 
-  return { url: normalizeSupabaseUrl(url), anonKey };
-}
-
-function getSupabaseServiceRoleKey() {
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!serviceRoleKey) {
-    throw new Error("Missing environment variable: SUPABASE_SERVICE_ROLE_KEY");
-  }
-
-  return serviceRoleKey;
+  return { url: url.replace(/\/rest\/v1\/?$/, "").replace(/\/+$/, ""), anonKey };
 }
 
 function isEarlyReturnPublicPath(pathname: string) {
@@ -106,26 +85,38 @@ function copySupabaseResponse(source: NextResponse, target: NextResponse) {
   return target;
 }
 
-async function fetchUserRole(url: string, serviceRoleKey: string, userId: string): Promise<Rol | null> {
-  const response = await fetch(
-    buildSupabaseRestUrl(url, `/usuarios?select=rol&id=eq.${encodeURIComponent(userId)}&limit=1`),
-    {
-      headers: {
-        apikey: serviceRoleKey,
-        Authorization: `Bearer ${serviceRoleKey}`
-      },
-      cache: "no-store"
-    }
-  );
+async function getRolUsuario(userId: string): Promise<Rol | null> {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-  if (!response.ok) {
+  if (!url || !serviceKey) {
     return null;
   }
 
-  const payload = (await response.json()) as Array<{ rol?: string }>;
-  const rol = payload[0]?.rol;
+  try {
+    const normalizedUrl = url.replace(/\/rest\/v1\/?$/, "").replace(/\/+$/, "");
+    const response = await fetch(
+      `${normalizedUrl}/rest/v1/usuarios?id=eq.${encodeURIComponent(userId)}&select=rol`,
+      {
+        headers: {
+          apikey: serviceKey,
+          Authorization: `Bearer ${serviceKey}`
+        },
+        cache: "no-store"
+      }
+    );
 
-  return rol === "admin" || rol === "miembro" ? rol : null;
+    if (!response.ok) {
+      return null;
+    }
+
+    const data = (await response.json()) as Array<{ rol?: string }>;
+    const rol = data?.[0]?.rol;
+
+    return rol === "admin" || rol === "miembro" ? rol : null;
+  } catch {
+    return null;
+  }
 }
 
 export async function middleware(request: NextRequest) {
@@ -191,7 +182,7 @@ export async function middleware(request: NextRequest) {
       return copySupabaseResponse(supabaseResponse, redirectResponse);
     }
 
-    const rol = await fetchUserRole(url, getSupabaseServiceRoleKey(), session.user.id);
+    const rol = await getRolUsuario(session.user.id);
 
     if (!rol) {
       const redirectResponse = NextResponse.redirect(new URL("/login", request.url));

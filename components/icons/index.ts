@@ -10,3 +10,4 @@ export { DashboardIcon } from "./DashboardIcon";
 export { MenuIcon } from "./MenuIcon";
 export { BellIcon } from "./BellIcon";
 export { LogoutIcon } from "./LogoutIcon";
+export { SearchIcon } from "./SearchIcon";

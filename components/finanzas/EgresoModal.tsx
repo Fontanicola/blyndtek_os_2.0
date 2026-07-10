@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Button, EntitySelect, Input, Modal } from "@/components/ui";
+import { getProyectoDisplayLabel } from "@/lib/proyectos/labels";
 import type { CategoriaEgreso, CreateEgresoInput, Egreso } from "@/types/egresos";
 import type { Proyecto } from "@/types/proyectos";
 import type { CuentaMedio } from "@/types/cobros";
@@ -11,7 +12,7 @@ type EgresoModalProps = {
   onClose: () => void;
   onSave: (input: CreateEgresoInput) => Promise<void> | void;
   egreso?: Egreso | null;
-  proyectos: Array<Pick<Proyecto, "id" | "nombre" | "estado">>;
+  proyectos: Array<Pick<Proyecto, "id" | "nombre" | "estado" | "cliente_id"> & { clienteNombre?: string | null }>;
 };
 
 const categorias: Array<{ value: CategoriaEgreso; label: string }> = [
@@ -100,7 +101,10 @@ export function EgresoModal({ isOpen, onClose, onSave, egreso, proyectos }: Egre
             placeholder="Sin proyecto"
             options={proyectos.map((proyecto) => ({
               id: proyecto.id,
-              label: proyecto.nombre,
+              label: getProyectoDisplayLabel({
+                nombre: proyecto.nombre,
+                clienteNombre: proyecto.clienteNombre
+              }),
               sublabel: proyecto.estado.replaceAll("_", " ")
             }))}
             onChange={(id) => setProyectoId(id ?? "")}

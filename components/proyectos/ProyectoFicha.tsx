@@ -2,32 +2,30 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Badge, Button, Card, EntityMultiSelect, EntitySelect, Input } from "@/components/ui";
+import { useFasesProyecto } from "@/lib/hooks/useFasesProyecto";
 import { cn } from "@/lib/cn";
 import { PROYECTO_ESTADO_LABELS, PROYECTO_ESTADO_OPTIONS } from "@/lib/proyectos";
 import { formatFecha, formatUSD } from "@/lib/utils/formatters";
 import type { CuentaServicio, CreateCuentaServicioInput } from "@/types/cuentas";
-import type { CreateFeatureInput, Feature, UpdateFeatureInput } from "@/types/features";
+import type { Cliente } from "@/types/clientes";
+import type { Feature } from "@/types/features";
 import type { Proyecto, UpdateProyectoInput } from "@/types/proyectos";
 import type { Usuario } from "@/types/auth";
 import { CuentaServicioCard } from "./CuentaServicioCard";
 import { CuentaServicioModal } from "./CuentaServicioModal";
-import { FeaturesKanban } from "./FeaturesKanban";
+import { FasesEstadoKanban } from "./features-kanban";
 
 type ProyectoFichaProps = {
   proyecto: Proyecto;
   clienteNombre: string;
   isAdmin: boolean;
   features: Feature[];
+  clientes: Array<Pick<Cliente, "id" | "empresa">>;
   usuarios: Array<Pick<Usuario, "id" | "nombre" | "email" | "rol">>;
-  proyectos: Array<Pick<Proyecto, "id" | "nombre" | "estado">>;
+  proyectos: Array<Pick<Proyecto, "id" | "nombre" | "estado" | "cliente_id">>;
   onProyectoUpdated: (proyecto: Proyecto) => void | Promise<void>;
+  onNuevoProyecto: () => void;
   onUpdateProyecto: (input: UpdateProyectoInput) => Promise<Proyecto>;
-  onCreateFeature: (input: CreateFeatureInput) => Promise<{ data?: unknown; project?: Proyecto | null }>;
-  onUpdateFeature: (
-    id: string,
-    input: UpdateFeatureInput
-  ) => Promise<{ data?: unknown; project?: Proyecto | null }>;
-  onDeleteFeature: (id: string) => Promise<{ success?: boolean; project?: Proyecto | null }>;
 };
 
 type TabKey = "general" | "features" | "cuentas" | "roadmap";
@@ -187,19 +185,19 @@ export function ProyectoFicha({
   clienteNombre,
   isAdmin,
   features,
+  clientes,
   usuarios,
   proyectos,
   onProyectoUpdated,
-  onUpdateProyecto,
-  onCreateFeature,
-  onUpdateFeature,
-  onDeleteFeature
+  onNuevoProyecto,
+  onUpdateProyecto
 }: ProyectoFichaProps) {
   const [activeTab, setActiveTab] = useState<TabKey>("general");
   const [cuentas, setCuentas] = useState<CuentaServicio[]>([]);
   const [cuentaModalOpen, setCuentaModalOpen] = useState(false);
   const [editingCuenta, setEditingCuenta] = useState<CuentaServicio | null>(null);
   const [roadmapOrigin, setRoadmapOrigin] = useState("");
+  const { fases, fetchFases, setFases } = useFasesProyecto();
 
   useEffect(() => {
     setRoadmapOrigin(window.location.origin);
@@ -221,10 +219,33 @@ export function ProyectoFicha({
     })();
   }, [isAdmin, proyecto.id]);
 
+  useEffect(() => {
+    setFases([]);
+    void fetchFases(proyecto.id);
+  }, [fetchFases, proyecto.id, setFases]);
+
   const roadmapUrl = useMemo(() => `${roadmapOrigin}/roadmap/${proyecto.roadmap_token}`, [
     proyecto.roadmap_token,
     roadmapOrigin
   ]);
+
+  const fasesOrdenadas = useMemo(
+    () => [...fases].sort((first, second) => first.orden - second.orden || first.nombre.localeCompare(second.nombre)),
+    [fases]
+  );
+
+  const faseProgress = useMemo(() => {
+    return fasesOrdenadas.map((fase) => {
+      const faseFeatures = features.filter((feature) => feature.fase === fase.id);
+      const completed = faseFeatures.filter((feature) => feature.estado === "lista").length;
+
+      return {
+        fase,
+        completed,
+        total: faseFeatures.length
+      };
+    });
+  }, [features, fasesOrdenadas]);
 
   async function persistProyecto(input: UpdateProyectoInput) {
     const updated = await onUpdateProyecto(input);
@@ -274,22 +295,28 @@ export function ProyectoFicha({
 
   return (
     <div className="flex h-full flex-col gap-4">
-      <div className="flex flex-wrap gap-2 border-b border-line-soft pb-2">
-        {tabs.map((tab) => (
-          <button
-            key={tab.key}
-            type="button"
-            onClick={() => setActiveTab(tab.key)}
-            className={cn(
-              "rounded-pill px-3 py-1.5 text-sm font-label transition-colors duration-fast ease-fast",
-              activeTab === tab.key
-                ? "bg-signal-light text-signal"
-                : "text-graphite hover:bg-white hover:text-carbon"
-            )}
-          >
-            {tab.label}
-          </button>
-        ))}
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line-soft pb-2">
+        <div className="flex flex-wrap gap-2">
+          {tabs.map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setActiveTab(tab.key)}
+              className={cn(
+                "rounded-pill px-3 py-1.5 text-sm font-label transition-colors duration-fast ease-fast",
+                activeTab === tab.key
+                  ? "bg-signal-light text-signal"
+                  : "text-graphite hover:bg-white hover:text-carbon"
+              )}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        <Button size="sm" onClick={onNuevoProyecto}>
+          Nuevo proyecto
+        </Button>
       </div>
 
       {activeTab === "general" ? (
@@ -297,12 +324,12 @@ export function ProyectoFicha({
           <Card padding="lg" className="space-y-6">
             <div className="space-y-2">
               <div className="flex flex-wrap items-center gap-3">
-                <h2 className="text-2xl font-title text-carbon">{proyecto.nombre}</h2>
+                <h2 className="text-2xl font-title text-carbon">{clienteNombre}</h2>
                 <Badge variant={getEstadoVariant(proyecto.estado)}>
                   {PROYECTO_ESTADO_LABELS[proyecto.estado]}
                 </Badge>
               </div>
-              <p className="text-sm text-graphite">{clienteNombre}</p>
+              <p className="text-base text-graphite">{proyecto.nombre}</p>
             </div>
 
             <section className="space-y-3">
@@ -399,6 +426,9 @@ export function ProyectoFicha({
             <section className="space-y-3">
               <h3 className="text-sm font-title text-carbon">Avance</h3>
               <ProgressBar value={proyecto.avance_pct} />
+              <p className="text-xs text-graphite">
+                Se actualiza automáticamente a medida que completás subtareas en Features.
+              </p>
             </section>
           </Card>
 
@@ -426,32 +456,7 @@ export function ProyectoFicha({
       ) : null}
 
       {activeTab === "features" ? (
-        <FeaturesKanban
-          projectId={proyecto.id}
-          features={features}
-          onCreateFeature={async (input) => {
-            const result = await onCreateFeature(input);
-            if (result.project) {
-              await onProyectoUpdated(result.project);
-            }
-          }}
-          onUpdateFeature={async (id, input) => {
-            const result = await onUpdateFeature(id, input);
-            if (result.project) {
-              await onProyectoUpdated(result.project);
-            }
-            return result;
-          }}
-          onDeleteFeature={async (id) => {
-            const result = await onDeleteFeature(id);
-            if (result.project) {
-              await onProyectoUpdated(result.project);
-            }
-          }}
-          onMoveFeature={async (id, estado) => {
-            return onUpdateFeature(id, { estado });
-          }}
-        />
+        <FasesEstadoKanban proyecto={proyecto} />
       ) : null}
 
       {activeTab === "cuentas" ? (
@@ -498,6 +503,7 @@ export function ProyectoFicha({
               }}
               cuenta={editingCuenta}
               proyectos={proyectos}
+              clientes={clientes}
               defaultProyectoId={proyecto.id}
               onSave={saveCuenta}
             />
@@ -511,44 +517,91 @@ export function ProyectoFicha({
 
       {activeTab === "roadmap" ? (
         <div className="grid gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)]">
-          <Card padding="lg" className="space-y-4">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <h3 className="text-base font-title text-carbon">Roadmap público</h3>
-                <p className="mt-1 text-sm text-graphite">
-                  La vista pública se activa con el token único del proyecto.
-                </p>
-              </div>
-              <label className="inline-flex items-center gap-2 text-sm text-carbon">
-                <input
-                  type="checkbox"
-                  checked={proyecto.roadmap_publico_activo}
-                  onChange={async (event) => {
-                    await persistProyecto({
-                      roadmap_publico_activo: event.target.checked
-                    });
-                  }}
-                  className="h-4 w-4 rounded border-line text-signal focus:ring-signal/20"
-                />
-                Activo
-              </label>
-            </div>
+          <div className="space-y-4">
+            {fasesOrdenadas.length > 0 ? (
+              <Card padding="lg" className="space-y-4">
+                <div>
+                  <h3 className="text-base font-title text-carbon">Fases planificadas</h3>
+                  <p className="mt-1 text-sm text-graphite">
+                    Referencia interna del roadmap con el avance real de cada fase.
+                  </p>
+                </div>
 
-            <div className="space-y-2">
-              <p className="text-xs font-label uppercase tracking-[0.08em] text-graphite">Link público</p>
-              <div className="flex flex-col gap-3 sm:flex-row">
-                <Input value={roadmapUrl} readOnly className="flex-1" />
-                <Button
-                  variant="secondary"
-                  onClick={async () => {
-                    await navigator.clipboard.writeText(roadmapUrl);
-                  }}
-                >
-                  Copiar
-                </Button>
+                <div className="space-y-3">
+                  {faseProgress.map(({ fase, completed, total }) => (
+                    <div key={fase.id} className="rounded-card border border-line-soft bg-paper p-4">
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-label text-carbon">{fase.nombre}</p>
+                          <p className="text-xs text-graphite">
+                            {fase.fecha_inicio_estimada || fase.fecha_fin_estimada
+                              ? [
+                                  fase.fecha_inicio_estimada ? formatFecha(fase.fecha_inicio_estimada) : null,
+                                  fase.fecha_fin_estimada ? formatFecha(fase.fecha_fin_estimada) : null
+                                ]
+                                  .filter(Boolean)
+                                  .join(" - ")
+                              : "Sin fechas estimadas"}
+                          </p>
+                        </div>
+                        <Badge variant="default">
+                          {completed}/{total} features completadas
+                        </Badge>
+                      </div>
+
+                      {fase.descripcion || fase.entregables ? (
+                        <div className="mt-3 space-y-2 border-t border-line-soft pt-3">
+                          {fase.descripcion ? <p className="text-sm text-carbon">{fase.descripcion}</p> : null}
+                          {fase.entregables ? (
+                            <p className="text-xs text-graphite">{fase.entregables}</p>
+                          ) : null}
+                        </div>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            ) : null}
+
+            <Card padding="lg" className="space-y-4">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-base font-title text-carbon">Roadmap público</h3>
+                  <p className="mt-1 text-sm text-graphite">
+                    La vista pública se activa con el token único del proyecto.
+                  </p>
+                </div>
+                <label className="inline-flex items-center gap-2 text-sm text-carbon">
+                  <input
+                    type="checkbox"
+                    checked={proyecto.roadmap_publico_activo}
+                    onChange={async (event) => {
+                      await persistProyecto({
+                        roadmap_publico_activo: event.target.checked
+                      });
+                    }}
+                    className="h-4 w-4 rounded border-line text-signal focus:ring-signal/20"
+                  />
+                  Activo
+                </label>
               </div>
-            </div>
-          </Card>
+
+              <div className="space-y-2">
+                <p className="text-xs font-label uppercase tracking-[0.08em] text-graphite">Link público</p>
+                <div className="flex flex-col gap-3 sm:flex-row">
+                  <Input value={roadmapUrl} readOnly className="flex-1" />
+                  <Button
+                    variant="secondary"
+                    onClick={async () => {
+                      await navigator.clipboard.writeText(roadmapUrl);
+                    }}
+                  >
+                    Copiar
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          </div>
 
           <Card padding="lg" className="space-y-3">
             <h3 className="text-sm font-title text-carbon">Preview</h3>

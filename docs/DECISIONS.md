@@ -180,3 +180,21 @@
 - El recálculo de `proyectos.avance_pct` se centralizó en un helper compartido para que tanto el PATCH de features como la sync desde tareas usen la misma lógica.
 - El drag & drop entre fases se reemplazó por un selector “Mover a fase” dentro de cada subtarea, porque el flujo real es más claro cuando la fase se cambia explícitamente y no por arrastre.
 - La cascada de aceptación del Cotizador también crea la tarea vinculada por cada feature generada, para que el proyecto arranque con trabajo trazable desde el día uno.
+
+## 2026-07-09 — Middleware Edge compatible con fetch nativo
+
+- El middleware de Next debe consultar Supabase con `fetch` nativo cuando corre en Edge Runtime, en lugar de usar `@supabase/supabase-js`, porque esa librería depende de APIs de Node que no están disponibles allí y pueden disparar `ReferenceError: __dirname is not defined`.
+- La lectura puntual del rol se hace contra la REST API de Supabase con `apikey` y `Authorization` del `service_role`, manteniendo el control de acceso por rol sin acoplar el middleware a una librería incompatible con Edge.
+
+## 2026-07-09 — Proyectos: kanban por estado con fase como metadato
+
+- Se revirtió la vista tipo Lab del tab `Features` a un kanban simple de 3 columnas por estado (`Pendiente`, `En curso`, `Lista`).
+- La fase pasó a tratarse como metadato y filtro, no como la estructura visual principal del tablero.
+- Motivo: este patrón es más consistente con `Tareas`, más fácil de operar en el día a día y evita sobrecargar la UI con columnas horizontales adicionales.
+- El Lab queda deprecado como vista alternativa no usada, por si en el futuro se recupera como modo secundario dentro de `Roadmap` o de una vista de laboratorio.
+
+## 2026-07-09 — Proyectos: fases como cards expandibles por estado
+
+- El tab `Features` terminó usando fases completas como cards en un kanban de 3 columnas por estado, con expansión interna para ver el checklist de subtareas.
+- Esta forma mantiene el patrón visual de kanban, pero preserva la organización temporal por fase y la edición más granular dentro de cada card.
+- El roadmap público se dejó sin una frontera client innecesaria en su timeline visual, porque no tiene interacción propia y así se evita ruido de serialización entre Server Components y Client Components.

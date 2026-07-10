@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { Badge, Button, Card } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { sortTareas } from "@/lib/tareas";
+import { getProyectoDisplayLabel } from "@/lib/proyectos/labels";
 import type { TaskProjectOption, TaskUserOption } from "@/lib/task-support";
 import type { EstadoTarea, Tarea } from "@/types/tareas";
 import { TareaCard } from "./TareaCard";
@@ -28,7 +29,14 @@ function getProjectName(projectId: string | null, proyectos: TaskProjectOption[]
     return null;
   }
 
-  return proyectos.find((proyecto) => proyecto.id === projectId)?.nombre ?? null;
+  const proyecto = proyectos.find((item) => item.id === projectId);
+
+  return proyecto
+    ? getProyectoDisplayLabel({
+        nombre: proyecto.nombre,
+        clienteNombre: proyecto.cliente_nombre
+      })
+    : null;
 }
 
 function getUserName(userId: string, usuarios: TaskUserOption[]) {
@@ -56,12 +64,12 @@ export function TareasKanban({
   );
 
   return (
-    <div className="flex gap-4 overflow-x-auto pb-2">
+    <div className="grid grid-cols-3 gap-4">
       {grouped.map((column) => (
         <section
           key={column.estado}
           className={cn(
-            "flex min-h-[560px] min-w-[300px] max-w-[300px] flex-col rounded-card bg-paper p-3 transition-all duration-fast ease-fast",
+            "flex min-h-[560px] w-full flex-col rounded-card bg-paper p-3 transition-all duration-fast ease-fast",
             dropTarget === column.estado && "ring-2 ring-signal"
           )}
           onDragOver={(event) => {

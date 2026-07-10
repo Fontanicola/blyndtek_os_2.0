@@ -650,8 +650,104 @@ Estado general actual: Fase 0 completa. Cimientos técnicos listos: documentaci�
 - Se removieron imports y props heredadas que habían quedado sin uso en las rutas de features y en el Lab de proyectos.
 - El ajuste no cambió comportamiento funcional: solo eliminó ruido de lint para que Vercel no falle por `no-unused-vars`.
 
+## 2026-07-09 — Proyectos: fases reales, avance estable y cards compactas
+
+- El tab `Features` ahora carga las fases reales del proyecto desde `GET /api/proyectos/[id]/fases`, por lo que las columnas aparecen aunque todavía no tengan subtareas.
+- Se agregó la creación manual de fases desde el Lab con un botón visible `+ Nueva fase`, y el canvas ya no depende de las subtareas para descubrir columnas.
+- `avance_pct` ahora conserva su valor cuando un proyecto todavía no tiene features; solo se recalcula cuando existe al menos una subtarea.
+- `ProyectoCard` quedó compacta y el encabezado de `ProyectoFicha` pasó a mostrar al cliente como título y al proyecto como subtítulo.
+- Los selectores de proyecto de tareas, finanzas y cuentas ahora muestran `[Cliente] — [Nombre del proyecto]` para evitar IDs y facilitar la búsqueda.
+- Verificación ejecutada: `npm run lint` y `npm run build` finalizaron sin errores.
+
+## 2026-07-09 — Fix urgente de middleware en producción
+
+- Se eliminó cualquier dependencia de `@supabase/supabase-js` del `middleware.ts` y la lectura de rol pasó a hacerse con `fetch` nativo contra la REST API de Supabase.
+- La causa raíz era que el Edge Runtime de Next no soporta APIs de Node que esa librería usa internamente, lo que provocaba `MIDDLEWARE_INVOCATION_FAILED` y `ReferenceError: __dirname is not defined` en producción.
+- La autorización por rol se mantiene igual: `admin` sigue con acceso total y `miembro` queda limitado a `Proyectos`, `Tareas` y `Calendario`.
+- Verificación ejecutada: `npm run lint` y `npm run build` finalizaron sin errores ni warnings relacionados con Edge Runtime.
+
 ## Última actualización
 
 - Fecha: 2026-07-09
-- Actualizado: se limpiaron los últimos `no-unused-vars` detectados por Vercel en las rutas de features y el Lab de proyectos.
-- Estado actual: build y lint alineados con el despliegue en Vercel.
+- Actualizado: se corrigió el Lab para renderizar fases reales migradas, se compactó la lista de proyectos, se estabilizó el recálculo de avance, se normalizó el label de proyectos en los selectores de la app y se eliminó la dependencia de `supabase-js` en el middleware Edge.
+- Estado actual: `npm run lint` y `npm run build` pasan limpios; el middleware ya consulta el rol con `fetch` nativo compatible con Edge Runtime.
+
+## 2026-07-09 — Shell sin headers duplicados
+
+- Se eliminó el header redundante debajo de la topbar en Outbound, Inbound, Cotizador, Proyectos, Tareas, Calendario, Finanzas y Dashboard.
+- Se introdujo `FilterPopover` como contenedor reutilizable para filtros flotantes con cierre por click afuera/Escape y badge de filtros activos.
+- Outbound e Inbound pasaron a tener una sola fila superior con búsqueda, filtros en popover, contador/badge y acción principal al final.
+- Cotizador movió `Nueva cotización` a la fila de tabs; Proyectos movió `Nuevo proyecto` al tab bar de la ficha y lo mantuvo visible también en el estado vacío; Finanzas movió `Exportar P&L a Excel` a la fila de tabs; Dashboard quedó solo con selector de período y fecha de actualización.
+- Tareas eliminó la fila de filtros y pasó a un kanban de 3 columnas que ocupa todo el ancho disponible.
+- Calendario dejó la fila de controles como única cabecera superior, sin duplicar título/subtítulo.
+- Estado actual: cambios de layout aplicados y listos para verificación final con `lint`/`build`.
+
+## Última actualización
+
+- Fecha: 2026-07-09
+- Actualizado: se eliminaron los headers duplicados debajo de la topbar en Outbound, Inbound, Cotizador, Proyectos, Tareas, Calendario, Finanzas y Dashboard; además se agregó `FilterPopover` y se reubicaron las acciones principales dentro de filas funcionales existentes.
+- Verificación: `npm run lint` y `npm run build` pasan limpios después del refactor de layout.
+- Estado actual: el shell quedó consistente y todos los módulos relevantes muestran su acción principal sin repetir títulos/subtítulos debajo de la topbar.
+
+## 2026-07-09 — Proyectos: card compacta y Features por estado
+
+- `ProyectoCard` quedó compacta y dejó de estirarse verticalmente en el panel izquierdo.
+- El tab `Features` volvió a un kanban de 3 columnas por estado (`Pendiente`, `En curso`, `Lista`) ocupando todo el ancho disponible.
+- Cada feature ahora muestra la fase como badge y el filtro por fase funciona como metadato, no como estructura visual principal.
+- El alta/edición de subtareas en el kanban permite elegir responsable y fase opcional desde un selector por nombre.
+- El tab `Roadmap` ahora muestra las fases planificadas como referencia de solo lectura con su progreso por fase.
+- `LabCanvas`, `FaseColumn` y `SubtareaChecklistItem` quedaron deprecados, sin uso en la UI actual, pero se conservan en el código por si se retoma esa vista alternativa.
+- Verificación ejecutada: `npm run lint` y `npm run build` pasan limpios.
+
+## Última actualización
+
+- Fecha: 2026-07-09
+- Actualizado: se compactó `ProyectoCard`, se reemplazó el Lab por un kanban por estado en `Features`, se agregó el selector de responsable/fase opcional al alta de subtareas y el roadmap ahora referencia las fases planificadas.
+- Verificación: `npm run lint` y `npm run build` pasan limpios después del ajuste de Proyectos.
+- Estado actual: la UI de Proyectos quedó consistente con el patrón de Tareas y con las fases visibles como metadato/referencia, no como estructura principal.
+
+## 2026-07-09 — Finanzas y Dashboard: fechas null-safe
+
+- Se corrigió la causa raíz del crash compartido en `/finanzas` y `/dashboard`: `lib/finanzas.ts` asumía que `fecha_vencimiento` siempre era string y hacía `.split("-")` sin validar `null`.
+- `formatFecha()` ahora devuelve `Sin fecha` si recibe `null`, `undefined` o una fecha inválida.
+- `getCobroEffectiveDueDate()` e `isCobroVencido()` ahora son tolerantes a fechas vacías para que los cobros incompletos no rompan el render ni los jobs de vencidos.
+- Verificación ejecutada: `npm run lint` y `npm run build` pasan limpios.
+
+## Última actualización
+
+- Fecha: 2026-07-09
+- Actualizado: se blindó el formateo de fechas contra valores nulos/ inválidos en Finanzas y Dashboard, evitando el crash al cargar ambos módulos.
+- Verificación: `npm run lint` y `npm run build` pasan limpios después del fix.
+- Estado actual: `/finanzas` y `/dashboard` cargan sin el error de `.split()` sobre `null`.
+
+## 2026-07-09 — Proyectos: fases colapsables y roadmap público sin error de Client Component
+
+- El tab `Features` de Proyectos volvió a renderizar el Lab original con fases como columnas colapsables, checklist de subtareas, alta de nuevas fases y CRUD completo de fases.
+- Se reactivó el flujo de `NuevaFaseForm` junto con edición inline del nombre, fechas, descripción y entregables de cada fase, además de eliminación con confirmación.
+- `LabCanvas` volvió a ser el contenedor principal de la vista de fases y `LabCanvas`/`FaseColumn` quedaron sincronizados con el hook `useFasesProyecto()` para crear, actualizar y borrar fases.
+- El tablero de features por estado quedó nuevamente deprecado en el código, pero no se eliminó para conservar la alternativa previa.
+- El roadmap público se ajustó para compilar sin el error de `Event handlers cannot be passed to Client Component props`, moviendo la parte interactiva a un boundary cliente explícito.
+- Verificación ejecutada: `npm run lint` y `npm run build` pasan limpios luego de los cambios.
+
+## Última actualización
+
+- Fecha: 2026-07-09
+- Actualizado: se reactivó el Lab de fases en Proyectos con CRUD completo y se corrigió el boundary cliente del roadmap público para eliminar el error de event handlers.
+- Verificación: `npm run lint` y `npm run build` pasan limpios.
+- Estado actual: Proyectos volvió a la vista por fases colapsables y `/roadmap/[token]` renderiza sin el error de Client Component.
+
+## 2026-07-09 — Proyectos: kanban por estado con fases expandibles
+
+- El tab `Features` se rediseñó otra vez como un kanban de 3 columnas fijas por estado (`Pendiente`, `En curso`, `Lista`), donde cada card representa una fase completa.
+- Cada fase se puede expandir o colapsar para mostrar el checklist de subtareas, mientras que el movimiento entre columnas sigue siendo manual con drag & drop.
+- Se agregó `estado` a `fases_proyecto`, el endpoint `PATCH /api/fases/[id]/estado` y `updateEstadoFase()` en el hook `useFasesProyecto()`.
+- La vista tipo Lab (`LabCanvas`, `FaseColumn`, `SubtareaChecklistItem`, `NuevaFaseForm`) quedó nuevamente deprecada en la UI, pero se conserva en el código.
+- El roadmap público quedó sin frontera client innecesaria y compila como Server Component puro en su sección visual.
+- Verificación ejecutada: `npm run lint` y `npm run build` finalizaron sin errores.
+
+## Última actualización
+
+- Fecha: 2026-07-09
+- Actualizado: se re-rediseñó `Features` como un kanban por estado con fases expandibles, se agregó el estado de fase persistido y se estabilizó el roadmap público dejando el timeline en Server Component.
+- Verificación: `npm run lint` y `npm run build` pasan limpios.
+- Estado actual: el módulo Proyectos usa fases como cards de estado y el Lab anterior quedó deprecado pero conservado.

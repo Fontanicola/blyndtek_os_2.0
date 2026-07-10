@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { KanbanColumn, LeadFormRapido, LeadModal } from "@/components/outbound";
-import { Badge, Button } from "@/components/ui";
+import { Badge, Button, FilterPopover, Input } from "@/components/ui";
 import {
   ETAPA_LABELS,
   OUTBOUND_ETAPAS,
@@ -10,6 +10,7 @@ import {
   isLeadOverdue
 } from "@/lib/leads";
 import { useLeads } from "@/lib/hooks/useLeads";
+import { SearchIcon } from "@/components/icons";
 import type { CreateLeadInput, EtapaLead, Lead, UpdateLeadInput } from "@/types/leads";
 
 type FilterState = {
@@ -35,6 +36,7 @@ function normalizeModalInput(input: UpdateLeadInput, etapa: EtapaLead = "por_con
 
 export default function OutboundPage() {
   const { leads, loading, error, createLead, updateLead, updateEtapa, deleteLead } = useLeads();
+  const [search, setSearch] = useState("");
   const [filters, setFilters] = useState<FilterState>({
     rubro: "",
     ubicacion: "",
@@ -47,27 +49,47 @@ export default function OutboundPage() {
   const [draggedLeadId, setDraggedLeadId] = useState<string | null>(null);
   const [dragOverEtapa, setDragOverEtapa] = useState<EtapaLead | null>(null);
 
-  const filteredLeads = leads.filter((lead) => {
-    if (filters.rubro && lead.rubro !== filters.rubro) {
-      return false;
-    }
+  const visibleLeads = useMemo(() => {
+    const normalizedSearch = search.trim().toLowerCase();
 
-    if (filters.ubicacion && lead.ubicacion !== filters.ubicacion) {
-      return false;
-    }
+    return leads.filter((lead) => {
+      if (filters.rubro && lead.rubro !== filters.rubro) {
+        return false;
+      }
 
-    if (filters.responsable_id && lead.responsable_id !== filters.responsable_id) {
-      return false;
-    }
+      if (filters.ubicacion && lead.ubicacion !== filters.ubicacion) {
+        return false;
+      }
 
-    if (filters.etapa && lead.etapa !== filters.etapa) {
-      return false;
-    }
+      if (filters.responsable_id && lead.responsable_id !== filters.responsable_id) {
+        return false;
+      }
 
-    return true;
-  });
+      if (filters.etapa && lead.etapa !== filters.etapa) {
+        return false;
+      }
 
-  const overdueCount = filteredLeads.filter(isLeadOverdue).length;
+      if (normalizedSearch) {
+        const haystack = [
+          lead.empresa,
+          lead.contacto_1_nombre,
+          lead.contacto_2_nombre
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+
+        if (!haystack.includes(normalizedSearch)) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  }, [filters, leads, search]);
+
+  const overdueCount = visibleLeads.filter(isLeadOverdue).length;
+  const activeFiltersCount = Object.values(filters).filter(Boolean).length;
   const rubroOptions = Array.from(new Set(leads.map((lead) => lead.rubro).filter(Boolean))).sort();
   const ubicacionOptions = Array.from(
     new Set(leads.map((lead) => lead.ubicacion).filter(Boolean))
@@ -136,90 +158,106 @@ export default function OutboundPage() {
 
   return (
     <div className="flex h-full flex-col gap-6">
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-title text-carbon">Outbound</h1>
+      <div className="flex flex-wrap items-end gap-3">
+        <Input
+          label="Buscar"
+          placeholder="Empresa o contacto"
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          leftIcon={<SearchIcon />}
+          className="min-w-[240px] flex-1"
+        />
+
+        <FilterPopover activeCount={activeFiltersCount}>
+          <div className="space-y-4">
+            <div className="grid gap-3 md:grid-cols-2">
+              <select
+                value={filters.rubro}
+                onChange={(event) =>
+                  setFilters((current) => ({ ...current, rubro: event.target.value }))
+                }
+                className={filterSelectClassName}
+              >
+                <option value="">Rubro</option>
+                {rubroOptions.map((option) => (
+                  <option key={option} value={option ?? ""}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                value={filters.ubicacion}
+                onChange={(event) =>
+                  setFilters((current) => ({ ...current, ubicacion: event.target.value }))
+                }
+                className={filterSelectClassName}
+              >
+                <option value="">Ubicación</option>
+                {ubicacionOptions.map((option) => (
+                  <option key={option} value={option ?? ""}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                value={filters.responsable_id}
+                onChange={(event) =>
+                  setFilters((current) => ({ ...current, responsable_id: event.target.value }))
+                }
+                className={filterSelectClassName}
+              >
+                <option value="">Responsable</option>
+                {responsableOptions.map((option) => (
+                  <option key={option} value={option ?? ""}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                value={filters.etapa}
+                onChange={(event) =>
+                  setFilters((current) => ({ ...current, etapa: event.target.value }))
+                }
+                className={filterSelectClassName}
+              >
+                <option value="">Etapa</option>
+                {OUTBOUND_ETAPAS.map((etapa) => (
+                  <option key={etapa} value={etapa}>
+                    {ETAPA_LABELS[etapa]}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex items-center justify-between gap-3 border-t border-line-soft pt-3">
+              <p className="text-xs text-graphite">
+                {activeFiltersCount > 0 ? `${activeFiltersCount} filtros activos` : "Sin filtros activos"}
+              </p>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() =>
+                  setFilters({
+                    rubro: "",
+                    ubicacion: "",
+                    responsable_id: "",
+                    etapa: ""
+                  })
+                }
+              >
+                Limpiar filtros
+              </Button>
+            </div>
+          </div>
+        </FilterPopover>
+
+        <div className="ml-auto flex items-center gap-3">
           <Badge variant="warning">{overdueCount} vencidos</Badge>
+          <Button onClick={handleOpenNewLead}>Nuevo lead</Button>
         </div>
-
-        <Button onClick={handleOpenNewLead}>Nuevo lead</Button>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-3 rounded-card bg-white p-4 shadow-soft">
-        <select
-          value={filters.rubro}
-          onChange={(event) =>
-            setFilters((current) => ({ ...current, rubro: event.target.value }))
-          }
-          className={filterSelectClassName}
-        >
-          <option value="">Rubro</option>
-          {rubroOptions.map((option) => (
-            <option key={option} value={option ?? ""}>
-              {option}
-            </option>
-          ))}
-        </select>
-
-        <select
-          value={filters.ubicacion}
-          onChange={(event) =>
-            setFilters((current) => ({ ...current, ubicacion: event.target.value }))
-          }
-          className={filterSelectClassName}
-        >
-          <option value="">Ubicación</option>
-          {ubicacionOptions.map((option) => (
-            <option key={option} value={option ?? ""}>
-              {option}
-            </option>
-          ))}
-        </select>
-
-        <select
-          value={filters.responsable_id}
-          onChange={(event) =>
-            setFilters((current) => ({ ...current, responsable_id: event.target.value }))
-          }
-          className={filterSelectClassName}
-        >
-          <option value="">Responsable</option>
-          {responsableOptions.map((option) => (
-            <option key={option} value={option ?? ""}>
-              {option}
-            </option>
-          ))}
-        </select>
-
-        <select
-          value={filters.etapa}
-          onChange={(event) =>
-            setFilters((current) => ({ ...current, etapa: event.target.value }))
-          }
-          className={filterSelectClassName}
-        >
-          <option value="">Etapa</option>
-          {OUTBOUND_ETAPAS.map((etapa) => (
-            <option key={etapa} value={etapa}>
-              {ETAPA_LABELS[etapa]}
-            </option>
-          ))}
-        </select>
-
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() =>
-            setFilters({
-              rubro: "",
-              ubicacion: "",
-              responsable_id: "",
-              etapa: ""
-            })
-          }
-        >
-          Limpiar filtros
-        </Button>
       </div>
 
       {error ? (
@@ -235,7 +273,7 @@ export default function OutboundPage() {
               key={etapa}
               etapa={etapa}
               label={ETAPA_LABELS[etapa]}
-              leads={filteredLeads.filter((lead) => lead.etapa === etapa)}
+              leads={visibleLeads.filter((lead) => lead.etapa === etapa)}
               onLeadClick={handleOpenLead}
               onAddLead={(nextEtapa) => {
                 setActiveQuickForm(nextEtapa);

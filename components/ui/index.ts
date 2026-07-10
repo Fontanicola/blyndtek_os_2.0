@@ -7,3 +7,4 @@ export { Spinner } from "./Spinner";
 export { Toast } from "./Toast";
 export { EntitySelect } from "./EntitySelect";
 export { EntityMultiSelect } from "./EntityMultiSelect";
+export { FilterPopover } from "./FilterPopover";

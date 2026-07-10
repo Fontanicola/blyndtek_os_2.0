@@ -36,7 +36,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
     } = {
       nombre: body.nombre?.trim() || body.nombre,
       descripcion: body.descripcion?.trim() || body.descripcion,
-      fase: body.fase?.trim() || body.fase,
+      fase: typeof body.fase === "string" ? body.fase.trim() : body.fase,
       ...(body.estado ? { estado: body.estado } : {}),
       ...(body.responsable_id ? { responsable_id: body.responsable_id } : {}),
       ...(typeof body.orden === "number" ? { orden: body.orden } : {})

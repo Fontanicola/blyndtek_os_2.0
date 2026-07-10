@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Button, EntitySelect, Input, Modal } from "@/components/ui";
+import { getProyectoDisplayLabel } from "@/lib/proyectos/labels";
 import type { TaskProjectOption, TaskUserOption } from "@/lib/task-support";
 import type { EstadoTarea, PrioridadTarea, Tarea, CreateTareaInput } from "@/types/tareas";
 
@@ -118,7 +119,10 @@ export function TareaModal({
             placeholder="Sin proyecto"
             options={proyectos.map((proyecto) => ({
               id: proyecto.id,
-              label: proyecto.nombre,
+              label: getProyectoDisplayLabel({
+                nombre: proyecto.nombre,
+                clienteNombre: proyecto.cliente_nombre
+              }),
               sublabel: proyecto.estado.replaceAll("_", " ")
             }))}
             onChange={(id) => setForm((current) => ({ ...current, proyecto_id: id ?? "" }))}

@@ -81,6 +81,14 @@ export function FinanzasClient() {
   const { clientes } = useClientes();
   const { proyectos } = useProyectos();
   const { cotizaciones } = useCotizaciones();
+  const proyectosConCliente = useMemo(
+    () =>
+      proyectos.map((proyecto) => ({
+        ...proyecto,
+        clienteNombre: clientes.find((cliente) => cliente.id === proyecto.cliente_id)?.empresa ?? null
+      })),
+    [clientes, proyectos]
+  );
 
   const [activeTab, setActiveTab] = useState<TabKey>("resumen");
   const [toast, setToast] = useState<{ message: string; type: "success" | "info" | "warning" | "error"; visible: boolean }>({
@@ -235,11 +243,24 @@ export function FinanzasClient() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <div>
-          <h1 className="text-2xl font-title text-carbon">Finanzas</h1>
-          <p className="mt-1 text-sm text-graphite">Control económico total del sistema.</p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap gap-2">
+          {tabs.map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setActiveTab(tab.key)}
+              className={
+                activeTab === tab.key
+                  ? "rounded-pill bg-signal-light px-4 py-2 text-sm font-label text-signal"
+                  : "rounded-pill bg-white px-4 py-2 text-sm font-label text-graphite transition-colors duration-fast ease-fast hover:text-carbon"
+              }
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
+
         <div className="flex flex-wrap items-center gap-2">
           <Button variant="secondary" size="sm" onClick={() => void exportPLToExcel()}>
             Exportar P&L a Excel
@@ -248,23 +269,6 @@ export function FinanzasClient() {
             Refrescar
           </Button>
         </div>
-      </div>
-
-      <div className="flex flex-wrap gap-2">
-        {tabs.map((tab) => (
-          <button
-            key={tab.key}
-            type="button"
-            onClick={() => setActiveTab(tab.key)}
-            className={
-              activeTab === tab.key
-                ? "rounded-pill bg-signal-light px-4 py-2 text-sm font-label text-signal"
-                : "rounded-pill bg-white px-4 py-2 text-sm font-label text-graphite transition-colors duration-fast ease-fast hover:text-carbon"
-            }
-          >
-            {tab.label}
-          </button>
-        ))}
       </div>
 
       {loading ? (
@@ -418,7 +422,7 @@ export function FinanzasClient() {
         }}
         cobro={selectedCobro}
         clientes={clientes}
-        proyectos={proyectos}
+        proyectos={proyectosConCliente}
         cotizaciones={cotizaciones}
         suscripciones={suscripciones}
         onSave={async (input) => {
@@ -446,7 +450,7 @@ export function FinanzasClient() {
           setSelectedEgreso(null);
         }}
         egreso={selectedEgreso}
-        proyectos={proyectos}
+        proyectos={proyectosConCliente}
         onSave={async (input) => {
           try {
             if (selectedEgreso) {
@@ -473,7 +477,7 @@ export function FinanzasClient() {
         }}
         suscripcion={selectedSuscripcion}
         clientes={clientes}
-        proyectos={proyectos}
+        proyectos={proyectosConCliente}
         cotizaciones={cotizaciones}
         onSave={async (input) => {
           try {

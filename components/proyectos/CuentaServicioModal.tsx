@@ -2,15 +2,18 @@
 
 import { useEffect, useState } from "react";
 import { Button, EntitySelect, Input, Modal } from "@/components/ui";
+import { getProyectoDisplayLabel } from "@/lib/proyectos/labels";
 import type { CuentaServicio, CreateCuentaServicioInput } from "@/types/cuentas";
 import type { Proyecto } from "@/types/proyectos";
+import type { Cliente } from "@/types/clientes";
 
 type CuentaServicioModalProps = {
   isOpen: boolean;
   onClose: () => void;
   onSave: (input: CreateCuentaServicioInput) => void | Promise<void>;
   cuenta: CuentaServicio | null;
-  proyectos: Array<Pick<Proyecto, "id" | "nombre" | "estado">>;
+  proyectos: Array<Pick<Proyecto, "id" | "nombre" | "estado" | "cliente_id">>;
+  clientes: Array<Pick<Cliente, "id" | "empresa">>;
   defaultProyectoId: string;
 };
 
@@ -43,6 +46,7 @@ export function CuentaServicioModal({
   onSave,
   cuenta,
   proyectos,
+  clientes,
   defaultProyectoId
 }: CuentaServicioModalProps) {
   const [form, setForm] = useState<CreateCuentaServicioInput>(
@@ -85,7 +89,10 @@ export function CuentaServicioModal({
           value={form.proyecto_id}
           options={proyectos.map((proyecto) => ({
             id: proyecto.id,
-            label: proyecto.nombre,
+            label: getProyectoDisplayLabel({
+              nombre: proyecto.nombre,
+              clienteNombre: clientes.find((cliente) => cliente.id === proyecto.cliente_id)?.empresa ?? null
+            }),
             sublabel: proyecto.estado.replaceAll("_", " ")
           }))}
           onChange={(value) =>

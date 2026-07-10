@@ -10,12 +10,22 @@ export function formatUSD(amount: number): string {
   return `$${formatter.format(amount)} USD`;
 }
 
-export function formatFecha(fecha: string): string {
+export function formatFecha(fecha: string | null | undefined): string {
+  if (!fecha) {
+    return "Sin fecha";
+  }
+
+  const parsed = new Date(fecha);
+
+  if (Number.isNaN(parsed.getTime())) {
+    return "Sin fecha";
+  }
+
   return new Intl.DateTimeFormat("es-AR", {
     day: "numeric",
     month: "long",
     year: "numeric"
-  }).format(new Date(fecha));
+  }).format(parsed);
 }
 
 export function formatSemanas(semanas: number): string {

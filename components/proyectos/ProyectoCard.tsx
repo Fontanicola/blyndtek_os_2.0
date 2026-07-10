@@ -48,11 +48,11 @@ function formatShortDate(value: string | null | undefined) {
 function abbreviateClienteName(value: string) {
   const normalized = value.trim().replace(/\s+/g, " ");
 
-  if (normalized.length <= 30) {
+  if (normalized.length <= 26) {
     return normalized;
   }
 
-  return `${normalized.slice(0, 27).trimEnd()}...`;
+  return `${normalized.slice(0, 23).trimEnd()}...`;
 }
 
 export function ProyectoCard({
@@ -63,16 +63,18 @@ export function ProyectoCard({
 }: ProyectoCardProps) {
   return (
     <Card
-      padding="md"
+      padding="none"
       onClick={onClick}
-      className={selected ? "h-full border-l-2 border-signal bg-signal-light" : "h-full"}
+      className={selected ? "shrink-0 min-h-[76px] border-l-2 border-signal bg-signal-light" : "shrink-0 min-h-[76px]"}
     >
-      <div className="space-y-3">
+      <div className="space-y-1.5 p-3">
         <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <p className="truncate text-base font-label text-carbon">{proyecto.nombre}</p>
-            <p className="mt-1 truncate text-sm text-graphite" title={clienteNombre}>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-base font-label text-carbon" title={clienteNombre}>
               {abbreviateClienteName(clienteNombre)}
+            </p>
+            <p className="truncate text-sm text-graphite" title={proyecto.nombre}>
+              {proyecto.nombre}
             </p>
           </div>
           <Badge variant={getEstadoVariant(proyecto.estado)}>
@@ -80,18 +82,16 @@ export function ProyectoCard({
           </Badge>
         </div>
 
-        <div className="space-y-2">
-          <div className="h-2 rounded-pill bg-paper">
+        <div className="space-y-1">
+          <div className="h-1.5 rounded-pill bg-paper">
             <div
-              className="h-2 rounded-pill bg-signal transition-all duration-normal ease-normal"
+              className="h-1.5 rounded-pill bg-signal transition-all duration-normal ease-normal"
               style={{ width: `${Math.min(Math.max(proyecto.avance_pct, 0), 100)}%` }}
             />
           </div>
           <div className="flex items-center justify-between gap-3 text-xs text-graphite">
-            <span>{proyecto.avance_pct}% completado</span>
-            <span>
-              Entrega comprometida: {formatShortDate(proyecto.entrega_comprometida)}
-            </span>
+            <span>{proyecto.avance_pct}%</span>
+            <span>{formatShortDate(proyecto.entrega_comprometida)}</span>
           </div>
         </div>
       </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { Button, Card } from "@/components/ui";
+import { getProyectoDisplayLabel } from "@/lib/proyectos/labels";
 import type { TaskProjectOption, TaskUserOption } from "@/lib/task-support";
 import type { PrioridadTarea } from "@/types/tareas";
 
@@ -32,7 +33,10 @@ export function TareaFiltros({ filtros, proyectos, usuarios, onChange, onClear }
             <option value="">Todos</option>
             {proyectos.map((proyecto) => (
               <option key={proyecto.id} value={proyecto.id}>
-                {proyecto.nombre}
+                {getProyectoDisplayLabel({
+                  nombre: proyecto.nombre,
+                  clienteNombre: proyecto.cliente_nombre
+                })}
               </option>
             ))}
           </select>

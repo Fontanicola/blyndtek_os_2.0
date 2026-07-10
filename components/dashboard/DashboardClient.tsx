@@ -104,34 +104,27 @@ export function DashboardClient() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <div>
-          <h1 className="text-2xl font-title text-carbon">Dashboard</h1>
-          <p className="mt-1 text-sm text-graphite">Métricas inteligentes de Comercial, Finanzas y Entrega.</p>
+      <div className="flex flex-wrap items-center justify-end gap-3">
+        <div className="inline-flex rounded-pill bg-white p-1 shadow-soft">
+          {periodOptions.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              onClick={() => setPeriod(option.value)}
+              className={
+                period === option.value
+                  ? "rounded-pill bg-signal px-4 py-2 text-sm font-label text-white"
+                  : "rounded-pill px-4 py-2 text-sm font-label text-graphite transition-colors duration-fast ease-fast hover:text-carbon"
+              }
+            >
+              {option.label}
+            </button>
+          ))}
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="inline-flex rounded-pill bg-white p-1 shadow-soft">
-            {periodOptions.map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() => setPeriod(option.value)}
-                className={
-                  period === option.value
-                    ? "rounded-pill bg-signal px-4 py-2 text-sm font-label text-white"
-                    : "rounded-pill px-4 py-2 text-sm font-label text-graphite transition-colors duration-fast ease-fast hover:text-carbon"
-                }
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
-
-          <Badge variant="default">
-            Actualizado {dashboard ? formatFecha(dashboard.updated_at) : "recientemente"}
-          </Badge>
-        </div>
+        <Badge variant="default">
+          Actualizado {dashboard ? formatFecha(dashboard.updated_at) : "recientemente"}
+        </Badge>
       </div>
 
       {loading ? (

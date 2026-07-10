@@ -37,7 +37,7 @@ function getUserLabel(usuario: ProyectosClientProps["usuarios"][number]) {
 export function ProyectosClient({ usuario, clientes, cotizaciones, usuarios }: ProyectosClientProps) {
   const isAdmin = usuario?.rol === "admin";
   const { proyectos, loading, error, setProyectos, createProyecto, updateProyecto } = useProyectos();
-  const { features, fetchFeatures, createFeature, updateFeature, deleteFeature } = useFeatures();
+  const { features, fetchFeatures } = useFeatures();
   const filtersRef = useRef<HTMLDivElement | null>(null);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [mobileMode, setMobileMode] = useState<ProyectosViewMode>("list");
@@ -135,17 +135,6 @@ export function ProyectosClient({ usuario, clientes, cotizaciones, usuarios }: P
           {error}
         </div>
       ) : null}
-
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-title text-carbon">Proyectos</h1>
-          <p className="mt-1 text-sm text-graphite">
-            Desarrollo vivo, features, cuentas de servicios y roadmap interno.
-          </p>
-        </div>
-
-        <Button onClick={() => setNewProjectOpen(true)}>Nuevo proyecto</Button>
-      </div>
 
       <div className="grid gap-4 md:grid-cols-[320px_minmax(0,1fr)]">
         <Card
@@ -256,22 +245,28 @@ export function ProyectosClient({ usuario, clientes, cotizaciones, usuarios }: P
                 clienteNombre={getClienteNombre(selectedProject.cliente_id, clientes)}
                 isAdmin={isAdmin}
                 features={features}
+                clientes={clientes}
                 proyectos={proyectos}
                 usuarios={usuarios}
                 onProyectoUpdated={handleProyectoUpdated}
+                onNuevoProyecto={() => setNewProjectOpen(true)}
                 onUpdateProyecto={async (input) => {
                   const updated = await updateProyecto(selectedProject.id, input);
                   return updated;
                 }}
-                onCreateFeature={async (input) => createFeature(selectedProject.id, input)}
-                onUpdateFeature={async (id, input) => updateFeature(id, input)}
-                onDeleteFeature={async (id) => deleteFeature(id)}
               />
             </>
           ) : (
-            <Card padding="lg" className="flex min-h-[320px] items-center justify-center">
-              <p className="text-sm text-graphite">Seleccioná un proyecto para ver su ficha</p>
-            </Card>
+            <div className="space-y-4">
+              <div className="flex justify-end">
+                <Button size="sm" onClick={() => setNewProjectOpen(true)}>
+                  Nuevo proyecto
+                </Button>
+              </div>
+              <Card padding="lg" className="flex min-h-[320px] items-center justify-center">
+                <p className="text-sm text-graphite">Seleccioná un proyecto para ver su ficha</p>
+              </Card>
+            </div>
           )}
         </div>
       </div>
