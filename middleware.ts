@@ -120,9 +120,6 @@ function buildSupabaseRestUrl(url: string, path: string) {
 }
 
 function extractAccessTokenFromCookies(request: NextRequest) {
-  const { url } = getSupabaseEnv();
-  const projectRef = new URL(url).hostname.split(".")[0];
-  const baseName = `sb-${projectRef}-auth-token`;
   const cookies = request.cookies.getAll();
 
   const decodeCookieValue = (rawValue: string) => {
@@ -161,24 +158,35 @@ function extractAccessTokenFromCookies(request: NextRequest) {
     }
   };
 
-  const exactCookie = cookies.find((cookie) => cookie.name === baseName);
-  if (exactCookie) {
+  const exactCookies = cookies.filter((cookie) => isSupabaseAuthCookieName(cookie.name));
+  for (const exactCookie of exactCookies) {
     const token = parseCookieValue(exactCookie.value);
     if (token) {
       return token;
     }
   }
 
-  const chunkCookies = cookies
-    .filter((cookie) => cookie.name.startsWith(`${baseName}.`))
-    .sort((first, second) => {
+  const chunkCookieGroups = new Map<string, ReturnType<NextRequest["cookies"]["getAll"]>>();
+
+  for (const cookie of cookies) {
+    if (!isSupabaseAuthCookieChunkName(cookie.name)) {
+      continue;
+    }
+
+    const baseName = cookie.name.replace(/\.\d+$/, "");
+    const groupedCookies = chunkCookieGroups.get(baseName) ?? [];
+    groupedCookies.push(cookie);
+    chunkCookieGroups.set(baseName, groupedCookies);
+  }
+
+  for (const chunkCookies of chunkCookieGroups.values()) {
+    const sortedChunkCookies = chunkCookies.sort((first, second) => {
       const firstIndex = Number(first.name.split(".").pop() ?? 0);
       const secondIndex = Number(second.name.split(".").pop() ?? 0);
       return firstIndex - secondIndex;
     });
 
-  if (chunkCookies.length > 0) {
-    const combinedValue = chunkCookies.map((cookie) => cookie.value).join("");
+    const combinedValue = sortedChunkCookies.map((cookie) => cookie.value).join("");
     const token = parseCookieValue(combinedValue);
     if (token) {
       return token;
@@ -188,14 +196,21 @@ function extractAccessTokenFromCookies(request: NextRequest) {
   return null;
 }
 
-function getSupabaseAuthCookieNames(request: NextRequest) {
-  const { url } = getSupabaseEnv();
-  const projectRef = new URL(url).hostname.split(".")[0];
-  const baseName = `sb-${projectRef}-auth-token`;
+function isSupabaseAuthCookieName(cookieName: string) {
+  return /^sb-.+-auth-token$/.test(cookieName);
+}
 
+function isSupabaseAuthCookieChunkName(cookieName: string) {
+  return /^sb-.+-auth-token\.\d+$/.test(cookieName);
+}
+
+function getSupabaseAuthCookieNames(request: NextRequest) {
   return request.cookies
     .getAll()
-    .filter((cookie) => cookie.name.startsWith(baseName))
+    .filter(
+      (cookie) =>
+        isSupabaseAuthCookieName(cookie.name) || isSupabaseAuthCookieChunkName(cookie.name)
+    )
     .map((cookie) => cookie.name);
 }
 

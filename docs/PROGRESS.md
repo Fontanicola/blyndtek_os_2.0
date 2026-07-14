@@ -1609,3 +1609,17 @@ $ grep -n "^import" middleware.ts
 
 - La lógica de rol, rutas, URL de Supabase, REST, parsing de cookies `base64-`, limpieza de cookies inválidas y protección contra loops de `/login` vive localmente en `middleware.ts`.
 - `docs/DECISIONS.md` quedó actualizado con la regla más fuerte: `middleware.ts` es un archivo blindado y sólo puede importar `next/server`.
+
+## 2026-07-14 — Middleware: limpieza de cookies sin dependencia de env vars
+
+- Se detectó un camino adicional de riesgo: si `getSupabaseEnv()` fallaba en producción, el `catch` del middleware podía volver a llamar funciones de limpieza de cookies que dependían de la misma env var, provocando un segundo error y terminando en `MIDDLEWARE_INVOCATION_FAILED`.
+- `middleware.ts` ahora detecta cookies de Supabase por patrón (`sb-*-auth-token` y chunks `sb-*-auth-token.N`) para extraer y borrar sesiones inválidas sin depender de `NEXT_PUBLIC_SUPABASE_URL`.
+- Se mantiene el soporte para cookies normales y fragmentadas, incluyendo el formato `base64-` usado por Supabase SSR.
+- Evidencia del chequeo de imports:
+
+```text
+$ grep -n "^import" middleware.ts
+1:import { NextResponse, type NextRequest } from "next/server";
+```
+
+- Verificación local ejecutada: `npm run build` y `npm run lint` pasan correctamente, sin warnings de Edge Runtime; el artefacto `.next/server/middleware.js` no contiene `__dirname`, `@supabase/ssr`, `@supabase/supabase-js`, `createServerClient`, `lib/supabase` ni `types/auth`.

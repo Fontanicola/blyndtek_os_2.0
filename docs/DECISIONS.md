@@ -404,6 +404,7 @@
 - El costo de duplicar unas pocas funciones locales es menor que el riesgo operativo: este patrón ya causó cuatro caídas de producción con `MIDDLEWARE_INVOCATION_FAILED` / `__dirname is not defined`.
 - El middleware nunca debe redirigir una ruta a sí misma: si `/login` falla por auth inválida, debe limpiar cookies de sesión corruptas y dejar renderizar login en vez de crear un loop irrecuperable.
 - El parser manual de cookies del middleware debe soportar explícitamente el prefijo `base64-` de `@supabase/ssr` y decodificarlo antes de parsear JSON, porque ese formato ya está en producción y puede cambiar de nuevo en el futuro.
+- El parsing y la limpieza de cookies de Supabase no deben depender de `NEXT_PUBLIC_SUPABASE_URL` ni de ninguna variable de entorno: se detectan por patrón `sb-*-auth-token` para que una env var faltante no provoque un segundo error dentro del `catch` del middleware.
 
 ## 2026-07-13 — Runway Lab con ingresos pendientes opcionales
 
