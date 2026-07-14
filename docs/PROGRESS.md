@@ -8,6 +8,15 @@ Fecha de inicio: 2026-06-25
 
 Estado general actual: Fase 0 completa. Cimientos técnicos listos: documentación fundacional, setup del repo, design system, shell de app y sistema de autenticación base. Las fases 1, 2 y 3 del roadmap original quedaron completadas.
 
+## Actualización 2026-07-14
+
+- Se habilitó la edición de cobros tipo `hito` desde la ficha del cliente, reusando `CobroModal` en modo edición.
+- `app/api/cobros/[id]/route.ts` ahora registra cambios en `cobros_historial_cambios` cuando varían `monto` o `fecha_vencimiento`, incluyendo nota opcional y usuario que modificó.
+- `components/clientes/ClienteFicha.tsx` ahora muestra un botón `Editar` en hitos, permite expandir el historial de cambios por fila y refresca el cobro editado en la tabla.
+- `types/supabase.ts` quedó actualizado con la tabla `cobros_historial_cambios`.
+- Confirmé que `app/api/roadmap/[token]/route.ts` ya lee los hitos directamente desde `cobros`, así que cualquier edición se refleja automáticamente en el roadmap público sin cambios extra.
+- Verificación local completa: `npm run build` y `npm run lint` pasaron sin errores.
+
 ## Fase 0 — Cimientos
 
 ### ✅ 0.1 — Documentación fundacional

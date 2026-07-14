@@ -316,6 +316,26 @@
 | estado | enum (`pendiente|facturado|cobrado|vencido`) | No especificado |  |
 | created_at | timestamptz | No especificado |  |
 
+## Tabla: cobros_historial_cambios
+
+**PK:** `id`
+
+**FKs:** `cobro_id` → `cobros.id`; `modificado_por` → `usuarios.id`
+
+**RLS esperada:** acceso para `admin` sí; acceso para `miembro` no.
+
+| Campo | Tipo | Nullable | Notas |
+| --- | --- | --- | --- |
+| id | uuid | No | PK |
+| cobro_id | uuid | No | FK → `cobros` |
+| monto_anterior | numeric (USD) | Sí | monto previo cuando cambió |
+| monto_nuevo | numeric (USD) | Sí | monto nuevo cuando cambió |
+| fecha_anterior | date | Sí | fecha vencimiento previa |
+| fecha_nueva | date | Sí | fecha vencimiento nueva |
+| nota | text | Sí | motivo opcional del cambio |
+| modificado_por | uuid | Sí | FK → `usuarios` que hizo la edición |
+| created_at | timestamptz | No especificado |  |
+
 ## Tabla: egresos
 
 **PK:** `id`
@@ -721,6 +741,7 @@ Nota: `usuarios` debe existir antes que `leads`, `proyectos`, `features`, `tarea
 - `comisiones` registra las comisiones generadas al aceptar cotizaciones, con base, porcentaje, monto y estado de pago.
 - `config_comisiones` guarda el piso, tiers y bono vigentes para calcular comisiones sin hardcodear valores.
 - `egresos.comision_id` uuid nullable para trazar el egreso generado al pagar una comisión y mantener el impacto contable y de runway en caja real.
+- `cobros_historial_cambios` guarda el historial de cambios de monto y fecha de vencimiento de los hitos editados desde la ficha del cliente.
 - `comisiones` no tiene `proyecto_id`; cualquier referencia de proyecto para reporting debe resolverse vía `cliente_id` / `cotizacion_id` y joins a `proyectos` según contexto.
 
 ### Tabla nueva

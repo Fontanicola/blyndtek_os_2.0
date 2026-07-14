@@ -2,6 +2,19 @@ export type TipoCobro = "one_pay" | "hito" | "mantenimiento" | "brick";
 export type EstadoCobro = "pendiente" | "facturado" | "cobrado" | "vencido";
 export type CuentaMedio = string;
 
+export type CobroHistorialCambio = {
+  id: string;
+  cobro_id: string;
+  monto_anterior: number | null;
+  monto_nuevo: number | null;
+  fecha_anterior: string | null;
+  fecha_nueva: string | null;
+  nota: string | null;
+  modificado_por: string | null;
+  modificado_por_nombre?: string | null;
+  created_at: string;
+};
+
 export type Cobro = {
   id: string;
   cliente_id: string;
@@ -21,6 +34,7 @@ export type Cobro = {
   tolerancia_dias: number;
   estado: EstadoCobro;
   created_at: string;
+  historial?: CobroHistorialCambio[];
 };
 
 export type CreateCobroInput = {
@@ -39,4 +53,6 @@ export type CreateCobroInput = {
   estado?: EstadoCobro;
 };
 
-export type UpdateCobroInput = Partial<CreateCobroInput>;
+export type UpdateCobroInput = Partial<CreateCobroInput> & {
+  nota_historial?: string | null;
+};

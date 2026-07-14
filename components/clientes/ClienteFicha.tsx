@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Badge, Button, Card, Input, Toast } from "@/components/ui";
+import { CobroModal } from "@/components/finanzas";
 import { NotasVinculadasSection } from "@/components/notas";
 import { ProyectoCard } from "@/components/proyectos";
 import { formatFecha, formatUSD } from "@/lib/utils/formatters";
@@ -10,6 +11,7 @@ import { useFinanzas } from "@/lib/hooks/useFinanzas";
 import { useProyectos } from "@/lib/hooks/useProyectos";
 import { LeadNegociacionesSection } from "@/components/leads/LeadNegociacionesSection";
 import type { Cobro } from "@/types/cobros";
+import type { CobroModalInput } from "@/components/finanzas/CobroModal";
 import type { Cliente, DatosFacturacion, EstadoCliente, UpdateClienteInput } from "@/types/clientes";
 import type { Lead } from "@/types/leads";
 import type { Producto } from "@/types/productos";
@@ -41,6 +43,17 @@ function formatTimestamp(date = new Date()) {
     minute: "2-digit",
     hour12: false
   }).format(date);
+}
+
+function formatDateTime(value: string) {
+  return new Intl.DateTimeFormat("es-AR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false
+  }).format(new Date(value));
 }
 
 function InlineText({
@@ -150,11 +163,14 @@ const estadoVariants: Record<EstadoCliente, "success" | "warning" | "default"> =
 export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
   const router = useRouter();
   const { fetchProyectos } = useProyectos();
-  const { fetchCobros, fetchSuscripciones, createSuscripcion, activarSuscripcion } = useFinanzas();
+  const { fetchCobros, fetchCobro, fetchSuscripciones, createSuscripcion, activarSuscripcion, updateCobro } = useFinanzas();
   const [activeTab, setActiveTab] = useState<TabKey>("datos");
   const [notaDraft, setNotaDraft] = useState("");
   const [proyectos, setProyectos] = useState<Proyecto[]>([]);
   const [cobros, setCobros] = useState<Cobro[]>([]);
+  const [cobroModalOpen, setCobroModalOpen] = useState(false);
+  const [selectedCobro, setSelectedCobro] = useState<Cobro | null>(null);
+  const [expandedCobros, setExpandedCobros] = useState<Record<string, boolean>>({});
   const [suscripcion, setSuscripcion] = useState<Suscripcion | null>(null);
   const [productos, setProductos] = useState<Producto[]>([]);
   const [planes, setPlanes] = useState<ProductoPlan[]>([]);
@@ -502,6 +518,58 @@ export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
     }
   }
 
+  async function handleOpenCobroHistory(cobro: Cobro) {
+    if (expandedCobros[cobro.id]) {
+      setExpandedCobros((current) => ({
+        ...current,
+        [cobro.id]: false
+      }));
+      return;
+    }
+
+    try {
+      const detailedCobro = cobro.historial ? cobro : await fetchCobro(cobro.id);
+      setCobros((current) => current.map((item) => (item.id === cobro.id ? detailedCobro : item)));
+
+      if ((detailedCobro.historial?.length ?? 0) > 0) {
+        setExpandedCobros((current) => ({
+          ...current,
+          [cobro.id]: true
+        }));
+      }
+    } catch (error) {
+      setTabError(error instanceof Error ? error.message : "No se pudo cargar el historial del cobro.");
+    }
+  }
+
+  function handleEditCobro(cobro: Cobro) {
+    setSelectedCobro(cobro);
+    setCobroModalOpen(true);
+  }
+
+  async function handleSaveCobro(input: CobroModalInput) {
+    if (!selectedCobro) {
+      return;
+    }
+
+    setTabError(null);
+
+    try {
+      await updateCobro(selectedCobro.id, input);
+      const detailedCobro = await fetchCobro(selectedCobro.id);
+      setCobros((current) => current.map((item) => (item.id === selectedCobro.id ? detailedCobro : item)));
+      setToast({
+        message: "Cobro actualizado correctamente.",
+        type: "success",
+        visible: true
+      });
+      setCobroModalOpen(false);
+      setSelectedCobro(null);
+    } catch (error) {
+      setTabError(error instanceof Error ? error.message : "No se pudo actualizar el cobro.");
+    }
+  }
+
   return (
     <div className="flex h-full flex-col gap-4">
       <div className="flex flex-wrap gap-2 border-b border-line-soft pb-2">
@@ -696,26 +764,98 @@ export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
               </div>
 
               <div className="overflow-hidden rounded-card border border-line-soft">
-                <div className="grid grid-cols-[minmax(0,2fr)_auto_auto_auto_auto] gap-3 border-b border-line-soft bg-paper px-4 py-3 text-xs font-label uppercase tracking-[0.08em] text-graphite">
+                <div className="grid grid-cols-[minmax(0,2fr)_auto_auto_auto_auto_auto] gap-3 border-b border-line-soft bg-paper px-4 py-3 text-xs font-label uppercase tracking-[0.08em] text-graphite">
                   <span>Concepto</span>
                   <span>Tipo</span>
                   <span>Monto</span>
                   <span>Vencimiento</span>
                   <span>Estado</span>
+                  <span className="sr-only">Acciones</span>
                 </div>
                 <div className="divide-y divide-line-soft bg-white">
-                  {cobros.map((cobro) => (
-                    <div
-                      key={cobro.id}
-                      className="grid grid-cols-[minmax(0,2fr)_auto_auto_auto_auto] items-center gap-3 px-4 py-3 text-sm"
-                    >
-                      <span className="truncate font-label text-carbon">{cobro.concepto}</span>
-                      <Badge variant="default">{cobro.tipo}</Badge>
-                      <span className="text-carbon">{formatUSD(cobro.monto)}</span>
-                      <span className="text-graphite">{formatFecha(cobro.fecha_vencimiento)}</span>
-                      <CobroBadge estado={cobro.estado} />
-                    </div>
-                  ))}
+                  {cobros.map((cobro) => {
+                    const historial = cobro.historial ?? [];
+                    const isExpanded = expandedCobros[cobro.id] && historial.length > 0;
+
+                    return (
+                      <div key={cobro.id} className="border-b border-line-soft last:border-b-0">
+                        <div className="grid grid-cols-[minmax(0,2fr)_auto_auto_auto_auto_auto] items-center gap-3 px-4 py-3 text-sm">
+                          <span className="truncate font-label text-carbon">{cobro.concepto}</span>
+                          <Badge variant="default">{cobro.tipo}</Badge>
+                          <span className="text-carbon">{formatUSD(cobro.monto)}</span>
+                          <span className="text-graphite">{formatFecha(cobro.fecha_vencimiento)}</span>
+                          <CobroBadge estado={cobro.estado} />
+                          <div className="flex items-center justify-end gap-1">
+                            <button
+                              type="button"
+                              onClick={() => void handleOpenCobroHistory(cobro)}
+                              className="inline-flex h-8 w-8 items-center justify-center rounded-pill text-graphite transition-colors duration-fast ease-fast hover:bg-paper hover:text-carbon"
+                              aria-label={isExpanded ? "Ocultar historial" : "Ver historial"}
+                              title={isExpanded ? "Ocultar historial" : "Ver historial"}
+                            >
+                              <svg viewBox="0 0 18 18" fill="none" aria-hidden="true" className={["h-4 w-4 transition-transform duration-fast ease-fast", isExpanded ? "rotate-180" : "rotate-0"].join(" ")}>
+                                <path
+                                  d="M4.5 6.75L9 11.25L13.5 6.75"
+                                  stroke="currentColor"
+                                  strokeWidth="1.75"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                />
+                              </svg>
+                            </button>
+                            {cobro.tipo === "hito" ? (
+                              <button
+                                type="button"
+                                onClick={() => handleEditCobro(cobro)}
+                                className="rounded-pill px-3 py-1.5 text-xs font-label text-signal transition-colors duration-fast ease-fast hover:bg-signal-light"
+                              >
+                                Editar
+                              </button>
+                            ) : null}
+                          </div>
+                        </div>
+
+                        {isExpanded ? (
+                          <div className="border-t border-line-soft bg-paper/40 px-4 py-3">
+                            <div className="space-y-3">
+                              {historial.map((item) => {
+                                const montoAnterior = item.monto_anterior != null ? formatUSD(item.monto_anterior) : "Sin monto previo";
+                                const montoNuevo = item.monto_nuevo != null ? formatUSD(item.monto_nuevo) : "Sin monto nuevo";
+                                const fechaAnterior = item.fecha_anterior ? formatFecha(item.fecha_anterior) : "Sin fecha previa";
+                                const fechaNueva = item.fecha_nueva ? formatFecha(item.fecha_nueva) : "Sin fecha nueva";
+
+                                return (
+                                  <div
+                                    key={item.id}
+                                    className="rounded-card border border-line-soft bg-white px-4 py-3 text-sm text-carbon"
+                                  >
+                                    <div className="flex flex-wrap items-center gap-2">
+                                      <span className="font-label">Monto:</span>
+                                      <span>{montoAnterior}</span>
+                                      <span className="text-graphite">→</span>
+                                      <span>{montoNuevo}</span>
+                                    </div>
+                                    <div className="mt-1 flex flex-wrap items-center gap-2">
+                                      <span className="font-label">Fecha:</span>
+                                      <span>{fechaAnterior}</span>
+                                      <span className="text-graphite">→</span>
+                                      <span>{fechaNueva}</span>
+                                    </div>
+                                    {item.nota ? <p className="mt-2 text-sm text-graphite">{item.nota}</p> : null}
+                                    <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-graphite">
+                                      <span>{item.modificado_por_nombre ?? "Sistema"}</span>
+                                      <span>·</span>
+                                      <span>{formatDateTime(item.created_at)}</span>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        ) : null}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -938,6 +1078,27 @@ export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
           </div>
         </Card>
       ) : null}
+
+      <CobroModal
+        isOpen={cobroModalOpen}
+        onClose={() => {
+          setCobroModalOpen(false);
+          setSelectedCobro(null);
+        }}
+        onSave={handleSaveCobro}
+        cobro={selectedCobro}
+        clientes={[{ id: cliente.id, empresa: cliente.empresa, pais: cliente.pais ?? null, estado: cliente.estado }]}
+        proyectos={proyectos.map((proyecto) => ({
+          id: proyecto.id,
+          nombre: proyecto.nombre,
+          estado: proyecto.estado,
+          cliente_id: proyecto.cliente_id,
+          clienteNombre: cliente.empresa
+        }))}
+        cotizaciones={[]}
+        suscripciones={suscripcion ? [suscripcion] : []}
+        cajas={[]}
+      />
 
       <Toast
         message={toast.message}

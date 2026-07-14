@@ -244,6 +244,57 @@ export type Database = {
           }
         ];
       };
+      cobros_historial_cambios: {
+        Row: {
+          id: string;
+          cobro_id: string;
+          monto_anterior: number | null;
+          monto_nuevo: number | null;
+          fecha_anterior: string | null;
+          fecha_nueva: string | null;
+          nota: string | null;
+          modificado_por: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          cobro_id: string;
+          monto_anterior?: number | null;
+          monto_nuevo?: number | null;
+          fecha_anterior?: string | null;
+          fecha_nueva?: string | null;
+          nota?: string | null;
+          modificado_por?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          cobro_id?: string;
+          monto_anterior?: number | null;
+          monto_nuevo?: number | null;
+          fecha_anterior?: string | null;
+          fecha_nueva?: string | null;
+          nota?: string | null;
+          modificado_por?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "cobros_historial_cambios_cobro_id_fkey";
+            columns: ["cobro_id"];
+            isOneToOne: false;
+            referencedRelation: "cobros";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "cobros_historial_cambios_modificado_por_fkey";
+            columns: ["modificado_por"];
+            isOneToOne: false;
+            referencedRelation: "usuarios";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
       features: {
         Row: {
           id: string;

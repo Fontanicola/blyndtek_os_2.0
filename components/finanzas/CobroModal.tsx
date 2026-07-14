@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Button, EntitySelect, Input, Modal } from "@/components/ui";
 import { getProyectoDisplayLabel } from "@/lib/proyectos/labels";
-import type { CreateCobroInput, Cobro } from "@/types/cobros";
+import type { Cobro, CreateCobroInput } from "@/types/cobros";
 import type { Caja } from "@/types/cajas";
 import type { Cliente } from "@/types/clientes";
 import type { Proyecto } from "@/types/proyectos";
@@ -13,13 +13,17 @@ import type { Suscripcion } from "@/types/suscripciones";
 type CobroModalProps = {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (input: CreateCobroInput) => Promise<void> | void;
+  onSave: (input: CobroModalInput) => Promise<void> | void;
   cobro?: Cobro | null;
   clientes: Array<Pick<Cliente, "id" | "empresa" | "pais" | "estado">>;
   proyectos: Array<Pick<Proyecto, "id" | "nombre" | "estado" | "cliente_id"> & { clienteNombre?: string | null }>;
   cotizaciones: Array<Pick<Cotizacion, "id" | "empresa" | "precio_total">>;
   suscripciones: Array<Pick<Suscripcion, "id" | "tipo" | "estado" | "monto_mensual">>;
   cajas: Caja[];
+};
+
+export type CobroModalInput = CreateCobroInput & {
+  nota_historial?: string | null;
 };
 
 export function CobroModal({
@@ -44,6 +48,7 @@ export function CobroModal({
   const [proyectoId, setProyectoId] = useState(cobro?.proyecto_id ?? "");
   const [suscripcionId, setSuscripcionId] = useState(cobro?.suscripcion_id ?? "");
   const [cotizacionId, setCotizacionId] = useState(cobro?.cotizacion_id ?? "");
+  const [notaCambio, setNotaCambio] = useState("");
 
   useEffect(() => {
     setConcepto(cobro?.concepto ?? "");
@@ -57,6 +62,7 @@ export function CobroModal({
     setProyectoId(cobro?.proyecto_id ?? "");
     setSuscripcionId(cobro?.suscripcion_id ?? "");
     setCotizacionId(cobro?.cotizacion_id ?? "");
+    setNotaCambio("");
   }, [cobro, cajas, isOpen]);
 
   return (
@@ -162,6 +168,18 @@ export function CobroModal({
           onChange={(id) => setCotizacionId(id ?? "")}
         />
 
+        {cobro ? (
+          <div className="space-y-1">
+            <label className="text-sm font-label text-carbon">Nota del cambio</label>
+            <textarea
+              value={notaCambio}
+              onChange={(event) => setNotaCambio(event.target.value)}
+              placeholder="Motivo del cambio (opcional)"
+              className="min-h-[96px] w-full rounded-component border border-line bg-white px-3 py-2 text-sm text-carbon transition-all duration-fast ease-fast placeholder:text-graphite focus:border-signal focus:outline-none focus:ring-2 focus:ring-signal/20"
+            />
+          </div>
+        ) : null}
+
         <div className="flex justify-end gap-2">
           <Button variant="ghost" onClick={onClose}>
             Cancelar
@@ -184,7 +202,8 @@ export function CobroModal({
                 cotizacion_id: cotizacionId.trim() || null,
                 cuenta_medio: cuentaMedio ?? null,
                 tolerancia_dias: Number(toleranciaDias || 0),
-                estado: cobro?.estado ?? "pendiente"
+                estado: cobro?.estado ?? "pendiente",
+                nota_historial: cobro ? notaCambio.trim() || null : undefined
               });
             }}
           >
