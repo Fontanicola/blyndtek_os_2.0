@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { Badge, Card } from "@/components/ui";
 import { UserAvatar } from "@/components/ui/UserAvatar";
+import { LeadsPorEtapaChart } from "@/components/dashboard/LeadsPorEtapaChart";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { formatUSD } from "@/lib/utils/formatters";
 import { getCurrentUser, getDefaultRouteForRole } from "@/lib/auth";
@@ -186,16 +187,7 @@ export default async function EquipoComercialPage() {
                 <Stat label="Tasa de conversión" value={formatPercent(metric.tasaConversion)} />
               </div>
 
-              <div className="space-y-3">
-                <p className="text-xs font-label uppercase tracking-[0.08em] text-graphite">Leads por etapa</p>
-                <div className="flex flex-wrap gap-2">
-                  {metric.leadsPorEtapa.map((stage) => (
-                    <Badge key={stage.etapa} variant="ghost" className="gap-1">
-                      {stage.etapa}: {stage.cantidad}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
+              <LeadsPorEtapaChart data={metric.leadsPorEtapa} />
 
               <div className="grid gap-3 sm:grid-cols-2">
                 <Stat label="Comisión pendiente del mes" value={formatUSD(metric.comisionesPendientesMes)} />

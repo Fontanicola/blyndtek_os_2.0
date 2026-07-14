@@ -1542,3 +1542,9 @@ Estado general actual: Fase 0 completa. Cimientos técnicos listos: documentaci�
 - `middleware.ts` ahora define su propio `normalizeSupabaseUrl()` local, de forma autocontenida, y no depende de ningún módulo compartido de `lib/supabase/`.
 - La medida es preventiva y de robustez: el middleware mantiene imports mínimos y evita repetir el problema de deploy por dependencia indirecta en Edge Runtime.
 - Verificación local ejecutada: `npm run build` y `npm run lint` pasan correctamente luego del cambio.
+
+## 2026-07-14 — Equipo comercial: embudo por etapa en gráfico horizontal
+
+- En `/equipo-comercial` se reemplazó el listado de texto plano de leads por etapa por un `BarChart` horizontal con barras por etapa y tooltip sobre hover.
+- El gráfico usa la paleta semántica del sistema para diferenciar etapas tempranas, `Ganado` y `Descartado`, y muestra un estado vacío limpio cuando aún no hay leads cargados.
+- Verificación local ejecutada: `npm run build` y `npm run lint` pasan correctamente luego del ajuste.
