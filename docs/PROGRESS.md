@@ -1637,3 +1637,4 @@ $ find . -maxdepth 3 \( -name 'middleware.*' -o -name 'proxy.*' \) -not -path '.
 
 - `npm run build` y `npm run lint` pasan correctamente; el resumen final de Next ya no muestra la línea `ƒ Middleware`, confirmando que no se compila middleware Edge.
 - `docs/DECISIONS.md` quedó actualizado: queda prohibido reintroducir `middleware.ts` salvo decisión explícita nueva y verificación real en Vercel.
+- Se pusheó el commit `514c8423473ec4f6ffbbf358f23934bea8b8d812` a `main`; al verificar producción, el error cambió de `MIDDLEWARE_INVOCATION_FAILED` a `404 NOT_FOUND` de plataforma en `/`, `/login` y `/dashboard`, lo que indica que el problema de Edge middleware quedó removido pero falta revisar en Vercel si el deploy quedó activo y asociado al dominio correcto.
