@@ -1548,3 +1548,39 @@ Estado general actual: Fase 0 completa. Cimientos técnicos listos: documentaci�
 - En `/equipo-comercial` se reemplazó el listado de texto plano de leads por etapa por un `BarChart` horizontal con barras por etapa y tooltip sobre hover.
 - El gráfico usa la paleta semántica del sistema para diferenciar etapas tempranas, `Ganado` y `Descartado`, y muestra un estado vacío limpio cuando aún no hay leads cargados.
 - Verificación local ejecutada: `npm run build` y `npm run lint` pasan correctamente luego del ajuste.
+
+## 2026-07-14 — Mi panel comercial: pipeline potencial visible
+
+- La API de `/api/mi-panel/metricas` ahora calcula `pipeline_potencial_usd` sumando el monto negociado o propuesto de los leads propios en etapa `cotizacion`.
+- `/mi-panel` agregó la métrica “En juego” con un texto auxiliar corto para comunicar propuestas enviadas pendientes de respuesta.
+- El layout de métricas pasó a contemplar 5 cards en lugar de 4, con carga esquelética consistente.
+- Verificación local ejecutada: `npm run build` y `npm run lint` pasan correctamente luego del ajuste.
+
+## 2026-07-14 — Mi panel comercial: gráfico de ventas de 6 meses
+
+- La API de `/api/mi-panel/metricas` ahora devuelve `historico_ventas` con la cantidad de cierres y el monto total por mes para los últimos 6 meses.
+- Se agregó `components/mi-panel/VentasChart.tsx` y se ubicó inmediatamente debajo de las métricas del panel comercial, antes del detalle de comisiones y el embudo.
+- El gráfico usa barras sólidas para el monto y una línea punteada para la cantidad de ventas, con tooltip que sigue al mouse y estado vacío cuando no hay cierres.
+- Verificación local ejecutada: `npm run build` y `npm run lint` pasan correctamente luego del ajuste.
+
+## 2026-07-14 — Leads: card expandible con vendedor, valor y comisión estimada
+
+- Se confirmó que la card expandible de leads no estaba aplicada en la UI viva y se implementó sobre `components/outbound/LeadCard.tsx`, con resumen desplegable de touch points, próximo seguimiento, notas, monto y negociación.
+- `app/api/leads/route.ts` ahora devuelve `vendedor_nombre` y la comisión estimada calculada con la configuración activa, para que admin vea el vendedor asignado y el valor del lead de un vistazo.
+- `app/api/tareas/route.ts` y `lib/hooks/useTareas.ts` incorporaron el filtro `lead_id`, y `components/tareas/TareasClient.tsx` lo usa para que el link de seguimiento navegue a una vista útil.
+- `app/(app)/leads/page.tsx` pasó a resolver el usuario en servidor para diferenciar la UI de admin/comercial, y `components/outbound/KanbanColumn.tsx` propagó ese contexto a la card.
+- Verificación local ejecutada: `npm run lint` y `npm run build` pasan correctamente luego del ajuste; además se confirmó con grep que la card quedó realmente en `components/outbound/LeadCard.tsx` y no solo como plan.
+
+## 2026-07-14 — Leads: verificación real del expandible y contexto admin
+
+- Se revisó primero `components/leads/` con `ls` y `grep` para confirmar que no había un card expandible nuevo viviendo ahí; la UI real estaba en `components/outbound/LeadCard.tsx`.
+- La card ahora muestra el resumen expandible dentro del kanban y, para admin, expone vendedor asignado, valor del lead y comisión estimada sin requerir expansión.
+- La API de leads quedó preparada para devolver el nombre del vendedor junto con la comisión estimada, y la vista de tareas acepta `lead_id` para abrir seguimientos vinculados.
+- Verificación local ejecutada: `npm run build` y `npm run lint` siguen pasando luego de esta aplicación real del cambio.
+
+## 2026-07-14 — Middleware Edge: cadena limpia y autocontenida
+
+- Se hizo una pasada completa de la cadena real del middleware y no quedó ningún import de `@supabase/ssr` ni `@supabase/supabase-js` alcanzable desde `middleware.ts`.
+- `middleware.ts` quedó todavía más blindado: ahora importa solo `next/server` y define el tipo `Rol` localmente, sin depender de `types/auth.ts` ni de helpers compartidos.
+- El build local quedó limpio, sin warnings de Edge Runtime ni trazas de Node incompatibles.
+- Resultado de la investigación: en el checkout actual no apareció un archivo específico que siga arrastrando Supabase al middleware; la protección quedó reforzada para evitar regresiones por imports indirectos.

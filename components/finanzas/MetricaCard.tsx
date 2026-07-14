@@ -11,6 +11,7 @@ type MetricaCardProps = {
   value: string | number;
   icono?: ReactNode;
   colorIcono?: "signal" | "success" | "danger" | "warning" | "graphite";
+  description?: string;
   trend?: string;
   direction?: "up" | "down";
   status?: {
@@ -33,6 +34,7 @@ export function MetricaCard({
   value,
   icono,
   colorIcono = "signal",
+  description,
   trend,
   direction,
   status,
@@ -63,6 +65,8 @@ export function MetricaCard({
           </div>
         ) : null}
       </div>
+
+      {description ? <p className="mt-3 text-xs text-graphite">{description}</p> : null}
 
       <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
         {trend ? (

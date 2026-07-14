@@ -5,6 +5,7 @@ import { crearComisionVenta } from "@/lib/comisiones/crearComisionVenta";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { crearTareaConAdminClient } from "@/lib/tareas/crearTarea";
 import { ensureClienteDesdeLead } from "@/lib/clientes/ensureClienteDesdeLead";
+import type { Database } from "@/types/supabase";
 import {
   type EtapaLead,
   type Lead,
@@ -63,12 +64,18 @@ async function rollbackLead(
     id: rollbackId,
     created_at: rollbackCreatedAt,
     updated_at: rollbackUpdatedAt,
+    vendedor_nombre: _rollbackVendedorNombre,
+    comision_estimada_usd: _rollbackComisionEstimdaUsd,
+    comision_estimada_pct: _rollbackComisionEstimdaPct,
     ...rest
   } = previousLead;
 
   void rollbackId;
   void rollbackCreatedAt;
   void rollbackUpdatedAt;
+  void _rollbackVendedorNombre;
+  void _rollbackComisionEstimdaUsd;
+  void _rollbackComisionEstimdaPct;
 
   await supabase.from("leads").update(rest).eq("id", leadId);
 }
@@ -137,7 +144,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
     }
 
     const now = new Date();
-    const updatePayload: Partial<Lead> = { etapa: body.etapa };
+    const updatePayload: Database["public"]["Tables"]["leads"]["Update"] = { etapa: body.etapa };
 
     if (body.etapa === "seguimiento") {
       const touchUpdatePayload = touchUpdate(body.touchpoint ?? "seg1");

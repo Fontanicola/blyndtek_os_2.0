@@ -2,8 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Badge, Card } from "@/components/ui";
-import { ClientesIcon, DashboardIcon, FinanzasIcon, OutboundIcon } from "@/components/icons";
+import { ClientesIcon, CotizadorIcon, DashboardIcon, FinanzasIcon, OutboundIcon } from "@/components/icons";
 import { MetricaCard } from "@/components/finanzas/MetricaCard";
+import { VentasChart } from "@/components/mi-panel/VentasChart";
 import { cn } from "@/lib/cn";
 import { ETAPA_LABELS, OUTBOUND_ETAPAS } from "@/lib/leads";
 import { formatFecha, formatUSD } from "@/lib/utils/formatters";
@@ -15,6 +16,12 @@ type MiPanelMetricas = {
   leads_por_etapa: Array<{ etapa: EtapaLead; cantidad: number }>;
   clientes_convertidos: number;
   ventas_cerradas_mes: { count: number; monto: number };
+  pipeline_potencial_usd: number;
+  historico_ventas: Array<{
+    mes: string;
+    cantidad_ventas: number;
+    monto_total_usd: number;
+  }>;
   comision_pendiente_usd: number;
   comision_pagada_usd: number;
   bono: {
@@ -38,6 +45,10 @@ function LeadsIcon() {
 
 function SalesIcon() {
   return <FinanzasIcon />;
+}
+
+function OpportunityIcon() {
+  return <CotizadorIcon />;
 }
 
 function CommissionsIcon() {
@@ -140,8 +151,8 @@ export function MiPanelClient() {
       ) : null}
 
       {state.loading ? (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {Array.from({ length: 4 }).map((_, index) => (
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+          {Array.from({ length: 5 }).map((_, index) => (
             <div key={index} className="h-[124px] animate-pulse rounded-card bg-paper" />
           ))}
         </div>
@@ -149,7 +160,7 @@ export function MiPanelClient() {
 
       {!state.loading && state.metrics ? (
         <>
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
             <MetricaCard
               label="Leads Totales"
               value={`${state.metrics.leads_totales}`}
@@ -174,7 +185,15 @@ export function MiPanelClient() {
               icono={<CommissionsIcon />}
               colorIcono="danger"
             />
+            <MetricaCard
+              label="En juego"
+              value={state.metrics.pipeline_potencial_usd}
+              icono={<OpportunityIcon />}
+              colorIcono="warning"
+            />
           </div>
+
+          <VentasChart data={state.metrics.historico_ventas} />
 
           {state.metrics.bono ? (
             <Card padding="md" className="space-y-3">

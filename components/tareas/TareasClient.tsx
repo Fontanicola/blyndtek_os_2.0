@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Badge, Card } from "@/components/ui";
 import { useTareas } from "@/lib/hooks/useTareas";
 import type { TaskProjectOption, TaskUserOption } from "@/lib/task-support";
@@ -16,10 +17,21 @@ type TareasClientProps = {
 };
 
 export function TareasClient({ usuario, proyectos, usuarios }: TareasClientProps) {
+  const searchParams = useSearchParams();
+  const leadFilterId = searchParams?.get("lead_id")?.trim() || undefined;
   const isAdmin = usuario?.rol === "admin";
   const initialFilters = useMemo(
-    () => (isAdmin ? undefined : usuario?.id ? { responsable_id: usuario.id } : undefined),
-    [isAdmin, usuario?.id]
+    () =>
+      isAdmin
+        ? leadFilterId
+          ? { lead_id: leadFilterId }
+          : undefined
+        : usuario?.id
+          ? { responsable_id: usuario.id, lead_id: leadFilterId }
+          : leadFilterId
+            ? { lead_id: leadFilterId }
+            : undefined,
+    [isAdmin, leadFilterId, usuario?.id]
   );
   const { tareas, loading, error, fetchTareas, createTarea, updateTarea, updateEstado, deleteTarea } =
     useTareas(initialFilters);
@@ -46,17 +58,27 @@ export function TareasClient({ usuario, proyectos, usuarios }: TareasClientProps
     }
 
     if (taskViewer === "todos") {
-      void fetchTareas();
+      void fetchTareas(leadFilterId ? { lead_id: leadFilterId } : undefined);
       return;
     }
 
     if (taskViewer === "yo") {
-      void fetchTareas(usuario?.id ? { responsable_id: usuario.id } : undefined);
+      void fetchTareas(
+        usuario?.id
+          ? leadFilterId
+            ? { responsable_id: usuario.id, lead_id: leadFilterId }
+            : { responsable_id: usuario.id }
+          : leadFilterId
+            ? { lead_id: leadFilterId }
+            : undefined
+      );
       return;
     }
 
-    void fetchTareas({ responsable_id: taskViewer });
-  }, [fetchTareas, isAdmin, taskViewer, usuario?.id]);
+    void fetchTareas(
+      leadFilterId ? { responsable_id: taskViewer, lead_id: leadFilterId } : { responsable_id: taskViewer }
+    );
+  }, [fetchTareas, isAdmin, leadFilterId, taskViewer, usuario?.id]);
 
   const visibleTareas = useMemo(() => {
     return tareas.filter((tarea) => {

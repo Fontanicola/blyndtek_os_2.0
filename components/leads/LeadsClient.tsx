@@ -35,6 +35,10 @@ type FilterState = {
   canal: string;
 };
 
+type LeadsClientProps = {
+  usuario: Pick<Usuario, "id" | "rol" | "nombre" | "foto_url">;
+};
+
 const filterSelectClassName =
   "h-10 rounded-component border border-line bg-white px-3 text-sm text-carbon transition-all duration-fast ease-fast focus:border-signal focus:outline-none focus:ring-2 focus:ring-signal/20";
 
@@ -49,7 +53,7 @@ function normalizeModalInput(input: UpdateLeadInput, etapa: EtapaLead = "por_con
   };
 }
 
-export function LeadsClient() {
+export function LeadsClient({ usuario }: LeadsClientProps) {
   const searchParams = useSearchParams();
   const outboundHook = useLeads();
   const inboundHook = useInboundLeads();
@@ -165,6 +169,7 @@ export function LeadsClient() {
     new Set(allLeads.map((lead) => lead.responsable_id).filter(Boolean))
   ).sort();
   const nivelConfianzaOptions: Array<NivelConfianza> = ["alto", "medio", "bajo"];
+  const isAdmin = usuario.rol === "admin";
 
   function handleOpenNewLead() {
     setSelectedLead(null);
@@ -433,6 +438,7 @@ export function LeadsClient() {
               label={ETAPA_LABELS[etapa]}
               leads={visibleLeads.filter((lead) => lead.etapa === etapa)}
               responsables={usuarios}
+              isAdmin={isAdmin}
               onLeadClick={handleOpenLead}
               onAddLead={(nextEtapa) => {
                 setActiveQuickForm(nextEtapa);

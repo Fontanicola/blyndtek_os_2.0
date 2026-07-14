@@ -35,6 +35,7 @@ export async function GET(request: NextRequest) {
 
     const searchParams = request.nextUrl.searchParams;
     const proyectoId = searchParams.get("proyecto_id")?.trim() || null;
+    const leadId = searchParams.get("lead_id")?.trim() || null;
     const responsableId = searchParams.get("responsable_id")?.trim() || null;
     const prioridad = parsePrioridad(searchParams.get("prioridad"));
     const estado = parseEstado(searchParams.get("estado"));
@@ -67,6 +68,10 @@ export async function GET(request: NextRequest) {
 
     if (proyectoId) {
       query = query.eq("proyecto_id", proyectoId);
+    }
+
+    if (leadId) {
+      query = query.eq("lead_id", leadId);
     }
 
     if (currentUser.rol === "admin") {

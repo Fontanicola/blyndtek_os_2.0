@@ -403,6 +403,7 @@
 - El middleware nunca debe redirigir una ruta a sí misma: si `/login` falla por auth inválida, debe limpiar cookies de sesión corruptas y dejar renderizar login en vez de crear un loop irrecuperable.
 - El parser manual de cookies del middleware debe soportar explícitamente el prefijo `base64-` de `@supabase/ssr` y decodificarlo antes de parsear JSON, porque ese formato ya está en producción y puede cambiar de nuevo en el futuro.
 - Middleware `middleware.ts` debe mantenerse autocontenido y con imports mínimos: no depender de helpers compartidos de `lib/supabase/` si eso puede arrastrar el bundle Edge a una regresión de deploy por resolución indirecta.
+- Antes de cerrar cualquier prompt que toque código server-side o API routes, se debe correr `grep -rn "@supabase/supabase-js\\|@supabase/ssr"` sobre los archivos nuevos o modificados de ese prompt específico para atrapar regresiones Edge antes del deploy.
 
 ## 2026-07-13 — Runway Lab con ingresos pendientes opcionales
 

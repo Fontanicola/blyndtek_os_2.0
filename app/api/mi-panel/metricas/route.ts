@@ -26,6 +26,12 @@ type MiPanelMetricasResponse = {
       count: number;
       monto: number;
     };
+    pipeline_potencial_usd: number;
+    historico_ventas: Array<{
+      mes: string;
+      cantidad_ventas: number;
+      monto_total_usd: number;
+    }>;
     comision_pendiente_usd: number;
     comision_pagada_usd: number;
     bono: MiPanelBono | null;
@@ -65,6 +71,25 @@ function getMonthRange() {
   };
 }
 
+function buildLastSixMonths() {
+  const now = new Date();
+  const formatter = new Intl.DateTimeFormat("es-AR", {
+    month: "short",
+    year: "numeric",
+    timeZone: "UTC"
+  });
+
+  return Array.from({ length: 6 }).map((_, index) => {
+    const date = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - (5 - index), 1));
+
+    return {
+      key: `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}`,
+      mes: formatter.format(date).replace(/\./g, ""),
+      date
+    };
+  });
+}
+
 export async function GET() {
   try {
     const currentUser = await getCurrentUser();
@@ -80,16 +105,17 @@ export async function GET() {
     const supabase = createAdminClient();
     const vendedorId = currentUser.id;
     const { desde, hasta } = getMonthRange();
+    const historicalMonths = buildLastSixMonths();
 
     const [leadsResult, clientesResult, comisionesMesResult, comisionesTotalesResult, configResult] =
       await Promise.all([
         supabase
           .from("leads")
-          .select("id, etapa")
+          .select("id, etapa, monto_propuesto_desarrollo, monto_negociado_desarrollo, updated_at")
           .eq("vendedor_id", vendedorId),
         supabase
           .from("clientes")
-          .select("id, lead_id")
+          .select("id, lead_id, created_at")
           .eq("vendedor_id", vendedorId)
           .not("lead_id", "is", null),
         supabase
@@ -126,11 +152,56 @@ export async function GET() {
     const clientes = clientesResult.data ?? [];
     const comisionesMes = comisionesMesResult.data ?? [];
     const comisionesTotales = comisionesTotalesResult.data ?? [];
+    const salesByLeadId = new Map(
+      clientes
+        .filter((cliente) => cliente.lead_id)
+        .map((cliente) => [cliente.lead_id as string, cliente.created_at])
+    );
 
     const leadsPorEtapa = ETAPAS.map((etapa) => ({
       etapa,
       cantidad: leads.filter((lead) => lead.etapa === etapa).length
     }));
+
+    const pipelinePotencialUsd = leads
+      .filter((lead) => lead.etapa === "cotizacion")
+      .reduce((total, lead) => {
+        const monto =
+          lead.monto_negociado_desarrollo ??
+          lead.monto_propuesto_desarrollo ??
+          0;
+
+        return total + Number(monto);
+      }, 0);
+
+    const historicoVentas = historicalMonths.map((month) => {
+      const monthLeads = leads.filter((lead) => {
+        if (lead.etapa !== "ganado") {
+          return false;
+        }
+
+        const conversionDate = salesByLeadId.get(lead.id) ?? lead.updated_at;
+        const current = new Date(conversionDate);
+
+        return (
+          current.getUTCFullYear() === month.date.getUTCFullYear() &&
+          current.getUTCMonth() === month.date.getUTCMonth()
+        );
+      });
+
+      return {
+        mes: month.mes,
+        cantidad_ventas: monthLeads.length,
+        monto_total_usd: monthLeads.reduce((total, lead) => {
+          const monto =
+            lead.monto_negociado_desarrollo ??
+            lead.monto_propuesto_desarrollo ??
+            0;
+
+          return total + Number(monto);
+        }, 0)
+      };
+    });
 
     const ventasCerradasMes = {
       count: comisionesMes.length,
@@ -161,6 +232,8 @@ export async function GET() {
         leads_por_etapa: leadsPorEtapa,
         clientes_convertidos: clientes.length,
         ventas_cerradas_mes: ventasCerradasMes,
+        pipeline_potencial_usd: pipelinePotencialUsd,
+        historico_ventas: historicoVentas,
         comision_pendiente_usd: comisionPendienteUsd,
         comision_pagada_usd: comisionPagadaUsd,
         bono

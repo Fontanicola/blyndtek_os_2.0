@@ -21,6 +21,7 @@ type KanbanColumnProps = {
   onDragStartLead?: (lead: Lead) => void;
   onDragEndLead?: () => void;
   responsables?: Array<Pick<Usuario, "id" | "nombre" | "foto_url">>;
+  isAdmin?: boolean;
   footer?: ReactNode;
 };
 
@@ -38,6 +39,7 @@ export function KanbanColumn({
   onDragStartLead,
   onDragEndLead,
   responsables = [],
+  isAdmin = false,
   footer
 }: KanbanColumnProps) {
   function getResponsableUsuario(userId: string | null) {
@@ -79,6 +81,7 @@ export function KanbanColumn({
             onDragEnd={onDragEndLead}
             isDragging={draggedLeadId === lead.id}
             responsableUsuario={getResponsableUsuario(lead.responsable_id)}
+            isAdmin={isAdmin}
           />
         ))}
 

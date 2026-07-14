@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
-import type { Rol } from "@/types/auth";
+
+type Rol = "admin" | "miembro" | "comercial";
 
 const roleAllowedPrefixes: Record<Rol, readonly string[]> = {
   admin: ["/"],

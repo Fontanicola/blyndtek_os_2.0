@@ -12,6 +12,9 @@ export type NivelConfianza = "alto" | "medio" | "bajo";
 export type Lead = {
   id: string;
   canal: CanalLead;
+  vendedor_nombre?: string | null;
+  comision_estimada_usd?: number | null;
+  comision_estimada_pct?: number | null;
   empresa: string;
   rubro: string | null;
   ubicacion: string | null;
@@ -45,6 +48,11 @@ export type Lead = {
   updated_at: string;
 };
 
+type LeadWritableFields = Omit<
+  Lead,
+  "id" | "created_at" | "updated_at" | "vendedor_nombre" | "comision_estimada_usd" | "comision_estimada_pct"
+>;
+
 export type LeadTouchKey = "llamada" | "seg1" | "seg2";
 
 export type LeadNegociacion = {
@@ -72,7 +80,7 @@ export type LeadStageTransitionInput = {
   mismo_monto?: boolean;
 };
 
-export type CreateLeadInput = Omit<Lead, "id" | "created_at" | "updated_at" | "vendedor_id"> & {
+export type CreateLeadInput = Omit<LeadWritableFields, "vendedor_id"> & {
   vendedor_id?: string | null;
 };
 export type UpdateLeadInput = Partial<CreateLeadInput>;

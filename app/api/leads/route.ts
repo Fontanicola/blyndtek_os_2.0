@@ -1,7 +1,39 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
+import { calcularComision } from "@/lib/comisiones/calcular";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { CanalLead, CreateLeadInput, EtapaLead, Lead, NivelConfianza } from "@/types/leads";
+import type { ConfigComisiones } from "@/types/comisiones";
+
+type LeadRow = Lead & {
+  vendedor?: { nombre?: string | null } | null;
+};
+
+async function getActiveConfig(supabase: ReturnType<typeof createAdminClient>) {
+  const { data, error } = await supabase
+    .from("config_comisiones")
+    .select("*")
+    .order("updated_at", { ascending: false })
+    .limit(1);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return (data?.[0] ?? null) as ConfigComisiones | null;
+}
+
+function getLeadMontoVenta(lead: Lead) {
+  const desarrollo =
+    lead.monto_negociado_desarrollo ?? lead.monto_propuesto_desarrollo ?? lead.valor_estimado ?? null;
+  const mensual = lead.monto_negociado_mensual ?? lead.monto_propuesto_mensual ?? null;
+
+  if (desarrollo === null && mensual === null) {
+    return null;
+  }
+
+  return Number((desarrollo ?? 0) + (mensual ?? 0));
+}
 
 function buildLeadFilters(searchParams: URLSearchParams) {
   const canal = searchParams.get("canal");
@@ -30,13 +62,14 @@ export async function GET(request: NextRequest) {
     }
 
     const supabase = createAdminClient();
+    const activeConfig = await getActiveConfig(supabase).catch(() => null);
     const { canal, etapa, responsableId, rubro, ubicacion, nivelConfianza } = buildLeadFilters(
       request.nextUrl.searchParams
     );
 
     let query = supabase
       .from("leads")
-      .select("*")
+      .select("*, vendedor:usuarios!leads_vendedor_id_fkey(nombre)")
       .eq("canal", canal)
       .order("updated_at", { ascending: false });
 
@@ -72,7 +105,21 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ data: (data ?? []) as Lead[] });
+    const leads = (data ?? []).map((row) => {
+      const leadRow = row as LeadRow;
+      const montoVenta = getLeadMontoVenta(leadRow);
+      const comision =
+        montoVenta !== null && activeConfig ? calcularComision(montoVenta, activeConfig) : null;
+
+      return {
+        ...(leadRow as Lead),
+        vendedor_nombre: leadRow.vendedor?.nombre ?? null,
+        comision_estimada_usd: comision?.montoComision ?? null,
+        comision_estimada_pct: comision?.porcentaje ?? null
+      } satisfies Lead;
+    });
+
+    return NextResponse.json({ data: leads });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unexpected error";
     return NextResponse.json({ error: message }, { status: 500 });

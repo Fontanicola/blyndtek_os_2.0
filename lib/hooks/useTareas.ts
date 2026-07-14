@@ -16,6 +16,7 @@ type ApiDeleteResponse = {
 
 type TareaFilters = {
   proyecto_id?: string;
+  lead_id?: string;
   responsable_id?: string;
   prioridad?: PrioridadTarea;
   estado?: EstadoTarea;
@@ -32,6 +33,10 @@ function buildQueryString(filters?: TareaFilters) {
 
   if (filters?.responsable_id) {
     searchParams.set("responsable_id", filters.responsable_id);
+  }
+
+  if (filters?.lead_id) {
+    searchParams.set("lead_id", filters.lead_id);
   }
 
   if (filters?.prioridad) {
