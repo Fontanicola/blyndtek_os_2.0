@@ -6,7 +6,6 @@ import {
   DashboardIcon,
   ArchivosIcon,
   FinanzasIcon,
-  InboundIcon,
   SaasIcon,
   OutboundIcon,
   NotasIcon,
@@ -18,6 +17,13 @@ import type { NavItem } from "@/types/navigation";
 
 export const navigationItems: NavItem[] = [
   {
+    label: "Mi panel",
+    href: "/mi-panel",
+    icon: createElement(DashboardIcon),
+    roles: ["comercial"],
+    section: "top-level"
+  },
+  {
     label: "Dashboard",
     href: "/dashboard",
     icon: createElement(DashboardIcon),
@@ -25,16 +31,9 @@ export const navigationItems: NavItem[] = [
     section: "top-level"
   },
   {
-    label: "Outbound",
-    href: "/outbound",
+    label: "Leads",
+    href: "/leads",
     icon: createElement(OutboundIcon),
-    roles: ["admin", "comercial"],
-    section: "comercial"
-  },
-  {
-    label: "Inbound",
-    href: "/inbound",
-    icon: createElement(InboundIcon),
     roles: ["admin", "comercial"],
     section: "comercial"
   },

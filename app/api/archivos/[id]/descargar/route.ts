@@ -59,7 +59,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
     const descargar = _request.nextUrl.searchParams.get("descargar") === "true";
     const headers = new Headers();
     headers.set("Content-Type", archivo.tipo_mime || data.type || "application/octet-stream");
-    headers.set("Content-Disposition", `${descargar ? "attachment" : "inline"}; filename=\"${archivo.nombre}\"`);
+    headers.set("Content-Disposition", `${descargar ? "attachment" : "inline"}; filename="${archivo.nombre}"`);
 
     return new NextResponse(data, { headers });
   } catch (error) {

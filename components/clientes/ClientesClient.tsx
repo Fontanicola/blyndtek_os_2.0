@@ -35,7 +35,7 @@ export default function ClientesPage() {
   const { leads: inboundLeads } = useInboundLeads();
   const [estado, setEstado] = useState<EstadoCliente>("activo");
   const [busqueda, setBusqueda] = useState("");
-  const [selectedClienteId, setSelectedClienteId] = useState<string | null>(searchParams.get("cliente_id"));
+  const [selectedClienteId, setSelectedClienteId] = useState<string | null>(searchParams?.get("cliente_id") ?? null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [mobileView, setMobileView] = useState<"list" | "detail">("list");
   const estadoLabels: Record<EstadoCliente, string> = {
@@ -49,7 +49,7 @@ export default function ClientesPage() {
   }, [estado, fetchClientes]);
 
   useEffect(() => {
-    const queryClienteId = searchParams.get("cliente_id");
+    const queryClienteId = searchParams?.get("cliente_id") ?? null;
 
     if (queryClienteId && queryClienteId !== selectedClienteId) {
       setSelectedClienteId(queryClienteId);

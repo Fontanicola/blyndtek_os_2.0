@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     let query = supabase
       .from("comisiones")
       .select(
-        "id, vendedor_id, cliente_id, cotizacion_id, proyecto_id, tipo, estado, monto_venta, base_comision, porcentaje, monto_comision, config_comisiones_id, pagada_at, created_at, updated_at, vendedor:usuarios(nombre), cliente:clientes(empresa)"
+        "id, vendedor_id, cliente_id, cotizacion_id, tipo, estado, monto_venta, base_comision, monto_comision, pagada_at, created_at, vendedor:usuarios(nombre), cliente:clientes(empresa)"
       )
       .order("created_at", { ascending: false });
 
@@ -41,15 +41,20 @@ export async function GET(request: NextRequest) {
     }
 
     const commissions = (data ?? []).map((item) => {
-      const commission = item as ComisionListado & {
+      const commission = item as Omit<ComisionListado, "porcentaje" | "config_comisiones_id" | "updated_at"> & {
         vendedor?: { nombre: string | null } | null;
         cliente?: { empresa: string | null } | null;
       };
 
       const { vendedor, cliente, ...rest } = commission;
+      const porcentaje =
+        rest.base_comision > 0 ? Number(((rest.monto_comision / rest.base_comision) * 100).toFixed(2)) : 0;
 
       return {
         ...rest,
+        config_comisiones_id: null,
+        updated_at: rest.created_at,
+        porcentaje,
         vendedor_nombre: vendedor?.nombre ?? null,
         cliente_nombre: cliente?.empresa ?? null
       } satisfies ComisionListado;

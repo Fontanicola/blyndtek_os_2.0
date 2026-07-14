@@ -446,7 +446,6 @@ export type Database = {
           vendedor_id: string;
           cliente_id: string;
           cotizacion_id: string | null;
-          proyecto_id: string | null;
           tipo: "venta";
           estado: "pendiente" | "pagada" | "cancelada";
           monto_venta: number;
@@ -463,7 +462,6 @@ export type Database = {
           vendedor_id: string;
           cliente_id: string;
           cotizacion_id?: string | null;
-          proyecto_id?: string | null;
           tipo?: "venta";
           estado?: "pendiente" | "pagada" | "cancelada";
           monto_venta: number;
@@ -480,7 +478,6 @@ export type Database = {
           vendedor_id?: string;
           cliente_id?: string;
           cotizacion_id?: string | null;
-          proyecto_id?: string | null;
           tipo?: "venta";
           estado?: "pendiente" | "pagada" | "cancelada";
           monto_venta?: number;
@@ -512,13 +509,6 @@ export type Database = {
             columns: ["cotizacion_id"];
             isOneToOne: false;
             referencedRelation: "cotizaciones";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "comisiones_proyecto_id_fkey";
-            columns: ["proyecto_id"];
-            isOneToOne: false;
-            referencedRelation: "proyectos";
             referencedColumns: ["id"];
           },
           {
@@ -806,6 +796,57 @@ export type Database = {
           }
         ];
       };
+      eventos_invitados: {
+        Row: {
+          id: string;
+          evento_id: string;
+          usuario_id: string;
+          estado: "pendiente" | "aceptado" | "rechazado" | "propuesta_alternativa";
+          fecha_propuesta_alt: string | null;
+          hora_propuesta_alt: string | null;
+          comentario: string | null;
+          respondido_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          evento_id: string;
+          usuario_id: string;
+          estado?: "pendiente" | "aceptado" | "rechazado" | "propuesta_alternativa";
+          fecha_propuesta_alt?: string | null;
+          hora_propuesta_alt?: string | null;
+          comentario?: string | null;
+          respondido_at?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          evento_id?: string;
+          usuario_id?: string;
+          estado?: "pendiente" | "aceptado" | "rechazado" | "propuesta_alternativa";
+          fecha_propuesta_alt?: string | null;
+          hora_propuesta_alt?: string | null;
+          comentario?: string | null;
+          respondido_at?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "eventos_invitados_evento_id_fkey";
+            columns: ["evento_id"];
+            isOneToOne: false;
+            referencedRelation: "eventos";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "eventos_invitados_usuario_id_fkey";
+            columns: ["usuario_id"];
+            isOneToOne: false;
+            referencedRelation: "usuarios";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
       leads: {
         Row: {
           id: string;
@@ -824,6 +865,7 @@ export type Database = {
             | "seguimiento"
             | "calificado"
             | "cotizacion"
+            | "ganado"
             | "descartado";
           valor_estimado: number | null;
           responsable_id: string | null;
@@ -838,6 +880,10 @@ export type Database = {
           nivel_confianza: "alto" | "medio" | "bajo" | null;
           contexto: string | null;
           presupuesto_estimado: number | null;
+          monto_propuesto_desarrollo: number | null;
+          monto_propuesto_mensual: number | null;
+          monto_negociado_desarrollo: number | null;
+          monto_negociado_mensual: number | null;
           motivo_descarte: string | null;
           notas: string | null;
           vendedor_id: string | null;
@@ -861,6 +907,7 @@ export type Database = {
             | "seguimiento"
             | "calificado"
             | "cotizacion"
+            | "ganado"
             | "descartado";
           valor_estimado?: number | null;
           responsable_id?: string | null;
@@ -875,6 +922,10 @@ export type Database = {
           nivel_confianza?: "alto" | "medio" | "bajo" | null;
           contexto?: string | null;
           presupuesto_estimado?: number | null;
+          monto_propuesto_desarrollo?: number | null;
+          monto_propuesto_mensual?: number | null;
+          monto_negociado_desarrollo?: number | null;
+          monto_negociado_mensual?: number | null;
           motivo_descarte?: string | null;
           notas?: string | null;
           vendedor_id?: string | null;
@@ -898,6 +949,7 @@ export type Database = {
             | "seguimiento"
             | "calificado"
             | "cotizacion"
+            | "ganado"
             | "descartado";
           valor_estimado?: number | null;
           responsable_id?: string | null;
@@ -912,6 +964,10 @@ export type Database = {
           nivel_confianza?: "alto" | "medio" | "bajo" | null;
           contexto?: string | null;
           presupuesto_estimado?: number | null;
+          monto_propuesto_desarrollo?: number | null;
+          monto_propuesto_mensual?: number | null;
+          monto_negociado_desarrollo?: number | null;
+          monto_negociado_mensual?: number | null;
           motivo_descarte?: string | null;
           notas?: string | null;
           vendedor_id?: string | null;
@@ -929,6 +985,57 @@ export type Database = {
           {
             foreignKeyName: "leads_vendedor_id_fkey";
             columns: ["vendedor_id"];
+            isOneToOne: false;
+            referencedRelation: "usuarios";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      leads_negociaciones: {
+        Row: {
+          id: string;
+          lead_id: string;
+          monto_anterior_desarrollo: number | null;
+          monto_anterior_mensual: number | null;
+          monto_nuevo_desarrollo: number | null;
+          monto_nuevo_mensual: number | null;
+          nota: string | null;
+          creado_por: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          lead_id: string;
+          monto_anterior_desarrollo?: number | null;
+          monto_anterior_mensual?: number | null;
+          monto_nuevo_desarrollo?: number | null;
+          monto_nuevo_mensual?: number | null;
+          nota?: string | null;
+          creado_por?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          lead_id?: string;
+          monto_anterior_desarrollo?: number | null;
+          monto_anterior_mensual?: number | null;
+          monto_nuevo_desarrollo?: number | null;
+          monto_nuevo_mensual?: number | null;
+          nota?: string | null;
+          creado_por?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "leads_negociaciones_lead_id_fkey";
+            columns: ["lead_id"];
+            isOneToOne: false;
+            referencedRelation: "leads";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "leads_negociaciones_creado_por_fkey";
+            columns: ["creado_por"];
             isOneToOne: false;
             referencedRelation: "usuarios";
             referencedColumns: ["id"];
@@ -1254,6 +1361,52 @@ export type Database = {
           created_at?: string;
         };
         Relationships: [];
+      };
+      notas_compartidas: {
+        Row: {
+          id: string;
+          nota_id: string;
+          usuario_id: string;
+          compartida_por: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          nota_id: string;
+          usuario_id: string;
+          compartida_por?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          nota_id?: string;
+          usuario_id?: string;
+          compartida_por?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "notas_compartidas_nota_id_fkey";
+            columns: ["nota_id"];
+            isOneToOne: false;
+            referencedRelation: "notas";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "notas_compartidas_usuario_id_fkey";
+            columns: ["usuario_id"];
+            isOneToOne: false;
+            referencedRelation: "usuarios";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "notas_compartidas_compartida_por_fkey";
+            columns: ["compartida_por"];
+            isOneToOne: false;
+            referencedRelation: "usuarios";
+            referencedColumns: ["id"];
+          }
+        ];
       };
       wiki_categorias: {
         Row: {
@@ -1711,6 +1864,7 @@ export type Database = {
           id: string;
           titulo: string;
           proyecto_id: string | null;
+          lead_id: string | null;
           feature_id: string | null;
           responsable_id: string | null;
           prioridad: "alta" | "media" | "baja";
@@ -1724,6 +1878,7 @@ export type Database = {
           id?: string;
           titulo: string;
           proyecto_id?: string | null;
+          lead_id?: string | null;
           feature_id?: string | null;
           responsable_id?: string | null;
           prioridad?: "alta" | "media" | "baja";
@@ -1737,6 +1892,7 @@ export type Database = {
           id?: string;
           titulo?: string;
           proyecto_id?: string | null;
+          lead_id?: string | null;
           feature_id?: string | null;
           responsable_id?: string | null;
           prioridad?: "alta" | "media" | "baja";
@@ -1752,6 +1908,13 @@ export type Database = {
             columns: ["proyecto_id"];
             isOneToOne: false;
             referencedRelation: "proyectos";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "tareas_lead_id_fkey";
+            columns: ["lead_id"];
+            isOneToOne: false;
+            referencedRelation: "leads";
             referencedColumns: ["id"];
           },
           {

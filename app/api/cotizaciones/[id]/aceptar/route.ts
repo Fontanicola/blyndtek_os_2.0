@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { ensureCarpetaAutomaticaProyecto } from "@/lib/carpetas";
 import { calcularComision } from "@/lib/comisiones/calcular";
+import { ensureClienteDesdeLead } from "@/lib/clientes/ensureClienteDesdeLead";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { generarSlugRoadmap } from "@/lib/proyectos/generarSlug";
 import { FEATURE_A_TAREA } from "@/lib/proyectos/sincronizarFeatureTarea";
@@ -269,8 +270,6 @@ export async function POST(_request: NextRequest, { params }: RouteContext) {
         return await fail("El cliente asociado no existe.", 404);
       }
     } else {
-      let leadForClient: Lead | null = null;
-
       if (currentCotizacion.lead_id) {
         const { data: leadData, error: leadDataError } = await supabase
           .from("leads")
@@ -286,41 +285,50 @@ export async function POST(_request: NextRequest, { params }: RouteContext) {
           return await fail("Lead asociado no encontrado.", 404);
         }
 
-        leadForClient = leadData as Lead;
+        currentStep = "creación de cliente";
+        const clienteResult = await ensureClienteDesdeLead(supabase, {
+          lead: leadData as Lead,
+          vendedorIdFallback: null
+        });
+
+        clienteId = clienteResult.cliente.id;
+        created.clienteId = clienteId;
+        created.createdCliente = clienteResult.created;
+        mutating = true;
+      } else {
+        currentStep = "creación de cliente";
+        const clientePayload = {
+          lead_id: currentCotizacion.lead_id,
+          empresa: currentCotizacion.empresa,
+          pais: null,
+          contacto_nombre: null,
+          contacto_email: null,
+          contacto_whatsapp: null,
+          datos_facturacion: null,
+          estado: "activo" as const,
+          notas: null,
+          vendedor_id: null
+        };
+
+        const { data: createdCliente, error: createdClienteError } = await supabase
+          .from("clientes")
+          .insert(clientePayload)
+          .select("id")
+          .single();
+
+        if (createdClienteError) {
+          return await fail(createdClienteError.message);
+        }
+
+        if (!createdCliente) {
+          return await fail("No se pudo crear el cliente.");
+        }
+
+        clienteId = createdCliente.id;
+        created.clienteId = clienteId;
+        created.createdCliente = true;
+        mutating = true;
       }
-
-      currentStep = "creación de cliente";
-      const clientePayload = {
-        lead_id: currentCotizacion.lead_id,
-        empresa: currentCotizacion.empresa,
-        pais: null,
-        contacto_nombre: leadForClient?.contacto_1_nombre ?? null,
-        contacto_email: null,
-        contacto_whatsapp: leadForClient?.contacto_1_tel ?? null,
-        datos_facturacion: null,
-        estado: "activo" as const,
-        notas: null,
-        vendedor_id: leadForClient?.vendedor_id ?? null
-      };
-
-      const { data: createdCliente, error: createdClienteError } = await supabase
-        .from("clientes")
-        .insert(clientePayload)
-        .select("id")
-        .single();
-
-      if (createdClienteError) {
-        return await fail(createdClienteError.message);
-      }
-
-      if (!createdCliente) {
-        return await fail("No se pudo crear el cliente.");
-      }
-
-      clienteId = createdCliente.id;
-      created.clienteId = clienteId;
-      created.createdCliente = true;
-      mutating = true;
     }
 
     if (!clienteId) {
@@ -416,7 +424,6 @@ export async function POST(_request: NextRequest, { params }: RouteContext) {
           vendedor_id: clienteRecord.vendedor_id,
           cliente_id: clienteId,
           cotizacion_id: currentCotizacion.id,
-          proyecto_id: proyectoId,
           tipo: "venta",
           estado: "pendiente",
           monto_venta: montoVenta,

@@ -538,6 +538,34 @@ Estado general actual: Fase 0 completa. Cimientos técnicos listos: documentaci�
   - La ruta `/calendario` quedó incluida correctamente en el build final.
 - Estado: completo.
 
+### ✅ 2.5 — Invitaciones a eventos
+
+- Archivos creados/modificados:
+  - `supabase/migrations/007_eventos_invitaciones.sql`
+  - `types/eventos.ts`
+  - `types/eventosInvitados.ts`
+  - `types/supabase.ts`
+  - `lib/eventos/invitaciones.ts`
+  - `app/api/eventos/route.ts`
+  - `app/api/eventos/[id]/route.ts`
+  - `app/api/eventos/[id]/invitados/route.ts`
+  - `app/api/eventos/[id]/invitados/[invitadoId]/route.ts`
+  - `app/api/eventos-invitados/route.ts`
+  - `app/api/eventos-invitados/[id]/route.ts`
+  - `app/api/calendario/route.ts`
+  - `components/calendario/CalendarioClient.tsx`
+  - `components/calendario/EventoModal.tsx`
+- Contenido:
+  - Se incorporó el sistema de invitaciones a eventos con tabla propia `eventos_invitados`, RLS por invitado/organizador y estados `pendiente`, `aceptado`, `rechazado` y `propuesta_alternativa`.
+  - El formulario de evento ahora permite invitar usuarios del sistema, y las invitaciones se sincronizan al crear o editar el evento.
+  - El calendario filtra la visibilidad de eventos para usuarios no admin según sus eventos propios y las invitaciones aceptadas.
+  - Los invitados reciben un aviso persistente con acciones para aceptar, rechazar o proponer otro horario; el organizador puede resolver propuestas alternativas desde el modal del evento.
+- Verificación:
+  - `npm run lint` limpio.
+  - `npm run build` sin errores de tipos.
+  - La implementación quedó documentada con la estructura real de `eventos` y la nueva tabla `eventos_invitados`.
+- Estado: completo.
+
 ## Fase 3 — v3 (pendiente)
 
 ### ✅ 3.1 — Módulo Finanzas
@@ -1421,9 +1449,82 @@ Estado general actual: Fase 0 completa. Cimientos técnicos listos: documentaci�
 - `Finanzas` quedó restringido a admin desde el page server-side, y el egreso automático ya se refleja también en la tabla de `Egresos`.
 - Verificación ejecutada: `npm run lint` y `npm run build` pasan correctamente.
 
+## 2026-07-13 — Tareas por usuario y notas compartidas
+
+- Las tareas ahora quedan scoped por usuario: los no-admin solo ven y editan sus propias tareas, y el admin puede cambiar el selector para ver todas o filtrar por usuario.
+- Se agregó `notas_compartidas` con RLS para que admin comparta notas puntuales con usuarios comerciales; los comerciales solo ven lo creado por ellos o lo compartido explícitamente.
+- `NotaEditor` incorporó el menú de compartir, el listado de usuarios comerciales y el indicador visual cuando una nota tiene accesos compartidos.
+- Verificación ejecutada: `npm run lint` y `npm run build` pasan limpios.
+
 ## 2026-07-13 — Runway Lab con cobros y suscripciones pendientes opcionales
 
 - Se agregó el endpoint `GET /api/finanzas/runway` para servir la proyección de runway con el modo conservador por defecto y con `incluirPendientes=true` cuando se quiere sumar ingresos esperados.
 - El `Runway Lab` sumó un switch para incorporar cobros pendientes y suscripciones pendientes sobre la base actual, manteniendo las hipótesis de costo como una capa adicional encima de esa base.
 - Los cobros o suscripciones pendientes sin fecha esperada quedan fuera de la curva y se reportan aparte, para no inventar una fecha arbitraria que infle el runway.
 - Verificación ejecutada: `npm run lint` y `npm run build` pasan correctamente.
+
+## 2026-07-13 — Mi panel comercial conectado y operativo
+
+- Se creó la ruta `/mi-panel` para usuarios con rol `comercial`, se agregó al menú como primer ítem visible para ese rol y se ajustó el default route para que llegue ahí tras el login.
+- El backend de métricas devuelve leads totales, embudo por etapa, clientes convertidos, ventas del mes, comisiones pendientes/pagadas y bono disponible, y la vista muestra KPIs, embudo simple y tabla de comisiones propias.
+- Se corrigió el runtime que rompía la vista por columnas fantasmas en `comisiones` (`proyecto_id`, `porcentaje`, `config_comisiones_id`, `updated_at`) y se adaptó la respuesta para derivar el porcentaje sin depender de campos inexistentes.
+- Verificación ejecutada: abrí `/mi-panel` en el navegador autenticado con el usuario comercial de prueba `test.comercial@gmail.com` y confirmé que la ruta responde 200 y deja de mostrar 404; luego `npm run lint` y `npm run build` pasaron correctamente.
+
+## 2026-07-14 — Leads unificados: Outbound + Inbound en una sola vista
+
+- La navegación comercial renombró `Outbound` a `Leads` y eliminó la sección separada `Inbound`; ahora el menú apunta a `/leads` y `/outbound` quedó como redirect de compatibilidad.
+- La nueva vista `/leads` unifica los leads de ambos canales en un solo kanban: el canal sigue existiendo como dato de referencia y se muestra como badge en cada card, pero ya no segmenta la navegación.
+- `Notas` e `InboundFicha` se actualizaron para enlazar a la nueva ruta canónica `/leads`, y `middleware`/`lib/auth` se ajustaron para permitir el redirect legacy sin reexponer `/inbound`.
+- Se limpió el runtime stale de Next con un build limpio antes de la verificación, porque el server de producción viejo estaba sirviendo chunks obsoletos y devolviendo 500 en `/login`.
+- Verificación ejecutada: `npm run build` y `npm run lint` pasan; además se validó con un usuario comercial autenticado que `/leads` responde 200 y renderiza el kanban con el menú actualizado, mientras que `/inbound` ya no existe como ruta.
+
+## 2026-07-14 — Leads: etapa `ganado`, negociación y comisión final
+
+- Se incorporó la etapa `ganado` al flujo de leads y al kanban, ubicada antes de `descartado`, con modales progresivos según la etapa de destino para registrar toque, calificación, propuesta y cierre.
+- Al cerrar un lead como `ganado` ahora se reutiliza la conversión lead→cliente, se registra el historial de negociación en `leads_negociaciones` cuando el monto final difiere del propuesto y, si corresponde, se dispara la comisión sobre el monto final acordado.
+- La documentación de esquema quedó alineada con el enum efectivo de `leads.etapa`, que ahora incluye `ganado`; no se creó una columna nueva de notas de calificación porque se reutilizó `leads.notas` para ese historial breve.
+- Aun no pude leer desde el entorno el nombre exacto del CHECK constraint remoto de Supabase, así que documenté el valor efectivo de la etapa en el repo y dejé el flujo consistente en tipos, APIs y UI.
+
+## 2026-07-14 — Middleware Edge rearmado sin `@supabase/ssr`
+
+- Se eliminó la regresión que reintroducía `createServerClient` en `middleware.ts`, volviendo al patrón liviano de `fetch()` directo contra `auth/v1/user` y `rest/v1/usuarios`.
+- La causa exacta del warning de Vercel era el empaquetado de `@supabase/supabase-js` dentro del middleware Edge, que elevaba el bundle y disparaba el error de Node.js API no soportada.
+- Verificación local ejecutada: `npm run build` ya no emite el warning de Edge Runtime y el tamaño reportado del middleware bajó a 27.8 kB; `npm run lint` también pasa limpio.
+
+## 2026-07-14 — Finanzas: comisiones sin `proyecto_id`
+
+- Se corrigió la route de comisiones para no escribir ni exponer `comisiones.proyecto_id`, que no existe en la tabla real y estaba rompiendo `/finanzas`.
+- La referencia a proyecto, cuando hace falta a nivel de reporting, debe resolverse desde `cliente_id` / `cotizacion_id` y no como FK directa en `comisiones`.
+- Se alinearon también los tipos generados y los helpers de creación de comisiones para que no vuelvan a intentar insertar ese campo fantasma.
+- Verificación ejecutada: `npm run build` y `npm run lint` pasan, y una pasada de búsqueda no dejó referencias activas de `comisiones.proyecto_id` en el código de app.
+
+## 2026-07-14 — Equipo comercial: boundary cliente/servidor corregido
+
+- Se corrigió `components/ui/Card.tsx`, que estaba renderizando handlers de evento en JSX sin `use client` y rompía la ruta `/equipo-comercial` con el error de Event Handlers en Client Components.
+- `app/(app)/equipo-comercial/page.tsx` puede seguir siendo Server Component; el problema estaba en la card reutilizable que esa vista monta para cada vendedor.
+- Verificación ejecutada: `npm run build` y `npm run lint` pasan correctamente luego del fix.
+
+## 2026-07-14 — Limpieza de comillas escapadas literales
+
+- Se revisó el repo en busca de líneas corruptas con comillas escapadas tipo `\"use client\";`.
+- Archivo afectado y corregido: `components/ui/Card.tsx`.
+- Verificación final: el grep específico volvió a correr y no devolvió coincidencias; `npm run build` y `npm run lint` pasan sin errores de sintaxis.
+
+## 2026-07-14 — Middleware: loop de `/login` cortado y cookies inválidas limpiadas
+
+- Se corrigió `middleware.ts` para que nunca redirija `/login` hacia sí misma cuando hay una cookie de sesión inválida o vencida.
+- Ahora, ante fallo de auth o rol, el middleware borra todas las cookies `sb-*-auth-token*` y, si la ruta ya es `/login`, deja renderizar la página en vez de volver a redirigir.
+- Verificación local ejecutada: `npm run build` y `npm run lint` pasan correctamente luego del fix.
+
+## 2026-07-14 — Login: navegación completa para evitar la carrera de cookies
+
+- El login hacía `router.push("/dashboard")` inmediatamente después de `signInWithPassword`, y eso permitía que `/dashboard` llegara al middleware antes de que la cookie de sesión nueva estuviera persistida en el navegador.
+- La causa confirmada fue una carrera de timing entre persistencia de cookies y navegación client-side; el middleware veía la request sin un token válido a tiempo y devolvía a `/login`.
+- Se cambió `components/auth/LoginForm.tsx` para usar `window.location.href = "/dashboard"` y forzar una navegación completa del navegador, garantizando que la request siguiente lleve la cookie ya escrita.
+- Verificación local ejecutada: `npm run build` y `npm run lint` pasan correctamente luego del cambio.
+
+## 2026-07-14 — Limpieza de comillas escapadas en seed y descarga de archivos
+
+- Se corrigieron `app/api/wiki/seed-estandares/route.ts` y `app/api/archivos/[id]/descargar/route.ts`, que seguían teniendo comillas escapadas literales `\"` en el fuente.
+- Se volvió a correr el grep global sobre `*.ts` y `*.tsx` fuera de `node_modules` y `.next`, y no quedaron resultados.
+- Verificación ejecutada: `npm run build` y `npm run lint` pasan correctamente luego del ajuste.

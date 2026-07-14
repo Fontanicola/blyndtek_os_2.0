@@ -25,7 +25,7 @@
 | contacto_2_nombre | text | No especificado |  |
 | contacto_2_tel | text | No especificado |  |
 | web | text | No especificado |  |
-| etapa | enum (`por_contactar|contactado|seguimiento|calificado|cotizacion|descartado`) | No especificado |  |
+| etapa | enum (`por_contactar|contactado|seguimiento|calificado|cotizacion|ganado|descartado`) | No especificado |  |
 | valor_estimado | numeric (USD) | No especificado |  |
 | responsable_id | uuid | No especificado | FK → `usuarios` |
 | llamada_fecha | date | No especificado |  |
@@ -43,6 +43,8 @@
 | notas | text | No especificado |  |
 | created_at | timestamptz | No especificado |  |
 | updated_at | timestamptz | No especificado |  |
+
+> Nota: el esquema documentado originalmente no incluía `ganado`; la definición efectiva usada por la app se amplió para reflejar la etapa de cierre antes de `descartado`.
 
 ## Tabla: clientes
 
@@ -108,7 +110,7 @@
 
 **FKs:** `cotizacion_id` → `cotizaciones.id`; `cliente_id` → `clientes.id`; `responsable_id` → `usuarios.id`; `devs_asignados` → `usuarios.id` (array FK)
 
-**RLS esperada:** acceso para `admin` sí; acceso para `miembro` sí.
+**RLS esperada:** acceso para `admin` sí; acceso para `miembro` sí sobre sus tareas; acceso para `comercial` restringido a sus propias tareas.
 
 | Campo | Tipo | Nullable | Notas |
 | --- | --- | --- | --- |
@@ -266,6 +268,26 @@
 | referencia_tipo | text | No especificado | `tarea|lead|cobro` |
 | referencia_id | uuid | No especificado | ID del objeto referenciado |
 | google_event_id | text | No especificado | para sincronización |
+| created_at | timestamptz | No especificado |  |
+
+## Tabla: eventos_invitados
+
+**PK:** `id`
+
+**FKs:** `evento_id` → `eventos.id`; `usuario_id` → `usuarios.id`
+
+**RLS esperada:** el invitado ve/actualiza su fila; el organizador del evento ve todas las invitaciones de sus eventos.
+
+| Campo | Tipo | Nullable | Notas |
+| --- | --- | --- | --- |
+| id | uuid | No | PK |
+| evento_id | uuid | No especificado | FK → `eventos` |
+| usuario_id | uuid | No especificado | FK → `usuarios` |
+| estado | text | No especificado | `pendiente|aceptado|rechazado|propuesta_alternativa` |
+| fecha_propuesta_alt | date | Sí | fecha alternativa propuesta |
+| hora_propuesta_alt | time | Sí | hora alternativa propuesta |
+| comentario | text | Sí | comentario opcional del invitado |
+| respondido_at | timestamptz | Sí | fecha de respuesta |
 | created_at | timestamptz | No especificado |  |
 
 ## Tabla: cobros
@@ -501,7 +523,7 @@
 
 **FKs:** `carpeta_id` → `carpetas_notas.id`; `cliente_id` → `clientes.id`; `proyecto_id` → `proyectos.id`; `lead_id` → `leads.id`; `creado_por` → `usuarios.id`
 
-**RLS esperada:** acceso para `admin` sí; acceso para `miembro` sí sobre sus notas.
+**RLS esperada:** acceso para `admin` sí; acceso para `miembro` sí sobre sus notas; acceso para `comercial` solo sobre notas creadas por él o compartidas explícitamente.
 
 | Campo | Tipo | Nullable | Notas |
 | --- | --- | --- | --- |
@@ -518,6 +540,22 @@
 | tags | text[] | Sí | etiquetas libres de la nota |
 | creado_por | uuid | Sí | FK → `usuarios` |
 | updated_at | timestamptz | No |  |
+| created_at | timestamptz | No |  |
+
+## Tabla: notas_compartidas
+
+**PK:** `id`
+
+**FKs:** `nota_id` → `notas.id`; `usuario_id` → `usuarios.id`; `compartida_por` → `usuarios.id`
+
+**RLS esperada:** acceso para `admin` sí; acceso para `comercial` solo a sus propios registros de compartición.
+
+| Campo | Tipo | Nullable | Notas |
+| --- | --- | --- | --- |
+| id | uuid | No | PK |
+| nota_id | uuid | No | FK → `notas` |
+| usuario_id | uuid | No | usuario receptor del acceso |
+| compartida_por | uuid | Sí | FK → `usuarios` |
 | created_at | timestamptz | No |  |
 
 ## Tabla: notas_etiquetas
@@ -611,6 +649,8 @@
 - `tareas.proyecto_id` → `proyectos.id`
 - `tareas.responsable_id` → `usuarios.id`
 - `eventos.usuario_id` → `usuarios.id`
+- `eventos_invitados.evento_id` → `eventos.id`
+- `eventos_invitados.usuario_id` → `usuarios.id`
 - `cobros.cliente_id` → `clientes.id`
 - `cobros.proyecto_id` → `proyectos.id`
 - `cobros.suscripcion_id` → `suscripciones.id`
@@ -647,18 +687,19 @@ Orden sugerido respetando dependencias de FK:
 10. `cuentas_servicios`
 11. `tareas`
 12. `eventos`
-13. `suscripciones`
-14. `cobros`
-15. `egresos`
-16. `config_finanzas`
-17. `cajas`
-18. `wiki_categorias`
-19. `wiki_articulos`
-20. `carpetas`
-21. `archivos`
-22. `tarjetas`
+13. `eventos_invitados`
+14. `suscripciones`
+15. `cobros`
+16. `egresos`
+17. `config_finanzas`
+18. `cajas`
+19. `wiki_categorias`
+20. `wiki_articulos`
+21. `carpetas`
+22. `archivos`
+23. `tarjetas`
 
-Nota: `usuarios` debe existir antes que `leads`, `proyectos`, `features`, `tareas` y `eventos`. `suscripciones` y `cobros` tienen una referencia circular potencial que hay que resolver con FK nullable o deferrable.
+Nota: `usuarios` debe existir antes que `leads`, `proyectos`, `features`, `tareas`, `eventos` y `eventos_invitados`. `suscripciones` y `cobros` tienen una referencia circular potencial que hay que resolver con FK nullable o deferrable.
 
 ### Columnas nuevas registradas
 
@@ -680,6 +721,7 @@ Nota: `usuarios` debe existir antes que `leads`, `proyectos`, `features`, `tarea
 - `comisiones` registra las comisiones generadas al aceptar cotizaciones, con base, porcentaje, monto y estado de pago.
 - `config_comisiones` guarda el piso, tiers y bono vigentes para calcular comisiones sin hardcodear valores.
 - `egresos.comision_id` uuid nullable para trazar el egreso generado al pagar una comisión y mantener el impacto contable y de runway en caja real.
+- `comisiones` no tiene `proyecto_id`; cualquier referencia de proyecto para reporting debe resolverse vía `cliente_id` / `cotizacion_id` y joins a `proyectos` según contexto.
 
 ### Tabla nueva
 

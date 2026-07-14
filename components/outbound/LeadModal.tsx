@@ -9,6 +9,7 @@ import {
   sanitizeNumberValue,
   sanitizeTextValue
 } from "@/lib/leads";
+import { LeadNegociacionesSection } from "@/components/leads/LeadNegociacionesSection";
 import { cn } from "@/lib/cn";
 import type { CreateLeadInput, Lead, UpdateLeadInput } from "@/types/leads";
 
@@ -49,6 +50,10 @@ function toDraft(lead: Lead | null): CreateLeadInput {
     nivel_confianza: lead.nivel_confianza,
     contexto: lead.contexto,
     presupuesto_estimado: lead.presupuesto_estimado,
+    monto_propuesto_desarrollo: lead.monto_propuesto_desarrollo,
+    monto_propuesto_mensual: lead.monto_propuesto_mensual,
+    monto_negociado_desarrollo: lead.monto_negociado_desarrollo,
+    monto_negociado_mensual: lead.monto_negociado_mensual,
     motivo_descarte: lead.motivo_descarte,
     notas: lead.notas
   };
@@ -117,6 +122,17 @@ export function LeadModal({ lead, isOpen, onClose, onSave, onDelete }: LeadModal
     >
       <form onSubmit={handleSave} className="space-y-5">
         <div className="grid gap-4 md:grid-cols-2">
+          <div className="space-y-1">
+            <label className="block text-sm font-label text-carbon">Canal</label>
+            <select
+              value={form.canal}
+              onChange={(event) => setField("canal", event.target.value as CreateLeadInput["canal"])}
+              className={fieldClassName}
+            >
+              <option value="outbound">Outbound</option>
+              <option value="inbound">Inbound</option>
+            </select>
+          </div>
           <Input
             label="Empresa"
             value={form.empresa}
@@ -256,6 +272,8 @@ export function LeadModal({ lead, isOpen, onClose, onSave, onDelete }: LeadModal
             className={cn(fieldClassName, "min-h-[110px] resize-none")}
           />
         </div>
+
+        {lead ? <LeadNegociacionesSection lead={lead} /> : null}
 
         <div className="flex items-center justify-between gap-3 border-t border-line-soft pt-4">
           <div>

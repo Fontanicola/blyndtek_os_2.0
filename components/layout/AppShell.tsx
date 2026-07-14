@@ -12,7 +12,7 @@ type AppShellProps = {
 };
 
 export function AppShell({ children, usuario }: AppShellProps) {
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "/";
   const [isOpen, setIsOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 

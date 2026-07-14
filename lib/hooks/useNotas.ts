@@ -115,6 +115,17 @@ export function useNotas() {
     return payload.data;
   }, []);
 
+  const fetchNotaCompartidas = useCallback(async (id: string) => {
+    const response = await fetch(`/api/notas/${id}/compartir`);
+    const payload = (await response.json()) as ApiResponse<string[]>;
+
+    if (!response.ok || !payload.data) {
+      throw new Error(payload.error ?? "No se pudieron cargar los usuarios compartidos.");
+    }
+
+    return payload.data;
+  }, []);
+
   const persistNota = useCallback(
     async (id: string, input: UpdateNotaInput) => {
       const response = await fetch(`/api/notas/${id}`, {
@@ -368,6 +379,25 @@ export function useNotas() {
     [fetchNotas]
   );
 
+  const updateNotaCompartidas = useCallback(async (id: string, usuarioIds: string[]) => {
+    setError(null);
+
+    const response = await fetch(`/api/notas/${id}/compartir`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ usuario_ids: usuarioIds })
+    });
+    const payload = (await response.json()) as ApiResponse<string[]>;
+
+    if (!response.ok || !payload.data) {
+      throw new Error(payload.error ?? "No se pudieron actualizar los usuarios compartidos.");
+    }
+
+    return payload.data;
+  }, []);
+
   useEffect(() => {
     void fetchNotas({ papelera: false });
   }, [fetchNotas]);
@@ -398,6 +428,8 @@ export function useNotas() {
     toggleFijada,
     eliminarNota,
     restaurarNota,
-    eliminarDefinitivo
+    eliminarDefinitivo,
+    fetchNotaCompartidas,
+    updateNotaCompartidas
   };
 }

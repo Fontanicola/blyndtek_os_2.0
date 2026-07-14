@@ -24,7 +24,15 @@ type CommercialUserMetrics = {
   tasaConversion: number | null;
 };
 
-const ETAPAS = ["por_contactar", "contactado", "seguimiento", "calificado", "cotizacion", "descartado"] as const;
+const ETAPAS = [
+  "por_contactar",
+  "contactado",
+  "seguimiento",
+  "calificado",
+  "cotizacion",
+  "ganado",
+  "descartado"
+] as const;
 
 function startOfMonth(date: Date) {
   return new Date(date.getFullYear(), date.getMonth(), 1);

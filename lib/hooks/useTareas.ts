@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { sortTareas } from "@/lib/tareas";
 import type { CreateTareaInput, EstadoTarea, PrioridadTarea, Tarea, UpdateTareaInput } from "@/types/tareas";
 
@@ -57,14 +57,17 @@ async function readJsonResponse<T>(response: Response): Promise<T> {
   throw new Error(text ? text.slice(0, 200) : "Unexpected non-JSON response from /api/tareas.");
 }
 
-export function useTareas() {
+export function useTareas(initialFilters?: TareaFilters) {
   const [tareas, setTareas] = useState<Tarea[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const initialFiltersRef = useRef<TareaFilters | undefined>(initialFilters);
+  const currentFiltersRef = useRef<TareaFilters | undefined>(initialFilters);
 
   const fetchTareas = useCallback(async (filters?: TareaFilters) => {
     setLoading(true);
     setError(null);
+    currentFiltersRef.current = filters;
 
     try {
       const response = await fetch(`/api/tareas${buildQueryString(filters)}`);
@@ -162,12 +165,12 @@ export function useTareas() {
   }, []);
 
   useEffect(() => {
-    void fetchTareas();
+    void fetchTareas(initialFiltersRef.current);
   }, [fetchTareas]);
 
   useEffect(() => {
     function handleRefresh() {
-      void fetchTareas();
+      void fetchTareas(currentFiltersRef.current);
     }
 
     window.addEventListener(refreshEventName, handleRefresh);

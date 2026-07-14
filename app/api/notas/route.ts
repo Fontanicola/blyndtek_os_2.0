@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
+import { fetchNotasCompartidasNotaIds } from "@/lib/notas/acceso";
 import { createEmptyTipTapContent, matchesNotaSearch, sanitizeNotaTags, sortNotas } from "@/lib/notas";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { CreateNotaInput, Nota } from "@/types/notas";
@@ -24,9 +25,62 @@ function optionalTrim(value: string | null) {
   return value?.trim() || null;
 }
 
+function applyNotaFilters(
+  query: ReturnType<ReturnType<typeof createAdminClient>["from"]>,
+  params: {
+    carpetaId: string | null;
+    fijadas: boolean | null;
+    papelera: boolean | null;
+    clienteId: string | null;
+    proyectoId: string | null;
+    leadId: string | null;
+    tag: string | null;
+  }
+) {
+  let next = query;
+
+  if (params.carpetaId) {
+    next = next.eq("carpeta_id", params.carpetaId);
+  }
+
+  if (params.fijadas !== null) {
+    next = next.eq("fijada", params.fijadas);
+  }
+
+  if (params.papelera !== null) {
+    next = next.eq("en_papelera", params.papelera);
+  } else {
+    next = next.eq("en_papelera", false);
+  }
+
+  if (params.clienteId) {
+    next = next.eq("cliente_id", params.clienteId);
+  }
+
+  if (params.proyectoId) {
+    next = next.eq("proyecto_id", params.proyectoId);
+  }
+
+  if (params.leadId) {
+    next = next.eq("lead_id", params.leadId);
+  }
+
+  if (params.tag) {
+    next = next.contains("tags", [params.tag]);
+  }
+
+  return next.order("fijada", { ascending: false }).order("updated_at", { ascending: false });
+}
+
 export async function GET(request: NextRequest) {
   try {
     const supabase = createAdminClient();
+    const currentUser = await getCurrentUser();
+
+    if (!currentUser) {
+      return NextResponse.json({ error: "No autenticado." }, { status: 401 });
+    }
+
     const searchParams = request.nextUrl.searchParams;
     const carpetaId = optionalTrim(searchParams.get("carpeta_id"));
     const fijadas = parseBoolean(searchParams.get("fijadas"));
@@ -37,51 +91,54 @@ export async function GET(request: NextRequest) {
     const leadId = optionalTrim(searchParams.get("lead_id"));
     const tag = optionalTrim(searchParams.get("tag"));
 
-    let query = supabase.from("notas").select("*");
+    const buildQuery = () =>
+      applyNotaFilters(supabase.from("notas").select("*"), {
+        carpetaId,
+        fijadas,
+        papelera,
+        clienteId,
+        proyectoId,
+        leadId,
+        tag
+      });
 
-    if (carpetaId) {
-      query = query.eq("carpeta_id", carpetaId);
-    }
+    let data: Nota[] = [];
 
-    if (fijadas !== null) {
-      query = query.eq("fijada", fijadas);
-    }
+    if (currentUser.rol === "comercial") {
+      const sharedIds = await fetchNotasCompartidasNotaIds(supabase, currentUser.id);
 
-    if (papelera !== null) {
-      query = query.eq("en_papelera", papelera);
+      const ownQuery = buildQuery().eq("creado_por", currentUser.id);
+      const sharedQuery = sharedIds.length > 0 ? buildQuery().in("id", sharedIds) : null;
+
+      const [ownResult, sharedResult] = await Promise.all([
+        ownQuery,
+        sharedQuery ?? Promise.resolve({ data: [], error: null })
+      ]);
+
+      if ("error" in ownResult && ownResult.error) {
+        return NextResponse.json({ error: ownResult.error.message }, { status: 500 });
+      }
+
+      if ("error" in sharedResult && sharedResult.error) {
+        return NextResponse.json({ error: sharedResult.error.message }, { status: 500 });
+      }
+
+      const combined = [...((ownResult.data ?? []) as Nota[]), ...((sharedResult.data ?? []) as Nota[])];
+      const deduped = Array.from(new Map(combined.map((note) => [note.id, note])).values());
+      data = deduped;
     } else {
-      query = query.eq("en_papelera", false);
+      const { data: noteRows, error } = await buildQuery();
+
+      if (error) {
+        return NextResponse.json({ error: error.message }, { status: 500 });
+      }
+
+      data = (noteRows ?? []) as Nota[];
     }
 
-    if (clienteId) {
-      query = query.eq("cliente_id", clienteId);
-    }
+    const filtered = buscar ? data.filter((note) => matchesNotaSearch(note, buscar)) : data;
 
-    if (proyectoId) {
-      query = query.eq("proyecto_id", proyectoId);
-    }
-
-    if (leadId) {
-      query = query.eq("lead_id", leadId);
-    }
-
-    if (tag) {
-      query = query.contains("tags", [tag]);
-    }
-
-    const { data, error } = await query.order("fijada", { ascending: false }).order("updated_at", {
-      ascending: false
-    });
-
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-
-    const filtered = buscar
-      ? (data ?? []).filter((note) => matchesNotaSearch(note as Nota, buscar))
-      : data ?? [];
-
-    return NextResponse.json({ data: sortNotas(filtered as Nota[]) });
+    return NextResponse.json({ data: sortNotas(filtered) });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unexpected error";
     return NextResponse.json({ error: message }, { status: 500 });

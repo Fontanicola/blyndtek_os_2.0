@@ -16,7 +16,7 @@ function isActivePath(pathname: string, href: string) {
 }
 
 export function Dock({ usuario }: DockProps) {
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "/";
   const visibleItems = useMemo(
     () => (usuario ? navigationItems.filter((item) => item.roles.includes(usuario.rol)) : []),
     [usuario]

@@ -1,6 +1,6 @@
 "use client";
 
-import { UserAvatar } from "@/components/ui";
+import { Badge, UserAvatar } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { isLeadOverdue } from "@/lib/leads";
 import type { Usuario } from "@/types/auth";
@@ -15,6 +15,14 @@ type LeadCardProps = {
   isDragging?: boolean;
   responsableUsuario?: Pick<Usuario, "nombre" | "foto_url"> | null;
 };
+
+function getLeadBackgroundClass(etapa: Lead["etapa"]) {
+  if (etapa === "ganado") {
+    return "!bg-success-light";
+  }
+
+  return "!bg-white";
+}
 
 export function LeadCard({
   lead,
@@ -36,7 +44,8 @@ export function LeadCard({
       onDragEnd={onDragEnd}
       onClick={onClick}
       className={cn(
-        "w-full rounded-card bg-white p-4 text-left shadow-soft transition-all duration-fast ease-fast hover:shadow-card",
+        "w-full rounded-card p-4 text-left shadow-soft transition-all duration-fast ease-fast hover:shadow-card",
+        getLeadBackgroundClass(lead.etapa),
         "border-l-2 border-transparent",
         overdue && "border-warning",
         isDragging && "opacity-50"
@@ -48,11 +57,17 @@ export function LeadCard({
           {meta ? <p className="mt-1 text-xs text-graphite">{meta}</p> : null}
         </div>
 
-        {lead.valor_estimado !== null ? (
-          <span className="shrink-0 text-sm font-label text-carbon">
-            USD {lead.valor_estimado.toLocaleString("en-US")}
-          </span>
-        ) : null}
+        <div className="flex shrink-0 items-center gap-2">
+          <Badge variant={lead.canal === "outbound" ? "signal" : "warning"} className="text-[10px]">
+            {lead.canal === "outbound" ? "Outbound" : "Inbound"}
+          </Badge>
+
+          {lead.valor_estimado !== null ? (
+            <span className="text-sm font-label text-carbon">
+              USD {lead.valor_estimado.toLocaleString("en-US")}
+            </span>
+          ) : null}
+        </div>
       </div>
 
       <div className="mt-4 flex items-end justify-between gap-3">

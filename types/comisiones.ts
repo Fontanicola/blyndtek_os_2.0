@@ -16,7 +16,6 @@ export type Comision = {
   vendedor_id: string;
   cliente_id: string;
   cotizacion_id: string | null;
-  proyecto_id: string | null;
   tipo: "venta";
   estado: ComisionEstado;
   monto_venta: number;

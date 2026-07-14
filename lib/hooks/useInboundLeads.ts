@@ -6,12 +6,18 @@ import type {
   CreateLeadInput,
   EtapaLead,
   Lead,
+  LeadStageTransitionInput,
   NivelConfianza,
   UpdateLeadInput
 } from "@/types/leads";
 
 type ApiDataResponse<T> = {
   data?: T;
+  error?: string;
+};
+
+type ApiDeleteResponse = {
+  success?: boolean;
   error?: string;
 };
 
@@ -132,6 +138,50 @@ export function useInboundLeads() {
     return updatedLead;
   }, []);
 
+  const updateEtapa = useCallback(async (id: string, etapa: EtapaLead, input: LeadStageTransitionInput = {}) => {
+    setError(null);
+
+    const response = await fetch(`/api/leads/${id}/etapa`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ etapa, ...input })
+    });
+    const payload = (await response.json()) as ApiDataResponse<Lead>;
+
+    if (!response.ok || !payload.data) {
+      const message = payload.error ?? "No se pudo mover el lead inbound.";
+      setError(message);
+      throw new Error(message);
+    }
+
+    const updatedLead = payload.data;
+
+    setLeads((current) =>
+      sortLeadsByUpdatedAt(current.map((lead) => (lead.id === id ? updatedLead : lead)))
+    );
+
+    return updatedLead;
+  }, []);
+
+  const deleteLead = useCallback(async (id: string) => {
+    setError(null);
+
+    const response = await fetch(`/api/leads/${id}`, {
+      method: "DELETE"
+    });
+    const payload = (await response.json()) as ApiDeleteResponse;
+
+    if (!response.ok || !payload.success) {
+      const message = payload.error ?? "No se pudo eliminar el lead inbound.";
+      setError(message);
+      throw new Error(message);
+    }
+
+    setLeads((current) => current.filter((lead) => lead.id !== id));
+  }, []);
+
   const addNota = useCallback(
     async (id: string, nota: string) => {
       const trimmed = nota.trim();
@@ -167,6 +217,8 @@ export function useInboundLeads() {
     fetchLeads,
     createLead,
     updateLead,
+    updateEtapa,
+    deleteLead,
     addNota
   };
 }

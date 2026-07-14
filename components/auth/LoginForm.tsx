@@ -1,14 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import { Badge, Button, Input } from "@/components/ui";
 import { createClient } from "@/lib/supabase/client";
 
 type LoginStatus = "idle" | "loading" | "error";
 
 export function LoginForm() {
-  const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -32,8 +30,7 @@ export function LoginForm() {
     }
 
     setStatus("idle");
-    router.push("/dashboard");
-    router.refresh();
+    window.location.href = "/dashboard";
   }
 
   return (

@@ -21,7 +21,7 @@ export default function InboundPage() {
   const [search, setSearch] = useState("");
   const [filtros, setFiltros] = useState<FiltrosState>({});
   const [isNuevaFichaOpen, setIsNuevaFichaOpen] = useState(false);
-  const [highlightedLeadId, setHighlightedLeadId] = useState<string | null>(searchParams.get("lead_id"));
+  const [highlightedLeadId, setHighlightedLeadId] = useState<string | null>(searchParams?.get("lead_id") ?? null);
   const [toast, setToast] = useState<{
     visible: boolean;
     message: string;
@@ -37,7 +37,7 @@ export default function InboundPage() {
   }, [fetchLeads, filtros]);
 
   useEffect(() => {
-    const queryLeadId = searchParams.get("lead_id");
+    const queryLeadId = searchParams?.get("lead_id") ?? null;
     if (queryLeadId) {
       setHighlightedLeadId(queryLeadId);
     }

@@ -25,6 +25,9 @@ type NotaEditorProps = {
   availableEtiquetas: NotaEtiqueta[];
   linkedEntityLabel: string | null;
   linkedEntityHref: string | null;
+  isAdmin?: boolean;
+  sharedUserIds?: string[];
+  shareUsers?: Array<{ id: string; nombre: string }>;
   saving: boolean;
   onUpdateNota: (
     id: string,
@@ -51,6 +54,7 @@ type NotaEditorProps = {
   onDraftChange?: (partial: Partial<Nota>) => void;
   onCreateEtiqueta: (input: { nombre: string; color?: NotaEtiquetaColor | null }) => Promise<NotaEtiqueta>;
   onUpdateEtiquetaColor: (id: string, color: NotaEtiquetaColor) => Promise<NotaEtiqueta>;
+  onUpdateNotaCompartidas?: (notaId: string, usuarioIds: string[]) => Promise<void>;
   imageUploadUrl?: string;
 };
 
@@ -84,6 +88,32 @@ function LinkIcon() {
         strokeWidth="1.5"
         strokeLinecap="round"
         strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function PeopleIcon() {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" className="h-4 w-4">
+      <path
+        d="M6.25 8.75a2.25 2.25 0 1 0 0-4.5 2.25 2.25 0 0 0 0 4.5ZM13.75 8.25a1.75 1.75 0 1 0 0-3.5 1.75 1.75 0 0 0 0 3.5Z"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M2.75 15.25c0-2.1 1.7-3.75 3.75-3.75s3.75 1.65 3.75 3.75"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+      <path
+        d="M10.75 15.25c.15-1.8 1.6-3.25 3.4-3.25 1.5 0 2.8.95 3.3 2.3"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
       />
     </svg>
   );
@@ -133,6 +163,9 @@ export function NotaEditor({
   availableEtiquetas,
   linkedEntityLabel,
   linkedEntityHref,
+  isAdmin = false,
+  sharedUserIds = [],
+  shareUsers = [],
   saving,
   onUpdateNota,
   onUpdateNotaInmediata,
@@ -143,6 +176,7 @@ export function NotaEditor({
   onDraftChange,
   onCreateEtiqueta,
   onUpdateEtiquetaColor,
+  onUpdateNotaCompartidas,
   imageUploadUrl = "/api/notas/imagenes/upload"
 }: NotaEditorProps) {
   const [titleDraft, setTitleDraft] = useState("");
@@ -152,6 +186,8 @@ export function NotaEditor({
   const [menuOpen, setMenuOpen] = useState(false);
   const [linkModalOpen, setLinkModalOpen] = useState(false);
   const [folderModalOpen, setFolderModalOpen] = useState(false);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [shareDraft, setShareDraft] = useState<string[]>(sharedUserIds);
   const [linkDraft, setLinkDraft] = useState<NotaVinculoValue>({ tipo: "ninguna", id: null });
   const [folderDraft, setFolderDraft] = useState<string>("");
   const [editingColorTag, setEditingColorTag] = useState<string | null>(null);
@@ -175,6 +211,7 @@ export function NotaEditor({
     setTagInput("");
     setAddingTag(false);
     setFolderDraft(nota.carpeta_id ?? "");
+    setShareDraft(sharedUserIds);
     setLinkDraft(
       nota.cliente_id
         ? { tipo: "cliente", id: nota.cliente_id }
@@ -184,7 +221,7 @@ export function NotaEditor({
             ? { tipo: "lead", id: nota.lead_id }
             : { tipo: "ninguna", id: null }
     );
-  }, [nota]);
+  }, [nota, sharedUserIds]);
 
   useEffect(() => {
     function handlePointerDown(event: MouseEvent) {
@@ -206,6 +243,12 @@ export function NotaEditor({
       tagInputRef.current?.focus();
     }
   }, [addingTag]);
+
+  useEffect(() => {
+    if (shareModalOpen) {
+      setShareDraft(sharedUserIds);
+    }
+  }, [shareModalOpen, sharedUserIds]);
 
   const tagSuggestions = useMemo(() => {
     const query = tagInput.trim().toLowerCase();
@@ -312,6 +355,15 @@ export function NotaEditor({
 
               <StatusDot saving={saving} />
 
+              {isAdmin && sharedUserIds.length > 0 ? (
+                <span
+                  title={`Compartida con ${sharedUserIds.length} usuario${sharedUserIds.length === 1 ? "" : "s"}`}
+                  className="inline-flex items-center text-signal"
+                >
+                  <PeopleIcon />
+                </span>
+              ) : null}
+
               <div className="ml-auto flex items-center gap-1">
                 <IconButton
                   active={nota.fijada}
@@ -331,6 +383,18 @@ export function NotaEditor({
 
                   {menuOpen ? (
                     <div className="absolute right-0 top-full z-20 mt-2 w-56 overflow-hidden rounded-card border border-line-soft bg-white shadow-modal">
+                      {isAdmin ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setMenuOpen(false);
+                            setShareModalOpen(true);
+                          }}
+                          className="flex w-full items-center px-4 py-3 text-left text-sm text-carbon transition-colors duration-fast ease-fast hover:bg-paper"
+                        >
+                          Compartir con...
+                        </button>
+                      ) : null}
                       <button
                         type="button"
                         onClick={() => {
@@ -569,6 +633,61 @@ export function NotaEditor({
                 onDraftChange?.({ carpeta_id: next });
                 void onUpdateNotaInmediata(notaId, { carpeta_id: next });
                 setFolderModalOpen(false);
+              }}
+            >
+              Guardar
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal isOpen={shareModalOpen} onClose={() => setShareModalOpen(false)} title="Compartir con..." size="md">
+        <div className="space-y-4">
+          <div className="max-h-72 space-y-2 overflow-y-auto pr-1">
+            {shareUsers.length > 0 ? (
+              shareUsers.map((user) => {
+                const checked = shareDraft.includes(user.id);
+
+                return (
+                  <label
+                    key={user.id}
+                    className="flex items-center gap-3 rounded-component border border-line-soft px-3 py-2 text-sm text-carbon transition-colors duration-fast ease-fast hover:bg-paper"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() =>
+                        setShareDraft((current) =>
+                          current.includes(user.id)
+                            ? current.filter((item) => item !== user.id)
+                            : [...current, user.id]
+                        )
+                      }
+                      className="h-4 w-4 rounded border-line text-signal focus:ring-signal/20"
+                    />
+                    <span className="min-w-0 flex-1 truncate font-label">{user.nombre}</span>
+                  </label>
+                );
+              })
+            ) : (
+              <div className="rounded-card border border-dashed border-line bg-paper px-3 py-4 text-sm text-graphite">
+                No hay usuarios comerciales activos para compartir.
+              </div>
+            )}
+          </div>
+
+          <div className="flex items-center justify-end gap-2 border-t border-line-soft pt-4">
+            <Button variant="ghost" onClick={() => setShareModalOpen(false)}>
+              Cancelar
+            </Button>
+              <Button
+              onClick={async () => {
+                try {
+                  await onUpdateNotaCompartidas?.(notaId, shareDraft);
+                  setShareModalOpen(false);
+                } catch {
+                  // El error se expone desde el hook; mantenemos el modal abierto.
+                }
               }}
             >
               Guardar

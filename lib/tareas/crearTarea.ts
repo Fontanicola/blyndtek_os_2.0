@@ -22,6 +22,7 @@ export async function crearTareaConAdminClient(
   const payload = {
     titulo,
     proyecto_id: input.proyecto_id?.trim() || null,
+    lead_id: input.lead_id?.trim() || null,
     feature_id: input.feature_id?.trim() || null,
     responsable_id: responsableId,
     prioridad: input.prioridad ?? "media",

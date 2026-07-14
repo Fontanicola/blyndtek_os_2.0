@@ -345,7 +345,7 @@ export function InboundFicha({ lead, onUpdate, onPasarACotizacion }: InboundFich
             entityType="lead"
             entityId={lead.id}
             entityLabel={lead.empresa}
-            href={`/inbound?lead_id=${lead.id}`}
+            href={`/leads?lead_id=${lead.id}`}
           />
 
           <section className="space-y-3">

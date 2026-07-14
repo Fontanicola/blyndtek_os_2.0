@@ -13,7 +13,7 @@ type MobileMode = "sidebar" | "lista" | "editor";
 
 export function WikiClient() {
   const searchParams = useSearchParams();
-  const initialArticuloId = searchParams.get("articulo_id");
+  const initialArticuloId = searchParams?.get("articulo_id") ?? null;
 
   const {
     categorias,

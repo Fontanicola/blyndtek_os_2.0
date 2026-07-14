@@ -14,6 +14,7 @@ import { useProyectos } from "@/lib/hooks/useProyectos";
 import { useLeads } from "@/lib/hooks/useLeads";
 import { useInboundLeads } from "@/lib/hooks/useInboundLeads";
 import { getLinkedNotaEntity, sortNotas } from "@/lib/notas";
+import type { Usuario } from "@/types/auth";
 import type { Nota } from "@/types/notas";
 
 type NotasView = "todas" | "papelera" | "carpeta";
@@ -21,6 +22,10 @@ type MobileMode = "sidebar" | "lista" | "editor";
 type LinkedEntityInfo = {
   label: string;
   href: string;
+};
+
+type NotasClientProps = {
+  usuario: Usuario | null;
 };
 
 function buildLinkedEntityInfo(
@@ -54,13 +59,13 @@ function buildLinkedEntityInfo(
   const lead = leads.find((item) => item.id === linked.id);
   return {
     label: lead ? lead.empresa : "Lead vinculado",
-    href: `/inbound?lead_id=${linked.id}`
+    href: `/leads?lead_id=${linked.id}`
   };
 }
 
-export function NotasClient() {
+export function NotasClient({ usuario }: NotasClientProps) {
   const searchParams = useSearchParams();
-  const initialNotaId = searchParams.get("nota_id");
+  const initialNotaId = searchParams?.get("nota_id") ?? null;
 
   const {
     notas,
@@ -78,7 +83,9 @@ export function NotasClient() {
     toggleFijada,
     eliminarNota,
     restaurarNota,
-    eliminarDefinitivo
+    eliminarDefinitivo,
+    fetchNotaCompartidas,
+    updateNotaCompartidas
   } = useNotas();
   const carpetasHook = useCarpetasNotas();
   const clientesHook = useClientes();
@@ -100,6 +107,8 @@ export function NotasClient() {
   const [folderName, setFolderName] = useState("");
   const [creatingNota, setCreatingNota] = useState(false);
   const [creatingFolder, setCreatingFolder] = useState(false);
+  const [sharedUserIds, setSharedUserIds] = useState<string[]>([]);
+  const [commercialUsers, setCommercialUsers] = useState<Array<{ id: string; nombre: string }>>([]);
   const [toast, setToast] = useState<{
     visible: boolean;
     message: string;
@@ -193,6 +202,65 @@ export function NotasClient() {
       cancelled = true;
     };
   }, [fetchNota, initialNotaId]);
+
+  useEffect(() => {
+    if (!usuario || usuario.rol !== "admin") {
+      setCommercialUsers([]);
+      return;
+    }
+
+    let cancelled = false;
+
+    async function loadShareUsers() {
+      try {
+        const response = await fetch("/api/usuarios");
+        const payload = (await response.json()) as { data?: Array<{ id: string; nombre: string; rol: string }>; error?: string };
+
+        if (!response.ok || !payload.data) {
+          throw new Error(payload.error ?? "No se pudieron cargar los usuarios.");
+        }
+
+        if (!cancelled) {
+          setCommercialUsers(payload.data.filter((item) => item.rol === "comercial"));
+        }
+      } catch {
+        if (!cancelled) {
+          setCommercialUsers([]);
+        }
+      }
+    }
+
+    void loadShareUsers();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [usuario]);
+
+  useEffect(() => {
+    if (!selectedNotaDraft || usuario?.rol !== "admin") {
+      setSharedUserIds([]);
+      return;
+    }
+
+    let cancelled = false;
+
+    void fetchNotaCompartidas(selectedNotaDraft.id)
+      .then((ids) => {
+        if (!cancelled) {
+          setSharedUserIds(ids);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setSharedUserIds([]);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [fetchNotaCompartidas, selectedNotaDraft, usuario?.rol]);
 
   useEffect(() => {
     if (selectedNotaDraft) {
@@ -313,6 +381,13 @@ export function NotasClient() {
     setSelectedNotaDraft((current) => (current ? { ...current, ...partial } : current));
   }
 
+  async function handleUpdateNotaCompartidas(notaId: string, nextUserIds: string[]) {
+    const updated = await updateNotaCompartidas(notaId, nextUserIds);
+    if (selectedNotaDraft?.id === notaId) {
+      setSharedUserIds(updated);
+    }
+  }
+
   return (
     <div className="flex h-full min-h-0 flex-col gap-4">
       {notasError || carpetasHook.error ? (
@@ -371,13 +446,13 @@ export function NotasClient() {
 
             <NotasLista
               notas={sortNotas(notas)}
-            carpetas={carpetasHook.carpetas}
-            loading={notasLoading}
-            selectedNotaId={selectedNotaDraft?.id ?? null}
-            etiquetas={etiquetas}
-            onSelectNota={(nota) => {
-              setSelectedNotaDraft(nota);
-              setMobileMode("editor");
+              carpetas={carpetasHook.carpetas}
+              loading={notasLoading}
+              selectedNotaId={selectedNotaDraft?.id ?? null}
+              etiquetas={etiquetas}
+              onSelectNota={(nota) => {
+                setSelectedNotaDraft(nota);
+                setMobileMode("editor");
               }}
               onNewNota={() => setCreateOpen(true)}
             />
@@ -401,6 +476,9 @@ export function NotasClient() {
               availableEtiquetas={etiquetas}
               linkedEntityLabel={selectedNotaInfo?.label ?? null}
               linkedEntityHref={selectedNotaInfo?.href ?? null}
+              isAdmin={usuario?.rol === "admin"}
+              sharedUserIds={sharedUserIds}
+              shareUsers={commercialUsers}
               saving={notasSaving}
               onUpdateNota={(id, input) => void updateNota(id, input)}
               onUpdateNotaInmediata={(id, input) => void updateNotaInmediata(id, input)}
@@ -411,6 +489,7 @@ export function NotasClient() {
               onDraftChange={handleSaveDraft}
               onCreateEtiqueta={createEtiqueta}
               onUpdateEtiquetaColor={updateEtiquetaColor}
+              onUpdateNotaCompartidas={handleUpdateNotaCompartidas}
               imageUploadUrl="/api/notas/imagenes/upload"
             />
           </div>

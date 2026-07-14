@@ -6,6 +6,7 @@ export const OUTBOUND_ETAPAS: EtapaLead[] = [
   "seguimiento",
   "calificado",
   "cotizacion",
+  "ganado",
   "descartado"
 ];
 
@@ -15,6 +16,7 @@ export const ETAPA_LABELS: Record<EtapaLead, string> = {
   seguimiento: "En seguimiento",
   calificado: "Calificado",
   cotizacion: "Pasado a cotización",
+  ganado: "Ganado",
   descartado: "Descartado"
 };
 
@@ -50,9 +52,21 @@ export function createLeadDraft(etapa: EtapaLead = "por_contactar"): CreateLeadI
     nivel_confianza: null,
     contexto: null,
     presupuesto_estimado: null,
+    monto_propuesto_desarrollo: null,
+    monto_propuesto_mensual: null,
+    monto_negociado_desarrollo: null,
+    monto_negociado_mensual: null,
     motivo_descarte: null,
     notas: null
   };
+}
+
+export function getLeadEtapaIndex(etapa: EtapaLead) {
+  return OUTBOUND_ETAPAS.indexOf(etapa);
+}
+
+export function isForwardLeadTransition(origen: EtapaLead, destino: EtapaLead) {
+  return getLeadEtapaIndex(destino) > getLeadEtapaIndex(origen);
 }
 
 export function sanitizeTextValue(value: string): string | null {

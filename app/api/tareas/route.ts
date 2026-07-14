@@ -27,6 +27,12 @@ function parsePrioridad(value: string | null): PrioridadTarea | null {
 export async function GET(request: NextRequest) {
   try {
     const supabase = createAdminClient();
+    const currentUser = await getCurrentUser();
+
+    if (!currentUser) {
+      return NextResponse.json({ error: "No autenticado." }, { status: 401 });
+    }
+
     const searchParams = request.nextUrl.searchParams;
     const proyectoId = searchParams.get("proyecto_id")?.trim() || null;
     const responsableId = searchParams.get("responsable_id")?.trim() || null;
@@ -40,6 +46,7 @@ export async function GET(request: NextRequest) {
           id,
           titulo,
           proyecto_id,
+          lead_id,
           feature_id,
           responsable_id,
           prioridad,
@@ -62,8 +69,12 @@ export async function GET(request: NextRequest) {
       query = query.eq("proyecto_id", proyectoId);
     }
 
-    if (responsableId) {
-      query = query.eq("responsable_id", responsableId);
+    if (currentUser.rol === "admin") {
+      if (responsableId) {
+        query = query.eq("responsable_id", responsableId);
+      }
+    } else {
+      query = query.eq("responsable_id", currentUser.id);
     }
 
     if (prioridad) {
@@ -108,9 +119,18 @@ export async function POST(request: NextRequest) {
   try {
     const currentUser = await getCurrentUser();
 
+    if (!currentUser) {
+      return NextResponse.json({ error: "No autenticado." }, { status: 401 });
+    }
+
     const supabase = createAdminClient();
     const body = (await request.json()) as Parameters<typeof crearTareaConAdminClient>[1];
-    const tarea = await crearTareaConAdminClient(supabase, body, { defaultResponsableId: currentUser?.id });
+    const tarea = await crearTareaConAdminClient(supabase, {
+      ...body,
+      responsable_id: currentUser.rol === "admin" ? body.responsable_id : currentUser.id
+    }, {
+      defaultResponsableId: currentUser.id
+    });
 
     return NextResponse.json({ data: tarea }, { status: 201 });
   } catch (error) {

@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getCurrentUser } from "@/lib/auth";
+import { fetchEventoIdsAceptadosUsuario } from "@/lib/eventos/invitaciones";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
   endOfMonth,
@@ -128,6 +130,12 @@ function buildLeadReminderKeys(eventos: Evento[]) {
 
 export async function GET(request: NextRequest) {
   try {
+    const currentUser = await getCurrentUser();
+
+    if (!currentUser) {
+      return NextResponse.json({ error: "No autenticado." }, { status: 401 });
+    }
+
     const supabase = createAdminClient();
     const searchParams = request.nextUrl.searchParams;
     const today = new Date();
@@ -169,7 +177,18 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: leadsResult.error.message }, { status: 500 });
     }
 
-    const eventos = (eventosResult.data ?? []).map((evento): CalendarItem => {
+    const acceptedIds = currentUser.rol === "admin" ? [] : await fetchEventoIdsAceptadosUsuario(supabase, currentUser.id);
+    const acceptedSet = new Set(acceptedIds);
+
+    const eventosFiltrados = (eventosResult.data ?? []).filter((evento) => {
+      if (currentUser.rol === "admin") {
+        return true;
+      }
+
+      return evento.usuario_id === currentUser.id || acceptedSet.has(evento.id);
+    });
+
+    const eventos = eventosFiltrados.map((evento): CalendarItem => {
       const typedEvento = evento as Evento;
       return {
         id: typedEvento.id,
@@ -185,7 +204,7 @@ export async function GET(request: NextRequest) {
     });
 
     const tareas = (tareasResult.data ?? []).map((tarea) => buildTaskItem(tarea as Tarea));
-    const leadReminderKeys = buildLeadReminderKeys((eventosResult.data ?? []) as Evento[]);
+    const leadReminderKeys = buildLeadReminderKeys(eventosFiltrados as Evento[]);
     const leadItems = (leadsResult.data ?? []).flatMap((lead) => {
       const typedLead = lead as Lead;
       return buildLeadReminderItems(typedLead, rangeStart, rangeEnd).filter((item) => {

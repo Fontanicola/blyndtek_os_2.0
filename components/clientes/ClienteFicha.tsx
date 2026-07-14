@@ -8,8 +8,10 @@ import { ProyectoCard } from "@/components/proyectos";
 import { formatFecha, formatUSD } from "@/lib/utils/formatters";
 import { useFinanzas } from "@/lib/hooks/useFinanzas";
 import { useProyectos } from "@/lib/hooks/useProyectos";
+import { LeadNegociacionesSection } from "@/components/leads/LeadNegociacionesSection";
 import type { Cobro } from "@/types/cobros";
 import type { Cliente, DatosFacturacion, EstadoCliente, UpdateClienteInput } from "@/types/clientes";
+import type { Lead } from "@/types/leads";
 import type { Producto } from "@/types/productos";
 import type { ProductoPlan } from "@/types/productoPlanes";
 import type { Proyecto } from "@/types/proyectos";
@@ -156,6 +158,7 @@ export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
   const [suscripcion, setSuscripcion] = useState<Suscripcion | null>(null);
   const [productos, setProductos] = useState<Producto[]>([]);
   const [planes, setPlanes] = useState<ProductoPlan[]>([]);
+  const [leadOrigen, setLeadOrigen] = useState<Lead | null>(null);
   const [productoSeleccionadoId, setProductoSeleccionadoId] = useState("");
   const [planSeleccionadoId, setPlanSeleccionadoId] = useState("");
   const [montoDraft, setMontoDraft] = useState("");
@@ -277,6 +280,40 @@ export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
       cancelled = true;
     };
   }, [activeTab, cliente.id, fetchCobros, fetchProyectos, fetchSuscripciones]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadLeadOrigen() {
+      if (!cliente.lead_id) {
+        setLeadOrigen(null);
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/leads/${cliente.lead_id}`);
+        const payload = (await response.json()) as { data?: Lead; error?: string };
+
+        if (!response.ok || !payload.data) {
+          throw new Error(payload.error ?? "No se pudo cargar el lead de origen.");
+        }
+
+        if (!cancelled) {
+          setLeadOrigen(payload.data);
+        }
+      } catch {
+        if (!cancelled) {
+          setLeadOrigen(null);
+        }
+      }
+    }
+
+    void loadLeadOrigen();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [cliente.lead_id]);
 
   useEffect(() => {
     if (activeTab !== "suscripcion") {
@@ -590,6 +627,8 @@ export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
               {cliente.lead_id ? "Ver lead →" : "Sin lead de origen"}
             </p>
           </section>
+
+          {leadOrigen ? <LeadNegociacionesSection lead={leadOrigen} /> : null}
 
           <NotasVinculadasSection
             entityType="cliente"

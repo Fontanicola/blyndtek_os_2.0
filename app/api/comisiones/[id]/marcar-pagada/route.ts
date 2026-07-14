@@ -28,7 +28,7 @@ export async function POST(_request: NextRequest, context: RouteContext) {
     const supabase = createAdminClient();
     const { data: comision, error: comisionError } = await supabase
       .from("comisiones")
-      .select("id, vendedor_id, cliente_id, proyecto_id, estado, monto_comision, updated_at")
+      .select("id, vendedor_id, cliente_id, estado, monto_comision, updated_at")
       .eq("id", context.params.id)
       .single();
 
@@ -43,7 +43,7 @@ export async function POST(_request: NextRequest, context: RouteContext) {
 
     const commissionRow = comision as Pick<
       Comision,
-      "id" | "vendedor_id" | "cliente_id" | "proyecto_id" | "estado" | "monto_comision"
+      "id" | "vendedor_id" | "cliente_id" | "estado" | "monto_comision"
     > & { updated_at?: string };
 
     const [{ data: vendedor }, { data: cliente }] = await Promise.all([
@@ -78,7 +78,6 @@ export async function POST(_request: NextRequest, context: RouteContext) {
           cuenta_medio: null,
           pagado: true,
           fecha_pago: fechaHoy,
-          proyecto_id: commissionRow.proyecto_id,
           comision_id: commissionRow.id,
           notas: null
         })

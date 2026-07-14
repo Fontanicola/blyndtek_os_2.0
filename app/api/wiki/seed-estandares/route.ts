@@ -15,10 +15,10 @@ function buildArticleContent(): Json {
     tiptapParagraph([
       "Este documento define los estándares no negociables de cualquier proyecto construido por o para Blyndtek, tanto en frontend como en backend. Se referencia como contexto obligatorio en todo prompt a Codex/Claude Code, y como archivo ESTANDARES.md en la raíz de cada repo de cliente."
     ]),
-    tiptapHeading("Estándares de frontend — \"Nivel Apple, no negociable\""),
+    tiptapHeading('Estándares de frontend — "Nivel Apple, no negociable"'),
     tiptapHeading("Principios visuales", 3),
     tiptapBulletList([
-      ["Máximo aire, mínimo ruido. Si una sección se ve \"llena\", está mal."],
+      ['Máximo aire, mínimo ruido. Si una sección se ve "llena", está mal.'],
       [
         "Paleta acotada: 4-5 colores núcleo por proyecto (primario, fondo, texto, variantes semánticas de éxito/error/alerta). Nunca colores inventados sobre la marcha."
       ],
@@ -47,14 +47,14 @@ function buildArticleContent(): Json {
     tiptapBulletList([
       ["Todo gráfico de serie de tiempo lleva tooltip que sigue al mouse con el dato exacto."],
       ["Ejes con valores formateados en moneda/unidad real."],
-      ["Prohibido mostrar $0 o 0% cuando en realidad es \"sin datos\"; son cosas distintas."],
+      ['Prohibido mostrar $0 o 0% cuando en realidad es "sin datos"; son cosas distintas.'],
       ["KPIs con indicador visual de color/ícono, nunca solo texto plano."]
     ]),
     tiptapHeading("Estándares de layout", 3),
     tiptapBulletList([
       ["Nunca duplicar el nombre de la sección como título grande si ya está en la topbar."],
       ["Headers y toolbars fijos, contenido con su propio scroll interno."],
-      ["Todo formulario de edición tiene un botón \"Guardar\" explícito."],
+      ['Todo formulario de edición tiene un botón "Guardar" explícito.'],
       ["Estados vacíos con mensaje breve y útil."],
       ["Mobile-first en cualquier módulo visible a clientes finales."]
     ]),
@@ -80,7 +80,7 @@ function buildArticleContent(): Json {
       ["¿Hay texto o ícono repetido sin aportar información nueva?"],
       ["¿Los colores usados existen en la paleta definida del proyecto?"]
     ]),
-    tiptapHeading("Estándares de backend — \"Profesional, no vibecodeado\""),
+    tiptapHeading('Estándares de backend — "Profesional, no vibecodeado"'),
     tiptapHeading("Autenticación y autorización", 3),
     tiptapBulletList([
       ["Toda ruta de API valida la sesión del lado del servidor."],

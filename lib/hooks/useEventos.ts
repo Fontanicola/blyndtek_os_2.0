@@ -1,7 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import type { CreateEventoInput, Evento, TipoEvento, UpdateEventoInput } from "@/types/eventos";
+import type {
+  CreateEventoInput,
+  Evento,
+  EventoConInvitados,
+  TipoEvento,
+  UpdateEventoInput
+} from "@/types/eventos";
 
 type ApiResponse<T> = {
   data?: T;
@@ -80,9 +86,9 @@ export function useEventos() {
     }
   }, []);
 
-  const fetchEvento = useCallback(async (id: string) => {
+  const fetchEvento = useCallback(async (id: string): Promise<EventoConInvitados> => {
     const response = await fetch(`/api/eventos/${id}`);
-    const payload = await readJsonResponse<ApiResponse<Evento>>(response);
+    const payload = await readJsonResponse<ApiResponse<EventoConInvitados>>(response);
 
     if (!response.ok || !payload.data) {
       throw new Error(payload.error ?? "No se pudo cargar el evento.");

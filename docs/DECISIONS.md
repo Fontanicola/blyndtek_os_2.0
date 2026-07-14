@@ -388,6 +388,20 @@
 - Al pagarse una comisión, se crea un egreso real trazable vía `comision_id` para que el costo de ventas impacte P&L, runway y tesorería con criterio cash basis.
 - Mientras la comisión siga pendiente, no afecta runway ni caja real hasta que efectivamente se pague y se refleje en `egresos`.
 
+## 2026-07-14 — Leads con captura progresiva por etapa y cierre ganado
+
+- La captura de datos del lead se hace de forma progresiva según la etapa del kanban en vez de exigir un formulario único de cierre.
+- La etapa `ganado` se ubica antes de `descartado` y al cerrar el lead se reutiliza la conversión a cliente para mantener una sola fuente de verdad.
+- Si hubo negociación, el historial queda guardado en `leads_negociaciones` y el monto final acordado es el que alimenta el cálculo de comisión, no el propuesto original.
+- La comisión se calcula sobre el monto total del cierre (desarrollo + mensual) y conserva la misma lógica centralizada de `lib/comisiones/calcular.ts`.
+
+## 2026-07-14 — Middleware Edge siempre con `fetch()` directo
+
+- `middleware.ts` no debe volver a importar `@supabase/ssr` ni `@supabase/supabase-js`; en Edge se usa `fetch()` directo contra `auth/v1/user` y `rest/v1/usuarios`.
+- Esta regla es crítica porque ya se rompió más de una vez por regresiones de dependencias y disparó bundles demasiado grandes para Edge Runtime.
+- La verificación de sesión y rol en middleware debe mantenerse liviana y compatible con Vercel Edge, incluso si la lógica de usuarios o permisos cambia en otras partes del sistema.
+- El middleware nunca debe redirigir una ruta a sí misma: si `/login` falla por auth inválida, debe limpiar cookies de sesión corruptas y dejar renderizar login en vez de crear un loop irrecuperable.
+
 ## 2026-07-13 — Runway Lab con ingresos pendientes opcionales
 
 - El runway conserva el modo conservador por defecto, pero ahora puede sumar cobros pendientes y suscripciones pendientes cuando el usuario lo activa explícitamente.

@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createAdminClient } from "@/lib/supabase/admin";
 import { getCurrentUser } from "@/lib/auth";
-import type { CreateEventoInput, Evento, TipoEvento } from "@/types/eventos";
+import { fetchEventoIdsAceptadosUsuario, syncEventoInvitados } from "@/lib/eventos/invitaciones";
+import { createAdminClient } from "@/lib/supabase/admin";
+import type { CreateEventoInput, Evento, EventoConInvitados, TipoEvento } from "@/types/eventos";
 
 type EventosResponse = {
-  data: Evento[];
+  data: (Evento | EventoConInvitados)[];
 };
 
 function parseTipo(value: string | null): TipoEvento | null {
@@ -32,8 +33,20 @@ function toIso(date: Date) {
   return date.toISOString();
 }
 
+function sanitizeInvitedUserIds(input: string[] | undefined, organizerId: string) {
+  return [...new Set((input ?? []).filter((value) => typeof value === "string" && value.trim().length > 0))]
+    .map((value) => value.trim())
+    .filter((value) => value !== organizerId);
+}
+
 export async function GET(request: NextRequest) {
   try {
+    const currentUser = await getCurrentUser();
+
+    if (!currentUser) {
+      return NextResponse.json({ error: "No autenticado." }, { status: 401 });
+    }
+
     const supabase = createAdminClient();
     const searchParams = request.nextUrl.searchParams;
     const tipo = parseTipo(searchParams.get("tipo"));
@@ -45,10 +58,6 @@ export async function GET(request: NextRequest) {
 
     if (tipo) {
       query = query.eq("tipo", tipo);
-    }
-
-    if (usuarioId) {
-      query = query.eq("usuario_id", usuarioId);
     }
 
     if (desde) {
@@ -65,7 +74,16 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ data: (data ?? []) as Evento[] } satisfies EventosResponse);
+    let eventos = (data ?? []) as Evento[];
+
+    if (currentUser.rol !== "admin") {
+      const acceptedIds = new Set(await fetchEventoIdsAceptadosUsuario(supabase, currentUser.id));
+      eventos = eventos.filter((evento) => evento.usuario_id === currentUser.id || acceptedIds.has(evento.id));
+    } else if (usuarioId) {
+      eventos = eventos.filter((evento) => evento.usuario_id === usuarioId);
+    }
+
+    return NextResponse.json({ data: eventos } satisfies EventosResponse);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unexpected error";
     return NextResponse.json({ error: message }, { status: 500 });
@@ -75,6 +93,11 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const currentUser = await getCurrentUser();
+
+    if (!currentUser) {
+      return NextResponse.json({ error: "No autenticado." }, { status: 401 });
+    }
+
     const body = (await request.json()) as Partial<CreateEventoInput>;
 
     if (!body.titulo?.trim()) {
@@ -98,11 +121,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "tipo inválido" }, { status: 400 });
     }
 
-    const usuarioId = body.usuario_id?.trim() || currentUser?.id;
-
-    if (!usuarioId) {
-      return NextResponse.json({ error: "usuario_id is required" }, { status: 400 });
-    }
+    const usuarioId = currentUser.rol === "admin" ? body.usuario_id?.trim() || currentUser.id : currentUser.id;
 
     const supabase = createAdminClient();
     const payload = {
@@ -120,6 +139,17 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    const invitedUserIds = sanitizeInvitedUserIds(body.invited_user_ids, usuarioId);
+
+    if (invitedUserIds.length > 0) {
+      try {
+        await syncEventoInvitados(supabase, data.id, invitedUserIds, usuarioId);
+      } catch (syncError) {
+        await supabase.from("eventos").delete().eq("id", data.id);
+        throw syncError;
+      }
     }
 
     return NextResponse.json({ data: data as Evento }, { status: 201 });

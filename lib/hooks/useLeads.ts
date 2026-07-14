@@ -2,7 +2,13 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { createLeadDraft, sortLeadsByUpdatedAt, type LeadFilters } from "@/lib/leads";
-import type { CreateLeadInput, EtapaLead, Lead, UpdateLeadInput } from "@/types/leads";
+import type {
+  CreateLeadInput,
+  EtapaLead,
+  Lead,
+  LeadStageTransitionInput,
+  UpdateLeadInput
+} from "@/types/leads";
 
 type ApiDataResponse<T> = {
   data?: T;
@@ -120,7 +126,7 @@ export function useLeads() {
     return payload.data;
   }, []);
 
-  const updateEtapa = useCallback(async (id: string, etapa: EtapaLead) => {
+  const updateEtapa = useCallback(async (id: string, etapa: EtapaLead, input: LeadStageTransitionInput = {}) => {
     setError(null);
 
     const response = await fetch(`/api/leads/${id}/etapa`, {
@@ -128,7 +134,7 @@ export function useLeads() {
       headers: {
         "Content-Type": "application/json"
       },
-      body: JSON.stringify({ etapa })
+      body: JSON.stringify({ etapa, ...input })
     });
     const payload = await readJsonResponse<ApiDataResponse<Lead>>(response);
 

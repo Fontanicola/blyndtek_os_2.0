@@ -21,6 +21,7 @@ const PIPELINE_WEIGHTS: Record<string, number> = {
   seguimiento: 0.25,
   calificado: 0.5,
   cotizacion: 0.75,
+  ganado: 1,
   descartado: 0
 };
 
@@ -51,7 +52,15 @@ function clampPct(value: number | null) {
 }
 
 function buildPipelineStages(leads: Lead[]) {
-  const etapas = ["por_contactar", "contactado", "seguimiento", "calificado", "cotizacion", "descartado"] as const;
+  const etapas = [
+    "por_contactar",
+    "contactado",
+    "seguimiento",
+    "calificado",
+    "cotizacion",
+    "ganado",
+    "descartado"
+  ] as const;
 
   return etapas.map((etapa) => {
     const leadsEnEtapa = leads.filter((lead) => lead.etapa === etapa);
@@ -68,7 +77,15 @@ function buildPipelineStages(leads: Lead[]) {
 }
 
 function buildLeadStageCounts(leads: Lead[]) {
-  const etapas = ["por_contactar", "contactado", "seguimiento", "calificado", "cotizacion", "descartado"] as const;
+  const etapas = [
+    "por_contactar",
+    "contactado",
+    "seguimiento",
+    "calificado",
+    "cotizacion",
+    "ganado",
+    "descartado"
+  ] as const;
 
   return etapas.map((etapa) => ({
     etapa,

@@ -10,7 +10,19 @@ import type { Database } from "@/types/supabase";
 const roleAllowedPrefixes: Record<Rol, readonly string[]> = {
   admin: ["/"],
   miembro: ["/proyectos", "/tareas", "/calendario"],
-  comercial: ["/outbound", "/inbound", "/clientes", "/cotizador", "/tareas", "/calendario", "/notas", "/wiki", "/archivos", "/perfil"]
+  comercial: [
+    "/mi-panel",
+    "/leads",
+    "/outbound",
+    "/clientes",
+    "/cotizador",
+    "/tareas",
+    "/calendario",
+    "/notas",
+    "/wiki",
+    "/archivos",
+    "/perfil"
+  ]
 };
 
 async function fetchUsuarioById(
@@ -46,7 +58,7 @@ export function getDefaultRouteForRole(rol: Rol): string {
   }
 
   if (rol === "comercial") {
-    return "/outbound";
+    return "/mi-panel";
   }
 
   return "/proyectos";
