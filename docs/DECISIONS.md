@@ -403,6 +403,11 @@
 - Si en el futuro se vuelve a necesitar un guard global, debe implementarse fuera de Edge o con una prueba de deploy real en Vercel antes de considerarlo cerrado.
 - Las entradas históricas anteriores que recomendaban `@supabase/ssr` en middleware quedan obsoletas para este proyecto: Supabase puede usarse en Server Components, API routes y helpers Node, pero no desde un middleware Edge.
 
+## 2026-07-14 — Vercel configurado explícitamente como Next.js
+
+- El proyecto de Vercel debe declarar `framework = nextjs`. Mantenerlo como `Other` permite que `next build` termine correctamente, pero deja la salida sin las funciones App Router y produce un `404 NOT_FOUND` en todas las rutas.
+- La configuración queda versionada en `vercel.json` para evitar que una configuración manual o una recreación del proyecto vuelva a publicar el repositorio como sitio estático.
+
 ## 2026-07-13 — Runway Lab con ingresos pendientes opcionales
 
 - El runway conserva el modo conservador por defecto, pero ahora puede sumar cobros pendientes y suscripciones pendientes cuando el usuario lo activa explícitamente.
