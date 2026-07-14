@@ -376,21 +376,21 @@ export type Database = {
           id: string;
           carpeta_id: string;
           usuario_id: string;
-          compartida_por: string | null;
+          compartido_por: string | null;
           created_at: string;
         };
         Insert: {
           id?: string;
           carpeta_id: string;
           usuario_id: string;
-          compartida_por?: string | null;
+          compartido_por?: string | null;
           created_at?: string;
         };
         Update: {
           id?: string;
           carpeta_id?: string;
           usuario_id?: string;
-          compartida_por?: string | null;
+          compartido_por?: string | null;
           created_at?: string;
         };
         Relationships: [

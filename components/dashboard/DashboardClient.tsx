@@ -358,10 +358,7 @@ export function DashboardClient() {
 
       {dashboard ? (
         <div className="space-y-10">
-          <DashboardSeccion
-            title="Financiero"
-            description="La foto más importante del negocio: MRR, runway, cobros y P&L."
-          >
+          <section>
             <div className="space-y-4">
               <div className="grid gap-4 lg:grid-cols-5">
                 {financialCards.map((metric) => (
@@ -380,7 +377,7 @@ export function DashboardClient() {
 
               <PLChart data={dashboard.financiero.historico_pl} />
             </div>
-          </DashboardSeccion>
+          </section>
 
           <DashboardSeccion
             title="Comercial"

@@ -1584,3 +1584,28 @@ Estado general actual: Fase 0 completa. Cimientos técnicos listos: documentaci�
 - `middleware.ts` quedó todavía más blindado: ahora importa solo `next/server` y define el tipo `Rol` localmente, sin depender de `types/auth.ts` ni de helpers compartidos.
 - El build local quedó limpio, sin warnings de Edge Runtime ni trazas de Node incompatibles.
 - Resultado de la investigación: en el checkout actual no apareció un archivo específico que siga arrastrando Supabase al middleware; la protección quedó reforzada para evitar regresiones por imports indirectos.
+
+## 2026-07-14 — Archivos: typo de `carpetas_compartidas` corregido
+
+- Se corrigió el typo `compartida_por` en la ruta de compartir carpetas; la columna real usada por `carpetas_compartidas` es `compartido_por`.
+- También se alinearon los tipos generados de Supabase para esa tabla, evitando que la inserción o el `select` vuelvan a romper por un nombre de columna inexistente.
+- Verificación local ejecutada: `npm run build` y `npm run lint` pasan correctamente después del fix, y la búsqueda global ya no muestra `compartida_por` en el flujo de `carpetas_compartidas`.
+
+## 2026-07-14 — Leads: fila superior del kanban eliminada
+
+- Se quitó por completo la barra superior de `/leads` para admin y comercial: buscador, filtros, contador de vencidos y botón de nuevo lead.
+- El kanban ahora arranca directo con las columnas y deja más espacio útil para las cards y su contenido expandible.
+- Verificación local ejecutada: `npm run build` y `npm run lint` pasan correctamente luego del ajuste.
+
+## 2026-07-14 — Middleware blindado sin imports del proyecto
+
+- Se verificó que `middleware.ts` está 100% autocontenido y no importa ningún archivo del proyecto.
+- Evidencia del chequeo solicitado:
+
+```text
+$ grep -n "^import" middleware.ts
+1:import { NextResponse, type NextRequest } from "next/server";
+```
+
+- La lógica de rol, rutas, URL de Supabase, REST, parsing de cookies `base64-`, limpieza de cookies inválidas y protección contra loops de `/login` vive localmente en `middleware.ts`.
+- `docs/DECISIONS.md` quedó actualizado con la regla más fuerte: `middleware.ts` es un archivo blindado y sólo puede importar `next/server`.

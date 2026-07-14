@@ -395,15 +395,15 @@
 - Si hubo negociación, el historial queda guardado en `leads_negociaciones` y el monto final acordado es el que alimenta el cálculo de comisión, no el propuesto original.
 - La comisión se calcula sobre el monto total del cierre (desarrollo + mensual) y conserva la misma lógica centralizada de `lib/comisiones/calcular.ts`.
 
-## 2026-07-14 — Middleware Edge siempre con `fetch()` directo
+## 2026-07-14 — Middleware Edge blindado y autocontenido
 
-- `middleware.ts` no debe volver a importar `@supabase/ssr` ni `@supabase/supabase-js`; en Edge se usa `fetch()` directo contra `auth/v1/user` y `rest/v1/usuarios`.
-- Esta regla es crítica porque ya se rompió más de una vez por regresiones de dependencias y disparó bundles demasiado grandes para Edge Runtime.
-- La verificación de sesión y rol en middleware debe mantenerse liviana y compatible con Vercel Edge, incluso si la lógica de usuarios o permisos cambia en otras partes del sistema.
+- `middleware.ts` es un archivo blindado: nunca debe importar nada de `lib/`, `types/`, `components/`, `app/` ni de ningún otro archivo del proyecto.
+- El único import permitido en `middleware.ts` es `next/server`; cualquier tipo trivial que necesite el middleware se define localmente en el mismo archivo.
+- Toda lógica necesaria para auth, roles, URLs de Supabase, parsing de cookies, limpieza de cookies inválidas y redirects vive duplicada localmente dentro de `middleware.ts`.
+- En Edge se usa `fetch()` directo contra `auth/v1/user` y `rest/v1/usuarios`; queda prohibido importar `@supabase/ssr`, `@supabase/supabase-js` o helpers compartidos que puedan arrastrarlos indirectamente.
+- El costo de duplicar unas pocas funciones locales es menor que el riesgo operativo: este patrón ya causó cuatro caídas de producción con `MIDDLEWARE_INVOCATION_FAILED` / `__dirname is not defined`.
 - El middleware nunca debe redirigir una ruta a sí misma: si `/login` falla por auth inválida, debe limpiar cookies de sesión corruptas y dejar renderizar login en vez de crear un loop irrecuperable.
 - El parser manual de cookies del middleware debe soportar explícitamente el prefijo `base64-` de `@supabase/ssr` y decodificarlo antes de parsear JSON, porque ese formato ya está en producción y puede cambiar de nuevo en el futuro.
-- Middleware `middleware.ts` debe mantenerse autocontenido y con imports mínimos: no depender de helpers compartidos de `lib/supabase/` si eso puede arrastrar el bundle Edge a una regresión de deploy por resolución indirecta.
-- Antes de cerrar cualquier prompt que toque código server-side o API routes, se debe correr `grep -rn "@supabase/supabase-js\\|@supabase/ssr"` sobre los archivos nuevos o modificados de ese prompt específico para atrapar regresiones Edge antes del deploy.
 
 ## 2026-07-13 — Runway Lab con ingresos pendientes opcionales
 

@@ -63,9 +63,9 @@ export async function POST(request: NextRequest, context: RouteContext) {
       .insert({
         carpeta_id: context.params.id,
         usuario_id: usuarioId,
-        compartida_por: currentUser.id
+        compartido_por: currentUser.id
       } as never)
-      .select("id, carpeta_id, usuario_id, compartida_por, created_at")
+      .select("id, carpeta_id, usuario_id, compartido_por, created_at")
       .single();
 
     if (error) {
