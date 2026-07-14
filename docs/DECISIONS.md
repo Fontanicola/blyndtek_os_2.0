@@ -397,14 +397,11 @@
 
 ## 2026-07-14 — Middleware Edge blindado y autocontenido
 
-- `middleware.ts` es un archivo blindado: nunca debe importar nada de `lib/`, `types/`, `components/`, `app/` ni de ningún otro archivo del proyecto.
-- El único import permitido en `middleware.ts` es `next/server`; cualquier tipo trivial que necesite el middleware se define localmente en el mismo archivo.
-- Toda lógica necesaria para auth, roles, URLs de Supabase, parsing de cookies, limpieza de cookies inválidas y redirects vive duplicada localmente dentro de `middleware.ts`.
-- En Edge se usa `fetch()` directo contra `auth/v1/user` y `rest/v1/usuarios`; queda prohibido importar `@supabase/ssr`, `@supabase/supabase-js` o helpers compartidos que puedan arrastrarlos indirectamente.
-- El costo de duplicar unas pocas funciones locales es menor que el riesgo operativo: este patrón ya causó cuatro caídas de producción con `MIDDLEWARE_INVOCATION_FAILED` / `__dirname is not defined`.
-- El middleware nunca debe redirigir una ruta a sí misma: si `/login` falla por auth inválida, debe limpiar cookies de sesión corruptas y dejar renderizar login en vez de crear un loop irrecuperable.
-- El parser manual de cookies del middleware debe soportar explícitamente el prefijo `base64-` de `@supabase/ssr` y decodificarlo antes de parsear JSON, porque ese formato ya está en producción y puede cambiar de nuevo en el futuro.
-- El parsing y la limpieza de cookies de Supabase no deben depender de `NEXT_PUBLIC_SUPABASE_URL` ni de ninguna variable de entorno: se detectan por patrón `sb-*-auth-token` para que una env var faltante no provoque un segundo error dentro del `catch` del middleware.
+- Decisión final luego de cuatro caídas de producción: el proyecto no usa `middleware.ts`. Se eliminó el Edge middleware por completo para que Vercel no genere una Edge Function capaz de arrastrar APIs Node incompatibles (`__dirname`, `process.version`, etc.).
+- La protección básica de rutas autenticadas vive en el layout server de `app/(app)/layout.tsx`: si `getCurrentUser()` no devuelve usuario, se redirige a `/login`.
+- Queda prohibido reintroducir `middleware.ts` sin una decisión explícita nueva. La prioridad operativa es que la app no tenga un punto único de caída en Edge Runtime.
+- Si en el futuro se vuelve a necesitar un guard global, debe implementarse fuera de Edge o con una prueba de deploy real en Vercel antes de considerarlo cerrado.
+- Las entradas históricas anteriores que recomendaban `@supabase/ssr` en middleware quedan obsoletas para este proyecto: Supabase puede usarse en Server Components, API routes y helpers Node, pero no desde un middleware Edge.
 
 ## 2026-07-13 — Runway Lab con ingresos pendientes opcionales
 

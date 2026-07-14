@@ -1623,3 +1623,17 @@ $ grep -n "^import" middleware.ts
 ```
 
 - Verificación local ejecutada: `npm run build` y `npm run lint` pasan correctamente, sin warnings de Edge Runtime; el artefacto `.next/server/middleware.js` no contiene `__dirname`, `@supabase/ssr`, `@supabase/supabase-js`, `createServerClient`, `lib/supabase` ni `types/auth`.
+
+## 2026-07-14 — Producción: middleware Edge eliminado por completo
+
+- La evidencia de Vercel siguió mostrando `MIDDLEWARE_INVOCATION_FAILED` con `ReferenceError: __dirname is not defined` aun después de blindar `middleware.ts`, por lo que se eliminó el archivo para que Next/Vercel no genere ninguna Edge Function de middleware.
+- La protección mínima de rutas autenticadas se movió a `app/(app)/layout.tsx`: el layout server obtiene el usuario con `getCurrentUser()` y redirige a `/login` cuando no hay sesión válida.
+- Verificación local:
+
+```text
+$ find . -maxdepth 3 \( -name 'middleware.*' -o -name 'proxy.*' \) -not -path './.next/*' -print
+# sin resultados
+```
+
+- `npm run build` y `npm run lint` pasan correctamente; el resumen final de Next ya no muestra la línea `ƒ Middleware`, confirmando que no se compila middleware Edge.
+- `docs/DECISIONS.md` quedó actualizado: queda prohibido reintroducir `middleware.ts` salvo decisión explícita nueva y verificación real en Vercel.
