@@ -90,11 +90,12 @@
 
 ## 2026-06-26 — Seguridad del roadmap público
 
-- La vista pública del roadmap se sirve por token único en `/roadmap/[token]`, sin autenticación de usuario.
+- La vista pública del roadmap se sirve por slug legible en `/roadmap/[slug]`, sin autenticación de usuario.
 - La API pública expone únicamente campos seguros para cliente: nombre del proyecto, estado, avance, fechas visibles y features agrupadas por fase.
 - Quedan excluidos deliberadamente costos, valores, responsables, notas internas, credenciales y cualquier otro dato operativo sensible.
-- La consulta exige `roadmap_publico_activo = true` además del `roadmap_token`, y la página pública devuelve `404` si el token no existe o el roadmap fue desactivado.
+- La consulta exige `roadmap_publico_activo = true` además del `roadmap_slug`, con fallback de compatibilidad por `roadmap_token`, y la página pública devuelve `404` si el slug no existe o el roadmap fue desactivado.
 - Aunque el acceso real puede apoyarse en `service_role` o RLS por token, la respuesta queda recortada server-side a un shape público explícito para evitar filtraciones accidentales.
+- El slug se genera a partir del nombre del cliente en kebab-case con un sufijo aleatorio corto, para evitar URLs adivinables sin exponer el UUID crudo.
 
 ## 2026-06-26 — Cascada de aceptación con rollback manual
 
@@ -198,3 +199,198 @@
 - El tab `Features` terminó usando fases completas como cards en un kanban de 3 columnas por estado, con expansión interna para ver el checklist de subtareas.
 - Esta forma mantiene el patrón visual de kanban, pero preserva la organización temporal por fase y la edición más granular dentro de cada card.
 - El roadmap público se dejó sin una frontera client innecesaria en su timeline visual, porque no tiene interacción propia y así se evita ruido de serialización entre Server Components y Client Components.
+
+## 2026-07-10 — Proyectos: prioridad visual y checklist sin reasignación
+
+- La prioridad de fase se mostró como un control inline liviano y su énfasis visual desaparece cuando la fase está en `lista`, para que la urgencia solo destaque mientras el trabajo sigue activo.
+- El checklist de subtareas dejó de ofrecer reasignación de fase desde cada fila; la fase se considera fija una vez creada y el foco queda en avanzar el estado de la subtarea.
+- La descripción de la fase se removió del kanban porque el detalle narrativo ya pertenece al tab `Roadmap`, evitando duplicar información en dos vistas distintas.
+
+## 2026-07-10 — Tareas: navegación por proyecto y resiliencia del hook
+
+- El vínculo cliente/proyecto en `TareaCard` se resolvió como texto clickeable que navega a `/proyectos?project_id=...`, para evitar duplicar una pill visual y llevar al usuario directo a la ficha correcta.
+- `useTareas` ahora valida que la respuesta sea JSON antes de parsearla, para degradar mejor si algún entorno devuelve HTML inesperado en lugar de un payload de API.
+
+## 2026-07-10 — Finanzas: runway y costos recurrentes
+
+- Se centralizó la lógica de egresos de período en `lib/finanzas/calcularEgresosPeriodo.ts` para que P&L, burn rate y runway traten los egresos recurrentes como costos activos desde su fecha en adelante.
+- El runway financiero quedó modelado con estados explícitos: `estable` cuando no hay quema neta, `agotado` cuando la caja ya no alcanza, y `normal` cuando todavía queda margen y tiene sentido mostrar meses restantes.
+- `caja_actual` pasó a reflejar caja real, descontando solo egresos pagados y no egresos pendientes.
+- El `Runway Lab` se implementó como simulación client-side: las hipótesis viven en estado local y solo se persisten al aprobar, donde se crean egresos reales por API.
+- La aprobación del escenario no intenta transacciones simuladas; se asume persistencia secuencial por API y se refrescan métricas al final para reflejar el nuevo costo fijo mensual.
+
+## 2026-07-11 — Sistema de archivos privado
+
+- Los archivos se suben a Supabase Storage en un bucket privado y se guardan con `storage_path` que incluye un `uuid` en el nombre, para evitar colisiones entre archivos con el mismo nombre original.
+- La descarga no expone el bucket como público: el backend genera una signed URL temporal de 60 segundos y redirige allí.
+- La eliminación de archivos es primero soft-delete a papelera y recién después existe un borrado definitivo del objeto en Storage, para permitir restauración y reducir riesgo de pérdida accidental.
+- Las carpetas automáticas de clientes y proyectos se crean al alta de la entidad y en el flujo de aceptación de cotización; si faltan carpetas históricas, un backfill admin puede reconstruirlas sin tocar datos existentes.
+
+## 2026-07-10 — Finanzas: runway con MRR y escenarios por meses
+
+- El runway financiero y del dashboard proyecta hacia adelante el MRR de suscripciones activas en lugar de basarse solo en cobros históricos, para reflejar mejor la caja real que entra todos los meses.
+- El `Runway Lab` dejó de usar una fecha de inicio perpetua y ahora simula hipótesis por meses específicos seleccionados, de modo que cada costo se aplica solo en los meses marcados por el usuario.
+- Al aprobar un escenario, se crean egresos reales por cada mes elegido, manteniendo la simulación client-side hasta que el usuario confirma.
+
+## 2026-07-10 — Roadmap público: pagos visibles y credenciales detrás de PIN
+
+- El roadmap público expone la URL del sistema y un resumen de pagos, pero mantiene las credenciales del cliente fuera de la respuesta inicial para no filtrarlas en HTML ni en props del Server Component.
+- Las credenciales solo se recuperan tras un POST server-side con PIN correcto, de modo que el link público por sí solo no alcanza para ver datos sensibles.
+- El PIN se valida contra `proyectos.roadmap_pin` y la respuesta del endpoint de credenciales solo entrega `credenciales_cliente` si el código coincide; en caso contrario, devuelve un error genérico.
+- Esta separación evita que información sensible quede indexable, cacheada o visible por inspección del código fuente del roadmap público.
+
+## 2026-07-10 — Progreso de proyecto por fase
+
+- `avance_pct` se calcula como el promedio de todas las fases del proyecto.
+- Si una fase no tiene subtareas, cuenta como `100%` solo cuando su `estado` es `lista`; en cualquier otro estado aporta `0%`.
+- Si una fase sí tiene subtareas, su avance sale de `subtareas_lista / subtareas_totales`, sin depender del estado manual de la fase.
+- Si un proyecto todavía no tiene fases, se conserva el `avance_pct` existente para no romper el comportamiento legado.
+
+## 2026-07-10 — Finanzas: fórmula final de runway
+
+- `mrr_activo` se define como la suma de `monto_mensual` de las suscripciones con `estado = 'activa'`.
+- `costos_fijos_mensuales` se calcula como la suma de egresos recurrentes activos en el mes actual más el promedio de egresos no recurrentes de los últimos 3 meses.
+- `neto_mensual = mrr_activo - costos_fijos_mensuales`.
+- Si `neto_mensual >= 0`, el runway queda en `estable` y se muestra `Generás $[neto_mensual] USD/mes`.
+- Si `neto_mensual < 0`, la quema neta es `abs(neto_mensual)` y el runway se calcula como `caja_actual / quema_neta`.
+- Si `caja_actual <= 0`, el estado es `agotado`; si no, el estado es `normal`.
+- `caja_actual` se calcula como `caja_inicial + cobros cobrados históricos - egresos pagados históricos`, sin descontar egresos pendientes.
+
+## 2026-07-10 — Roadmap público: preview visual sin dependencias externas
+
+- La preview visual del sistema en vivo usa el meta tag `og:image` del sitio del cliente, obtenido con fetch server-side y timeout, en vez de depender de un servicio de capturas de pantalla de terceros.
+- Si el fetch falla, el sitio bloquea la solicitud, o no existe `og:image`, el endpoint devuelve `imagenUrl: null` y la UI cae a un fallback limpio sin romper el roadmap.
+- Se cachea la extracción cuando es posible para evitar golpear el sitio del cliente en cada visita al roadmap público.
+
+## 2026-07-10 — Finanzas: cartera por cliente
+
+- El gráfico de cartera se construye solo con cobros de tipo `hito` y `one_pay`, porque representan contratos de desarrollo con saldo a cobrar.
+- Los cobros de tipo `mantenimiento` y `brick` quedan fuera del agregado visual para no mezclar ingresos recurrentes con cartera de proyectos.
+- La visualización agrupa por cliente y ordena por tamaño del contrato, para priorizar primero las cuentas más grandes.
+
+## 2026-07-10 — Finanzas: cajas administrables y slug histórico
+
+- `cajas` pasa a ser la fuente de verdad para medios de cobro/pago porque permite crear, renombrar, activar y desactivar sin tocar el histórico.
+- La eliminación real de una caja se considera soft-delete cuando hay movimientos: si existe uso histórico, la caja se desactiva para no romper trazabilidad ni referencias.
+- `cobros.cuenta_medio` y `egresos.cuenta_medio` siguen guardando texto con el slug de la caja, en vez de una FK, para mantener compatibilidad con datos ya cargados y evitar cascadas frágiles sobre registros históricos.
+- La UI resuelve los nombres de caja desde la tabla `cajas`, pero conserva el slug como identificador de escritura para que el backend siga siendo simple y estable.
+
+## 2026-07-10 — Finanzas: tarjetero de solo referencia
+
+- `tarjetas` almacena únicamente datos de referencia rápida: alias, banco, titular, últimos 4 dígitos, vencimiento, tipo, uso habitual y notas.
+- No se guarda el PAN completo ni el CVV para reducir superficie de exposición y alinearse con buenas prácticas PCI-DSS.
+- El número completo de la tarjeta debe permanecer en el gestor de contraseñas del equipo, fuera de la base de datos de la aplicación.
+
+## 2026-07-10 — Roadmap público: sin auto-preview del sistema
+
+- Se descartó el auto-preview visual del sistema en vivo porque los sistemas con autenticación no exponen un `og:image` público confiable.
+- El roadmap público se queda con el fallback final de dominio + link directo, que es estable, simple y no depende de capturas externas ni de rutas públicas especiales.
+
+## 2026-07-10 — Tiempo trabajado por fase
+
+- Se restringe a una sola sesión activa por usuario para evitar solapamientos de tiempo y mantener una única fuente de verdad en el cronómetro global.
+- La métrica de tiempo es pura y no impacta Rentabilidad ni ningún cálculo financiero; sirve solo para seguimiento operativo del trabajo por fase/proyecto.
+
+## 2026-07-11 — Shell con dock flotante estilo macOS
+
+- Se reemplazó el sidebar lateral por un dock flotante inferior estilo macOS para liberar ancho horizontal en toda la app.
+- La navegación se mantiene centralizada en `lib/navigation.ts`, pero ahora se presenta en una sola fila sin secciones visibles.
+- El logo de marca se reubicó en la topbar para evitar depender del sidebar como punto fijo de identidad visual.
+- El avatar de usuario pasó a abrir un dropdown con perfil y cierre de sesión, en lugar de dejar el logout en el pie del sidebar.
+- `Sidebar.tsx` quedó como implementación deprecada por compatibilidad y eventual reversión, pero ya no participa del shell activo.
+
+## 2026-07-11 — Finanzas: Runway Lab como tab propia
+
+- El Runway Lab pasó de un modal disparado desde Resumen a una tab propia para que la simulación quede siempre accesible como una vista completa del módulo.
+- Se agregó un toggle por hipótesis para activarla o desactivarla localmente y comparar escenarios sin perder el trabajo ya cargado.
+- Las hipótesis activas son las únicas que se persisten al aprobar; las inactivas quedan solo como parte del escenario de simulación.
+- La comparación visual reutiliza el lenguaje de gráficos ya validado en Finanzas: barras sólidas para la serie base y una línea de escenario distinguible, con tooltip que sigue el mouse.
+
+## 2026-07-11 — Dashboard protagonista en Financiero
+
+- La sección Financiero se decidió como protagonista del dashboard para que la foto más importante del negocio quede arriba y ocupe el mayor peso visual.
+- Comercial y Entrega se presentan como bloques completos secundarios, pero sin competir con el bloque financiero principal.
+- El dashboard reutiliza directamente `PLChart` y el lenguaje visual de Finanzas en lugar de duplicar gráficos o crear variantes paralelas, para mantener consistencia y reducir mantenimiento.
+- Para evitar que un período anterior pise el seleccionado más reciente, `useDashboard` aborta solicitudes viejas y descarta respuestas fuera de fecha.
+
+## 2026-07-12 — Notas con TipTap y JSON estructurado
+
+- TipTap se eligió como motor de edición porque es headless y permite construir la UI completa con Tailwind sin depender de componentes visuales ajenos al sistema.
+- El contenido de las notas se guarda como JSON estructurado en vez de HTML crudo para conservar semántica, facilitar autosave y evitar depender de sanitización visual en el front.
+- Las notas pueden vincularse opcionalmente a clientes, proyectos o leads sin romper el flujo de edición o navegación del resto de la app.
+
+## 2026-07-12 — Notas: imágenes pegadas por proxy autenticado y paleta post-it
+
+- Las imágenes pegadas o arrastradas dentro de Notas se sirven a través de un endpoint proxy autenticado del sistema, en vez de signed URLs temporales o bucket público.
+- La razón es evitar expiración de enlaces y mantener el bucket privado sin sacrificar la posibilidad de pegar capturas directo en el editor.
+- Los colores `postit` (`amarillo`, `rosa`, `celeste`, `verde`, `violeta`) se definieron como una paleta separada de la semántica global del design system y quedan reservados exclusivamente para el feature de Notas.
+- El color ya no vive en la nota individual: ahora pertenece a la etiqueta reutilizable (`notas_etiquetas`) para que el mismo tag mantenga una representación consistente en toda la app.
+
+## 2026-07-12 — Reversión del Dock
+
+- Se revirtió el dock horizontal flotante y se volvió al sidebar lateral original porque el usuario prefirió el patrón clásico de navegación.
+- `Dock.tsx` queda conservado como código deprecado para retomar la idea en el futuro si se decide reintentar.
+
+## 2026-07-12 — SaaS separado por producto
+
+- Se separó el SaaS de los clientes de desarrollo a medida usando `suscripciones.producto_id`, en vez de duplicar o especializar la tabla `clientes`.
+- Esto permite extender productos SaaS, métricas y roadmap por producto sin tocar el modelo de clientes existente.
+- La tabla `clientes` sigue representando clientes de la agencia / desarrollo a medida; el vínculo al producto vive en `suscripciones` porque esa es la unidad natural de cobro recurrente.
+
+## 2026-07-12 — Editor compartido entre Notas y Wiki
+
+- Se extrajo el editor enriquecido a `components/shared/RichTextEditor.tsx` para reutilizar el mismo TipTap entre Notas y Wiki.
+- La UI de edición sigue siendo headless y se estiliza completamente con Tailwind, sin introducir una segunda implementación paralela de TipTap.
+- Esto reduce deriva visual y de comportamiento entre módulos que usan el mismo patrón de texto enriquecido.
+
+## 2026-07-12 — Regla global: no repetir headers nuevos
+
+- La regla de eliminar títulos/subtítulos redundantes debajo de la topbar aplica a todo módulo nuevo que se construya de acá en adelante, sin excepción.
+- La topbar ya identifica la sección actual, así que ningún módulo nuevo debe repetir su nombre como `h1` o `h2` grande en el contenido principal.
+- Esto se aplica también a ajustes futuros sobre módulos ya creados: si un panel vuelve a introducir un título redundante, se elimina en favor de la primera fila funcional del flujo.
+
+## 2026-07-12 — Archivos: iconos por tipo y acciones abiertas/descarga separadas
+
+- Para archivos que no son imagen se prefieren iconos grandes por tipo en la vista galería, en vez de intentar previsualizar el contenido real.
+- Esto evita renderizado server-side pesado y mantiene la UI rápida y consistente para documentos, planillas y PDFs.
+- La acción primaria de un archivo es "abrir" con comportamiento nativo del navegador, mientras que "descargar" fuerza `Content-Disposition: attachment`.
+- Esa separación deja claro cuándo el usuario quiere previsualizar y cuándo necesita guardar el archivo explícitamente.
+
+## 2026-07-13 — Gráficos premium: profundidad visual sin cambiar la lógica
+
+- La decisión anterior de usar barras planas queda reemplazada por pedido explícito del usuario: los gráficos deben poder mostrarse a clientes y sentirse modernos, con una estética de producto premium.
+- Las series mantienen su significado semántico y la paleta de Blyndtek (`signal`, `danger`, `success`, `warning`), pero pueden usar gradientes sobrios, sombras SVG suaves y superficies de gráfico más cuidadas cuando eso mejore la percepción visual.
+- `CarteraClientesChart` queda como referencia aprobada: limpio, con buena jerarquía y sin ruido. El resto de los gráficos debe acercarse a ese nivel de pulido sin tocar cálculos ni endpoints.
+- Los gradientes no son decorativos libres: se usan solo dentro de gráficos, con lógica semántica y contraste suficiente; navegación, formularios y UI estructural siguen sin gradientes decorativos.
+- Todos los imports de `recharts` deben salir del paquete principal `recharts`; no se usan rutas internas como `recharts/es6/...` o `recharts/lib/...`.
+- `MetricaCard` se mantiene como tarjeta reutilizable con ícono circular de color para reforzar lectura rápida de métricas sin crear componentes paralelos.
+
+## 2026-07-13 — Checklist de QA como gate antes de mover una fase a Lista
+
+- Para pasar una fase a `lista`, la checklist de QA ahora funciona como condición de calidad obligatoria cuando existe al menos un ítem generado o agregado manualmente.
+- La checklist puede arrancar desde Claude con JSON estructurado, pero sigue siendo editable por el usuario para cubrir casos que la IA no contempló.
+- El gate vive en el backend para bloquear el cambio de estado aunque el drag sea optimista en la UI, lo que deja la regla independiente de quién escribió el código o generó la checklist.
+- Esta base queda lista para integrar más adelante disparos automáticos de QA con Claude Code sin cambiar la regla de negocio.
+
+## 2026-07-13 — AI Dev orquestado por webhook compartido y costo estimado
+
+- El webhook de AI Dev se autentica con un secreto compartido entre Blyndtek OS y el workflow de GitHub Actions, en vez de montar un flujo OAuth completo.
+- Esa decisión encaja con el uso interno acotado del sistema y simplifica la puesta en marcha del piloto sin añadir complejidad operativa innecesaria.
+- El costo estimado por ejecución usa el precio de Sonnet como aproximación aunque el flujo pueda mezclar modelos distintos; queda documentado como estimación no exacta para seguimiento interno, no como facturación real.
+- La corrida queda persistida en `ai_dev_ejecuciones` y el tiempo consumido en `sesiones_tiempo` con `es_ia = true`, de modo que el historial de trabajo y el tracking operativo queden separados del tiempo humano.
+
+## 2026-07-13 — Comisiones configurables al aceptar cotización
+
+- El modelo de comisión se calcula al aceptar la cotización, no de forma progresiva con los cobros.
+- La base, tiers y bono viven en `config_comisiones` para evitar hardcodear porcentajes o pisos y permitir ajustes de negocio sin tocar el código.
+- Cuando el cliente resultante tiene `vendedor_id`, se genera un registro en `comisiones` con estado pendiente y luego puede marcarlo pagado sólo admin.
+- `supervisor_id` en `usuarios` queda preparado para una futura jerarquía comercial, pero sin lógica activa todavía para no mezclar responsabilidad con la comisión actual.
+- Al pagarse una comisión, se crea un egreso real trazable vía `comision_id` para que el costo de ventas impacte P&L, runway y tesorería con criterio cash basis.
+- Mientras la comisión siga pendiente, no afecta runway ni caja real hasta que efectivamente se pague y se refleje en `egresos`.
+
+## 2026-07-13 — Runway Lab con ingresos pendientes opcionales
+
+- El runway conserva el modo conservador por defecto, pero ahora puede sumar cobros pendientes y suscripciones pendientes cuando el usuario lo activa explícitamente.
+- Los pendientes sin fecha esperada se excluyen del cálculo en vez de asumir un mes arbitrario, para no inflar la proyección con datos inventados.
+- El `Runway Lab` presenta esa decisión como un switch visible, y la misma regla queda disponible también desde el endpoint `GET /api/finanzas/runway`.
+- Las hipótesis de costo siguen sumándose sobre la base elegida, sin cambiar su lógica ni mezclar el tratamiento de ingresos con el de escenarios.

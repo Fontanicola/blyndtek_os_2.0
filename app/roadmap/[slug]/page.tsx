@@ -1,12 +1,18 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
-import { RoadmapFooter, RoadmapHeader, RoadmapTimeline } from "@/components/roadmap";
+import {
+  RoadmapHeader,
+  ResumenPagos,
+  RoadmapTimeline,
+  RoadmapFooter,
+  SistemaEnVivo
+} from "@/components/roadmap";
 import type { PublicRoadmapProject } from "@/types/roadmap-public";
 
 type RoadmapPageProps = {
   params: {
-    token: string;
+    slug: string;
   };
 };
 
@@ -15,7 +21,7 @@ type RoadmapApiResponse = {
   error?: string;
 };
 
-async function fetchRoadmap(token: string) {
+async function fetchRoadmap(slug: string) {
   const requestHeaders = headers();
   const host = requestHeaders.get("host");
   const protocol = requestHeaders.get("x-forwarded-proto") ?? "http";
@@ -24,7 +30,7 @@ async function fetchRoadmap(token: string) {
     throw new Error("No se pudo resolver el host para cargar el roadmap.");
   }
 
-  const response = await fetch(`${protocol}://${host}/api/roadmap/${token}`, {
+  const response = await fetch(`${protocol}://${host}/api/roadmap/${slug}`, {
     cache: "no-store"
   });
 
@@ -42,7 +48,7 @@ async function fetchRoadmap(token: string) {
 }
 
 export async function generateMetadata({ params }: RoadmapPageProps): Promise<Metadata> {
-  const roadmap = await fetchRoadmap(params.token).catch(() => null);
+  const roadmap = await fetchRoadmap(params.slug).catch(() => null);
 
   if (!roadmap) {
     return {
@@ -56,7 +62,7 @@ export async function generateMetadata({ params }: RoadmapPageProps): Promise<Me
 }
 
 export default async function RoadmapPage({ params }: RoadmapPageProps) {
-  const roadmap = await fetchRoadmap(params.token);
+  const roadmap = await fetchRoadmap(params.slug);
 
   if (!roadmap) {
     notFound();
@@ -66,6 +72,8 @@ export default async function RoadmapPage({ params }: RoadmapPageProps) {
     <main className="min-h-screen bg-paper px-4 py-6 sm:px-6 sm:py-10">
       <div className="mx-auto max-w-3xl space-y-6">
         <RoadmapHeader roadmap={roadmap} />
+        <ResumenPagos pagos={roadmap.pagos} />
+        {roadmap.url_sistema ? <SistemaEnVivo urlSistema={roadmap.url_sistema} /> : null}
         <RoadmapTimeline fases={roadmap.fases} />
         <RoadmapFooter ultimaActualizacion={roadmap.ultima_actualizacion} />
       </div>

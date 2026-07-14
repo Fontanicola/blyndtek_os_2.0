@@ -1,16 +1,20 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Badge, Button, Card, EntityMultiSelect, EntitySelect, Input } from "@/components/ui";
+import { NotasVinculadasSection } from "@/components/notas";
+import { useCronometro } from "@/lib/hooks/useCronometro";
 import { useFasesProyecto } from "@/lib/hooks/useFasesProyecto";
 import { cn } from "@/lib/cn";
 import { PROYECTO_ESTADO_LABELS, PROYECTO_ESTADO_OPTIONS } from "@/lib/proyectos";
+import { formatDurationHours, formatDurationShort } from "@/lib/tiempo";
 import { formatFecha, formatUSD } from "@/lib/utils/formatters";
 import type { CuentaServicio, CreateCuentaServicioInput } from "@/types/cuentas";
 import type { Cliente } from "@/types/clientes";
 import type { Feature } from "@/types/features";
 import type { Proyecto, UpdateProyectoInput } from "@/types/proyectos";
 import type { Usuario } from "@/types/auth";
+import type { ProyectoTiempoResponse } from "@/types/sesionesTiempo";
 import { CuentaServicioCard } from "./CuentaServicioCard";
 import { CuentaServicioModal } from "./CuentaServicioModal";
 import { FasesEstadoKanban } from "./features-kanban";
@@ -21,14 +25,23 @@ type ProyectoFichaProps = {
   isAdmin: boolean;
   features: Feature[];
   clientes: Array<Pick<Cliente, "id" | "empresa">>;
-  usuarios: Array<Pick<Usuario, "id" | "nombre" | "email" | "rol">>;
+  usuarios: Array<Pick<Usuario, "id" | "nombre" | "email" | "rol" | "foto_url">>;
   proyectos: Array<Pick<Proyecto, "id" | "nombre" | "estado" | "cliente_id">>;
   onProyectoUpdated: (proyecto: Proyecto) => void | Promise<void>;
-  onNuevoProyecto: () => void;
   onUpdateProyecto: (input: UpdateProyectoInput) => Promise<Proyecto>;
 };
 
 type TabKey = "general" | "features" | "cuentas" | "roadmap";
+
+type RoadmapConfigDraft = {
+  url_sistema: string;
+  roadmap_pin: string;
+  credenciales_cliente: {
+    usuario: string;
+    contraseña: string;
+    notas: string;
+  };
+};
 
 const tabs: Array<{ key: TabKey; label: string }> = [
   { key: "general", label: "General" },
@@ -189,7 +202,6 @@ export function ProyectoFicha({
   usuarios,
   proyectos,
   onProyectoUpdated,
-  onNuevoProyecto,
   onUpdateProyecto
 }: ProyectoFichaProps) {
   const [activeTab, setActiveTab] = useState<TabKey>("general");
@@ -197,7 +209,23 @@ export function ProyectoFicha({
   const [cuentaModalOpen, setCuentaModalOpen] = useState(false);
   const [editingCuenta, setEditingCuenta] = useState<CuentaServicio | null>(null);
   const [roadmapOrigin, setRoadmapOrigin] = useState("");
+  const [roadmapConfigOpen, setRoadmapConfigOpen] = useState(true);
+  const [tiempoProyecto, setTiempoProyecto] = useState<ProyectoTiempoResponse | null>(null);
+  const [tiempoProyectoLoading, setTiempoProyectoLoading] = useState(false);
+  const [roadmapConfigDraft, setRoadmapConfigDraft] = useState<RoadmapConfigDraft>({
+    url_sistema: proyecto.url_sistema ?? "",
+    roadmap_pin: proyecto.roadmap_pin ?? "",
+    credenciales_cliente: {
+      usuario: proyecto.credenciales_cliente?.usuario ?? "",
+      contraseña: proyecto.credenciales_cliente?.contraseña ?? "",
+      notas: proyecto.credenciales_cliente?.notas ?? ""
+      }
+    });
+  const [githubRepoDraft, setGithubRepoDraft] = useState(proyecto.github_repo ?? "");
+  const [githubRepoSaving, setGithubRepoSaving] = useState(false);
+  const [githubRepoError, setGithubRepoError] = useState<string | null>(null);
   const { fases, fetchFases, setFases } = useFasesProyecto();
+  const cronometro = useCronometro();
 
   useEffect(() => {
     setRoadmapOrigin(window.location.origin);
@@ -224,10 +252,49 @@ export function ProyectoFicha({
     void fetchFases(proyecto.id);
   }, [fetchFases, proyecto.id, setFases]);
 
-  const roadmapUrl = useMemo(() => `${roadmapOrigin}/roadmap/${proyecto.roadmap_token}`, [
-    proyecto.roadmap_token,
-    roadmapOrigin
-  ]);
+  useEffect(() => {
+    setRoadmapConfigDraft({
+      url_sistema: proyecto.url_sistema ?? "",
+      roadmap_pin: proyecto.roadmap_pin ?? "",
+      credenciales_cliente: {
+        usuario: proyecto.credenciales_cliente?.usuario ?? "",
+        contraseña: proyecto.credenciales_cliente?.contraseña ?? "",
+        notas: proyecto.credenciales_cliente?.notas ?? ""
+      }
+    });
+  }, [proyecto.credenciales_cliente, proyecto.roadmap_pin, proyecto.url_sistema]);
+
+  useEffect(() => {
+    setGithubRepoDraft(proyecto.github_repo ?? "");
+  }, [proyecto.github_repo]);
+
+  const fetchTiempoProyecto = useCallback(async () => {
+    setTiempoProyectoLoading(true);
+
+    try {
+      const response = await fetch(`/api/proyectos/${proyecto.id}/tiempo`, {
+        cache: "no-store"
+      });
+      const payload = (await response.json()) as { data?: ProyectoTiempoResponse; error?: string };
+
+      if (response.ok && payload.data) {
+        setTiempoProyecto(payload.data);
+      } else {
+        setTiempoProyecto(null);
+      }
+    } catch {
+      setTiempoProyecto(null);
+    } finally {
+      setTiempoProyectoLoading(false);
+    }
+  }, [proyecto.id]);
+
+  useEffect(() => {
+    void fetchTiempoProyecto();
+  }, [fetchTiempoProyecto]);
+
+  const roadmapPath = proyecto.roadmap_slug ?? proyecto.roadmap_token;
+  const roadmapUrl = useMemo(() => `${roadmapOrigin}/roadmap/${roadmapPath}`, [roadmapOrigin, roadmapPath]);
 
   const fasesOrdenadas = useMemo(
     () => [...fases].sort((first, second) => first.orden - second.orden || first.nombre.localeCompare(second.nombre)),
@@ -236,7 +303,7 @@ export function ProyectoFicha({
 
   const faseProgress = useMemo(() => {
     return fasesOrdenadas.map((fase) => {
-      const faseFeatures = features.filter((feature) => feature.fase === fase.id);
+      const faseFeatures = features.filter((feature) => feature.fase_id === fase.id);
       const completed = faseFeatures.filter((feature) => feature.estado === "lista").length;
 
       return {
@@ -246,6 +313,127 @@ export function ProyectoFicha({
       };
     });
   }, [features, fasesOrdenadas]);
+
+  const tiempoProyectoVisual = useMemo(() => {
+    const base = tiempoProyecto ?? {
+      total_segundos: 0,
+      por_fase: [],
+      por_usuario: []
+    };
+    const activeSession = cronometro.sesionActiva;
+
+    if (!activeSession || activeSession.proyecto_id !== proyecto.id) {
+      return base;
+    }
+
+    const liveSeconds = cronometro.tiempoTranscurrido;
+    const porFase = base.por_fase.map((fase) => {
+      if (fase.fase_id !== activeSession.fase_id) {
+        return fase;
+      }
+
+      const porUsuario: Array<(typeof fase.por_usuario)[number]> = [...fase.por_usuario];
+      const currentIndex = porUsuario.findIndex((item) => item.usuario_id === activeSession.usuario_id);
+
+      if (currentIndex >= 0) {
+        const currentUser = porUsuario[currentIndex];
+        if (currentUser) {
+          porUsuario[currentIndex] = {
+            ...currentUser,
+            segundos: currentUser.segundos + liveSeconds
+          };
+        }
+      } else {
+        porUsuario.push({
+          usuario_id: activeSession.usuario_id,
+          nombre: activeSession.usuario_nombre ?? "Sin nombre",
+          segundos: liveSeconds
+        });
+      }
+
+      return {
+        ...fase,
+        segundos: fase.segundos + liveSeconds,
+        por_usuario: porUsuario
+      };
+    });
+
+    const porUsuario: typeof base.por_usuario = base.por_usuario.map((item) =>
+      item.usuario_id === activeSession.usuario_id
+        ? { ...item, segundos: item.segundos + liveSeconds }
+        : item
+    );
+
+    if (!porUsuario.some((item) => item.usuario_id === activeSession.usuario_id)) {
+      porUsuario.push({
+        usuario_id: activeSession.usuario_id,
+        nombre: activeSession.usuario_nombre ?? "Sin nombre",
+        segundos: liveSeconds
+      });
+    }
+
+    return {
+      total_segundos: base.total_segundos + liveSeconds,
+      por_fase: porFase,
+      por_usuario: porUsuario
+    };
+  }, [cronometro.sesionActiva, cronometro.tiempoTranscurrido, proyecto.id, tiempoProyecto]);
+
+  const tiempoPorFaseOrdenado = useMemo(
+    () =>
+      [...tiempoProyectoVisual.por_fase].sort(
+        (first, second) => second.segundos - first.segundos || first.nombre.localeCompare(second.nombre)
+      ),
+    [tiempoProyectoVisual.por_fase]
+  );
+
+  const tiempoPorUsuarioVisible = useMemo(
+    () => tiempoProyectoVisual.por_usuario.filter((usuario) => usuario.segundos > 0),
+    [tiempoProyectoVisual.por_usuario]
+  );
+
+  async function iniciarCronometro(faseId: string) {
+    await cronometro.iniciar(faseId);
+    await fetchTiempoProyecto();
+  }
+
+  async function pausarCronometro(sesionId: string, nota?: string) {
+    await cronometro.pausar(sesionId, nota);
+    await fetchTiempoProyecto();
+  }
+
+  async function saveRoadmapConfig() {
+    await persistProyecto({
+      url_sistema: roadmapConfigDraft.url_sistema.trim() ? roadmapConfigDraft.url_sistema.trim() : null,
+      roadmap_pin: roadmapConfigDraft.roadmap_pin.trim() ? roadmapConfigDraft.roadmap_pin.trim() : null,
+      credenciales_cliente: {
+        usuario: roadmapConfigDraft.credenciales_cliente.usuario.trim() || null,
+        contraseña: roadmapConfigDraft.credenciales_cliente.contraseña.trim() || null,
+        notas: roadmapConfigDraft.credenciales_cliente.notas.trim() || null
+      }
+    });
+  }
+
+  async function saveGitHubRepo() {
+    const value = githubRepoDraft.trim();
+    if (value && !/^[^/\s]+\/[^/\s]+$/.test(value)) {
+      setGithubRepoError("El repositorio debe tener formato owner/repo.");
+      return;
+    }
+
+    setGithubRepoSaving(true);
+    setGithubRepoError(null);
+    try {
+      await persistProyecto({
+        github_repo: value ? value : null
+      });
+      setGithubRepoError(null);
+    } catch (error) {
+      setGithubRepoError(error instanceof Error ? error.message : "No se pudo guardar el repositorio.");
+    } finally {
+      setGithubRepoSaving(false);
+    }
+  }
 
   async function persistProyecto(input: UpdateProyectoInput) {
     const updated = await onUpdateProyecto(input);
@@ -294,8 +482,8 @@ export function ProyectoFicha({
   }
 
   return (
-    <div className="flex h-full flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line-soft pb-2">
+    <div className="flex h-full min-h-0 flex-col gap-4">
+      <div className="flex-shrink-0 border-b border-line-soft pb-2">
         <div className="flex flex-wrap gap-2">
           {tabs.map((tab) => (
             <button
@@ -313,304 +501,510 @@ export function ProyectoFicha({
             </button>
           ))}
         </div>
-
-        <Button size="sm" onClick={onNuevoProyecto}>
-          Nuevo proyecto
-        </Button>
       </div>
 
-      {activeTab === "general" ? (
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)]">
-          <Card padding="lg" className="space-y-6">
-            <div className="space-y-2">
-              <div className="flex flex-wrap items-center gap-3">
-                <h2 className="text-2xl font-title text-carbon">{clienteNombre}</h2>
-                <Badge variant={getEstadoVariant(proyecto.estado)}>
-                  {PROYECTO_ESTADO_LABELS[proyecto.estado]}
-                </Badge>
-              </div>
-              <p className="text-base text-graphite">{proyecto.nombre}</p>
-            </div>
-
-            <section className="space-y-3">
-              <h3 className="text-sm font-title text-carbon">General</h3>
-              <div className="grid gap-3 md:grid-cols-2">
-                <div className="space-y-1">
-                  <p className="text-xs font-label uppercase tracking-[0.08em] text-graphite">Cliente</p>
-                  <p className="rounded-component bg-paper px-3 py-2 text-sm text-carbon">{clienteNombre}</p>
+      <div className="min-h-0 flex-1 overflow-hidden">
+        {activeTab === "general" ? (
+          <div className="h-full min-h-0 overflow-y-auto pr-1">
+            <div className="grid gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)]">
+              <Card padding="lg" className="space-y-6">
+                <div className="space-y-2">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <h2 className="text-2xl font-title text-carbon">{clienteNombre}</h2>
+                    <Badge variant={getEstadoVariant(proyecto.estado)}>
+                      {PROYECTO_ESTADO_LABELS[proyecto.estado]}
+                    </Badge>
+                  </div>
+                  <p className="text-base text-graphite">{proyecto.nombre}</p>
                 </div>
 
-                <div className="space-y-1">
-                  <p className="text-xs font-label uppercase tracking-[0.08em] text-graphite">Estado</p>
-                  <select
-                    value={proyecto.estado}
-                    onChange={async (event) => {
-                      await persistProyecto({
-                        estado: event.target.value as Proyecto["estado"]
-                      });
-                    }}
-                    className="w-full rounded-component border border-line bg-white px-3 py-2 text-sm text-carbon focus:border-signal focus:outline-none focus:ring-2 focus:ring-signal/20"
-                  >
-                    {PROYECTO_ESTADO_OPTIONS.map((estado) => (
-                      <option key={estado} value={estado}>
-                        {PROYECTO_ESTADO_LABELS[estado]}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <EntitySelect
-                  label="Responsable"
-                  value={proyecto.responsable_id}
-                  allowEmpty
-                  placeholder="Sin responsable"
-                  options={usuarios.map((usuario) => ({
-                    id: usuario.id,
-                    label: usuario.nombre,
-                    sublabel: usuario.rol
-                  }))}
-                  onChange={async (value) => {
-                    await persistProyecto({ responsable_id: value });
-                  }}
-                />
-                <EntityMultiSelect
-                  label="Devs asignados"
-                  values={proyecto.devs_asignados}
-                  placeholder="Agregar devs"
-                  options={usuarios.map((usuario) => ({
-                    id: usuario.id,
-                    label: usuario.nombre,
-                    sublabel: usuario.email
-                  }))}
-                  onChange={async (value) => {
-                    await persistProyecto({
-                      devs_asignados: value
-                    });
-                  }}
-                />
-                <InlineField
-                  label="Fecha inicio"
-                  value={proyecto.fecha_inicio}
-                  onSave={async (value) => {
-                    await persistProyecto({ fecha_inicio: value });
-                  }}
-                  type="date"
-                />
-                <InlineField
-                  label="Entrega comprometida"
-                  value={proyecto.entrega_comprometida}
-                  onSave={async (value) => {
-                    await persistProyecto({ entrega_comprometida: value });
-                  }}
-                  type="date"
-                />
-                <InlineField
-                  label="Entrega real"
-                  value={proyecto.entrega_real}
-                  onSave={async (value) => {
-                    await persistProyecto({ entrega_real: value });
-                  }}
-                  type="date"
-                />
-                <InlineField
-                  label="Valor total"
-                  value={proyecto.valor_total !== null ? String(proyecto.valor_total) : null}
-                  onSave={async (value) => {
-                    await persistProyecto({ valor_total: value ? Number(value) : null });
-                  }}
-                  type="number"
-                />
-              </div>
-            </section>
-
-            <section className="space-y-3">
-              <h3 className="text-sm font-title text-carbon">Avance</h3>
-              <ProgressBar value={proyecto.avance_pct} />
-              <p className="text-xs text-graphite">
-                Se actualiza automáticamente a medida que completás subtareas en Features.
-              </p>
-            </section>
-          </Card>
-
-          <Card padding="lg" className="space-y-4">
-            <h3 className="text-sm font-title text-carbon">Notas de arquitectura / DB</h3>
-            <TextareaField
-              label="Notas"
-              value={proyecto.notas_arquitectura}
-              onSave={async (value) => {
-                await persistProyecto({ notas_arquitectura: value });
-              }}
-            />
-
-            <div className="space-y-2 rounded-card bg-paper p-4">
-              <p className="text-xs font-label uppercase tracking-[0.08em] text-graphite">Resumen</p>
-              <p className="text-sm text-carbon">
-                Precio total: {proyecto.valor_total !== null ? formatUSD(proyecto.valor_total) : "Sin definir"}
-              </p>
-              <p className="text-sm text-carbon">
-                Entrega comprometida: {proyecto.entrega_comprometida ? formatFecha(proyecto.entrega_comprometida) : "Sin fecha"}
-              </p>
-            </div>
-          </Card>
-        </div>
-      ) : null}
-
-      {activeTab === "features" ? (
-        <FasesEstadoKanban proyecto={proyecto} />
-      ) : null}
-
-      {activeTab === "cuentas" ? (
-        isAdmin ? (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <h3 className="text-base font-title text-carbon">Cuentas y servicios</h3>
-                <p className="mt-1 text-sm text-graphite">Credenciales internas y accesos del proyecto.</p>
-              </div>
-              <Button variant="secondary" onClick={() => setCuentaModalOpen(true)}>
-                Nueva cuenta
-              </Button>
-            </div>
-
-            <div className="space-y-3">
-              {cuentas.length > 0 ? (
-                cuentas.map((cuenta) => (
-                  <CuentaServicioCard
-                    key={cuenta.id}
-                    cuenta={cuenta}
-                    isAdmin={isAdmin}
-                    onEdit={() => {
-                      setEditingCuenta(cuenta);
-                      setCuentaModalOpen(true);
-                    }}
-                    onDelete={async () => {
-                      await deleteCuenta(cuenta.id);
-                    }}
-                  />
-                ))
-              ) : (
-                <Card padding="lg">
-                  <p className="text-sm text-graphite">Todavía no hay cuentas/servicios cargados.</p>
-                </Card>
-              )}
-            </div>
-
-            <CuentaServicioModal
-              isOpen={cuentaModalOpen}
-              onClose={() => {
-                setCuentaModalOpen(false);
-                setEditingCuenta(null);
-              }}
-              cuenta={editingCuenta}
-              proyectos={proyectos}
-              clientes={clientes}
-              defaultProyectoId={proyecto.id}
-              onSave={saveCuenta}
-            />
-          </div>
-        ) : (
-          <Card padding="lg">
-            <p className="text-sm text-graphite">Solo administradores pueden ver las credenciales.</p>
-          </Card>
-        )
-      ) : null}
-
-      {activeTab === "roadmap" ? (
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)]">
-          <div className="space-y-4">
-            {fasesOrdenadas.length > 0 ? (
-              <Card padding="lg" className="space-y-4">
-                <div>
-                  <h3 className="text-base font-title text-carbon">Fases planificadas</h3>
-                  <p className="mt-1 text-sm text-graphite">
-                    Referencia interna del roadmap con el avance real de cada fase.
-                  </p>
-                </div>
-
-                <div className="space-y-3">
-                  {faseProgress.map(({ fase, completed, total }) => (
-                    <div key={fase.id} className="rounded-card border border-line-soft bg-paper p-4">
-                      <div className="flex flex-wrap items-center justify-between gap-3">
-                        <div>
-                          <p className="text-sm font-label text-carbon">{fase.nombre}</p>
-                          <p className="text-xs text-graphite">
-                            {fase.fecha_inicio_estimada || fase.fecha_fin_estimada
-                              ? [
-                                  fase.fecha_inicio_estimada ? formatFecha(fase.fecha_inicio_estimada) : null,
-                                  fase.fecha_fin_estimada ? formatFecha(fase.fecha_fin_estimada) : null
-                                ]
-                                  .filter(Boolean)
-                                  .join(" - ")
-                              : "Sin fechas estimadas"}
-                          </p>
-                        </div>
-                        <Badge variant="default">
-                          {completed}/{total} features completadas
-                        </Badge>
-                      </div>
-
-                      {fase.descripcion || fase.entregables ? (
-                        <div className="mt-3 space-y-2 border-t border-line-soft pt-3">
-                          {fase.descripcion ? <p className="text-sm text-carbon">{fase.descripcion}</p> : null}
-                          {fase.entregables ? (
-                            <p className="text-xs text-graphite">{fase.entregables}</p>
-                          ) : null}
-                        </div>
-                      ) : null}
+                <section className="space-y-3">
+                  <h3 className="text-sm font-title text-carbon">General</h3>
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <div className="space-y-1">
+                      <p className="text-xs font-label uppercase tracking-[0.08em] text-graphite">Cliente</p>
+                      <p className="rounded-component bg-paper px-3 py-2 text-sm text-carbon">{clienteNombre}</p>
                     </div>
-                  ))}
+
+                    <div className="space-y-1">
+                      <p className="text-xs font-label uppercase tracking-[0.08em] text-graphite">Estado</p>
+                      <select
+                        value={proyecto.estado}
+                        onChange={async (event) => {
+                          await persistProyecto({
+                            estado: event.target.value as Proyecto["estado"]
+                          });
+                        }}
+                        className="w-full rounded-component border border-line bg-white px-3 py-2 text-sm text-carbon focus:border-signal focus:outline-none focus:ring-2 focus:ring-signal/20"
+                      >
+                        {PROYECTO_ESTADO_OPTIONS.map((estado) => (
+                          <option key={estado} value={estado}>
+                            {PROYECTO_ESTADO_LABELS[estado]}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <EntitySelect
+                      label="Responsable"
+                      value={proyecto.responsable_id}
+                      allowEmpty
+                      placeholder="Sin responsable"
+                      options={usuarios.map((usuario) => ({
+                        id: usuario.id,
+                        label: usuario.nombre,
+                        sublabel: usuario.rol
+                      }))}
+                      onChange={async (value) => {
+                        await persistProyecto({ responsable_id: value });
+                      }}
+                    />
+                    <EntityMultiSelect
+                      label="Devs asignados"
+                      values={proyecto.devs_asignados}
+                      placeholder="Agregar devs"
+                      options={usuarios.map((usuario) => ({
+                        id: usuario.id,
+                        label: usuario.nombre,
+                        sublabel: usuario.email
+                      }))}
+                      onChange={async (value) => {
+                        await persistProyecto({
+                          devs_asignados: value
+                        });
+                      }}
+                    />
+                    <InlineField
+                      label="Fecha inicio"
+                      value={proyecto.fecha_inicio}
+                      onSave={async (value) => {
+                        await persistProyecto({ fecha_inicio: value });
+                      }}
+                      type="date"
+                    />
+                    <InlineField
+                      label="Entrega comprometida"
+                      value={proyecto.entrega_comprometida}
+                      onSave={async (value) => {
+                        await persistProyecto({ entrega_comprometida: value });
+                      }}
+                      type="date"
+                    />
+                    <InlineField
+                      label="Entrega real"
+                      value={proyecto.entrega_real}
+                      onSave={async (value) => {
+                        await persistProyecto({ entrega_real: value });
+                      }}
+                      type="date"
+                    />
+                    <InlineField
+                      label="Valor total"
+                      value={proyecto.valor_total !== null ? String(proyecto.valor_total) : null}
+                      onSave={async (value) => {
+                        await persistProyecto({ valor_total: value ? Number(value) : null });
+                      }}
+                      type="number"
+                    />
+                  </div>
+                </section>
+
+                <section className="space-y-3">
+                  <h3 className="text-sm font-title text-carbon">Avance</h3>
+                  <ProgressBar value={proyecto.avance_pct} />
+                  <p className="text-xs text-graphite">
+                    Se actualiza automáticamente a medida que completás subtareas en Features.
+                  </p>
+                </section>
+
+                <section className="space-y-3">
+                  <div className="space-y-1">
+                    <p className="text-xs font-label uppercase tracking-[0.08em] text-graphite">
+                      Repositorio de GitHub
+                    </p>
+                    <p className="text-xs text-graphite">Necesario para usar AI Dev en las fases de este proyecto.</p>
+                  </div>
+                  <div className="flex flex-wrap items-end gap-3">
+                    <div className="min-w-0 flex-1">
+                      <Input
+                        value={githubRepoDraft}
+                        onChange={(event) => setGithubRepoDraft(event.target.value)}
+                        placeholder="owner/repo"
+                        className="w-full"
+                      />
+                    </div>
+                    <Button
+                      type="button"
+                      variant="primary"
+                      onClick={() => {
+                        void saveGitHubRepo();
+                      }}
+                      loading={githubRepoSaving}
+                      >
+                        Guardar
+                      </Button>
+                  </div>
+                  {githubRepoError ? <p className="text-xs text-danger">{githubRepoError}</p> : null}
+                </section>
+
+                <section className="space-y-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <h3 className="text-sm font-title text-carbon">Tiempo invertido</h3>
+                      <p className="mt-1 text-xs text-graphite">
+                        Tiempo acumulado por fases y usuarios desde que comenzó el proyecto.
+                      </p>
+                    </div>
+                    <div className="rounded-card bg-paper px-4 py-3 text-right">
+                      <p className="text-xs font-label uppercase tracking-[0.08em] text-graphite">Total</p>
+                      <p className="text-lg font-title text-carbon">{formatDurationHours(tiempoProyectoVisual.total_segundos)}</p>
+                      <p className="text-xs text-graphite">{formatDurationShort(tiempoProyectoVisual.total_segundos)}</p>
+                    </div>
+                  </div>
+
+                  {tiempoProyectoLoading && !tiempoProyecto ? (
+                    <Card padding="sm">
+                      <p className="text-sm text-graphite">Cargando tiempo invertido...</p>
+                    </Card>
+                  ) : tiempoPorFaseOrdenado.length > 0 ? (
+                    <div className="space-y-3">
+                      {tiempoPorFaseOrdenado.map((fase) => (
+                        <Card key={fase.fase_id} padding="sm" className="space-y-2">
+                          <div className="flex items-center justify-between gap-3">
+                            <p className="text-sm font-label text-carbon">{fase.nombre}</p>
+                            <Badge variant="default">{formatDurationShort(fase.segundos)}</Badge>
+                          </div>
+
+                          {fase.por_usuario.length > 1 ? (
+                            <div className="flex flex-wrap gap-2">
+                              {fase.por_usuario.map((usuario) => (
+                                <Badge key={usuario.usuario_id} variant="ghost">
+                                  {usuario.nombre}: {formatDurationShort(usuario.segundos)}
+                                </Badge>
+                              ))}
+                            </div>
+                          ) : null}
+                        </Card>
+                      ))}
+                    </div>
+                  ) : (
+                    <Card padding="sm">
+                      <p className="text-sm text-graphite">Todavía no hay sesiones registradas.</p>
+                    </Card>
+                  )}
+
+                  {tiempoPorUsuarioVisible.length > 1 ? (
+                    <Card padding="sm" className="space-y-3">
+                      <p className="text-xs font-label uppercase tracking-[0.08em] text-graphite">Por usuario</p>
+                      <div className="flex flex-wrap gap-2">
+                        {tiempoPorUsuarioVisible.map((usuario) => (
+                          <Badge key={usuario.usuario_id} variant="default">
+                            {usuario.nombre}: {formatDurationShort(usuario.segundos)}
+                          </Badge>
+                        ))}
+                      </div>
+                    </Card>
+                  ) : null}
+                </section>
+              </Card>
+
+              <Card padding="lg" className="space-y-4">
+                <h3 className="text-sm font-title text-carbon">Notas de arquitectura / DB</h3>
+                <TextareaField
+                  label="Notas"
+                  value={proyecto.notas_arquitectura}
+                  onSave={async (value) => {
+                    await persistProyecto({ notas_arquitectura: value });
+                  }}
+                />
+
+                <NotasVinculadasSection
+                  entityType="proyecto"
+                  entityId={proyecto.id}
+                  entityLabel={proyecto.nombre}
+                  href={`/proyectos?project_id=${proyecto.id}`}
+                />
+
+                <div className="space-y-2 rounded-card bg-paper p-4">
+                  <p className="text-xs font-label uppercase tracking-[0.08em] text-graphite">Resumen</p>
+                  <p className="text-sm text-carbon">
+                    Precio total: {proyecto.valor_total !== null ? formatUSD(proyecto.valor_total) : "Sin definir"}
+                  </p>
+                  <p className="text-sm text-carbon">
+                    Entrega comprometida: {proyecto.entrega_comprometida ? formatFecha(proyecto.entrega_comprometida) : "Sin fecha"}
+                  </p>
                 </div>
               </Card>
-            ) : null}
+            </div>
+          </div>
+        ) : null}
 
-            <Card padding="lg" className="space-y-4">
+        {activeTab === "features" ? (
+          <div className="h-full min-h-0 overflow-hidden pr-1">
+            <FasesEstadoKanban
+              proyecto={proyecto}
+              tiempoProyecto={tiempoProyecto}
+              sesionActiva={cronometro.sesionActiva}
+              tiempoTranscurrido={cronometro.tiempoTranscurrido}
+              usuarios={usuarios}
+              onIniciarCronometro={iniciarCronometro}
+              onPausarCronometro={pausarCronometro}
+            />
+          </div>
+        ) : null}
+
+        {activeTab === "cuentas" ? (
+          isAdmin ? (
+            <div className="h-full min-h-0 space-y-4 overflow-y-auto pr-1">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <h3 className="text-base font-title text-carbon">Roadmap público</h3>
-                  <p className="mt-1 text-sm text-graphite">
-                    La vista pública se activa con el token único del proyecto.
-                  </p>
+                  <h3 className="text-base font-title text-carbon">Cuentas y servicios</h3>
+                  <p className="mt-1 text-sm text-graphite">Credenciales internas y accesos del proyecto.</p>
                 </div>
-                <label className="inline-flex items-center gap-2 text-sm text-carbon">
-                  <input
-                    type="checkbox"
-                    checked={proyecto.roadmap_publico_activo}
-                    onChange={async (event) => {
-                      await persistProyecto({
-                        roadmap_publico_activo: event.target.checked
-                      });
-                    }}
-                    className="h-4 w-4 rounded border-line text-signal focus:ring-signal/20"
-                  />
-                  Activo
-                </label>
+                <Button variant="secondary" onClick={() => setCuentaModalOpen(true)}>
+                  Nueva cuenta
+                </Button>
               </div>
 
-              <div className="space-y-2">
-                <p className="text-xs font-label uppercase tracking-[0.08em] text-graphite">Link público</p>
-                <div className="flex flex-col gap-3 sm:flex-row">
-                  <Input value={roadmapUrl} readOnly className="flex-1" />
-                  <Button
-                    variant="secondary"
-                    onClick={async () => {
-                      await navigator.clipboard.writeText(roadmapUrl);
-                    }}
-                  >
-                    Copiar
+              <div className="space-y-3">
+                {cuentas.length > 0 ? (
+                  cuentas.map((cuenta) => (
+                    <CuentaServicioCard
+                      key={cuenta.id}
+                      cuenta={cuenta}
+                      isAdmin={isAdmin}
+                      onEdit={() => {
+                        setEditingCuenta(cuenta);
+                        setCuentaModalOpen(true);
+                      }}
+                      onDelete={async () => {
+                        await deleteCuenta(cuenta.id);
+                      }}
+                    />
+                  ))
+                ) : (
+                  <Card padding="lg">
+                    <p className="text-sm text-graphite">Todavía no hay cuentas/servicios cargados.</p>
+                  </Card>
+                )}
+              </div>
+
+              <CuentaServicioModal
+                isOpen={cuentaModalOpen}
+                onClose={() => {
+                  setCuentaModalOpen(false);
+                  setEditingCuenta(null);
+                }}
+                cuenta={editingCuenta}
+                proyectos={proyectos}
+                clientes={clientes}
+                defaultProyectoId={proyecto.id}
+                onSave={saveCuenta}
+              />
+            </div>
+          ) : (
+            <Card padding="lg">
+              <p className="text-sm text-graphite">Solo administradores pueden ver las credenciales.</p>
+            </Card>
+          )
+        ) : null}
+
+        {activeTab === "roadmap" ? (
+          <div className="h-full min-h-0 overflow-y-auto pr-1">
+            <div className="space-y-4">
+              <Card padding="lg" className="space-y-4 border border-line-soft">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="space-y-1">
+                    <h3 className="text-base font-title text-carbon">Configuración del roadmap público</h3>
+                    <p className="text-sm text-graphite">
+                      Definí la URL del sistema, el acceso de credenciales y el PIN para compartir con el cliente.
+                    </p>
+                  </div>
+
+                  <Button variant="primary" onClick={() => void saveRoadmapConfig()}>
+                    Guardar configuración
                   </Button>
                 </div>
-              </div>
-            </Card>
-          </div>
 
-          <Card padding="lg" className="space-y-3">
-            <h3 className="text-sm font-title text-carbon">Preview</h3>
-            <p className="text-sm text-graphite">
-              La vista pública real se construye en el paso 2.2 y consume este token.
-            </p>
-          </Card>
-        </div>
-      ) : null}
+                <div className="grid gap-4 md:grid-cols-2">
+                  <Input
+                    label="URL del sistema"
+                    type="url"
+                    value={roadmapConfigDraft.url_sistema}
+                    onChange={(event) =>
+                      setRoadmapConfigDraft((current) => ({ ...current, url_sistema: event.target.value }))
+                    }
+                    placeholder="https://sistema.cliente.com"
+                  />
+
+                  <Input
+                    label="PIN de acceso"
+                    value={roadmapConfigDraft.roadmap_pin}
+                    onChange={(event) =>
+                      setRoadmapConfigDraft((current) => ({
+                        ...current,
+                        roadmap_pin: event.target.value.replace(/\D/g, "").slice(0, 6)
+                      }))
+                    }
+                    placeholder="1234"
+                  />
+                </div>
+
+                <div className="space-y-3 rounded-card bg-paper p-4">
+                  <button
+                    type="button"
+                    onClick={() => setRoadmapConfigOpen((current) => !current)}
+                    className="flex items-center gap-2 text-left text-sm font-label text-carbon"
+                  >
+                    <span className="text-graphite">{roadmapConfigOpen ? "▾" : "▸"}</span>
+                    Credenciales del cliente
+                  </button>
+
+                  <p className="text-xs text-graphite">
+                    Estas credenciales solo se revelan en el roadmap público si el cliente ingresa el PIN de acceso
+                    que definas abajo.
+                  </p>
+
+                  <div
+                    className={cn(
+                      "grid gap-3 overflow-hidden transition-[max-height,opacity] duration-200 ease-[cubic-bezier(0.2,0.8,0.2,1)]",
+                      roadmapConfigOpen ? "max-h-[600px] opacity-100" : "max-h-0 opacity-0"
+                    )}
+                  >
+                    <Input
+                      label="Usuario"
+                      value={roadmapConfigDraft.credenciales_cliente.usuario}
+                      onChange={(event) =>
+                        setRoadmapConfigDraft((current) => ({
+                          ...current,
+                          credenciales_cliente: {
+                            ...current.credenciales_cliente,
+                            usuario: event.target.value
+                          }
+                        }))
+                      }
+                      placeholder="usuario"
+                    />
+                    <Input
+                      label="Contraseña"
+                      type="password"
+                      value={roadmapConfigDraft.credenciales_cliente.contraseña}
+                      onChange={(event) =>
+                        setRoadmapConfigDraft((current) => ({
+                          ...current,
+                          credenciales_cliente: {
+                            ...current.credenciales_cliente,
+                            contraseña: event.target.value
+                          }
+                        }))
+                      }
+                      placeholder="••••••••"
+                    />
+                    <div className="space-y-1">
+                      <p className="text-xs font-label uppercase tracking-[0.08em] text-graphite">Notas</p>
+                      <textarea
+                        value={roadmapConfigDraft.credenciales_cliente.notas}
+                        onChange={(event) =>
+                          setRoadmapConfigDraft((current) => ({
+                            ...current,
+                            credenciales_cliente: {
+                              ...current.credenciales_cliente,
+                              notas: event.target.value
+                            }
+                          }))
+                        }
+                        className="min-h-[96px] w-full rounded-component border border-line bg-white px-3 py-2 text-sm text-carbon focus:border-signal focus:outline-none focus:ring-2 focus:ring-signal/20"
+                        placeholder="Notas de acceso, dominios, aclaraciones..."
+                      />
+                    </div>
+                  </div>
+                </div>
+              </Card>
+
+              <Card padding="lg" className="space-y-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <h3 className="text-base font-title text-carbon">Roadmap público</h3>
+                    <p className="mt-1 text-sm text-graphite">
+                      La vista pública se activa con el slug único del proyecto.
+                    </p>
+                  </div>
+                  <label className="inline-flex items-center gap-2 text-sm text-carbon">
+                    <input
+                      type="checkbox"
+                      checked={proyecto.roadmap_publico_activo}
+                      onChange={async (event) => {
+                        await persistProyecto({
+                          roadmap_publico_activo: event.target.checked
+                        });
+                      }}
+                      className="h-4 w-4 rounded border-line text-signal focus:ring-signal/20"
+                    />
+                    Activo
+                  </label>
+                </div>
+
+                <div className="space-y-2">
+                  <p className="text-xs font-label uppercase tracking-[0.08em] text-graphite">Link público</p>
+                  <div className="flex flex-col gap-3 sm:flex-row">
+                    <Input value={roadmapUrl} readOnly className="flex-1" />
+                    <Button
+                      variant="secondary"
+                      onClick={async () => {
+                        await navigator.clipboard.writeText(roadmapUrl);
+                      }}
+                    >
+                      Copiar
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+
+              {fasesOrdenadas.length > 0 ? (
+                <Card padding="lg" className="space-y-4">
+                  <div>
+                    <h3 className="text-base font-title text-carbon">Fases planificadas</h3>
+                    <p className="mt-1 text-sm text-graphite">
+                      Referencia interna del roadmap con el avance real de cada fase.
+                    </p>
+                  </div>
+
+                  <div className="space-y-3">
+                    {faseProgress.map(({ fase, completed, total }) => (
+                      <div key={fase.id} className="rounded-card border border-line-soft bg-paper p-4">
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                          <div>
+                            <p className="text-sm font-label text-carbon">{fase.nombre}</p>
+                            <p className="text-xs text-graphite">
+                              {fase.fecha_estimada_inicio || fase.fecha_estimada_fin
+                                ? [
+                                    fase.fecha_estimada_inicio ? formatFecha(fase.fecha_estimada_inicio) : null,
+                                    fase.fecha_estimada_fin ? formatFecha(fase.fecha_estimada_fin) : null
+                                  ]
+                                    .filter(Boolean)
+                                    .join(" - ")
+                                : "Sin fechas estimadas"}
+                            </p>
+                          </div>
+                          <Badge variant="default">
+                            {completed}/{total} features completadas
+                          </Badge>
+                        </div>
+
+                        {fase.descripcion ? (
+                          <div className="mt-3 space-y-2 border-t border-line-soft pt-3">
+                            {fase.descripcion ? <p className="text-sm text-carbon">{fase.descripcion}</p> : null}
+                          </div>
+                        ) : null}
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              ) : null}
+            </div>
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }

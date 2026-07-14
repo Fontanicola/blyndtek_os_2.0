@@ -120,6 +120,7 @@ export type Database = {
           datos_facturacion: Json | null;
           estado: "activo" | "pausado" | "inactivo";
           notas: string | null;
+          vendedor_id: string | null;
           created_at: string;
         };
         Insert: {
@@ -133,6 +134,7 @@ export type Database = {
           datos_facturacion?: Json | null;
           estado?: "activo" | "pausado" | "inactivo";
           notas?: string | null;
+          vendedor_id?: string | null;
           created_at?: string;
         };
         Update: {
@@ -146,6 +148,7 @@ export type Database = {
           datos_facturacion?: Json | null;
           estado?: "activo" | "pausado" | "inactivo";
           notas?: string | null;
+          vendedor_id?: string | null;
           created_at?: string;
         };
         Relationships: [
@@ -247,7 +250,7 @@ export type Database = {
           proyecto_id: string;
           nombre: string;
           descripcion: string;
-          fase: string;
+          fase_id: string;
           estado: "pendiente" | "en_curso" | "lista";
           responsable_id: string;
           orden: number;
@@ -258,7 +261,7 @@ export type Database = {
           proyecto_id: string;
           nombre: string;
           descripcion: string;
-          fase: string;
+          fase_id: string;
           estado?: "pendiente" | "en_curso" | "lista";
           responsable_id: string;
           orden: number;
@@ -269,7 +272,7 @@ export type Database = {
           proyecto_id?: string;
           nombre?: string;
           descripcion?: string;
-          fase?: string;
+          fase_id?: string;
           estado?: "pendiente" | "en_curso" | "lista";
           responsable_id?: string;
           orden?: number;
@@ -307,6 +310,342 @@ export type Database = {
           id?: string;
           caja_inicial?: number;
           updated_at?: string;
+        };
+        Relationships: [];
+      };
+      carpetas: {
+        Row: {
+          id: string;
+          nombre: string;
+          seccion: "clientes" | "proyectos" | "comercial" | "finanzas" | "general";
+          carpeta_padre_id: string | null;
+          cliente_id: string | null;
+          proyecto_id: string | null;
+          es_automatica: boolean;
+          creado_por: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          nombre: string;
+          seccion: "clientes" | "proyectos" | "comercial" | "finanzas" | "general";
+          carpeta_padre_id?: string | null;
+          cliente_id?: string | null;
+          proyecto_id?: string | null;
+          es_automatica?: boolean;
+          creado_por?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          nombre?: string;
+          seccion?: "clientes" | "proyectos" | "comercial" | "finanzas" | "general";
+          carpeta_padre_id?: string | null;
+          cliente_id?: string | null;
+          proyecto_id?: string | null;
+          es_automatica?: boolean;
+          creado_por?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "carpetas_carpeta_padre_id_fkey";
+            columns: ["carpeta_padre_id"];
+            isOneToOne: false;
+            referencedRelation: "carpetas";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "carpetas_cliente_id_fkey";
+            columns: ["cliente_id"];
+            isOneToOne: false;
+            referencedRelation: "clientes";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "carpetas_proyecto_id_fkey";
+            columns: ["proyecto_id"];
+            isOneToOne: false;
+            referencedRelation: "proyectos";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      carpetas_compartidas: {
+        Row: {
+          id: string;
+          carpeta_id: string;
+          usuario_id: string;
+          compartida_por: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          carpeta_id: string;
+          usuario_id: string;
+          compartida_por?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          carpeta_id?: string;
+          usuario_id?: string;
+          compartida_por?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "carpetas_compartidas_carpeta_id_fkey";
+            columns: ["carpeta_id"];
+            isOneToOne: false;
+            referencedRelation: "carpetas";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "carpetas_compartidas_usuario_id_fkey";
+            columns: ["usuario_id"];
+            isOneToOne: false;
+            referencedRelation: "usuarios";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      cajas: {
+        Row: {
+          id: string;
+          nombre: string;
+          slug: string;
+          color: string;
+          activa: boolean;
+          orden: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          nombre: string;
+          slug: string;
+          color: string;
+          activa?: boolean;
+          orden?: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          nombre?: string;
+          slug?: string;
+          color?: string;
+          activa?: boolean;
+          orden?: number;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      comisiones: {
+        Row: {
+          id: string;
+          vendedor_id: string;
+          cliente_id: string;
+          cotizacion_id: string | null;
+          proyecto_id: string | null;
+          tipo: "venta";
+          estado: "pendiente" | "pagada" | "cancelada";
+          monto_venta: number;
+          base_comision: number;
+          porcentaje: number;
+          monto_comision: number;
+          config_comisiones_id: string | null;
+          pagada_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          vendedor_id: string;
+          cliente_id: string;
+          cotizacion_id?: string | null;
+          proyecto_id?: string | null;
+          tipo?: "venta";
+          estado?: "pendiente" | "pagada" | "cancelada";
+          monto_venta: number;
+          base_comision: number;
+          porcentaje: number;
+          monto_comision: number;
+          config_comisiones_id?: string | null;
+          pagada_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          vendedor_id?: string;
+          cliente_id?: string;
+          cotizacion_id?: string | null;
+          proyecto_id?: string | null;
+          tipo?: "venta";
+          estado?: "pendiente" | "pagada" | "cancelada";
+          monto_venta?: number;
+          base_comision?: number;
+          porcentaje?: number;
+          monto_comision?: number;
+          config_comisiones_id?: string | null;
+          pagada_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "comisiones_vendedor_id_fkey";
+            columns: ["vendedor_id"];
+            isOneToOne: false;
+            referencedRelation: "usuarios";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "comisiones_cliente_id_fkey";
+            columns: ["cliente_id"];
+            isOneToOne: false;
+            referencedRelation: "clientes";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "comisiones_cotizacion_id_fkey";
+            columns: ["cotizacion_id"];
+            isOneToOne: false;
+            referencedRelation: "cotizaciones";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "comisiones_proyecto_id_fkey";
+            columns: ["proyecto_id"];
+            isOneToOne: false;
+            referencedRelation: "proyectos";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "comisiones_config_comisiones_id_fkey";
+            columns: ["config_comisiones_id"];
+            isOneToOne: false;
+            referencedRelation: "config_comisiones";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      config_comisiones: {
+        Row: {
+          id: string;
+          piso_base_usd: number;
+          tier_1_pct: number;
+          tier_2_umbral_usd: number;
+          tier_2_pct: number;
+          bono_ventas_mes_umbral: number;
+          bono_monto_usd: number;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          piso_base_usd: number;
+          tier_1_pct: number;
+          tier_2_umbral_usd: number;
+          tier_2_pct: number;
+          bono_ventas_mes_umbral: number;
+          bono_monto_usd: number;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          piso_base_usd?: number;
+          tier_1_pct?: number;
+          tier_2_umbral_usd?: number;
+          tier_2_pct?: number;
+          bono_ventas_mes_umbral?: number;
+          bono_monto_usd?: number;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      archivos: {
+        Row: {
+          id: string;
+          nombre: string;
+          carpeta_id: string | null;
+          storage_path: string;
+          tipo_mime: string | null;
+          tamanio_bytes: number | null;
+          en_papelera: boolean;
+          eliminado_at: string | null;
+          subido_por: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          nombre: string;
+          carpeta_id?: string | null;
+          storage_path: string;
+          tipo_mime?: string | null;
+          tamanio_bytes?: number | null;
+          en_papelera?: boolean;
+          eliminado_at?: string | null;
+          subido_por?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          nombre?: string;
+          carpeta_id?: string | null;
+          storage_path?: string;
+          tipo_mime?: string | null;
+          tamanio_bytes?: number | null;
+          en_papelera?: boolean;
+          eliminado_at?: string | null;
+          subido_por?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "archivos_carpeta_id_fkey";
+            columns: ["carpeta_id"];
+            isOneToOne: false;
+            referencedRelation: "carpetas";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      tarjetas: {
+        Row: {
+          id: string;
+          alias: string;
+          banco: string | null;
+          titular: string | null;
+          ultimos_4: string;
+          vencimiento: string | null;
+          tipo: "debito" | "credito" | "prepaga";
+          uso_habitual: string | null;
+          notas: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          alias: string;
+          banco?: string | null;
+          titular?: string | null;
+          ultimos_4: string;
+          vencimiento?: string | null;
+          tipo: "debito" | "credito" | "prepaga";
+          uso_habitual?: string | null;
+          notas?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          alias?: string;
+          banco?: string | null;
+          titular?: string | null;
+          ultimos_4?: string;
+          vencimiento?: string | null;
+          tipo?: "debito" | "credito" | "prepaga";
+          uso_habitual?: string | null;
+          notas?: string | null;
+          created_at?: string;
         };
         Relationships: [];
       };
@@ -359,6 +698,7 @@ export type Database = {
             | "marketing_ads"
             | "impuestos_contable"
             | "sueldos_honorarios"
+            | "comisiones"
             | "otro";
           monto: number;
           fecha: string;
@@ -367,6 +707,7 @@ export type Database = {
           pagado: boolean;
           fecha_pago: string | null;
           proyecto_id: string | null;
+          comision_id: string | null;
           notas: string | null;
           created_at: string;
         };
@@ -380,6 +721,7 @@ export type Database = {
             | "marketing_ads"
             | "impuestos_contable"
             | "sueldos_honorarios"
+            | "comisiones"
             | "otro";
           monto: number;
           fecha: string;
@@ -388,6 +730,7 @@ export type Database = {
           pagado?: boolean;
           fecha_pago?: string | null;
           proyecto_id?: string | null;
+          comision_id?: string | null;
           notas?: string | null;
           created_at?: string;
         };
@@ -401,6 +744,7 @@ export type Database = {
             | "marketing_ads"
             | "impuestos_contable"
             | "sueldos_honorarios"
+            | "comisiones"
             | "otro";
           monto?: number;
           fecha?: string;
@@ -409,6 +753,7 @@ export type Database = {
           pagado?: boolean;
           fecha_pago?: string | null;
           proyecto_id?: string | null;
+          comision_id?: string | null;
           notas?: string | null;
           created_at?: string;
         };
@@ -495,6 +840,7 @@ export type Database = {
           presupuesto_estimado: number | null;
           motivo_descarte: string | null;
           notas: string | null;
+          vendedor_id: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -531,6 +877,7 @@ export type Database = {
           presupuesto_estimado?: number | null;
           motivo_descarte?: string | null;
           notas?: string | null;
+          vendedor_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -567,13 +914,21 @@ export type Database = {
           presupuesto_estimado?: number | null;
           motivo_descarte?: string | null;
           notas?: string | null;
+          vendedor_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };
         Relationships: [
           {
-            foreignKeyName: "leads_responsable_id_fkey";
-            columns: ["responsable_id"];
+          foreignKeyName: "leads_responsable_id_fkey";
+          columns: ["responsable_id"];
+          isOneToOne: false;
+          referencedRelation: "usuarios";
+          referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "leads_vendedor_id_fkey";
+            columns: ["vendedor_id"];
             isOneToOne: false;
             referencedRelation: "usuarios";
             referencedColumns: ["id"];
@@ -601,8 +956,13 @@ export type Database = {
           avance_pct: number;
           valor_total: number | null;
           notas_arquitectura: string | null;
+          url_sistema: string | null;
+          credenciales_cliente: Json | null;
+          roadmap_pin: string | null;
           roadmap_token: string;
+          roadmap_slug: string | null;
           roadmap_publico_activo: boolean;
+          github_repo: string | null;
           created_at: string;
         };
         Insert: {
@@ -625,8 +985,13 @@ export type Database = {
           avance_pct?: number;
           valor_total?: number | null;
           notas_arquitectura?: string | null;
+          url_sistema?: string | null;
+          credenciales_cliente?: Json | null;
+          roadmap_pin?: string | null;
           roadmap_token: string;
+          roadmap_slug?: string | null;
           roadmap_publico_activo?: boolean;
+          github_repo?: string | null;
           created_at?: string;
         };
         Update: {
@@ -649,8 +1014,13 @@ export type Database = {
           avance_pct?: number;
           valor_total?: number | null;
           notas_arquitectura?: string | null;
+          url_sistema?: string | null;
+          credenciales_cliente?: Json | null;
+          roadmap_pin?: string | null;
           roadmap_token?: string;
+          roadmap_slug?: string | null;
           roadmap_publico_activo?: boolean;
+          github_repo?: string | null;
           created_at?: string;
         };
         Relationships: [
@@ -683,11 +1053,18 @@ export type Database = {
           proyecto_id: string;
           nombre: string;
           estado: "pendiente" | "en_curso" | "lista";
+          prioridad: "alta" | "media" | "baja";
           orden: number;
-          fecha_inicio_estimada: string | null;
-          fecha_fin_estimada: string | null;
+          fecha_estimada_inicio: string | null;
+          fecha_estimada_fin: string | null;
           descripcion: string | null;
-          entregables: string | null;
+          ai_dev_estado: "ninguno" | "planificando" | "codeando" | "pr_abierto" | "fallido";
+          ai_dev_iniciado_at: string | null;
+          ai_dev_error: string | null;
+          pr_url: string | null;
+          pr_numero: number | null;
+          sql_pendiente: string | null;
+          sql_ejecutado: boolean;
           created_at: string;
         };
         Insert: {
@@ -695,11 +1072,18 @@ export type Database = {
           proyecto_id: string;
           nombre: string;
           estado?: "pendiente" | "en_curso" | "lista";
+          prioridad?: "alta" | "media" | "baja";
           orden?: number;
-          fecha_inicio_estimada?: string | null;
-          fecha_fin_estimada?: string | null;
+          fecha_estimada_inicio?: string | null;
+          fecha_estimada_fin?: string | null;
           descripcion?: string | null;
-          entregables?: string | null;
+          ai_dev_estado?: "ninguno" | "planificando" | "codeando" | "pr_abierto" | "fallido";
+          ai_dev_iniciado_at?: string | null;
+          ai_dev_error?: string | null;
+          pr_url?: string | null;
+          pr_numero?: number | null;
+          sql_pendiente?: string | null;
+          sql_ejecutado?: boolean;
           created_at?: string;
         };
         Update: {
@@ -707,11 +1091,18 @@ export type Database = {
           proyecto_id?: string;
           nombre?: string;
           estado?: "pendiente" | "en_curso" | "lista";
+          prioridad?: "alta" | "media" | "baja";
           orden?: number;
-          fecha_inicio_estimada?: string | null;
-          fecha_fin_estimada?: string | null;
+          fecha_estimada_inicio?: string | null;
+          fecha_estimada_fin?: string | null;
           descripcion?: string | null;
-          entregables?: string | null;
+          ai_dev_estado?: "ninguno" | "planificando" | "codeando" | "pr_abierto" | "fallido";
+          ai_dev_iniciado_at?: string | null;
+          ai_dev_error?: string | null;
+          pr_url?: string | null;
+          pr_numero?: number | null;
+          sql_pendiente?: string | null;
+          sql_ejecutado?: boolean;
           created_at?: string;
         };
         Relationships: [
@@ -724,12 +1115,515 @@ export type Database = {
           }
         ];
       };
+      carpetas_notas: {
+        Row: {
+          id: string;
+          nombre: string;
+          orden: number;
+          creado_por: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          nombre: string;
+          orden?: number;
+          creado_por?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          nombre?: string;
+          orden?: number;
+          creado_por?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "carpetas_notas_creado_por_fkey";
+            columns: ["creado_por"];
+            isOneToOne: false;
+            referencedRelation: "usuarios";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      notas: {
+        Row: {
+          id: string;
+          titulo: string;
+          contenido: Json;
+          carpeta_id: string | null;
+          fijada: boolean;
+          en_papelera: boolean;
+          eliminada_at: string | null;
+          cliente_id: string | null;
+          proyecto_id: string | null;
+          lead_id: string | null;
+          tags: string[] | null;
+          creado_por: string | null;
+          updated_at: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          titulo: string;
+          contenido?: Json;
+          carpeta_id?: string | null;
+          fijada?: boolean;
+          en_papelera?: boolean;
+          eliminada_at?: string | null;
+          cliente_id?: string | null;
+          proyecto_id?: string | null;
+          lead_id?: string | null;
+          tags?: string[] | null;
+          creado_por?: string | null;
+          updated_at?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          titulo?: string;
+          contenido?: Json;
+          carpeta_id?: string | null;
+          fijada?: boolean;
+          en_papelera?: boolean;
+          eliminada_at?: string | null;
+          cliente_id?: string | null;
+          proyecto_id?: string | null;
+          lead_id?: string | null;
+          tags?: string[] | null;
+          creado_por?: string | null;
+          updated_at?: string;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "notas_carpeta_id_fkey";
+            columns: ["carpeta_id"];
+            isOneToOne: false;
+            referencedRelation: "carpetas_notas";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "notas_cliente_id_fkey";
+            columns: ["cliente_id"];
+            isOneToOne: false;
+            referencedRelation: "clientes";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "notas_proyecto_id_fkey";
+            columns: ["proyecto_id"];
+            isOneToOne: false;
+            referencedRelation: "proyectos";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "notas_lead_id_fkey";
+            columns: ["lead_id"];
+            isOneToOne: false;
+            referencedRelation: "leads";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "notas_creado_por_fkey";
+            columns: ["creado_por"];
+            isOneToOne: false;
+            referencedRelation: "usuarios";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      notas_etiquetas: {
+        Row: {
+          id: string;
+          nombre: string;
+          color: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          nombre: string;
+          color?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          nombre?: string;
+          color?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      wiki_categorias: {
+        Row: {
+          id: string;
+          nombre: string;
+          orden: number;
+          creado_por: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          nombre: string;
+          orden?: number;
+          creado_por?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          nombre?: string;
+          orden?: number;
+          creado_por?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "wiki_categorias_creado_por_fkey";
+            columns: ["creado_por"];
+            isOneToOne: false;
+            referencedRelation: "usuarios";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      wiki_articulos: {
+        Row: {
+          id: string;
+          titulo: string;
+          contenido: Json;
+          categoria_id: string | null;
+          orden: number;
+          creado_por: string | null;
+          updated_at: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          titulo: string;
+          contenido?: Json;
+          categoria_id?: string | null;
+          orden?: number;
+          creado_por?: string | null;
+          updated_at?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          titulo?: string;
+          contenido?: Json;
+          categoria_id?: string | null;
+          orden?: number;
+          creado_por?: string | null;
+          updated_at?: string;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "wiki_articulos_categoria_id_fkey";
+            columns: ["categoria_id"];
+            isOneToOne: false;
+            referencedRelation: "wiki_categorias";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "wiki_articulos_creado_por_fkey";
+            columns: ["creado_por"];
+            isOneToOne: false;
+            referencedRelation: "usuarios";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      sesiones_tiempo: {
+        Row: {
+          id: string;
+          fase_id: string;
+          usuario_id: string | null;
+          inicio: string;
+          fin: string | null;
+          duracion_segundos: number | null;
+          nota: string | null;
+          es_ia: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          fase_id: string;
+          usuario_id?: string | null;
+          inicio?: string;
+          fin?: string | null;
+          duracion_segundos?: number | null;
+          nota?: string | null;
+          es_ia?: boolean;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          fase_id?: string;
+          usuario_id?: string | null;
+          inicio?: string;
+          fin?: string | null;
+          duracion_segundos?: number | null;
+          nota?: string | null;
+          es_ia?: boolean;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "sesiones_tiempo_fase_id_fkey";
+            columns: ["fase_id"];
+            isOneToOne: false;
+            referencedRelation: "fases_proyecto";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "sesiones_tiempo_usuario_id_fkey";
+            columns: ["usuario_id"];
+            isOneToOne: false;
+            referencedRelation: "usuarios";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      ai_dev_ejecuciones: {
+        Row: {
+          id: string;
+          fase_id: string;
+          modelo_orquestador: string;
+          modelo_implementacion: string;
+          estado: "en_curso" | "completado" | "fallido";
+          pr_url: string | null;
+          tokens_entrada: number | null;
+          tokens_salida: number | null;
+          costo_estimado_usd: number | null;
+          iniciado_por: string | null;
+          iniciado_at: string;
+          finalizado_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          fase_id: string;
+          modelo_orquestador: string;
+          modelo_implementacion: string;
+          estado?: "en_curso" | "completado" | "fallido";
+          pr_url?: string | null;
+          tokens_entrada?: number | null;
+          tokens_salida?: number | null;
+          costo_estimado_usd?: number | null;
+          iniciado_por?: string | null;
+          iniciado_at?: string;
+          finalizado_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          fase_id?: string;
+          modelo_orquestador?: string;
+          modelo_implementacion?: string;
+          estado?: "en_curso" | "completado" | "fallido";
+          pr_url?: string | null;
+          tokens_entrada?: number | null;
+          tokens_salida?: number | null;
+          costo_estimado_usd?: number | null;
+          iniciado_por?: string | null;
+          iniciado_at?: string;
+          finalizado_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "ai_dev_ejecuciones_fase_id_fkey";
+            columns: ["fase_id"];
+            isOneToOne: false;
+            referencedRelation: "fases_proyecto";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "ai_dev_ejecuciones_iniciado_por_fkey";
+            columns: ["iniciado_por"];
+            isOneToOne: false;
+            referencedRelation: "usuarios";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      checklist_qa: {
+        Row: {
+          id: string;
+          fase_id: string;
+          item: string;
+          completado: boolean;
+          completado_por: string | null;
+          completado_at: string | null;
+          orden: number;
+          generado_por_ia: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          fase_id: string;
+          item: string;
+          completado?: boolean;
+          completado_por?: string | null;
+          completado_at?: string | null;
+          orden?: number;
+          generado_por_ia?: boolean;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          fase_id?: string;
+          item?: string;
+          completado?: boolean;
+          completado_por?: string | null;
+          completado_at?: string | null;
+          orden?: number;
+          generado_por_ia?: boolean;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "checklist_qa_fase_id_fkey";
+            columns: ["fase_id"];
+            isOneToOne: false;
+            referencedRelation: "fases_proyecto";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "checklist_qa_completado_por_fkey";
+            columns: ["completado_por"];
+            isOneToOne: false;
+            referencedRelation: "usuarios";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      productos: {
+        Row: {
+          id: string;
+          nombre: string;
+          slug: string;
+          descripcion: string | null;
+          precio_mensual_default: number | null;
+          color: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          nombre: string;
+          slug: string;
+          descripcion?: string | null;
+          precio_mensual_default?: number | null;
+          color: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          nombre?: string;
+          slug?: string;
+          descripcion?: string | null;
+          precio_mensual_default?: number | null;
+          color?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      producto_planes: {
+        Row: {
+          id: string;
+          producto_id: string;
+          nombre: string;
+          precio_mensual: number;
+          descripcion: string | null;
+          orden: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          producto_id: string;
+          nombre: string;
+          precio_mensual: number;
+          descripcion?: string | null;
+          orden?: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          producto_id?: string;
+          nombre?: string;
+          precio_mensual?: number;
+          descripcion?: string | null;
+          orden?: number;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "producto_planes_producto_id_fkey";
+            columns: ["producto_id"];
+            isOneToOne: false;
+            referencedRelation: "productos";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      producto_features: {
+        Row: {
+          id: string;
+          producto_id: string;
+          titulo: string;
+          descripcion: string | null;
+          estado: "idea" | "planificado" | "en_desarrollo" | "lanzado";
+          prioridad: "alta" | "media" | "baja";
+          solicitado_por_cliente_id: string | null;
+          orden: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          producto_id: string;
+          titulo: string;
+          descripcion?: string | null;
+          estado?: "idea" | "planificado" | "en_desarrollo" | "lanzado";
+          prioridad?: "alta" | "media" | "baja";
+          solicitado_por_cliente_id?: string | null;
+          orden?: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          producto_id?: string;
+          titulo?: string;
+          descripcion?: string | null;
+          estado?: "idea" | "planificado" | "en_desarrollo" | "lanzado";
+          prioridad?: "alta" | "media" | "baja";
+          solicitado_por_cliente_id?: string | null;
+          orden?: number;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "producto_features_producto_id_fkey";
+            columns: ["producto_id"];
+            isOneToOne: false;
+            referencedRelation: "productos";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "producto_features_solicitado_por_cliente_id_fkey";
+            columns: ["solicitado_por_cliente_id"];
+            isOneToOne: false;
+            referencedRelation: "clientes";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
       suscripciones: {
         Row: {
           id: string;
           cliente_id: string;
           proyecto_id: string | null;
-          cotizacion_id: string;
+          cotizacion_id: string | null;
+          producto_id: string | null;
+          plan_id: string | null;
           tipo: "mantenimiento" | "brick";
           monto_mensual: number;
           ciclo: "mensual" | "anual";
@@ -744,7 +1638,9 @@ export type Database = {
           id?: string;
           cliente_id: string;
           proyecto_id?: string | null;
-          cotizacion_id: string;
+          cotizacion_id?: string | null;
+          producto_id?: string | null;
+          plan_id?: string | null;
           tipo: "mantenimiento" | "brick";
           monto_mensual: number;
           ciclo: "mensual" | "anual";
@@ -759,7 +1655,9 @@ export type Database = {
           id?: string;
           cliente_id?: string;
           proyecto_id?: string | null;
-          cotizacion_id?: string;
+          cotizacion_id?: string | null;
+          producto_id?: string | null;
+          plan_id?: string | null;
           tipo?: "mantenimiento" | "brick";
           monto_mensual?: number;
           ciclo?: "mensual" | "anual";
@@ -786,6 +1684,20 @@ export type Database = {
             referencedColumns: ["id"];
           },
           {
+            foreignKeyName: "suscripciones_producto_id_fkey";
+            columns: ["producto_id"];
+            isOneToOne: false;
+            referencedRelation: "productos";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "suscripciones_plan_id_fkey";
+            columns: ["plan_id"];
+            isOneToOne: false;
+            referencedRelation: "producto_planes";
+            referencedColumns: ["id"];
+          },
+          {
             foreignKeyName: "suscripciones_proyecto_id_fkey";
             columns: ["proyecto_id"];
             isOneToOne: false;
@@ -800,11 +1712,12 @@ export type Database = {
           titulo: string;
           proyecto_id: string | null;
           feature_id: string | null;
-          responsable_id: string;
+          responsable_id: string | null;
           prioridad: "alta" | "media" | "baja";
           fecha_limite: string | null;
           estado: "nueva" | "en_proceso" | "terminada";
           notas: string | null;
+          es_ia: boolean;
           created_at: string;
         };
         Insert: {
@@ -812,11 +1725,12 @@ export type Database = {
           titulo: string;
           proyecto_id?: string | null;
           feature_id?: string | null;
-          responsable_id: string;
+          responsable_id?: string | null;
           prioridad?: "alta" | "media" | "baja";
           fecha_limite?: string | null;
           estado?: "nueva" | "en_proceso" | "terminada";
           notas?: string | null;
+          es_ia?: boolean;
           created_at?: string;
         };
         Update: {
@@ -824,11 +1738,12 @@ export type Database = {
           titulo?: string;
           proyecto_id?: string | null;
           feature_id?: string | null;
-          responsable_id?: string;
+          responsable_id?: string | null;
           prioridad?: "alta" | "media" | "baja";
           fecha_limite?: string | null;
           estado?: "nueva" | "en_proceso" | "terminada";
           notas?: string | null;
+          es_ia?: boolean;
           created_at?: string;
         };
         Relationships: [
@@ -860,8 +1775,10 @@ export type Database = {
           id: string;
           nombre: string;
           email: string;
-          rol: "admin" | "miembro";
+          rol: "admin" | "miembro" | "comercial";
           google_calendar_token: string | null;
+          foto_url: string | null;
+          supervisor_id: string | null;
           activo: boolean;
           created_at: string;
         };
@@ -869,8 +1786,10 @@ export type Database = {
           id: string;
           nombre: string;
           email: string;
-          rol?: "admin" | "miembro";
+          rol?: "admin" | "miembro" | "comercial";
           google_calendar_token?: string | null;
+          foto_url?: string | null;
+          supervisor_id?: string | null;
           activo?: boolean;
           created_at?: string;
         };
@@ -878,12 +1797,22 @@ export type Database = {
           id?: string;
           nombre?: string;
           email?: string;
-          rol?: "admin" | "miembro";
+          rol?: "admin" | "miembro" | "comercial";
           google_calendar_token?: string | null;
+          foto_url?: string | null;
+          supervisor_id?: string | null;
           activo?: boolean;
           created_at?: string;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "usuarios_supervisor_id_fkey";
+            columns: ["supervisor_id"];
+            isOneToOne: false;
+            referencedRelation: "usuarios";
+            referencedColumns: ["id"];
+          }
+        ];
       };
     };
     Views: Record<string, never>;

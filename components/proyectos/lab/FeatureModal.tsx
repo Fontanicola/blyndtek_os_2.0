@@ -10,7 +10,7 @@ type FeatureModalProps = {
   isOpen: boolean;
   feature: Feature | null;
   fasesDisponibles: FaseProyecto[];
-  usuarios?: Array<Pick<Usuario, "id" | "nombre" | "email" | "rol">>;
+  usuarios?: Array<Pick<Usuario, "id" | "nombre" | "email" | "rol" | "foto_url">>;
   defaultEstado?: EstadoFeature;
   defaultFaseId?: string;
   defaultResponsableId?: string;
@@ -35,7 +35,7 @@ export function FeatureModal({
     () => ({
       nombre: feature?.nombre ?? "",
       descripcion: feature?.descripcion ?? "",
-      fase: feature?.fase ?? defaultFaseId ?? "",
+      fase_id: feature?.fase_id ?? defaultFaseId ?? "",
       estado: feature?.estado ?? defaultEstado,
       responsable_id: feature?.responsable_id ?? defaultResponsableId ?? ""
     }),
@@ -66,7 +66,7 @@ export function FeatureModal({
             await onSave({
               nombre: form.nombre.trim(),
               descripcion: form.descripcion.trim(),
-              fase: form.fase,
+              fase_id: form.fase_id,
               estado: form.estado,
               responsable_id: form.responsable_id || undefined
             });
@@ -109,8 +109,8 @@ export function FeatureModal({
           <div className="space-y-1">
             <label className="block text-sm font-label text-carbon">Fase</label>
             <select
-              value={form.fase}
-              onChange={(event) => setForm((current) => ({ ...current, fase: event.target.value }))}
+              value={form.fase_id}
+              onChange={(event) => setForm((current) => ({ ...current, fase_id: event.target.value }))}
               className="w-full rounded-component border border-line bg-white px-3 py-2 text-sm text-carbon focus:border-signal focus:outline-none focus:ring-2 focus:ring-signal/20"
             >
               <option value="">Sin fase</option>

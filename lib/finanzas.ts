@@ -1,13 +1,16 @@
 import { formatUSD } from "@/lib/utils/formatters";
+import { calcularEgresosPeriodo } from "@/lib/finanzas/calcularEgresosPeriodo";
 import type { Cobro } from "@/types/cobros";
 import type { Egreso } from "@/types/egresos";
+import type { Suscripcion } from "@/types/suscripciones";
 
 export type MonthlyFinancialPoint = {
   month: string;
   label: string;
   ingresos: number;
   egresos: number;
-  neto: number;
+  margen: number;
+  clientes_activos: number;
 };
 
 export type RunwayPoint = {
@@ -41,12 +44,16 @@ function startOfDay(date: Date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
 
+function getEndOfMonth(date: Date) {
+  return new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59, 999);
+}
+
 function parseDateOnly(dateString: string | null | undefined) {
   if (!dateString) {
     return new Date(NaN);
   }
 
-  const [yearPart, monthPart, dayPart] = dateString.split("-");
+  const [yearPart = "1970", monthPart = "1", dayPart = "1"] = `${dateString}`.split("-");
   const year = Number(yearPart ?? "1970");
   const month = Number(monthPart ?? "1");
   const day = Number(dayPart ?? "1");
@@ -83,7 +90,26 @@ export function getLastMonths(count: number, from = new Date()) {
   return Array.from({ length: count }, (_value, index) => addMonths(startOfMonth(from), index - (count - 1)));
 }
 
-export function buildMonthlyFinancialSeries(cobros: Cobro[], egresos: Egreso[], months = 6) {
+function countActiveClientsAtDate(suscripciones: Suscripcion[], referenceDate: Date) {
+  const activeClients = new Set(
+    suscripciones
+      .filter((suscripcion) => {
+        const fechaInicioOk = !suscripcion.fecha_inicio || new Date(suscripcion.fecha_inicio) <= referenceDate;
+        const fechaBajaOk = !suscripcion.fecha_baja || new Date(suscripcion.fecha_baja) > referenceDate;
+        return suscripcion.estado === "activa" && fechaInicioOk && fechaBajaOk;
+      })
+      .map((suscripcion) => suscripcion.cliente_id)
+  );
+
+  return activeClients.size;
+}
+
+export function buildMonthlyFinancialSeries(
+  cobros: Cobro[],
+  egresos: Egreso[],
+  suscripciones: Suscripcion[],
+  months = 12
+) {
   const monthList = getLastMonths(months);
 
   return monthList.map((monthDate) => {
@@ -97,19 +123,18 @@ export function buildMonthlyFinancialSeries(cobros: Cobro[], egresos: Egreso[], 
       })
       .reduce((total, cobro) => total + cobro.monto, 0);
 
-    const egresosMes = egresos
-      .filter((egreso) => {
-        const date = new Date(egreso.fecha);
-        return date >= monthDate && date < nextMonth;
-      })
+    const egresosMes = calcularEgresosPeriodo(egresos, monthDate, nextMonth)
       .reduce((total, egreso) => total + egreso.monto, 0);
+    const margen = ingresos - egresosMes;
+    const clientesActivos = countActiveClientsAtDate(suscripciones, getEndOfMonth(monthDate));
 
     return {
       month: monthKey,
       label: formatMonthLabel(monthDate),
       ingresos,
       egresos: egresosMes,
-      neto: ingresos - egresosMes
+      margen,
+      clientes_activos: clientesActivos
     } satisfies MonthlyFinancialPoint;
   });
 }

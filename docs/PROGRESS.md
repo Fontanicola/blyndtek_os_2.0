@@ -36,7 +36,7 @@ Estado general actual: Fase 0 completa. Cimientos técnicos listos: documentaci�
 
 ### ✅ 0.4 — Layout base
 
-- Archivos creados/modificados: `app/(auth)/layout.tsx`, `app/(auth)/login/page.tsx`, `app/(app)/layout.tsx`, `app/(app)/outbound/page.tsx`, `app/(app)/inbound/page.tsx`, `app/(app)/clientes/page.tsx`, `app/(app)/cotizador/page.tsx`, `app/(app)/proyectos/page.tsx`, `app/(app)/tareas/page.tsx`, `app/(app)/calendario/page.tsx`, `app/(app)/finanzas/page.tsx`, `app/(app)/dashboard/page.tsx`, `app/roadmap/[token]/page.tsx`, `components/layout/Sidebar.tsx`, `components/layout/Topbar.tsx`, `components/layout/index.ts`, `types/navigation.ts`, `lib/navigation.ts`, `components/icons/` (íconos SVG inline), `app/page.tsx`.
+- Archivos creados/modificados: `app/(auth)/layout.tsx`, `app/(auth)/login/page.tsx`, `app/(app)/layout.tsx`, `app/(app)/outbound/page.tsx`, `app/(app)/inbound/page.tsx`, `app/(app)/clientes/page.tsx`, `app/(app)/cotizador/page.tsx`, `app/(app)/proyectos/page.tsx`, `app/(app)/tareas/page.tsx`, `app/(app)/calendario/page.tsx`, `app/(app)/finanzas/page.tsx`, `app/(app)/dashboard/page.tsx`, `app/roadmap/[slug]/page.tsx`, `components/layout/Sidebar.tsx`, `components/layout/Topbar.tsx`, `components/layout/index.ts`, `types/navigation.ts`, `lib/navigation.ts`, `components/icons/` (íconos SVG inline), `app/page.tsx`.
 - Decisiones técnicas:
   - La navegación quedó centralizada en `lib/navigation.ts` y reutilizada por sidebar y topbar.
   - El estado activo del sidebar se detecta con `usePathname()`.
@@ -218,6 +218,20 @@ Estado general actual: Fase 0 completa. Cimientos técnicos listos: documentaci�
 - Verificación:
   - `npm run lint` limpio.
   - `npm run build` sin errores de tipos.
+
+### ✅ 1.5 — Backend de archivos
+
+- Archivos creados/modificados: `types/archivos.ts`, `types/supabase.ts`, `lib/carpetas.ts`, `lib/hooks/useCarpetas.ts`, `lib/hooks/useArchivos.ts`, `app/api/carpetas/route.ts`, `app/api/carpetas/[id]/route.ts`, `app/api/carpetas/[id]/mover/route.ts`, `app/api/carpetas/backfill/route.ts`, `app/api/archivos/upload/route.ts`, `app/api/archivos/[id]/route.ts`, `app/api/archivos/[id]/descargar/route.ts`, `app/api/archivos/[id]/mover/route.ts`, `app/api/archivos/papelera/route.ts`, `app/api/archivos/[id]/restaurar/route.ts`, `app/api/archivos/[id]/eliminar-definitivo/route.ts`, `app/api/clientes/route.ts`, `app/api/proyectos/route.ts`, `app/api/cotizaciones/[id]/aceptar/route.ts`.
+- Contenido:
+  - Se agregaron tipos de `carpetas` y `archivos`, más hooks cliente para consumir sus API routes.
+  - Se creó CRUD backend de carpetas con conteo de subcarpetas/archivos, detalle de contenido, mover entre padres y restricciones de renombrado/borrado para carpetas automáticas.
+  - Se creó backend de archivos con subida a Supabase Storage privado (`archivos-blyndtek`), signed URL temporal de descarga, papelera/restauración, mover entre carpetas y borrado definitivo.
+  - Se automatizó la creación de carpetas raíz para clientes y proyectos al crearlos, y también al aceptar cotizaciones.
+  - Se ejecutó un backfill real en Supabase para crear las carpetas faltantes de los clientes/proyectos existentes.
+- Verificación:
+  - `npm run lint` limpio.
+  - `npm run build` sin errores de tipos.
+  - Backfill confirmado para `ARC Global`, `Funes Exclusivos`, `Cubelo`, `Mr Host`, `Cora Campos`, `Bridge` y sus proyectos.
   - `/cotizador` y `/cotizador/[id]` quedaron incorporados al build final.
 - Estado: completo.
 
@@ -250,6 +264,47 @@ Estado general actual: Fase 0 completa. Cimientos técnicos listos: documentaci�
   - Excel/CSV se serializan a texto plano del lado cliente antes de persistirse, para dejar el contexto listo para el paso `1.6` sin depender todavía de Claude API.
   - PDF se conserva como base64 crudo en `adjuntos.contenido_texto`, porque la lectura semántica se delega al document block de Claude en el paso siguiente.
   - El paso 2 es opcional: se puede avanzar aunque no haya mensajes ni adjuntos, pero el layout muestra una sugerencia suave antes de continuar.
+- Verificación:
+  - `npm run lint` limpio.
+  - `npm run build` sin errores de tipos.
+- Estado: completo.
+
+### ✅ Finanzas: egresos y tesorería
+
+- Archivos creados/modificados: `components/finanzas/EgresosTabla.tsx`, `components/finanzas/TesoreriaCard.tsx`, `components/finanzas/FinanzasClient.tsx`, `app/api/finanzas/tesoreria/route.ts`, `types/finanzas.ts`, `types/cobros.ts`, `lib/hooks/useFinanzas.ts`, `lib/finanzas/calcularEgresosPeriodo.ts`.
+- Contenido:
+  - La tabla de egresos ahora usa menú de 3 puntos en Acciones y el badge de estado alterna `pagado` inline con PATCH directo.
+  - Las filas vencidas e impagas se resaltan en rojo suave para dar visibilidad inmediata.
+  - El tab de “Configuración” pasó a “Tesorería” y muestra el balance total, la caja inicial editable y el desglose por medio de cobro/pago.
+  - La API de tesorería ahora consolida cobros y egresos pagados por `cuenta_medio`, incluye el grupo “Sin asignar” y calcula el balance total con caja inicial.
+- Verificación:
+  - `npm run lint` limpio.
+  - `npm run build` sin errores de tipos.
+- Estado: completo.
+
+### ✅ Finanzas: P&L visible otra vez
+
+- Archivos modificados: `components/finanzas/PLChart.tsx`, `app/api/finanzas/metricas/route.ts`.
+- Diagnóstico:
+  - El log del histórico confirmó que el endpoint devolvía 12 puntos válidos y con valores reales (`len: 12`, último punto con ingresos/egresos/margen distintos de cero), así que el problema no estaba en la query.
+  - La regresión estaba en el render del gráfico: se volvió más frágil con `ResponsiveContainer` y la escala del eje, y las barras quedaban prácticamente invisibles sobre el fondo claro.
+- Fix aplicado:
+  - El gráfico ahora usa una altura explícita en `ResponsiveContainer`, un `domain` más seguro para el eje Y, y bordes visibles en barras/línea para que el P&L no desaparezca visualmente.
+  - Se retiraron los logs temporales de debug.
+- Verificación:
+  - `npm run lint` limpio.
+  - `npm run build` sin errores de tipos.
+- Estado: completo.
+
+### ✅ Finanzas: cartera por cliente legible
+
+- Archivos modificados: `components/finanzas/CarteraClientesChart.tsx`, `app/api/finanzas/cartera-clientes/route.ts`.
+- Diagnóstico:
+  - La consulta directa a Supabase mostró que la cartera sí devolvía nombres reales de cliente, así que el problema no estaba en los datos base.
+  - La regresión estaba en la capa de render de `CarteraClientesChart`, que no estaba normalizando de forma robusta el payload antes de pasarlo a Recharts.
+- Fix aplicado:
+  - El endpoint quedó más directo, aplastando `clientes(empresa)` a la key `empresa`.
+  - El chart normaliza `empresa` antes de renderizar y el tooltip muestra siempre el nombre del cliente junto con cobrado, pendiente y total.
 - Verificación:
   - `npm run lint` limpio.
   - `npm run build` sin errores de tipos.
@@ -384,8 +439,8 @@ Estado general actual: Fase 0 completa. Cimientos técnicos listos: documentaci�
 
 - Archivos creados/modificados:
   - `app/api/roadmap/[token]/route.ts`
-  - `app/roadmap/[token]/page.tsx`
-  - `app/roadmap/[token]/not-found.tsx`
+  - `app/roadmap/[slug]/page.tsx`
+  - `app/roadmap/[slug]/not-found.tsx`
   - `components/roadmap/RoadmapHeader.tsx`
   - `components/roadmap/RoadmapTimeline.tsx`
   - `components/roadmap/RoadmapFooter.tsx`
@@ -672,6 +727,31 @@ Estado general actual: Fase 0 completa. Cimientos técnicos listos: documentaci�
 - Actualizado: se corrigió el Lab para renderizar fases reales migradas, se compactó la lista de proyectos, se estabilizó el recálculo de avance, se normalizó el label de proyectos en los selectores de la app y se eliminó la dependencia de `supabase-js` en el middleware Edge.
 - Estado actual: `npm run lint` y `npm run build` pasan limpios; el middleware ya consulta el rol con `fetch` nativo compatible con Edge Runtime.
 
+## 2026-07-12 — Archivos Finder y headers recientes
+
+- Se completó la UI de `Archivos` tipo Finder con sidebar de secciones, breadcrumbs, carga por drag & drop, vistas `Íconos` / `Lista` / `Galería` y papelera accesible desde la navegación.
+- Se corrigieron los headers redundantes que habían quedado en `SaaS` y `Notas`, y `Archivos` quedó sin título duplicado debajo de la topbar.
+- Verificación ejecutada: `npm run lint` y `npm run build` pasan; el único aviso restante es el tip de `no-img-element` en la preview de archivos de galería.
+
+## 2026-07-12 — SaaS, Notas y Archivos sin headers duplicados
+
+- `SaaS` quedó arrancando directo con el selector de período y el selector de producto, sin `h1/h2` redundantes debajo de la topbar.
+- `Notas` perdió el encabezado grande de la página y también el título redundante del panel lateral; la fila funcional superior quedó como única cabecera visible.
+- `Archivos` fue auditado y mantiene solo contenido funcional en su layout Finder, sin repetir el nombre de la sección como encabezado grande.
+
+## 2026-07-12 — Wiki sin header duplicado ni alta repetida
+
+- Se eliminó el header redundante de la página de `Wiki` y también el encabezado del sidebar, dejando solo los controles funcionales.
+- El botón `+ Artículo` quedó en un único lugar, dentro del panel central, para evitar duplicación visual y ahorrar espacio.
+
+## 2026-07-12 — Archivos: limpieza visual, drag & drop y apertura por tipo
+
+- Se eliminó el header redundante del sidebar de `Archivos` y los textos de ayuda que ocupaban espacio innecesario.
+- El menú de acciones quedó con ícono vertical, cierre por click afuera y posicionamiento inteligente para no cortarse en pantalla.
+- Las carpetas ahora navegan con un solo click, la toolbar quedó en una sola fila sin buscador y la vista galería usa iconos grandes por tipo para archivos no imagen.
+- Se agregó drag & drop para mover y reordenar elementos, y los archivos ahora se abren en nueva pestaña mientras que `Descargar` fuerza la descarga.
+- Verificación ejecutada: `npm run build` y `npm run lint` pasan; el único aviso restante es el tip de `no-img-element` para la preview de galería.
+
 ## 2026-07-09 — Shell sin headers duplicados
 
 - Se eliminó el header redundante debajo de la topbar en Outbound, Inbound, Cotizador, Proyectos, Tareas, Calendario, Finanzas y Dashboard.
@@ -723,7 +803,7 @@ Estado general actual: Fase 0 completa. Cimientos técnicos listos: documentaci�
 ## 2026-07-09 — Proyectos: fases colapsables y roadmap público sin error de Client Component
 
 - El tab `Features` de Proyectos volvió a renderizar el Lab original con fases como columnas colapsables, checklist de subtareas, alta de nuevas fases y CRUD completo de fases.
-- Se reactivó el flujo de `NuevaFaseForm` junto con edición inline del nombre, fechas, descripción y entregables de cada fase, además de eliminación con confirmación.
+- Se reactivó el flujo de `NuevaFaseForm` junto con edición inline del nombre, fechas y descripción de cada fase, además de eliminación con confirmación.
 - `LabCanvas` volvió a ser el contenedor principal de la vista de fases y `LabCanvas`/`FaseColumn` quedaron sincronizados con el hook `useFasesProyecto()` para crear, actualizar y borrar fases.
 - El tablero de features por estado quedó nuevamente deprecado en el código, pero no se eliminó para conservar la alternativa previa.
 - El roadmap público se ajustó para compilar sin el error de `Event handlers cannot be passed to Client Component props`, moviendo la parte interactiva a un boundary cliente explícito.
@@ -734,7 +814,7 @@ Estado general actual: Fase 0 completa. Cimientos técnicos listos: documentaci�
 - Fecha: 2026-07-09
 - Actualizado: se reactivó el Lab de fases en Proyectos con CRUD completo y se corrigió el boundary cliente del roadmap público para eliminar el error de event handlers.
 - Verificación: `npm run lint` y `npm run build` pasan limpios.
-- Estado actual: Proyectos volvió a la vista por fases colapsables y `/roadmap/[token]` renderiza sin el error de Client Component.
+- Estado actual: Proyectos volvió a la vista por fases colapsables y `/roadmap/[slug]` renderiza sin el error de Client Component.
 
 ## 2026-07-09 — Proyectos: kanban por estado con fases expandibles
 
@@ -743,6 +823,7 @@ Estado general actual: Fase 0 completa. Cimientos técnicos listos: documentaci�
 - Se agregó `estado` a `fases_proyecto`, el endpoint `PATCH /api/fases/[id]/estado` y `updateEstadoFase()` en el hook `useFasesProyecto()`.
 - La vista tipo Lab (`LabCanvas`, `FaseColumn`, `SubtareaChecklistItem`, `NuevaFaseForm`) quedó nuevamente deprecada en la UI, pero se conserva en el código.
 - El roadmap público quedó sin frontera client innecesaria y compila como Server Component puro en su sección visual.
+- El roadmap público ahora se expone con `roadmap_slug` legible, generado a partir del cliente con sufijo aleatorio, y se completó un backfill para proyectos existentes.
 - Verificación ejecutada: `npm run lint` y `npm run build` finalizaron sin errores.
 
 ## Última actualización
@@ -751,3 +832,598 @@ Estado general actual: Fase 0 completa. Cimientos técnicos listos: documentaci�
 - Actualizado: se re-rediseñó `Features` como un kanban por estado con fases expandibles, se agregó el estado de fase persistido y se estabilizó el roadmap público dejando el timeline en Server Component.
 - Verificación: `npm run lint` y `npm run build` pasan limpios.
 - Estado actual: el módulo Proyectos usa fases como cards de estado y el Lab anterior quedó deprecado pero conservado.
+
+## 2026-07-10 — Proyectos: ajustes finos al kanban de fases
+
+- Se eliminó la descripción de la card de fase del kanban de `Features` para evitar duplicar contenido que ya vive en el tab `Roadmap`.
+- Se quitó el selector “mover a fase” del checklist de subtareas; ahora cada subtarea permanece fija en su fase.
+- Se restauró el indicador de estado clickeable de cada subtarea a la izquierda del nombre, con el ciclo `pendiente → en_curso → lista`.
+- Se eliminó el badge de estado redundante del header de fase y se agregó prioridad editable inline con color, apagando su énfasis visual cuando la fase queda en `lista`.
+- `fases_proyecto` pasó a incluir `prioridad`, y tanto el form de nueva fase como las rutas de creación/edición la persisten.
+- Verificación ejecutada: `npm run lint` y `npm run build` finalizaron sin errores.
+
+## Última actualización
+
+- Fecha: 2026-07-10
+- Actualizado: se simplificó el kanban de fases sacando duplicaciones visuales, se reactivó el control visible de estado de subtarea y se sumó prioridad editable por fase.
+- Verificación: `npm run lint` y `npm run build` pasan limpios.
+- Estado actual: el kanban de Features quedó más limpio, con subtareas fijas por fase y prioridad visual desacoplada cuando la fase está finalizada.
+
+## 2026-07-10 — Tareas: navegación a proyecto y prioridad visual
+
+- Se confirmó que `POST /api/tareas` sigue disponible y devuelve JSON en local; el hook `useTareas` quedó más robusto ante respuestas no JSON para no romperse con HTML inesperado.
+- El subtítulo cliente/proyecto en `TareaCard` dejó de repetir la información en una pill separada y ahora es clickeable para ir a `/proyectos?project_id=...`.
+- `ProyectosClient` y la página de Proyectos ahora respetan ese `project_id` para abrir la ficha correspondiente seleccionada.
+- Las cards de tareas muestran prioridad por color consistente con Proyectos, y ese énfasis se atenúa cuando la tarea está terminada.
+- Verificación ejecutada: `npm run lint` y `npm run build` finalizaron sin errores.
+
+## Última actualización
+
+- Fecha: 2026-07-10
+- Actualizado: se mejoró la navegación entre Tareas y Proyectos, se eliminó la pill redundante de vínculo y se reforzó el manejo de respuestas del hook de tareas.
+- Verificación: `npm run lint` y `npm run build` pasan limpios.
+- Estado actual: crear tareas sigue funcionando con JSON en local y la UI de tareas/proyectos quedó más directa y consistente.
+
+## 2026-07-10 — Finanzas: métricas, runway y suscripciones
+
+- Se agregó un helper compartido para calcular egresos de un período considerando costos recurrentes como activos desde su fecha en adelante, y se reutilizó en P&L, runway y métricas financieras.
+- `caja_actual` pasó a descontar solo egresos efectivamente pagados, y el runway ahora distingue entre `estable`, `agotado` y `normal` en lugar de mostrar `N/A` o valores rotos.
+- El resumen de Finanzas sumó un `MARGEN DEL MES`, tooltips con formato de moneda en los gráficos y colores coherentes para ingresos/egresos.
+- Se incorporó un `Runway Lab` client-side con hipótesis editables que compara escenario real vs. propuesto y solo persiste egresos al aprobarlos.
+- La pestaña `Egresos` dejó de mostrar alta rápida inline permanente y ahora usa un botón `Cargar egreso` que abre el modal reutilizable.
+- Las suscripciones activas ahora muestran estado visual de vencido, y el botón `Marcar cobrado` crea o actualiza el cobro del ciclo actual y avanza la próxima fecha de cobro.
+- Verificación ejecutada: `npm run lint` y `npm run build` pasan limpios después de los cambios.
+
+## Última actualización
+
+- Fecha: 2026-07-10
+- Actualizado: Finanzas quedó con métricas de runway más robustas, gráficas con tooltips, simulador de escenarios local y el flujo de egresos/suscripciones más claro.
+- Verificación: `npm run lint` y `npm run build` pasan limpios.
+- Estado actual: la sección Finanzas está lista para uso diario con costos recurrentes, runway estable/agotado/normal y aprobación explícita de escenarios.
+
+## 2026-07-10 — Proyectos: tinte de cards en vez de borde lateral
+
+- `FaseCardExpandible` dejó de marcar la prioridad con una línea lateral y ahora usa un tinte de fondo completo por prioridad (`danger-light`, `warning-light`, `paper`).
+- Cuando la fase está en `lista`, la card vuelve a fondo blanco para apagar la urgencia visual.
+- `ProyectoCard` también dejó el borde lateral de selección y pasó a usar `bg-signal-light` en toda la card con un borde sutil alrededor.
+- Verificación ejecutada: `npm run lint` y `npm run build` pasan limpios.
+
+## Última actualización
+
+- Fecha: 2026-07-10
+- Actualizado: se cambió el lenguaje visual de selección/prioridad de líneas laterales a tintes completos en Proyectos.
+- Verificación: `npm run lint` y `npm run build` pasan limpios.
+- Estado actual: las cards de fases y proyectos usan fondo completo para comunicar estado sin depender de bordes laterales.
+
+## 2026-07-10 — Sidebar: reordenamiento lógico
+
+- `Dashboard` pasó a ser el primer item del sidebar, arriba de todo y sin label de sección.
+- En `Comercial`, `Cotizador` y `Clientes` intercambiaron posición para dejar el orden `Outbound`, `Inbound`, `Cotizador`, `Clientes`.
+- `Control` quedó reducido a `Finanzas` solamente, ya que `Dashboard` se movió fuera de esa sección.
+- El sidebar ahora soporta items sin sección explícita como bloque top-level, sin padding de grupo ni label en mayúsculas.
+- Verificación ejecutada: `npm run lint` y `npm run build` pasan limpios.
+
+## Última actualización
+
+- Fecha: 2026-07-10
+- Actualizado: se reordenó el sidebar según el nuevo orden lógico y se agregó un bloque top-level para Dashboard.
+- Verificación: `npm run lint` y `npm run build` pasan limpios.
+- Estado actual: el sidebar mantiene permisos y activo resaltado, pero con una jerarquía visual más clara.
+
+## 2026-07-10 — Finanzas: margen dentro del P&L y runway con MRR
+
+- La card separada de `Margen del mes` se retiró del resumen y el margen ahora se comunica dentro del gráfico de P&L, con porcentaje por mes y promedio de 6 meses debajo del título.
+- Los gráficos de P&L y runway muestran valores visibles sobre barras/puntos y usan ejes con formato monetario compacto para no depender solo del tooltip.
+- El resumen financiero quedó en una sola fila de 5 cards en desktop, con scroll horizontal en pantallas chicas para evitar el salto a segunda fila.
+- El runway base incorporó el MRR de suscripciones activas y la proyección compartida entre Resumen, Dashboard y Runway Lab quedó alineada en una misma lógica.
+- El Runway Lab pasó a simular costos por meses seleccionados, y al aprobar crea un egreso real por cada mes marcado.
+- Verificación ejecutada: `npm run lint` y `npm run build` pasan limpios.
+
+## Última actualización
+
+- Fecha: 2026-07-10
+- Actualizado: Finanzas quedó con margen integrado al P&L, runway con MRR activo y simulación por meses seleccionados.
+- Verificación: `npm run lint` y `npm run build` pasan limpios.
+- Estado actual: la sección Finanzas está más clara visualmente y el lab de runway refleja escenarios más fieles al negocio.
+
+## 2026-07-13 — Notas: color por etiqueta y header más liviano
+
+- Se simplificó el header del editor de Notas para dejar solo la fila funcional: título, vínculo compacto, estado de guardado como punto, pin, menú y tags chicos.
+- El color visual ya no pertenece a la nota individual: pasó a `notas_etiquetas`, con chips reutilizables y selector de color por etiqueta para que el mismo tag se vea consistente en toda la app.
+- El sidebar de Notas quedó más liviano, sin secciones densas de fijadas ni encabezados redundantes; la estructura ahora prioriza buscador, todas las notas, carpetas, etiquetas y papelera.
+- Se ajustó el documento de base de datos para eliminar `notas.color` y registrar la nueva tabla `notas_etiquetas`.
+- Verificación ejecutada: `npm run build` pasó limpio; `npm run lint` queda cubierto por el build aunque quedó un warning de `img` en Archivos que no bloquea la compilación.
+
+## 2026-07-13 — Gráficos premium y KPI cards con ícono
+
+- `MetricaCard` pasó a soportar un ícono circular de color en la esquina superior derecha, con variante semántica por métrica para reutilizarla en Finanzas, Dashboard y SaaS.
+- `PLChart`, `RunwayChart` y `MRRChart` se rediseñaron como series de tiempo con áreas superpuestas, degradés suaves y curvas `monotone`, manteniendo tooltip y ejes legibles.
+- Los gráficos categóricos (`EmbudoLeads` y `WinRateChart`) se mantuvieron como barras, pero con spacing más amplio, bordes suaves y degradé sutil para alinearlos con la nueva familia visual.
+- Verificación ejecutada: `npm run build` pasa; `npm run lint` pasa con la advertencia preexistente de `components/archivos/ArchivosClient.tsx` sobre `<img>`.
+- Verificación visual: pendiente de validación en browser por indisponibilidad temporal del control del navegador in-app en esta sesión.
+
+## 2026-07-12 — Perfil personal y fotos de usuario
+
+- Se agregó la página `/perfil` con edición de nombre, subida y eliminación de foto, y cambio de contraseña propio.
+- `usuarios.foto_url` quedó conectado al sistema: el sidebar, el avatar superior y los responsables visibles en tareas, subtareas, features y outbound muestran foto real cuando existe.
+- Se incorporó el proxy autenticado para servir fotos desde Storage privado, evitando signed URLs expiran.
+- Verificación ejecutada: `npm run lint` y `npm run build` pasan limpios. La única advertencia restante es preexistente en `components/archivos/ArchivosClient.tsx` por uso de `<img>`.
+
+## 2026-07-12 — Archivos: fondo por tipo en tarjetas
+
+- En la vista `Íconos` y `Galería`, el color de tipo dejó de vivir solo en el ícono y pasó a ocupar toda la zona visual superior de la card.
+- Las carpetas y los distintos tipos de archivo se distinguen ahora de un vistazo por el fondo completo de esa zona, manteniendo el texto inferior sobre fondo blanco.
+- Verificación ejecutada: `npm run build` y `npm run lint` pasan; el único aviso restante sigue siendo el tip de `no-img-element` para la preview de galería.
+
+## 2026-07-12 — Archivos: nombre fuera de la card en Íconos/Galería
+
+- En `Íconos` y `Galería`, la card visual quedó reducida al ícono/fondo de tipo y el nombre pasó a vivirse debajo, fuera del recuadro.
+- Se retiró el conteo de subcarpetas/archivos y el label de tipo de estas vistas para dejar la jerarquía más limpia; ese detalle sigue solo en `Lista`.
+- Verificación ejecutada: `npm run build` y `npm run lint` pasan; el único aviso restante sigue siendo el tip de `no-img-element` para la preview de galería.
+
+## 2026-07-12 — Wiki: librería de prompts poblada
+
+- Se agregó `app/api/wiki/seed-prompts/route.ts` como seed idempotente para crear la categoría `Librería de Prompts` y sus 5 artículos base.
+- Los artículos quedaron guardados con contenido real en JSON de TipTap, usando solo nodos compatibles con el editor compartido de la Wiki.
+- Verificación ejecutada: el seed fue aplicado en Supabase y corrido más de una vez sin duplicar la categoría ni los artículos existentes.
+- Estado actual: la Wiki ya incluye una librería de prompts lista para consulta y reutilización dentro del sistema.
+
+## 2026-07-12 — Wiki con editor compartido
+
+- Se agregó el módulo `/wiki` con navegación propia en ENTREGA, categorías y artículos estructurados.
+- `RichTextEditor` quedó extraído a un componente compartido para reutilizar el mismo TipTap entre Notas y Wiki, sin duplicar la lógica de edición.
+- La Wiki usa autosave, búsqueda por título/contenido y el mismo lenguaje visual de paneles de Notas.
+- Verificación ejecutada: `npm run lint` y `npm run build` pasan limpios.
+
+## 2026-07-12 — SaaS: módulo por producto con métricas, roadmap y suscriptores
+
+- Se agregó la navegación `SaaS` en `CONTROL` para admin y se creó la vista `/saas` con selector dinámico de productos.
+- El panel muestra métricas de negocio recurrente, histórico de MRR, roadmap kanban por producto y lista de suscriptores reutilizando el lenguaje visual ya validado en Finanzas.
+- `suscripciones.producto_id` quedó integrado para separar suscriptores SaaS de clientes de desarrollo a medida sin duplicar la tabla `clientes`.
+- Verificación ejecutada: `npm run lint` y `npm run build` pasan limpios.
+
+## 2026-07-12 — SaaS: planes por producto y asignación desde la ficha del cliente
+
+- Se agregó `producto_planes` al esquema documentado y a los tipos generados, junto con `suscripciones.plan_id` para ligar cada suscripción SaaS a un plan concreto o a un monto personalizado.
+- La ficha de cliente ahora permite asignar un producto SaaS, elegir un plan o cargar un monto personalizado desde el tab `Suscripción`.
+- Se agregó un modal de gestión de planes dentro de `/saas` para crear, editar y eliminar pricing por producto.
+- El backend de suscripciones ahora acepta `producto_id` y `plan_id`, autocompleta `monto_mensual` cuando corresponde y sigue respetando el cobro mensual automático existente.
+
+## 2026-07-12 — Módulo Notas completo
+
+- Se agregó el módulo `Notas` con panel lateral de carpetas, lista central, editor TipTap, notas fijadas, papelera, buscador y vínculos opcionales a clientes, proyectos y leads.
+- `ClienteFicha`, `ProyectoFicha` e `InboundFicha` ahora muestran una sección de notas vinculadas con acceso directo a crear y abrir la nota relacionada.
+- Se documentaron las tablas `carpetas_notas` y `notas` en `docs/DATABASE.md`.
+- Verificación ejecutada: `npm run lint` y `npm run build` pasan limpios.
+
+## 2026-07-12 — Notas: layout fijo, colores post-it, tags e imágenes pegadas
+
+- Los 3 paneles de `/notas` quedaron con anchos fijos y `min-w-0`, sin estirarse por texto largo; el contenedor ahora ocupa toda la altura disponible de la sección.
+- El botón `+ Nota` se movió junto al buscador del sidebar y la fila superior redundante se eliminó.
+- Se agregó soporte de color post-it por nota, chips de tags con autocompletado y filtrado por etiqueta desde el sidebar.
+- TipTap ahora permite pegar o arrastrar imágenes, subiéndolas al bucket privado y sirviéndolas vía un proxy autenticado del sistema.
+- Se documentaron los campos `color` y `tags` de `notas` en `docs/DATABASE.md`.
+- Verificación ejecutada: `npm run lint` y `npm run build` pasan limpios.
+
+## 2026-07-12 — Reversión del Dock al shell original
+
+- Se restauró el sidebar lateral vertical original junto con la topbar superior, retirando el dock flotante del layout activo.
+- El footer de perfil/logout volvió al sidebar y el comportamiento móvil vuelve a depender del drawer clásico.
+- El dock quedó conservado en el código como implementación deprecada para una eventual reversión futura.
+- Verificación ejecutada: `npm run lint` y `npm run build` pasan limpios.
+
+## 2026-07-11 — Dashboard rediseñado con secciones reales
+
+- `app/api/dashboard/route.ts` ahora calcula datos reales para Financiero, Comercial y Entrega, incluyendo histórico de P&L, embudo de leads, win rate por canal, capacidad de entrega y features recientes.
+- `DashboardClient` se reescribió con Financiero como sección protagonista, seguida por Comercial y Entrega, manteniendo el lenguaje visual de Finanzas para cards y gráficos.
+- Se reutilizó `PLChart` en el dashboard y se agregaron `EmbudoLeads` y `FeaturesRecientes` para completar la vista sin duplicar lógica.
+- `useDashboard` quedó protegido contra respuestas viejas que podían pisar datos nuevos al cambiar de período, evitando estados vacíos espurios en Comercial.
+- Verificación ejecutada: `npm run lint` y `npm run build` pasan limpios; además se confirmó visualmente en `/dashboard` que la sección Financiero domina la pantalla y que Comercial/Entrega se renderizan en el layout nuevo.
+
+## Última actualización
+
+- Fecha: 2026-07-11
+- Actualizado: Dashboard rediseñado desde cero con Financiero protagonista y secciones completas de Comercial/Entrega.
+- Verificación: `npm run lint` y `npm run build` pasan limpios.
+- Estado actual: el dashboard ya no usa cards gigantes vacías; ahora presenta métricas densas, gráficos reutilizados y navegación por período consistente.
+
+## 2026-07-11 — Finanzas: Runway Lab como tab propia
+
+- El Runway Lab salió del modal/botón de Resumen y pasó a ser una tab propia de Finanzas, ubicada entre Tesorería y Tarjetas.
+- El lab quedó rearmado con una fila de KPIs, un gráfico comparativo con línea actual y línea de escenario, y un constructor/listado de hipótesis en dos columnas.
+- Cada hipótesis ahora puede activarse o desactivarse localmente para comparar escenarios sin perder el trabajo de simulación previo.
+- La aprobación sigue siendo explícita: solo las hipótesis activas crean egresos reales, con confirmación previa y refresh de métricas al final.
+- Verificación visual local ejecutada sobre una preview temporal del componente, porque `/finanzas` quedó detrás del login en este entorno y no había credenciales de demo disponibles para entrar al shell autenticado.
+- Verificación técnica ejecutada: `npm run lint` y `npm run build` pasan limpios.
+
+## 2026-07-11 — Shell: sidebar reemplazado por dock flotante
+
+- El sidebar lateral quedó reemplazado por un Dock horizontal flotante centrado abajo, con navegación en una sola fila, tooltip por ítem y marcador de ruta activa con dot.
+- La topbar ahora aloja el logo real de Blyndtek y el avatar abre un dropdown con perfil y cierre de sesión, manteniendo el logout funcional.
+- El contenido principal recuperó ancho horizontal completo para aprovechar mejor kanbans, tablas y vistas anchas, con padding inferior extra para no tapar el Dock.
+- `Sidebar.tsx` quedó deprecado y sin uso activo, preservado por si hiciera falta revertir el shell en el futuro.
+- Verificación ejecutada: `npm run lint` y `npm run build` pasan limpios.
+
+## 2026-07-11 — Finanzas: paleta de gráficos con degradés
+
+- `PLChart` pasó a usar degradés verticales SVG para `Ingresos`, `Egresos` y `Margen`, manteniendo el significado semántico de los colores pero con una ejecución visual más moderna.
+- `CarteraClientesChart` aplicó degradés horizontales en las barras apiladas de `Cobrado` y `Pendiente`, también con IDs aislados para evitar colisiones si ambos gráficos se montan juntos.
+- Se mantuvieron las barras sin bordes oscuros y con radios redondeados en el extremo exterior, para que la card siga viéndose limpia sobre el fondo claro.
+- Verificación ejecutada: `npm run lint` y `npm run build` pasan limpios.
+
+## 2026-07-11 — Tesorería: cajas con histórico y “Sin asignar” oculto cuando está vacío
+
+- Se eliminó la fila de texto `Color` de cada card de caja; ahora el punto superior ya es el único indicador visual del color.
+- La card especial `Sin asignar` ahora queda oculta si no tiene movimientos y, cuando sí los tiene, muestra una aclaración más explícita sobre cobros/egresos sin cuenta asignada.
+- `app/api/finanzas/tesoreria/route.ts` ahora devuelve un `historico` de 6 meses por caja para pintar un sparkline mini en cada card, incluyendo el bucket especial solo si realmente tiene movimientos.
+- Verificación ejecutada: `npm run lint` y `npm run build` pasan limpios.
+
+## 2026-07-11 — Finanzas: ajuste visual de P&L y cartera
+
+- `PLChart` dejó la línea de clientes activos más liviana y coherente con la paleta: `signal`, punteada, más fina y con dots más chicos.
+- Las barras de `PLChart` ya no muestran borde oscuro y `CarteraClientesChart` pasó a usar tonos intermedios más visibles para cobrado y pendiente.
+
+## 2026-07-11 — Finanzas: curva suave en clientes activos
+
+- La línea de `clientes_activos` en el gráfico de P&L ya venía pidiendo `type="monotone"`, pero el renderer local de `recharts` seguía trazando segmentos rectos; se corrigió el renderer para respetar la interpolación suave.
+- Verificación pendiente: `npm run lint` y `npm run build` tras el ajuste del renderer.
+
+## 2026-07-11 — Finanzas: tooltip flotante sobre el cursor
+
+- Causa exacta: el wrapper local de gráficos seguía posicionando el tooltip de `PLChart` arriba a la derecha del panel (`absolute right-2 top-2`), y `CarteraClientesChart` hacía lo mismo con su card (`absolute right-4 top-4`), así que el tooltip no seguía el mouse.
+- Corrección: ambos tooltips pasaron a calcular posición dinámica en función del cursor y del contenedor visible.
+- Verificación automática ejecutada: `npm run lint` y `npm run build` pasan limpios.
+- Verificación visual directa quedó limitada por autenticación local: el navegador de prueba cayó en `/login` y no había credenciales de demo disponibles en el repo para entrar al shell autenticado.
+
+## 2026-07-11 — Finanzas: barras más visibles y eje de clientes con más aire
+
+- `PLChart` volvió a usar los colores sólidos del sistema para las barras con `fillOpacity={0.65}`, así recuperan presencia sobre el fondo blanco sin quedar demasiado pesadas.
+- El eje derecho de `clientes_activos` ahora reserva más altura (`dataMax * 2.5`, mínimo 5), para que la línea no se pegue arriba ni exagere los cambios pequeños.
+
+## 2026-07-11 — Finanzas: tooltip sigue el cursor
+
+- Se corrigió el posicionamiento del tooltip en el wrapper local de gráficos y en la card de `CarteraClientesChart`, que estaban anclándolo arriba a la derecha.
+- Verificación visual ejecutada en navegador autenticado: en `/finanzas` → `Resumen` el tooltip del P&L cambia de lugar entre hover izquierdo y central, y en `Cobros` la cartera por cliente también sigue el cursor.
+- Verificación automática ejecutada: `npm run lint` y `npm run build` pasan limpios.
+
+## 2026-07-10 — Finanzas: cartera por cliente corregida
+
+- `recharts` estaba en `^3.8.1` y quedó actualizado a `^3.9.2` en `package.json`; no había `@types/recharts` separado instalado.
+- Se eliminó el cast/hack de `CarteraClientesChart`, pero en navegador el `layout="vertical"` siguió renderizando la orientación horizontal por defecto, así que este gráfico se resolvió con un render horizontal apilado determinístico propio para que los nombres de cliente queden en el eje vertical y las barras cobrado/pendiente se apilen correctamente.
+- Verificación visual ejecutada sobre `/debug-cartera`: ARC Global, Funes Exclusivos y Cubelo aparecen con barras horizontales apiladas y el tooltip/resumen sigue mostrando los importes.
+- Verificación final ejecutada: `npm run lint` y `npm run build` pasan limpios.
+- Estado actual: la cartera por cliente muestra los nombres correctos en vertical y las barras apiladas en horizontal, sin depender del comportamiento inconsistente de Recharts para este caso puntual.
+
+## 2026-07-10 — Finanzas: P&L visible y Cartera refinada
+
+- `CarteraClientesChart` quedó con barras más finas, sin importes flotantes permanentes, usando los tonos `success-light` y `warning-light` del design system y con tooltip on-hover para cobrado/pendiente/total/% cobrado.
+- Se corrigió la escala de cartera calculando el máximo real como `total_cobrado + total_pendiente`, de modo que el contrato más grande llega al borde derecho del gráfico y los demás quedan proporcionales.
+- La causa real de que `PLChart` no se viera era distinta a la de Cartera: `tsconfig` redirige `recharts` a la capa local `recharts/index.tsx`, y esa capa no implementaba `ComposedChart`; el archivo mezclaba ese wrapper local con un import profundo de `recharts/lib/chart/ComposedChart`, dejando el render inconsistente.
+- `recharts/index.tsx` ahora implementa `ComposedChart` para barras + línea con ejes izquierdo/derecho, y `PLChart` lo consume desde `recharts` sin casts ni imports profundos.
+- `RunwayChart` dejó de depender del import profundo de `LabelList`; mantiene sus valores visibles con la capa propia que ya tenía sobre el gráfico.
+- Verificación visual ejecutada en una ruta temporal sobre build de producción local: P&L muestra barras de Ingresos/Egresos/Margen y línea de Clientes activos con datos reales; Cartera muestra barras horizontales finas y tooltip funcional.
+
+## 2026-07-10 — Tiempo trabajado por fase
+
+- Se agregó la tabla `sesiones_tiempo` al esquema documentado y la API para iniciar y pausar cronómetros por fase.
+- `ProyectoFicha` ahora muestra el total invertido del proyecto con desglose por fase y por usuario, y cada fase integra un cronómetro propio.
+- La topbar suma un indicador global de cronómetro activo para no perder sesiones en curso al navegar entre módulos.
+- Verificación ejecutada: `npm run lint` y `npm run build` pasan limpios.
+
+## 2026-07-10 — Roadmap público: auto-preview descartado
+
+- Se eliminó el intento de cargar `og:image` del sistema en vivo porque los sitios con login no exponen una preview pública confiable.
+- `SistemaEnVivo` volvió al fallback final de dominio + link directo, sin fetch ni skeletons innecesarios.
+- Se borró el endpoint `app/api/roadmap/[token]/preview-imagen/route.ts` porque ya no se usa.
+- Verificación ejecutada: `npm run lint` y `npm run build` pasan limpios.
+- Estado actual: el roadmap público muestra la card de sistema en vivo de forma simple y estable, sin dependencias externas ni previews rotas.
+
+## 2026-07-10 — Finanzas: scroll general restaurado
+
+- Se retiró el patrón de `overflow-hidden` / `h-full` del contenedor demasiado alto que envolvía todos los tabs de Finanzas.
+- El comportamiento especial de header fijo + scroll interno quedó aislado solo en el tab `Egresos`, mientras que `Resumen`, `Cobros`, `Suscripciones` y `Tesorería` volvieron a scrollear normalmente.
+- Verificación ejecutada: `npm run lint` y `npm run build` pasan limpios.
+- Estado actual: la página de Finanzas recuperó su scroll general sin perder el comportamiento especial de la tabla de egresos.
+
+## Última actualización
+
+- Fecha: 2026-07-10
+- Actualizado: el preview del roadmap quedó sin caché temporal para diagnosticar el sitio del cliente en caliente.
+- Verificación: el endpoint `preview-imagen` sigue devolviendo `imagenUrl: null` porque `funes-exclusivos.vercel.app` responde con una redirección de la propia app (`NEXT_REDIRECT` hacia `/dashboard`) y no entrega un HTML público con `og:image`.
+- Estado actual: no hay preview usable para ese dominio mientras no exponga una página pública con metadata `og:image`; el fallback limpio sigue siendo el comportamiento correcto.
+
+## Última actualización
+
+- Fecha: 2026-07-10
+- Actualizado: Finanzas sumó un tarjetero de referencia rápida con CRUD administrable de tarjetas, mostrando solo alias, banco, últimos 4 y vencimiento.
+- Verificación: `npm run lint` y `npm run build` pasan limpios.
+- Estado actual: la tabla `tarjetas` quedó integrada como inventario de referencia para identificar medios de gasto sin guardar PAN completo ni CVV.
+
+## Última actualización
+
+- Fecha: 2026-07-10
+- Actualizado: la tabla de Egresos quedó con header fijo, scroll solo en las filas y la columna de acciones reducida al menú `⋮`.
+- Verificación: `npm run lint` y `npm run build` pasan limpios.
+- Estado actual: Egresos mantiene el encabezado siempre visible y el listado gana densidad sin perder accesibilidad.
+
+## 2026-07-10 — Finanzas: cajas administrables
+
+- Los medios de cobro/pago dejaron de ser un enum fijo y ahora salen de la tabla `cajas`, administrable desde la pestaña Tesorería.
+- `cobros.cuenta_medio` y `egresos.cuenta_medio` se mantienen como texto con el slug de la caja para no romper movimientos históricos.
+- Los selects de Cobro/Egreso cargan solo cajas activas, mientras que Tesorería muestra activas más las inactivas que todavía tienen movimientos.
+- Se agregó un modal de gestión para crear, renombrar, activar/desactivar y eliminar cajas; la eliminación se bloquea si ya existen movimientos asociados.
+- Verificación ejecutada: `npm run lint` y `npm run build` pasan limpios.
+
+## 2026-07-10 — Finanzas: cartera por cliente
+
+- Se agregó el gráfico `Cartera por cliente` en la tab `Cobros`, con barras horizontales apiladas de cobrado vs pendiente por cliente.
+- El endpoint `app/api/finanzas/cartera-clientes/route.ts` agrupa solo cobros de tipo `hito` y `one_pay`, excluyendo mantenimiento y brick para no mezclar contratos de desarrollo con recurrentes.
+- `FinanzasClient` ahora muestra ese resumen visual arriba de `CobrosTabla`, mientras el detalle línea por línea sigue intacto.
+- Verificación ejecutada: `npm run lint` y `npm run build` pasan limpios.
+
+## 2026-07-10 — Finanzas: P&L volvió a renderizar con datos reales
+
+- `PLChart` dejó de depender de `ResponsiveContainer` y pasó a un `ComposedChart` con ancho explícito, lo que corrigió el render vacío del panel de P&L.
+- El gráfico vuelve a mostrar barras y línea con datos reales, y se verificó visualmente en una página de debug temporal antes de limpiar el cambio.
+- La fórmula de runway quedó confirmada con MRR activo, costos fijos mensuales y caja real descontando solo egresos pagados.
+- Verificación ejecutada: `npm run build` y `npm run lint` pasan limpios.
+- Estado actual: el panel de P&L vuelve a dibujar sus series correctamente y el cálculo de runway quedó alineado con la definición de negocio.
+
+## Última actualización
+
+- Fecha: 2026-07-10
+- Actualizado: se corrigió el render del gráfico de P&L y se confirmó la fórmula de runway.
+- Verificación: `npm run build` y `npm run lint` pasan limpios.
+- Estado actual: el panel de P&L muestra barras y línea con datos reales, y el runway usa la fórmula acordada.
+
+## 2026-07-10 — Roadmap público: preview visual del sistema en vivo
+
+- `SistemaEnVivo` ahora consulta una preview server-side del `og:image` del sitio del cliente y la muestra como banner si está disponible.
+- Se agregó un endpoint de fallback seguro que nunca rompe la página: si el sitio no responde o no tiene `og:image`, la card sigue mostrando solo dominio + enlace.
+- El roadmap público se verificó en un proyecto real sin errores en consola y con la card renderizando correctamente el fallback limpio.
+- Verificación ejecutada: `npm run build` y `npm run lint` pasan limpios.
+
+## 2026-07-10 — Roadmap público: diagnóstico de preview sin imagen
+
+- Se verificó el endpoint `app/api/roadmap/[token]/preview-imagen/route.ts` contra el proyecto `funes-exclusivos-80tm`.
+- Diagnóstico exacto: `url_sistema` apunta a `https://funes-exclusivos.vercel.app/login`, y ese HTML inicial no expone `og:image`.
+- Se confirmó manualmente que el endpoint responde `200` con `imagenUrl: null`, por lo que el fallback actual es el comportamiento correcto hasta que el sitio del cliente publique metadata OG.
+- La route quedó más robusta con `User-Agent`, timeout extendido y resolución de URLs relativas, pero no había un bug de parseo que corregir en este caso.
+
+## 2026-07-10 — Finanzas: P&L a 12 meses y gráfico a ancho completo
+
+- `app/api/finanzas/metricas/route.ts` pasó el histórico de P&L de 6 a 12 meses.
+- `components/finanzas/PLChart.tsx` ahora ocupa el ancho completo del panel con `ResponsiveContainer`, elimina la leyenda manual duplicada y usa la leyenda nativa de Recharts.
+- Las barras usan los tonos claros `signal-light`, `danger-light` y `success-light`, el eje Y arranca en `0`, y el eje X rota levemente los 12 meses para mantener legibilidad.
+- El subtítulo de la card quedó alineado con el nuevo rango: `Margen promedio (12 meses)`.
+- Verificación ejecutada: `npm run build` y `npm run lint` pasan limpios.
+
+## 2026-07-10 — Finanzas: nombres legibles en Cobros y Suscripciones
+
+- `app/api/cobros/route.ts` ahora devuelve el nombre de la empresa del cliente asociado, en vez de dejar visible el `cliente_id` crudo.
+- `CobrosTabla` muestra `cobro.cliente.empresa` cuando está disponible, con fallback al ID solo si faltara el join.
+- `SuscripcionesLista` deja de mostrar `cotizacion_id` crudo y pasa a resolver el nombre de la cotización asociada.
+- Verificación ejecutada: `npm run build` y `npm run lint` pasan limpios.
+
+## Última actualización
+
+- Fecha: 2026-07-10
+- Actualizado: el gráfico de P&L pasó a 12 meses, a ancho completo, con colores claros y una sola leyenda.
+- Verificación: `npm run build` y `npm run lint` pasan limpios.
+- Estado actual: la tab Resumen de Finanzas muestra un P&L más limpio, legible y alineado con los tokens del design system.
+
+## Última actualización
+
+- Fecha: 2026-07-10
+- Actualizado: se agregó preview visual al sistema en vivo del roadmap público.
+- Verificación: `npm run build` y `npm run lint` pasan limpios.
+- Estado actual: la card del sistema en vivo muestra preview cuando puede y cae a fallback seguro cuando no.
+
+## 2026-07-10 — Finanzas: CTA de egresos alineado con exportación
+
+- En la tab `Egresos` de Finanzas, `Cargar egreso` se movió a la misma fila que `Exportar P&L a Excel` para dejar la acción principal en un solo bloque de controles.
+- Verificación ejecutada: `npm run build` y `npm run lint` pasan limpios.
+
+## 2026-07-10 — Finanzas: P&L con ejes reales y tooltip, runway fuera de Resumen
+
+- `PLChart` pasó a `ComposedChart` con ejes reales, tres barras (`Ingresos`, `Egresos`, `Margen`) y una línea de `Clientes activos`; los valores detallados ahora viven solo en el tooltip on-hover.
+- `RunwayChart` se retiró de la tab `Resumen` y el panel de P&L quedó a ancho completo; el botón `Simular escenarios` se mantiene debajo, alineado a la derecha.
+- `app/api/finanzas/metricas/route.ts` ahora entrega `historico_pl` con `margen` y `clientes_activos` por mes. Para `clientes_activos` se eligió la definición de clientes distintos con suscripción `activa` al cierre de cada mes, porque es la más estable con los datos actuales.
+- `FinanzasClient` consume el histórico del backend y exporta el P&L con las nuevas columnas de margen y clientes activos.
+- Verificación ejecutada: `npm run lint` y `npm run build` pasan limpios.
+
+## 2026-07-10 — Roadmap público: bisección real del error de Client Component
+
+- La bisección aisló el disparo inicial en `components/roadmap/ResumenPagos.tsx:43-44`, al renderizar el `Card` raíz dentro de la página pública.
+- El mismo patrón reapareció en `components/roadmap/SistemaEnVivo.tsx:11-16`, así que ambos contenedores se reemplazaron por `div` estáticos con la misma apariencia visual.
+- `app/roadmap/[slug]/page.tsx` volvió a renderizar `RoadmapHeader`, `ResumenPagos`, `SistemaEnVivo`, `RoadmapTimeline` y `RoadmapFooter` sin el overlay de `Event handlers cannot be passed to Client Component props`.
+- Verificación ejecutada en navegador: hard reload sobre `/roadmap/funes-exclusivos-80tm` y captura sin error rojo visible.
+
+## 2026-07-10 — Tareas, avance por fases y configuración pública del roadmap
+
+- `/tareas` ahora mantiene el encabezado fijo y deja el scroll únicamente dentro de cada columna del kanban.
+- `recalcularAvanceProyecto` pasó a calcular el avance como promedio por fase, combinando fases sin subtareas con fases que sí tienen subtareas, y se llama desde create/update/delete de fases y features.
+- `ProyectoFicha` incorporó una card visible de configuración del roadmap público con URL del sistema, credenciales del cliente y PIN, guardada de forma explícita.
+- Verificación ejecutada: `npm run lint` y `npm run build` pasan limpios.
+
+## 2026-07-10 — Roadmap público: fases reales, pagos y credenciales con PIN
+
+- `RoadmapHeader` ahora usa el mismo logo real que el sidebar (`Logo_Blyndtek_plataforma_negro.svg`) para que la marca coincida en toda la app.
+- `app/api/roadmap/[token]/route.ts` volvió a leer `fases_proyecto` reales del proyecto, incluyendo conteo de features por fase, y además expone un resumen público de pagos y la URL del sistema si existe.
+- Se agregó `app/api/roadmap/[token]/credenciales/route.ts` para desbloquear credenciales solo con PIN correcto, sin incluirlas en el HTML inicial ni en las props del server component.
+- Se sumaron `ResumenPagos`, `SistemaEnVivo` y `CredencialesGate` al roadmap público, integrados en `app/roadmap/[slug]/page.tsx`.
+- Verificación ejecutada: `npm run lint` y `npm run build` pasan limpios.
+- Estado actual: el roadmap público muestra fases reales, pagos resumidos, link al sistema y credenciales protegidas por PIN server-side.
+
+## 2026-07-10 — Roadmap público: nombres reales de fechas en fases
+
+- Se corrigieron todas las referencias a `fecha_inicio_estimada` / `fecha_fin_estimada` para usar los nombres reales de la base `fecha_estimada_inicio` / `fecha_estimada_fin`.
+- El endpoint público de roadmap, las rutas de fases y la UI del timeline ahora consultan y muestran las fechas correctas sin provocar errores de columna inexistente.
+- Verificación ejecutada: `npm run lint` y `npm run build` pasan limpios.
+
+## 2026-07-10 — Roadmap público: `entregables` eliminado de fases
+
+- Se removieron todas las referencias a `entregables` como si fuera una columna de `fases_proyecto`.
+- El roadmap público y la UI de fases usan solo `descripcion` como texto libre para esa información.
+- Verificación ejecutada: `npm run lint` y `npm run build` pasan limpios.
+
+## 2026-07-10 — Proyectos: estado optimista, scroll interno y edición explícita
+
+- `FasesEstadoKanban` ahora actualiza el estado de la fase de forma optimista al soltar una card, así el tinte de prioridad se apaga inmediatamente cuando pasa a `lista`.
+- `ProyectoFicha` quedó estructurado con tabs fijos arriba y contenido interno con scroll propio; el panel derecho ya no empuja toda la página.
+- `FaseCardExpandible` incorporó botones visibles de `Guardar` y `Cancelar` para la edición inline de nombre y fechas estimadas, manteniendo `Enter` como atajo de confirmación.
+- Verificación ejecutada: `npm run lint` y `npm run build` pasan limpios.
+
+## 2026-07-10 — Finanzas: números visibles en gráficos y runway prolijo
+
+- `PLChart` y `RunwayChart` reforzaron la visualización de valores con labels explícitos visibles sobre barras y puntos, además de mantener tooltips formateados en USD.
+- El gráfico de P&L volvió a mostrar el margen por mes de forma clara y el promedio de 6 meses sigue visible bajo el título.
+- La card de `Runway` dejó de mostrar un texto largo que se partía en varias líneas y ahora presenta un estado corto y legible.
+- Verificación ejecutada: `npm run build` y `npm run lint` pasan limpios.
+- Verificación visual ejecutada: se abrió `/finanzas` con sesión real de admin y se confirmó en captura que los importes aparecen visibles sobre el gráfico de P&L y la proyección de runway.
+
+## 2026-07-10 — Tareas y Proyectos: ajustes visuales menores
+
+- `TareaCard` cambió la prioridad baja a fondo blanco para que no se confunda con el fondo gris del kanban.
+- `ProyectoCard` dejó de mostrar el borde azul de selección y quedó solo con el tinte `signal-light`.
+- Verificación ejecutada: `npm run build` y `npm run lint` pasan limpios.
+
+## 2026-07-10 — Proyectos y Tareas: tintes completos y selección reforzada
+
+- `FaseCardExpandible` dejó de mostrar el selector visible de prioridad; ahora la prioridad se cambia desde el menú `⋮` y el fondo completo de la card refleja alta/media/baja con `danger-light`, `warning-light` y `paper`.
+- `ProyectoCard` reforzó el estado seleccionado con `bg-signal-light` completo y `border-2 border-signal` para que la selección quede inequívoca a simple vista.
+- `TareaCard` dejó atrás el borde lateral por prioridad y ahora usa el mismo patrón de fondo completo por prioridad que las fases, manteniendo `bg-white` en tareas terminadas.
+- Verificación ejecutada: `npm run lint` y `npm run build` pasan limpios.
+
+## Última actualización
+
+- Fecha: 2026-07-10
+- Actualizado: se corrigió el patrón visual de prioridad y selección en Proyectos y Tareas.
+- Verificación: `npm run lint` y `npm run build` pasan limpios.
+- Estado actual: las cards comunican prioridad y selección con fondo completo, sin líneas laterales confusas.
+
+## Última actualización
+
+- Fecha: 2026-07-10
+- Actualizado: Finanzas quedó con margen integrado al P&L, runway con MRR activo y simulación por meses seleccionados.
+- Verificación: `npm run lint` y `npm run build` pasan limpios.
+- Estado actual: la sección Finanzas está más clara visualmente y el lab de runway refleja escenarios más fieles al negocio.
+
+## 2026-07-13 — Checklist de QA obligatoria para fases en Lista
+
+- Se agregó `checklist_qa` como gate de calidad para fases: una fase solo puede pasar a `lista` si tiene checklist y todos los ítems están completados.
+- La checklist puede generarse con Claude a partir de la fase y sus subtareas, o ampliarse manualmente con ítems nuevos; cada ítem puede marcarse, eliminarse y regenerarse.
+- `FasesEstadoKanban` ahora muestra un toast claro y revierte el drag optimista si el backend rechaza el pase a `Lista` por checklist incompleta.
+- Se documentó la nueva tabla `checklist_qa` y la validación de estado quedó alineada al flujo real de Proyectos.
+- Verificación ejecutada: `npm run build` y `npm run lint` pasan limpios; el build requirió limpiar `.next` para descartar un artefacto viejo de Next antes de volver a compilar.
+
+## 2026-07-13 — Wiki: estándares técnicos poblados con seed idempotente
+
+- Se agregó el seed idempotente `app/api/wiki/seed-estandares/route.ts` para crear la categoría `Estándares técnicos` y el artículo `Constitución técnica de Blyndtek`.
+- El contenido se construye como JSON de TipTap reutilizando el mismo patrón de bloques compartidos que ya usan los demás seeds de Wiki.
+- Se extrajeron helpers de construcción de bloques TipTap a `lib/wiki-seed.ts` para evitar duplicar la serialización entre los seeds de prompts y estándares.
+- Verificación ejecutada: `npm run build` pasa limpio tras limpiar `.next`; `npm run lint` también pasa con el warning no bloqueante preexistente de `img` en Archivos.
+
+## 2026-07-13 — Listas de selección como filas y limpieza de íconos decorativos
+
+- `NotasLista`, `WikiLista`, `ProyectoCard` y `ClienteCard` dejaron el patrón de card individual y pasaron a filas con divisor fino, selección en `signal-light` y hover sutil.
+- Las listas izquierdas de Proyectos y Clientes también dejaron de usar separación tipo card entre ítems, para que la navegación se lea como lista homogénea.
+- Se limpiaron íconos circulares decorativos fuera de las excepciones permitidas, dejando el icono simple en `SistemaEnVivo` y en los flujos de aceptación de cotización.
+- La Constitución técnica de Blyndtek en la Wiki incorporó la regla de usar Card solo para paneles/detalle y filas con divisor para listas de selección, además de restringir íconos con badge de color a `MetricaCard` y tiles de Archivos.
+
+## 2026-07-13 — Auditoría de emojis y compactación de fase
+
+- `CronometroFase` quedó reducido a una sola fila compacta: icono de reloj, tiempo en vivo y play/pausa con SVG propio, sin texto explicativo ni desglose por usuario.
+- `ChecklistQaSection` pasó a un pill compacto con barra de progreso y movió la checklist completa a un modal; el botón de regenerar ahora usa un icono SVG de refresh.
+- `IndicadorCronometroGlobal`, `NotaEditor` y `SistemaEnVivo` dejaron de usar emojis literales y ahora muestran iconos SVG propios.
+- La Constitución técnica de la Wiki reforzó explícitamente la regla de cero emojis genéricos en toda la UI, siempre reemplazados por SVG del sistema.
+
+## 2026-07-13 — Recharts: imports consolidados desde el barrel principal
+
+- Se corrigió la causa exacta del gráfico vacío en P&L y de las vistas que compartían el mismo sistema de gráficos: había imports de `recharts` desde rutas internas (`recharts/es6/...`) mezclados con imports del barrel principal.
+- Todos los charts quedaron importando exclusivamente desde `recharts`, sin rutas internas ni instancias duplicadas del módulo.
+- Además, el wrapper local de `recharts` quedó alineado para soportar `AreaChart` y props visuales usados por los gráficos categóricos, de modo que el build siga estable con la implementación del proyecto.
+- Verificación ejecutada: `npm run build` y `npm run lint` pasan limpios, con el warning no bloqueante preexistente de `<img>` en `components/archivos/ArchivosClient.tsx`.
+
+## 2026-07-13 — Series de tiempo finales: barras sólidas sin degradé
+
+- `PLChart`, `RunwayChart`, `MRRChart` y el gráfico embebido de `RunwayLab` quedaron unificados en la versión final de barras sólidas, sin `defs`, sin `linearGradient` y sin áreas.
+- La causa raíz confirmada del bug de P&L vacío fue el uso de imports internos de `recharts` en lugar del paquete principal, lo que mezclaba instancias del sistema de charts y rompía el render silenciosamente.
+- `Dashboard` hereda el fix automáticamente porque reutiliza `PLChart`, así que el mismo criterio visual y técnico queda alineado entre Finanzas y Dashboard.
+- Verificación ejecutada: `npm run build` y `npm run lint` pasan limpios, con el warning no bloqueante preexistente de `<img>` en `components/archivos/ArchivosClient.tsx`.
+- Verificación visual pendiente en este entorno: intenté abrir `/finanzas`, `/dashboard` y las demás vistas pedidas, pero la conexión al browser embebido falló y no pude completar una inspección autenticada real desde acá.
+
+## 2026-07-13 — Gráficos: refinamiento visual del renderer
+
+- El renderer local de `recharts` ahora respeta mejor `barSize`, gaps, dominios de ejes, `strokeDasharray`, márgenes mínimos y formatters de ticks.
+- Esto corrige la estética envejecida de los charts: barras demasiado gruesas, labels cortados, ticks repetidos en el eje derecho y líneas auxiliares con demasiado peso visual.
+- `PLChart`, `RunwayChart`, `MRRChart` y `RunwayLab` se benefician del mismo renderer, manteniendo barras sólidas pero con proporción y espaciado más actuales.
+- `CarteraClientesChart` se rediseñó sin gradientes lavados: ahora usa tracks finos, segmentos sólidos para cobrado/pendiente, eje superior más limpio y leyenda compacta.
+- Verificación ejecutada: `npm run build` y `npm run lint` pasan limpios, con el warning no bloqueante preexistente de `<img>` en `components/archivos/ArchivosClient.tsx`.
+
+## 2026-07-13 — Gráficos: rediseño visual premium
+
+- Se actualizó el renderer local de `recharts` para renderizar `defs`, `linearGradient`, filtros SVG y tooltips en `BarChart`, permitiendo una capa visual más moderna sin cambiar datos ni lógica de negocio.
+- `PLChart`, `RunwayChart`, el gráfico de `RunwayLab` y `MRRChart` ahora usan barras con gradiente sobrio, sombra SVG suave, leyendas tipo chip, tooltips con fondo translúcido y grillas más livianas.
+- Los gráficos categóricos del Dashboard (`PipelineChart`, `EmbudoLeads`, `WinRateChart` y `RunwayProyectado`) quedaron alineados al mismo lenguaje visual: menos bordes, más aire, chips de contexto, barras con profundidad y tooltips custom.
+- Los sparklines de Tesorería dejaron de heredar ejes/márgenes de charts grandes y ahora se renderizan como líneas limpias dentro de una superficie compacta.
+- `CarteraClientesChart` se mantiene como referencia visual aprobada y no se modificó su funcionamiento.
+- Verificación ejecutada: `npm run build` y `npm run lint` pasan limpios, con el warning no bloqueante preexistente de `<img>` en `components/archivos/ArchivosClient.tsx`.
+
+## 2026-07-13 — AI Dev orquestado desde Blyndtek OS
+
+- Se agregó la infraestructura completa del lado de Blyndtek OS para orquestar AI Dev por fase: tipos, ejecución registrada, webhook receptor, disparo inicial a GitHub y confirmación manual de SQL ejecutado.
+- `ProyectoFicha` ahora permite configurar el repositorio `owner/repo` necesario para AI Dev, y `FaseCardExpandible` muestra un bloque compacto de seguimiento con estado, PR y SQL pendiente.
+- El webhook también registra tareas manuales sugeridas por la IA y tiempo de ejecución de IA en `sesiones_tiempo` con `usuario_id = null` y `es_ia = true`.
+- Verificación ejecutada: `npm run build` y `npm run lint` pasan. No se ejecutó todavía un piloto contra un repo real con workflow de GitHub Actions en esta sesión.
+
+## 2026-07-13 — Features por fase: `fase` fantasma vs `fase_id` real
+
+- La causa exacta del kanban vacío era que el frontend seguía agrupando por `feature.fase`, mientras el dato real viajaba en `fase_id`; además, el endpoint de features seguía exponiendo el campo fantasma `fase` junto al id correcto.
+- Se alineó el contrato a `fase_id` como único campo canónico: `types/features.ts`, el endpoint `/api/proyectos/[id]/features`, el update de feature, el cálculo de avance, el kanban y las vistas de fase ahora agrupan y persisten con `fase_id`.
+- También se corrigieron la checklist de QA y el flujo de AI Dev para que consuman `fase_id`, evitando que reaparezca el mismo desajuste en otras rutas que reutilizan features.
+- Verificación ejecutada: `curl /api/proyectos/{id}/features` ya devuelve `fase_id` sin `fase`. `npm run build` y `npm run lint` pasan con el warning no bloqueante preexistente de `<img>` en `components/archivos/ArchivosClient.tsx`.
+
+## 2026-07-13 — Backfill de tareas faltantes para features cargadas por SQL directo
+
+- Se confirmó la causa: en `HA Control de Obra` había 23 features cargadas por SQL directo que no pasaron por la ruta normal de creación, así que nunca se generó su tarea vinculada.
+- Se agregó `app/api/features/backfill-tareas/route.ts` y el helper compartido `lib/proyectos/featureTarea.ts` para reutilizar la misma lógica de creación automática de tareas que usa la app al crear una feature normalmente.
+- El backfill se ejecutó sobre todo el sistema y creó 23 tareas nuevas; al recontar quedó `missingCount: 0` para `HA Control de Obra` y también 0 features huérfanas en el total general.
+- No se agregó trigger de base de datos: la solución quedó en el backfill y el helper compartido, porque la regla de negocio vive en TypeScript y no conviene duplicarla en PL/pgSQL sin una capa adicional de mantenimiento.
+- Verificación ejecutada: `npm run build` y `npm run lint` pasan con el warning no bloqueante preexistente de `<img>` en `components/archivos/ArchivosClient.tsx`.
+
+## 2026-07-13 — Tareas: nombre de fase visible en subtareas de proyecto
+
+- El listado de tareas ahora trae `fase_nombre` para las tareas vinculadas a una feature: el GET de `/api/tareas` hace join con `features` y `fases_proyecto` y aplana el nombre de la fase en la respuesta.
+- `TareaCard` muestra ese nombre debajo del proyecto cuando la tarea proviene de una subtarea de proyecto; las tareas sueltas quedan igual, sin texto extra.
+- Verificación ejecutada: `npm run build` y `npm run lint` pasan con el warning no bloqueante preexistente de `<img>` en `components/archivos/ArchivosClient.tsx`.
+
+## 2026-07-13 — AI Dev: tareas marcadas como IA, filtro y rollback seguro
+
+- Al iniciar AI Dev desde una fase, las features pendientes pasan a `en_curso` y las tareas vinculadas quedan marcadas con `es_ia=true`, `responsable_id=null` y estado `en_proceso` mientras dura la ejecución.
+- Si el dispatch a GitHub falla, el endpoint revierte el estado de features, tareas y fase para no dejar trabajo marcado como IA sin una corrida real detrás.
+- El webhook de AI Dev ahora distingue fallos y éxito parcial: en `fallido` devuelve las tareas IA a `nueva`, y en `pr_abierto` deja el PR registrado sin auto-terminar tareas todavía.
+- La vista de Tareas sumó el badge compacto `IA` y el filtro `Ocultar tareas de IA`, con conteos y columnas respetando el filtro activo.
+- Verificación ejecutada: `npm run build` y `npm run lint` pasan; queda el warning no bloqueante preexistente de `<img>` en `components/archivos/ArchivosClient.tsx`.
+
+## 2026-07-13 — Rol comercial, comisiones y Archivos compartidos
+
+- Se agregó el rol `comercial` con scoping a sus propios leads/clientes y navegación acotada, además de una vista `Equipo comercial` para admin con métricas por vendedor.
+- El alta de leads/clientes ahora propaga `vendedor_id` correctamente y la aceptación de cotizaciones crea comisiones configurables en estado pendiente cuando corresponde.
+- Archivos quedó bifurcado entre admin y comercial: admin conserva la gestión completa y puede compartir carpetas; comercial ve solo carpetas compartidas y sus subcarpetas.
+- Se expuso `rol` en `/api/usuarios` para poder seleccionar destinatarios de compartición sin agregar otra fuente de datos.
+- Verificación ejecutada: `npm run lint` y `npm run build` pasan correctamente.
+
+## 2026-07-13 — Finanzas: comisiones pagadas generan egreso real
+
+- Al marcar una comisión como pagada, el backend crea automáticamente un egreso trazable con `categoria = "comisiones"` y `comision_id`, para que el costo impacte el P&L, el runway y la tesorería sin doble carga manual.
+- La tab `Resumen` suma ahora `Comisiones pendientes` y la nueva tab `Comisiones` permite filtrar, revisar y marcar pagos de forma centralizada para admin.
+- `Finanzas` quedó restringido a admin desde el page server-side, y el egreso automático ya se refleja también en la tabla de `Egresos`.
+- Verificación ejecutada: `npm run lint` y `npm run build` pasan correctamente.
+
+## 2026-07-13 — Runway Lab con cobros y suscripciones pendientes opcionales
+
+- Se agregó el endpoint `GET /api/finanzas/runway` para servir la proyección de runway con el modo conservador por defecto y con `incluirPendientes=true` cuando se quiere sumar ingresos esperados.
+- El `Runway Lab` sumó un switch para incorporar cobros pendientes y suscripciones pendientes sobre la base actual, manteniendo las hipótesis de costo como una capa adicional encima de esa base.
+- Los cobros o suscripciones pendientes sin fecha esperada quedan fuera de la curva y se reportan aparte, para no inventar una fecha arbitraria que infle el runway.
+- Verificación ejecutada: `npm run lint` y `npm run build` pasan correctamente.

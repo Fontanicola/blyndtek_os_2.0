@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { recalcularAvanceProyecto } from "@/lib/proyectos/recalcularAvance";
 import type { FaseProyecto, UpdateFaseProyectoInput } from "@/types/fases-proyecto";
 
 type RouteContext = {
@@ -13,14 +14,25 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
     const body = (await request.json()) as UpdateFaseProyectoInput;
     const supabase = createAdminClient();
 
+    const { data: currentFase, error: currentError } = await supabase
+      .from("fases_proyecto")
+      .select("proyecto_id")
+      .eq("id", params.id)
+      .maybeSingle();
+
+    if (currentError || !currentFase) {
+      const status = currentError?.code === "PGRST116" ? 404 : 500;
+      return NextResponse.json({ error: currentError?.message ?? "No se pudo encontrar la fase." }, { status });
+    }
+
     const payload: {
       nombre?: string;
       estado?: "pendiente" | "en_curso" | "lista";
+      prioridad?: "alta" | "media" | "baja";
       orden?: number;
-      fecha_inicio_estimada?: string | null;
-      fecha_fin_estimada?: string | null;
+      fecha_estimada_inicio?: string | null;
+      fecha_estimada_fin?: string | null;
       descripcion?: string | null;
-      entregables?: string | null;
     } = {};
 
     if (typeof body.nombre === "string") {
@@ -35,20 +47,20 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
       payload.estado = body.estado;
     }
 
-    if (Object.prototype.hasOwnProperty.call(body, "fecha_inicio_estimada")) {
-      payload.fecha_inicio_estimada = body.fecha_inicio_estimada ?? null;
+    if (typeof body.prioridad === "string") {
+      payload.prioridad = body.prioridad;
     }
 
-    if (Object.prototype.hasOwnProperty.call(body, "fecha_fin_estimada")) {
-      payload.fecha_fin_estimada = body.fecha_fin_estimada ?? null;
+    if (Object.prototype.hasOwnProperty.call(body, "fecha_estimada_inicio")) {
+      payload.fecha_estimada_inicio = body.fecha_estimada_inicio ?? null;
+    }
+
+    if (Object.prototype.hasOwnProperty.call(body, "fecha_estimada_fin")) {
+      payload.fecha_estimada_fin = body.fecha_estimada_fin ?? null;
     }
 
     if (Object.prototype.hasOwnProperty.call(body, "descripcion")) {
       payload.descripcion = body.descripcion ?? null;
-    }
-
-    if (Object.prototype.hasOwnProperty.call(body, "entregables")) {
-      payload.entregables = body.entregables ?? null;
     }
 
     const { data, error } = await supabase
@@ -63,7 +75,9 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
       return NextResponse.json({ error: error?.message ?? "No se pudo actualizar la fase." }, { status });
     }
 
-    return NextResponse.json({ data: data as FaseProyecto });
+    const project = await recalcularAvanceProyecto(supabase, currentFase.proyecto_id);
+
+    return NextResponse.json({ data: data as FaseProyecto, project });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unexpected error";
     return NextResponse.json({ error: message }, { status: 500 });
@@ -73,6 +87,18 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
 export async function DELETE(_request: NextRequest, { params }: RouteContext) {
   try {
     const supabase = createAdminClient();
+
+    const { data: currentFase, error: currentError } = await supabase
+      .from("fases_proyecto")
+      .select("proyecto_id")
+      .eq("id", params.id)
+      .maybeSingle();
+
+    if (currentError || !currentFase) {
+      const status = currentError?.code === "PGRST116" ? 404 : 500;
+      return NextResponse.json({ error: currentError?.message ?? "No se pudo encontrar la fase." }, { status });
+    }
+
     const { error } = await supabase.from("fases_proyecto").delete().eq("id", params.id);
 
     if (error) {
@@ -80,7 +106,9 @@ export async function DELETE(_request: NextRequest, { params }: RouteContext) {
       return NextResponse.json({ error: error.message }, { status });
     }
 
-    return NextResponse.json({ success: true });
+    const project = await recalcularAvanceProyecto(supabase, currentFase.proyecto_id);
+
+    return NextResponse.json({ success: true, project });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unexpected error";
     return NextResponse.json({ error: message }, { status: 500 });

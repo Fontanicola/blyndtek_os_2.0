@@ -9,6 +9,61 @@ type RouteContext = {
   };
 };
 
+function normalizeNullableString(value: unknown) {
+  if (typeof value === "undefined") {
+    return undefined;
+  }
+
+  if (value === null) {
+    return null;
+  }
+
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const next = value.trim();
+  return next ? next : null;
+}
+
+async function resolvePlan(
+  supabase: ReturnType<typeof createAdminClient>,
+  productoId: string | null | undefined,
+  planId: string | null | undefined
+) {
+  if (!planId) {
+    return {
+      productoId: productoId ?? null,
+      planId: null,
+      montoMensual: undefined as number | undefined
+    };
+  }
+
+  const { data: plan, error } = await supabase
+    .from("producto_planes")
+    .select("id, producto_id, precio_mensual")
+    .eq("id", planId)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  if (!plan) {
+    throw new Error("plan_id is invalid");
+  }
+
+  if (productoId && plan.producto_id !== productoId) {
+    throw new Error("plan_id does not belong to the selected producto_id");
+  }
+
+  return {
+    productoId: plan.producto_id,
+    planId: plan.id,
+    montoMensual: plan.precio_mensual
+  };
+}
+
 export async function GET(_request: NextRequest, context: RouteContext) {
   try {
     const admin = await getAdminUser();
@@ -40,10 +95,54 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 
     const body = (await request.json()) as UpdateSuscripcionInput;
     const supabase = createAdminClient();
+    const payload: UpdateSuscripcionInput = { ...body };
+
+    if (typeof body.cotizacion_id !== "undefined") {
+      const cotizacionId = normalizeNullableString(body.cotizacion_id);
+      if (typeof cotizacionId !== "undefined") {
+        payload.cotizacion_id = cotizacionId;
+      }
+    }
+
+    if (typeof body.proyecto_id !== "undefined") {
+      const proyectoId = normalizeNullableString(body.proyecto_id);
+      if (typeof proyectoId !== "undefined") {
+        payload.proyecto_id = proyectoId;
+      }
+    }
+
+    let resolvedPlan: { productoId: string | null; planId: string | null; montoMensual?: number } | null = null;
+
+    try {
+      resolvedPlan = await resolvePlan(supabase, payload.producto_id ?? null, payload.plan_id ?? null);
+    } catch (resolveError) {
+      return NextResponse.json(
+        { error: resolveError instanceof Error ? resolveError.message : "plan_id is invalid" },
+        { status: 400 }
+      );
+    }
+
+    const resolvedPlanValue = resolvedPlan;
+
+    if (typeof payload.plan_id !== "undefined" && resolvedPlanValue?.planId) {
+      payload.plan_id = resolvedPlanValue.planId;
+      payload.producto_id = resolvedPlanValue.productoId;
+      if (typeof payload.monto_mensual !== "number") {
+        payload.monto_mensual = resolvedPlanValue.montoMensual;
+      }
+    }
+
+    if (typeof payload.producto_id !== "undefined" && !payload.plan_id && resolvedPlanValue?.productoId) {
+      payload.producto_id = resolvedPlanValue.productoId;
+    }
+
+    if (typeof payload.monto_mensual !== "undefined" && (typeof payload.monto_mensual !== "number" || Number.isNaN(payload.monto_mensual) || payload.monto_mensual < 0)) {
+      return NextResponse.json({ error: "monto_mensual must be a valid number" }, { status: 400 });
+    }
 
     const { data, error } = await supabase
       .from("suscripciones")
-      .update(body)
+      .update(payload)
       .eq("id", context.params.id)
       .select("*")
       .single();

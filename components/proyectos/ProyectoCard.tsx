@@ -1,6 +1,6 @@
 "use client";
 
-import { Badge, Card } from "@/components/ui";
+import { Badge } from "@/components/ui";
 import { PROYECTO_ESTADO_LABELS } from "@/lib/proyectos";
 import type { Proyecto } from "@/types/proyectos";
 
@@ -62,12 +62,16 @@ export function ProyectoCard({
   selected = false
 }: ProyectoCardProps) {
   return (
-    <Card
-      padding="none"
+    <button
+      type="button"
       onClick={onClick}
-      className={selected ? "shrink-0 min-h-[76px] border-l-2 border-signal bg-signal-light" : "shrink-0 min-h-[76px]"}
+      className={
+        selected
+          ? "block w-full shrink-0 min-h-[76px] rounded-component bg-signal-light text-left"
+          : "block w-full shrink-0 min-h-[76px] border-b border-[#EAECF0] bg-white px-3 py-3 text-left transition-colors duration-fast ease-fast last:border-b-0 hover:bg-paper"
+      }
     >
-      <div className="space-y-1.5 p-3">
+      <div className={selected ? "space-y-1.5 px-3 py-3" : "space-y-1.5"}>
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
             <p className="truncate text-base font-label text-carbon" title={clienteNombre}>
@@ -95,6 +99,6 @@ export function ProyectoCard({
           </div>
         </div>
       </div>
-    </Card>
+    </button>
   );
 }

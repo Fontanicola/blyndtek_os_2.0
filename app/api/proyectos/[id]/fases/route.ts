@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { recalcularAvanceProyecto } from "@/lib/proyectos/recalcularAvance";
 import type { CreateFaseProyectoInput, FaseProyecto } from "@/types/fases-proyecto";
 
 type RouteContext = {
@@ -59,11 +60,11 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
         proyecto_id: params.id,
         nombre: body.nombre.trim(),
         estado: body.estado ?? "pendiente",
+        prioridad: body.prioridad ?? "media",
         orden: nextOrden,
-        fecha_inicio_estimada: body.fecha_inicio_estimada ?? null,
-        fecha_fin_estimada: body.fecha_fin_estimada ?? null,
-        descripcion: body.descripcion ?? null,
-        entregables: body.entregables ?? null
+        fecha_estimada_inicio: body.fecha_estimada_inicio ?? null,
+        fecha_estimada_fin: body.fecha_estimada_fin ?? null,
+        descripcion: body.descripcion ?? null
       })
       .select("*")
       .single();
@@ -72,7 +73,9 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       return NextResponse.json({ error: error?.message ?? "No se pudo crear la fase." }, { status: 500 });
     }
 
-    return NextResponse.json({ data: data as FaseProyecto });
+    const project = await recalcularAvanceProyecto(supabase, params.id);
+
+    return NextResponse.json({ data: data as FaseProyecto, project });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unexpected error";
     return NextResponse.json({ error: message }, { status: 500 });

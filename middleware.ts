@@ -3,20 +3,32 @@ import { NextResponse, type NextRequest } from "next/server";
 import type { Rol } from "@/types/auth";
 import type { Database } from "@/types/supabase";
 
-const memberAllowedPrefixes = ["/proyectos", "/tareas", "/calendario"] as const;
+const roleAllowedPrefixes: Record<Rol, readonly string[]> = {
+  admin: ["/"],
+  miembro: ["/proyectos", "/tareas", "/calendario"],
+  comercial: ["/outbound", "/inbound", "/clientes", "/cotizador", "/tareas", "/calendario", "/notas", "/wiki", "/archivos", "/perfil"]
+};
 
 function canRoleAccess(rol: Rol, pathname: string): boolean {
   if (rol === "admin") {
     return true;
   }
 
-  return memberAllowedPrefixes.some(
+  return (roleAllowedPrefixes[rol] ?? []).some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
   );
 }
 
 function getDefaultRouteForRole(rol: Rol): string {
-  return rol === "admin" ? "/dashboard" : "/proyectos";
+  if (rol === "admin") {
+    return "/dashboard";
+  }
+
+  if (rol === "comercial") {
+    return "/outbound";
+  }
+
+  return "/proyectos";
 }
 
 function getSupabaseEnv() {
@@ -64,8 +76,14 @@ function isProtectedAppPath(pathname: string) {
     "/proyectos",
     "/tareas",
     "/calendario",
+    "/notas",
+    "/wiki",
     "/finanzas",
-    "/dashboard"
+    "/dashboard",
+    "/archivos",
+    "/saas",
+    "/perfil",
+    "/equipo-comercial"
   ].some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
 }
 
@@ -113,7 +131,7 @@ async function getRolUsuario(userId: string): Promise<Rol | null> {
     const data = (await response.json()) as Array<{ rol?: string }>;
     const rol = data?.[0]?.rol;
 
-    return rol === "admin" || rol === "miembro" ? rol : null;
+    return rol === "admin" || rol === "miembro" || rol === "comercial" ? rol : null;
   } catch {
     return null;
   }

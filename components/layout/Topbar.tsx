@@ -1,6 +1,7 @@
 "use client";
 
 import { BellIcon, MenuIcon } from "@/components/icons";
+import { UserAvatar } from "@/components/ui";
 import { getPageLabel } from "@/lib/navigation";
 import type { Usuario } from "@/types/auth";
 
@@ -11,7 +12,6 @@ type TopbarProps = {
 };
 
 export function Topbar({ usuario, onMenuToggle, currentPath }: TopbarProps) {
-  const initials = usuario ? usuario.nombre.slice(0, 2).toUpperCase() : "--";
   const pageLabel = getPageLabel(currentPath);
 
   return (
@@ -37,9 +37,7 @@ export function Topbar({ usuario, onMenuToggle, currentPath }: TopbarProps) {
           <BellIcon />
         </button>
         <div className="h-5 w-px bg-line-soft" />
-        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-signal-light text-xs font-label text-signal">
-          {initials}
-        </div>
+        <UserAvatar name={usuario?.nombre ?? null} fotoUrl={usuario?.foto_url ?? null} size="sm" />
       </div>
     </header>
   );

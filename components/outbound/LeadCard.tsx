@@ -1,7 +1,9 @@
 "use client";
 
+import { UserAvatar } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { isLeadOverdue } from "@/lib/leads";
+import type { Usuario } from "@/types/auth";
 import type { Lead } from "@/types/leads";
 
 type LeadCardProps = {
@@ -11,15 +13,8 @@ type LeadCardProps = {
   onDragStart?: (lead: Lead) => void;
   onDragEnd?: () => void;
   isDragging?: boolean;
+  responsableUsuario?: Pick<Usuario, "nombre" | "foto_url"> | null;
 };
-
-function getInitials(value: string | null) {
-  if (!value) {
-    return "--";
-  }
-
-  return value.slice(0, 2).toUpperCase();
-}
 
 export function LeadCard({
   lead,
@@ -27,7 +22,8 @@ export function LeadCard({
   draggable = false,
   onDragStart,
   onDragEnd,
-  isDragging = false
+  isDragging = false,
+  responsableUsuario
 }: LeadCardProps) {
   const meta = [lead.rubro, lead.ubicacion].filter(Boolean).join(" · ");
   const overdue = isLeadOverdue(lead);
@@ -76,9 +72,13 @@ export function LeadCard({
           ))}
         </div>
 
-        <div className="flex h-5 w-5 items-center justify-center rounded-full bg-signal-light text-[10px] font-label text-signal">
-          {getInitials(lead.responsable_id)}
-        </div>
+        <UserAvatar
+          name={responsableUsuario?.nombre ?? lead.responsable_id}
+          fotoUrl={responsableUsuario?.foto_url ?? null}
+          size="xs"
+          className="shrink-0"
+          textClassName="text-[9px]"
+        />
       </div>
     </button>
   );

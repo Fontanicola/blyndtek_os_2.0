@@ -4,6 +4,6 @@ export type NavItem = {
   label: string;
   href: string;
   icon: ReactNode;
-  roles: ("admin" | "miembro")[];
-  section: "comercial" | "entrega" | "control";
+  roles: ("admin" | "miembro" | "comercial")[];
+  section: "top-level" | "comercial" | "entrega" | "control";
 };

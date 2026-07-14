@@ -5,7 +5,7 @@ import type { Usuario } from "@/types/auth";
 export type TaskProjectOption = Pick<Proyecto, "id" | "nombre" | "estado" | "cliente_id"> & {
   cliente_nombre: string | null;
 };
-export type TaskUserOption = Pick<Usuario, "id" | "nombre" | "email" | "rol">;
+export type TaskUserOption = Pick<Usuario, "id" | "nombre" | "email" | "rol" | "foto_url">;
 
 export async function getTaskSupportData() {
   try {
@@ -21,7 +21,7 @@ export async function getTaskSupportData() {
       supabase.from("clientes").select("id, empresa"),
       supabase
         .from("usuarios")
-        .select("id, nombre, email, rol")
+        .select("id, nombre, email, rol, foto_url")
         .eq("activo", true)
         .order("nombre", { ascending: true })
     ]);

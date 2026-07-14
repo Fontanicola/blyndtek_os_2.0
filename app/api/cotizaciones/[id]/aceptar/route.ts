@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
+import { ensureCarpetaAutomaticaProyecto } from "@/lib/carpetas";
+import { calcularComision } from "@/lib/comisiones/calcular";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { generarSlugRoadmap } from "@/lib/proyectos/generarSlug";
 import { FEATURE_A_TAREA } from "@/lib/proyectos/sincronizarFeatureTarea";
 import type { Cotizacion, ResultadoCascada } from "@/types/cotizaciones";
 import type { Lead } from "@/types/leads";
@@ -40,6 +43,30 @@ function addUtcDays(date: Date, days: number) {
 
 function formatAcceptanceDate(date: Date) {
   return new Intl.DateTimeFormat("es-AR", { dateStyle: "long" }).format(date);
+}
+
+async function generateUniqueRoadmapSlug(
+  supabase: ReturnType<typeof createAdminClient>,
+  nombreCliente: string
+) {
+  for (let attempt = 0; attempt < 8; attempt += 1) {
+    const candidate = generarSlugRoadmap(nombreCliente);
+    const { data: existingSlug, error: slugError } = await supabase
+      .from("proyectos")
+      .select("id")
+      .eq("roadmap_slug", candidate)
+      .maybeSingle();
+
+    if (slugError) {
+      throw new Error(slugError.message);
+    }
+
+    if (!existingSlug) {
+      return candidate;
+    }
+  }
+
+  throw new Error("No se pudo generar un slug único para el roadmap.");
 }
 
 async function safeDeleteById(
@@ -272,7 +299,8 @@ export async function POST(_request: NextRequest, { params }: RouteContext) {
         contacto_whatsapp: leadForClient?.contacto_1_tel ?? null,
         datos_facturacion: null,
         estado: "activo" as const,
-        notas: null
+        notas: null,
+        vendedor_id: leadForClient?.vendedor_id ?? null
       };
 
       const { data: createdCliente, error: createdClienteError } = await supabase
@@ -299,10 +327,25 @@ export async function POST(_request: NextRequest, { params }: RouteContext) {
       return await fail("No se pudo resolver el cliente.");
     }
 
+    const { data: clienteRecord, error: clienteRecordError } = await supabase
+      .from("clientes")
+      .select("empresa, vendedor_id")
+      .eq("id", clienteId)
+      .single();
+
+    if (clienteRecordError) {
+      return await fail(clienteRecordError.message, clienteRecordError.code === "PGRST116" ? 404 : 500);
+    }
+
+    if (!clienteRecord) {
+      return await fail("No se pudo resolver el nombre del cliente.");
+    }
+
     currentStep = "creación de proyecto";
     const today = startOfUtcDay(new Date());
     const plazoSemanas = Math.max(currentCotizacion.plazo_semanas ?? 0, 1);
     proyectoToken = crypto.randomUUID();
+    const roadmapSlug = await generateUniqueRoadmapSlug(supabase, clienteRecord.empresa);
     const proyectoPayload = {
       cotizacion_id: currentCotizacion.id,
       cliente_id: clienteId,
@@ -317,6 +360,7 @@ export async function POST(_request: NextRequest, { params }: RouteContext) {
       valor_total: currentCotizacion.precio_total,
       notas_arquitectura: "",
       roadmap_token: proyectoToken,
+      roadmap_slug: roadmapSlug,
       roadmap_publico_activo: true
     };
 
@@ -336,6 +380,62 @@ export async function POST(_request: NextRequest, { params }: RouteContext) {
 
     const proyectoId = proyecto.id;
     created.proyectoId = proyectoId;
+
+    try {
+      await ensureCarpetaAutomaticaProyecto(supabase, {
+        id: proyectoId,
+        nombre: proyectoPayload.nombre
+      });
+    } catch (folderError) {
+      const message = folderError instanceof Error ? folderError.message : "Unexpected folder error";
+      console.error("No se pudo crear la carpeta automática del proyecto en la cascada:", message);
+    }
+
+    if (clienteRecord.vendedor_id) {
+      try {
+        const { data: configRows, error: configError } = await supabase
+          .from("config_comisiones")
+          .select("*")
+          .order("updated_at", { ascending: false })
+          .limit(1);
+
+        if (configError) {
+          throw new Error(configError.message);
+        }
+
+        const config = configRows?.[0];
+
+        if (!config) {
+          throw new Error("No hay una configuración de comisiones activa.");
+        }
+
+        const montoVenta = Number(currentCotizacion.precio_total ?? 0);
+        const { baseComision, porcentaje, montoComision } = calcularComision(montoVenta, config);
+
+        const { error: comisionError } = await supabase.from("comisiones").insert({
+          vendedor_id: clienteRecord.vendedor_id,
+          cliente_id: clienteId,
+          cotizacion_id: currentCotizacion.id,
+          proyecto_id: proyectoId,
+          tipo: "venta",
+          estado: "pendiente",
+          monto_venta: montoVenta,
+          base_comision: baseComision,
+          porcentaje,
+          monto_comision: montoComision,
+          config_comisiones_id: config.id
+        } as never);
+
+        if (comisionError) {
+          throw new Error(comisionError.message);
+        }
+      } catch (commissionError) {
+        const message =
+          commissionError instanceof Error ? commissionError.message : "Unexpected commission error";
+        console.error("No se pudo crear la comisión de la cotización aceptada:", message);
+      }
+    }
+
     mutating = true;
 
     currentStep = "creación de features";
@@ -351,7 +451,7 @@ export async function POST(_request: NextRequest, { params }: RouteContext) {
             proyecto_id: proyectoId,
             nombre: featureName,
             descripcion: modulo.descripcion,
-            fase: modulo.nombre,
+            fase_id: modulo.nombre,
             estado: "pendiente",
             responsable_id: currentUser.id,
             orden: featureOrder
@@ -482,6 +582,7 @@ export async function POST(_request: NextRequest, { params }: RouteContext) {
         cliente_id: clienteId,
         proyecto_id: proyectoId,
         roadmap_token: proyectoToken,
+        roadmap_slug: roadmapSlug,
         cobros_creados: created.cobroIds.length,
         suscripcion_id: suscripcionId
       }

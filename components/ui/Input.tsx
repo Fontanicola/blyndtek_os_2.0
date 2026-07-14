@@ -9,6 +9,11 @@ type InputProps = {
   value?: string;
   onChange?: (event: ChangeEvent<HTMLInputElement>) => void;
   type?: InputHTMLAttributes<HTMLInputElement>["type"];
+  inputMode?: InputHTMLAttributes<HTMLInputElement>["inputMode"];
+  maxLength?: number;
+  minLength?: number;
+  pattern?: string;
+  autoComplete?: string;
   error?: string;
   hint?: string;
   disabled?: boolean;
@@ -30,6 +35,11 @@ export function Input({
   value,
   onChange,
   type = "text",
+  inputMode,
+  maxLength,
+  minLength,
+  pattern,
+  autoComplete,
   error,
   hint,
   disabled = false,
@@ -69,6 +79,11 @@ export function Input({
           value={value}
           onChange={onChange}
           placeholder={placeholder}
+          inputMode={inputMode}
+          maxLength={maxLength}
+          minLength={minLength}
+          pattern={pattern}
+          autoComplete={autoComplete}
           disabled={disabled}
           readOnly={readOnly}
           required={required}

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { buildRunwaySeries, isCobroVencido } from "@/lib/finanzas";
+import { buildMonthlyFinancialSeries, isCobroVencido } from "@/lib/finanzas";
+import { calcularEgresosPeriodo } from "@/lib/finanzas/calcularEgresosPeriodo";
+import { calculateRunwayProjection } from "@/lib/finanzas/runwayProjection";
 import { getCurrentWeekRange, getDashboardPeriodRange, isInRange } from "@/lib/dashboard";
 import { getAdminUser } from "@/lib/require-admin";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -65,6 +67,15 @@ function buildPipelineStages(leads: Lead[]) {
   });
 }
 
+function buildLeadStageCounts(leads: Lead[]) {
+  const etapas = ["por_contactar", "contactado", "seguimiento", "calificado", "cotizacion", "descartado"] as const;
+
+  return etapas.map((etapa) => ({
+    etapa,
+    cantidad: leads.filter((lead) => lead.etapa === etapa).length
+  }));
+}
+
 function buildWinRateChannel(leads: Lead[], clientes: Cliente[], canal: "outbound" | "inbound"): DashboardWinRateChannel {
   const canalLeads = leads.filter((lead) => lead.canal === canal);
   const leadIdsConCliente = new Set(
@@ -104,29 +115,6 @@ function calculateChurn(suscripciones: Suscripcion[], start: Date, end: Date) {
     .reduce((total, suscripcion) => total + suscripcion.monto_mensual, 0);
 }
 
-function buildBurnRate(cobros: Cobro[], egresos: Egreso[], periodEnd: Date) {
-  const months = [
-    new Date(periodEnd.getFullYear(), periodEnd.getMonth() - 2, 1),
-    new Date(periodEnd.getFullYear(), periodEnd.getMonth() - 1, 1),
-    new Date(periodEnd.getFullYear(), periodEnd.getMonth(), 1)
-  ];
-
-  const rates = months.map((start) => {
-    const end = new Date(start.getFullYear(), start.getMonth() + 1, 1);
-    const ingresos = cobros
-      .filter((cobro) => cobro.estado === "cobrado" && cobro.fecha_cobro)
-      .filter((cobro) => isInRange(cobro.fecha_cobro ?? cobro.fecha_emision, start, end))
-      .reduce((total, cobro) => total + cobro.monto, 0);
-    const egresosMes = egresos
-      .filter((egreso) => isInRange(egreso.fecha, start, end))
-      .reduce((total, egreso) => total + egreso.monto, 0);
-
-    return egresosMes - ingresos;
-  });
-
-  return average(rates) ?? 0;
-}
-
 function getLastUpdatedAt(...groups: Array<Array<{ updated_at?: string; created_at?: string }>>) {
   let latest: Date | null = null;
 
@@ -155,6 +143,15 @@ function isProyectoActivo(proyecto: Proyecto) {
   return proyecto.estado !== "entregado" && proyecto.estado !== "pausado";
 }
 
+type FeatureWithTimestamp = Feature & {
+  updated_at?: string;
+};
+
+function getFeatureUpdatedAt(feature: Feature) {
+  const row = feature as FeatureWithTimestamp;
+  return row.updated_at ?? feature.created_at;
+}
+
 function getPreviousWeekRange() {
   const { start, end } = getCurrentWeekRange();
   const previousStart = new Date(start);
@@ -177,7 +174,7 @@ export async function GET(request: NextRequest) {
     const previousWeek = getPreviousWeekRange();
     const supabase = createAdminClient();
 
-    const [
+    const [ 
       leadsResult,
       clientesResult,
       cotizacionesResult,
@@ -234,6 +231,7 @@ export async function GET(request: NextRequest) {
 
     const pipelineStages = buildPipelineStages(periodLeads);
     const pipelineStagesPrev = buildPipelineStages(previousLeads);
+    const leadsPorEtapa = buildLeadStageCounts(periodLeads);
     const pipelinePonderado = pipelineStages.reduce((total, stage) => total + stage.ponderado, 0);
     const pipelinePonderadoAnterior = pipelineStagesPrev.reduce((total, stage) => total + stage.ponderado, 0);
 
@@ -279,27 +277,25 @@ export async function GET(request: NextRequest) {
 
     const cobrosPendientes = cobros.filter((cobro) => cobro.estado === "pendiente").reduce((total, cobro) => total + cobro.monto, 0);
     const cobrosVencidos = cobros.filter((cobro) => isCobroVencido(cobro)).reduce((total, cobro) => total + cobro.monto, 0);
+    const historicoPl = buildMonthlyFinancialSeries(cobros, egresos, suscripciones, 12);
 
     const ingresosActual = cobros
       .filter((cobro) => cobro.estado === "cobrado" && cobro.fecha_cobro && isInRange(cobro.fecha_cobro, range.start, range.end))
       .reduce((total, cobro) => total + cobro.monto, 0);
-    const egresosActual = egresos
-      .filter((egreso) => isInRange(egreso.fecha, range.start, range.end))
-      .reduce((total, egreso) => total + egreso.monto, 0);
+    const egresosActual = calcularEgresosPeriodo(egresos, range.start, range.end).reduce((total, egreso) => total + egreso.monto, 0);
     const ingresosPrevios = cobros
       .filter((cobro) => cobro.estado === "cobrado" && cobro.fecha_cobro && isInRange(cobro.fecha_cobro, range.previousStart, range.previousEnd))
       .reduce((total, cobro) => total + cobro.monto, 0);
-    const egresosPrevios = egresos
-      .filter((egreso) => isInRange(egreso.fecha, range.previousStart, range.previousEnd))
-      .reduce((total, egreso) => total + egreso.monto, 0);
+    const egresosPrevios = calcularEgresosPeriodo(egresos, range.previousStart, range.previousEnd).reduce((total, egreso) => total + egreso.monto, 0);
 
     const plMesActual = ingresosActual - egresosActual;
     const plMesAnterior = ingresosPrevios - egresosPrevios;
 
-    const cajaActual = cajaInicial + cobros.filter((cobro) => cobro.estado === "cobrado").reduce((total, cobro) => total + cobro.monto, 0) - egresos.reduce((total, egreso) => total + egreso.monto, 0);
-    const quemaNeta = buildBurnRate(cobros, egresos, new Date());
-    const runwayMeses = quemaNeta > 0 ? cajaActual / quemaNeta : null;
-    const runwaySerie = buildRunwaySeries(cajaActual, quemaNeta, 12);
+    const cajaActual =
+      cajaInicial +
+      cobros.filter((cobro) => cobro.estado === "cobrado").reduce((total, cobro) => total + cobro.monto, 0) -
+      egresos.filter((egreso) => egreso.pagado).reduce((total, egreso) => total + egreso.monto, 0);
+    const runwayProjection = calculateRunwayProjection(cajaActual, cobros, egresos, suscripciones, new Date());
 
     const proyectosActivos = proyectos.filter(isProyectoActivo).length;
     const entregadosEnPeriodo = proyectos.filter(
@@ -317,19 +313,41 @@ export async function GET(request: NextRequest) {
         )
       : null;
 
-    const featuresCompletadasSemana = features.filter(
-      (feature) => feature.estado === "lista" && isInRange(feature.created_at, currentWeek.start, currentWeek.end)
+    const projectNameById = new Map(proyectos.map((proyecto) => [proyecto.id, proyecto.nombre]));
+    const featuresConTimestamp = features.map((feature) => ({
+      ...feature,
+      updated_at: getFeatureUpdatedAt(feature)
+    })) as Array<FeatureWithTimestamp>;
+
+    const featuresCompletadasSemana = featuresConTimestamp.filter(
+      (feature) => feature.estado === "lista" && isInRange(feature.updated_at ?? feature.created_at, currentWeek.start, currentWeek.end)
     ).length;
-    const featuresCompletadasSemanaAnterior = features.filter(
-      (feature) => feature.estado === "lista" && isInRange(feature.created_at, previousWeek.start, previousWeek.end)
+    const featuresCompletadasSemanaAnterior = featuresConTimestamp.filter(
+      (feature) => feature.estado === "lista" && isInRange(feature.updated_at ?? feature.created_at, previousWeek.start, previousWeek.end)
     ).length;
+
+    const featuresRecientes = featuresConTimestamp
+      .filter((feature) => feature.estado === "lista")
+      .sort(
+        (left, right) =>
+          new Date(right.updated_at ?? right.created_at).getTime() -
+          new Date(left.updated_at ?? left.created_at).getTime()
+      )
+      .slice(0, 5)
+      .map((feature) => ({
+        id: feature.id,
+        nombre: feature.nombre,
+        proyecto_id: feature.proyecto_id,
+        proyecto_nombre: projectNameById.get(feature.proyecto_id) ?? "Proyecto sin nombre",
+        updated_at: feature.updated_at ?? feature.created_at
+      }));
 
     const latestUpdatedAt = getLastUpdatedAt(
       leads,
       clientes,
       cotizaciones,
       proyectos,
-      features,
+      featuresConTimestamp,
       cobros,
       egresos,
       suscripciones,
@@ -343,6 +361,7 @@ export async function GET(request: NextRequest) {
         pipeline_ponderado: pipelinePonderado,
         pipeline_ponderado_anterior: pipelinePonderadoAnterior,
         pipeline_por_etapa: pipelineStages,
+        leads_por_etapa: leadsPorEtapa,
         win_rate_por_canal: {
           outbound: winRateOutbound,
           inbound: winRateInbound
@@ -357,12 +376,15 @@ export async function GET(request: NextRequest) {
         mrr_anterior: mrrAnterior,
         net_new_mrr_mes: netNewMrrMes,
         churn,
-        runway_meses: runwayMeses,
-        runway_serie: runwaySerie,
+        quema_neta: runwayProjection.monthlyBurn,
+        runway_meses: runwayProjection.runwayMonths,
+        runway_estado: runwayProjection.runwayStatus,
+        runway_serie: runwayProjection.series,
         cobros_pendientes: cobrosPendientes,
         cobros_vencidos: cobrosVencidos,
         pl_mes_actual: plMesActual,
-        pl_mes_anterior: plMesAnterior
+        pl_mes_anterior: plMesAnterior,
+        historico_pl: historicoPl
       },
       entrega: {
         proyectos_activos: proyectosActivos,
@@ -370,7 +392,8 @@ export async function GET(request: NextRequest) {
         pct_entregados_a_tiempo: clampPct(pctEntregadosATiempo),
         desvio_promedio_dias: desvioPromedioDias,
         features_completadas_semana: featuresCompletadasSemana,
-        features_completadas_semana_anterior: featuresCompletadasSemanaAnterior
+        features_completadas_semana_anterior: featuresCompletadasSemanaAnterior,
+        features_recientes: featuresRecientes
       }
     };
 

@@ -5,14 +5,14 @@ export type Feature = {
   proyecto_id: string;
   nombre: string;
   descripcion: string;
-  fase: string;
+  fase_id: string;
   estado: EstadoFeature;
   responsable_id: string | null;
   orden: number;
   created_at: string;
 };
 
-export type CreateFeatureInput = Pick<Feature, "proyecto_id" | "nombre" | "descripcion" | "fase"> & {
+export type CreateFeatureInput = Pick<Feature, "proyecto_id" | "nombre" | "descripcion" | "fase_id"> & {
   estado?: EstadoFeature;
   responsable_id?: string | null;
   orden?: number;

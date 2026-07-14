@@ -1,6 +1,6 @@
 "use client";
 
-import { Badge, Card } from "@/components/ui";
+import { Badge } from "@/components/ui";
 import type { Cliente } from "@/types/clientes";
 
 type ClienteCardProps = {
@@ -14,10 +14,14 @@ export function ClienteCard({ cliente, onClick, selected = false }: ClienteCardP
     cliente.estado === "activo" ? "success" : cliente.estado === "pausado" ? "warning" : "default";
 
   return (
-    <Card
-      padding="md"
+    <button
+      type="button"
       onClick={onClick}
-      className={selected ? "border-l-2 border-signal bg-signal-light" : undefined}
+      className={
+        selected
+          ? "block w-full rounded-component bg-signal-light px-3 py-3 text-left"
+          : "block w-full border-b border-[#EAECF0] bg-white px-3 py-3 text-left transition-colors duration-fast ease-fast last:border-b-0 hover:bg-paper"
+      }
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
@@ -31,6 +35,6 @@ export function ClienteCard({ cliente, onClick, selected = false }: ClienteCardP
           {cliente.estado === "activo" ? "Activo" : cliente.estado === "pausado" ? "Pausado" : "Inactivo"}
         </Badge>
       </div>
-    </Card>
+    </button>
   );
 }

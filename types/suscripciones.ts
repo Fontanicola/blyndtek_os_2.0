@@ -6,7 +6,9 @@ export type Suscripcion = {
   id: string;
   cliente_id: string;
   proyecto_id: string | null;
-  cotizacion_id: string;
+  cotizacion_id: string | null;
+  producto_id: string | null;
+  plan_id: string | null;
   tipo: TipoSuscripcion;
   monto_mensual: number;
   ciclo: CicloSuscripcion;
@@ -21,7 +23,9 @@ export type Suscripcion = {
 export type CreateSuscripcionInput = {
   cliente_id: string;
   proyecto_id?: string | null;
-  cotizacion_id: string;
+  cotizacion_id?: string | null;
+  producto_id?: string | null;
+  plan_id?: string | null;
   tipo: TipoSuscripcion;
   monto_mensual: number;
   ciclo: CicloSuscripcion;

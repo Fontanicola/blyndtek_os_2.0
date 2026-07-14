@@ -4,9 +4,13 @@ import {
   ClientesIcon,
   CotizadorIcon,
   DashboardIcon,
+  ArchivosIcon,
   FinanzasIcon,
   InboundIcon,
+  SaasIcon,
   OutboundIcon,
+  NotasIcon,
+  WikiIcon,
   ProyectosIcon,
   TareasIcon
 } from "@/components/icons";
@@ -14,31 +18,38 @@ import type { NavItem } from "@/types/navigation";
 
 export const navigationItems: NavItem[] = [
   {
+    label: "Dashboard",
+    href: "/dashboard",
+    icon: createElement(DashboardIcon),
+    roles: ["admin"],
+    section: "top-level"
+  },
+  {
     label: "Outbound",
     href: "/outbound",
     icon: createElement(OutboundIcon),
-    roles: ["admin"],
+    roles: ["admin", "comercial"],
     section: "comercial"
   },
   {
     label: "Inbound",
     href: "/inbound",
     icon: createElement(InboundIcon),
-    roles: ["admin"],
-    section: "comercial"
-  },
-  {
-    label: "Clientes",
-    href: "/clientes",
-    icon: createElement(ClientesIcon),
-    roles: ["admin"],
+    roles: ["admin", "comercial"],
     section: "comercial"
   },
   {
     label: "Cotizador",
     href: "/cotizador",
     icon: createElement(CotizadorIcon),
-    roles: ["admin"],
+    roles: ["admin", "comercial"],
+    section: "comercial"
+  },
+  {
+    label: "Clientes",
+    href: "/clientes",
+    icon: createElement(ClientesIcon),
+    roles: ["admin", "comercial"],
     section: "comercial"
   },
   {
@@ -52,14 +63,28 @@ export const navigationItems: NavItem[] = [
     label: "Tareas",
     href: "/tareas",
     icon: createElement(TareasIcon),
-    roles: ["admin", "miembro"],
+    roles: ["admin", "miembro", "comercial"],
     section: "entrega"
   },
   {
     label: "Calendario",
     href: "/calendario",
     icon: createElement(CalendarioIcon),
-    roles: ["admin", "miembro"],
+    roles: ["admin", "miembro", "comercial"],
+    section: "entrega"
+  },
+  {
+    label: "Notas",
+    href: "/notas",
+    icon: createElement(NotasIcon),
+    roles: ["admin", "miembro", "comercial"],
+    section: "entrega"
+  },
+  {
+    label: "Wiki",
+    href: "/wiki",
+    icon: createElement(WikiIcon),
+    roles: ["admin", "miembro", "comercial"],
     section: "entrega"
   },
   {
@@ -70,9 +95,23 @@ export const navigationItems: NavItem[] = [
     section: "control"
   },
   {
-    label: "Dashboard",
-    href: "/dashboard",
-    icon: createElement(DashboardIcon),
+    label: "Archivos",
+    href: "/archivos",
+    icon: createElement(ArchivosIcon),
+    roles: ["admin", "comercial"],
+    section: "control"
+  },
+  {
+    label: "SaaS",
+    href: "/saas",
+    icon: createElement(SaasIcon),
+    roles: ["admin"],
+    section: "control"
+  },
+  {
+    label: "Equipo comercial",
+    href: "/equipo-comercial",
+    icon: createElement(OutboundIcon),
     roles: ["admin"],
     section: "control"
   }
@@ -85,5 +124,9 @@ export const navigationSections = [
 ] as const;
 
 export function getPageLabel(pathname: string) {
+  if (pathname === "/perfil") {
+    return "Perfil";
+  }
+
   return navigationItems.find((item) => item.href === pathname)?.label ?? "Blyndtek OS";
 }

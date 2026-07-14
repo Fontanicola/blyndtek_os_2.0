@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
+import { isValidGitHubRepo, normalizeGitHubRepo } from "@/lib/ai-dev";
 import { getCurrentUser } from "@/lib/auth";
+import { ensureCarpetaAutomaticaProyecto } from "@/lib/carpetas";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { generarSlugRoadmap } from "@/lib/proyectos/generarSlug";
 import type { CreateProyectoInput, Proyecto } from "@/types/proyectos";
 
 function parseEstado(searchParams: URLSearchParams) {
@@ -61,6 +64,24 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "nombre is required" }, { status: 400 });
     }
 
+    if (body.github_repo && !isValidGitHubRepo(body.github_repo)) {
+      return NextResponse.json({ error: "github_repo must be in owner/repo format." }, { status: 400 });
+    }
+
+    const { data: clienteData, error: clienteError } = await supabase
+      .from("clientes")
+      .select("empresa")
+      .eq("id", body.cliente_id)
+      .single();
+
+    if (clienteError || !clienteData) {
+      const status = clienteError?.code === "PGRST116" ? 404 : 500;
+      return NextResponse.json(
+        { error: clienteError?.message ?? "No se pudo resolver el cliente." },
+        { status }
+      );
+    }
+
     if (!body.cotizacion_id?.trim()) {
       const { data: latestCotizacion } = await supabase
         .from("cotizaciones")
@@ -83,6 +104,29 @@ export async function POST(request: NextRequest) {
       body.cotizacion_id = latestCotizacion.id;
     }
 
+    async function generateUniqueRoadmapSlug(nombreCliente: string) {
+      for (let attempt = 0; attempt < 8; attempt += 1) {
+        const candidate = generarSlugRoadmap(nombreCliente);
+        const { data: existingSlug, error: slugError } = await supabase
+          .from("proyectos")
+          .select("id")
+          .eq("roadmap_slug", candidate)
+          .maybeSingle();
+
+        if (slugError) {
+          throw new Error(slugError.message);
+        }
+
+        if (!existingSlug) {
+          return candidate;
+        }
+      }
+
+      throw new Error("No se pudo generar un slug único para el roadmap.");
+    }
+
+    const roadmapSlug = await generateUniqueRoadmapSlug(clienteData.empresa);
+
     const payload = {
       cotizacion_id: body.cotizacion_id,
       cliente_id: body.cliente_id,
@@ -97,7 +141,9 @@ export async function POST(request: NextRequest) {
       valor_total: body.valor_total ?? null,
       notas_arquitectura: body.notas_arquitectura ?? null,
       roadmap_token: crypto.randomUUID(),
-      roadmap_publico_activo: body.roadmap_publico_activo ?? false
+      roadmap_slug: roadmapSlug,
+      roadmap_publico_activo: body.roadmap_publico_activo ?? false,
+      github_repo: body.github_repo ? normalizeGitHubRepo(body.github_repo) : null
     };
 
     const { data, error } = await supabase.from("proyectos").insert(payload).select("*").single();
@@ -106,7 +152,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ data: data as Proyecto }, { status: 201 });
+    const proyecto = data as Proyecto;
+
+    try {
+      await ensureCarpetaAutomaticaProyecto(supabase, {
+        id: proyecto.id,
+        nombre: proyecto.nombre
+      });
+    } catch (folderError) {
+      const message = folderError instanceof Error ? folderError.message : "Unexpected folder error";
+      console.error("No se pudo crear la carpeta automática del proyecto:", message);
+    }
+
+    return NextResponse.json({ data: proyecto }, { status: 201 });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unexpected error";
     return NextResponse.json({ error: message }, { status: 500 });

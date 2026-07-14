@@ -11,7 +11,6 @@ type FaseColumnProps = {
   projectId: string;
   fase: FaseProyecto;
   features: Feature[];
-  fasesDisponibles: FaseProyecto[];
   onCreateFeature: (input: CreateFeatureInput) => Promise<unknown> | void;
   onUpdateFeature: (id: string, input: UpdateFeatureInput) => Promise<unknown> | void;
   onUpdateFase: (id: string, input: UpdateFaseProyectoInput) => Promise<void> | void;
@@ -63,7 +62,7 @@ function QuickSubtareaForm({
               await onSave({
                 nombre: nombre.trim(),
                 descripcion: descripcion.trim(),
-                fase: faseId,
+                fase_id: faseId,
                 estado: "pendiente"
               });
             } finally {
@@ -86,7 +85,6 @@ export function FaseColumn({
   projectId,
   fase,
   features,
-  fasesDisponibles,
   onCreateFeature,
   onUpdateFeature,
   onUpdateFase,
@@ -99,20 +97,18 @@ export function FaseColumn({
   const [quickAdd, setQuickAdd] = useState(false);
   const [isEditingHeader, setIsEditingHeader] = useState(false);
   const [draftNombre, setDraftNombre] = useState(fase.nombre);
-  const [draftInicio, setDraftInicio] = useState(formatDateInput(fase.fecha_inicio_estimada));
-  const [draftFin, setDraftFin] = useState(formatDateInput(fase.fecha_fin_estimada));
+  const [draftInicio, setDraftInicio] = useState(formatDateInput(fase.fecha_estimada_inicio));
+  const [draftFin, setDraftFin] = useState(formatDateInput(fase.fecha_estimada_fin));
   const [draftDescripcion, setDraftDescripcion] = useState(fase.descripcion ?? "");
-  const [draftEntregables, setDraftEntregables] = useState(fase.entregables ?? "");
   const [menuOpen, setMenuOpen] = useState(false);
   const [savingHeader, setSavingHeader] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     setDraftNombre(fase.nombre);
-    setDraftInicio(formatDateInput(fase.fecha_inicio_estimada));
-    setDraftFin(formatDateInput(fase.fecha_fin_estimada));
+    setDraftInicio(formatDateInput(fase.fecha_estimada_inicio));
+    setDraftFin(formatDateInput(fase.fecha_estimada_fin));
     setDraftDescripcion(fase.descripcion ?? "");
-    setDraftEntregables(fase.entregables ?? "");
   }, [fase]);
 
   async function saveHeader(next?: Partial<UpdateFaseProyectoInput>) {
@@ -120,10 +116,9 @@ export function FaseColumn({
     try {
       await onUpdateFase(fase.id, {
         nombre: draftNombre.trim(),
-        fecha_inicio_estimada: draftInicio || null,
-        fecha_fin_estimada: draftFin || null,
+        fecha_estimada_inicio: draftInicio || null,
+        fecha_estimada_fin: draftFin || null,
         descripcion: draftDescripcion.trim() || null,
-        entregables: draftEntregables.trim() || null,
         ...next
       });
       setIsEditingHeader(false);
@@ -198,11 +193,11 @@ export function FaseColumn({
                 ) : (
                   <>
                     <span>
-                      {fase.fecha_inicio_estimada ? fase.fecha_inicio_estimada.slice(0, 10) : "Sin inicio"}
+                      {fase.fecha_estimada_inicio ? fase.fecha_estimada_inicio.slice(0, 10) : "Sin inicio"}
                     </span>
                     <span>·</span>
                     <span>
-                      {fase.fecha_fin_estimada ? fase.fecha_fin_estimada.slice(0, 10) : "Sin fin"}
+                      {fase.fecha_estimada_fin ? fase.fecha_estimada_fin.slice(0, 10) : "Sin fin"}
                     </span>
                   </>
                 )}
@@ -277,14 +272,6 @@ export function FaseColumn({
                 className="min-h-[70px] w-full rounded-component border border-line bg-white px-3 py-2 text-sm text-carbon focus:border-signal focus:outline-none focus:ring-2 focus:ring-signal/20"
               />
             </div>
-            <div className="space-y-1">
-              <p className="text-xs font-label uppercase tracking-[0.08em] text-graphite">Entregables</p>
-              <textarea
-                value={draftEntregables}
-                onChange={(event) => setDraftEntregables(event.target.value)}
-                className="min-h-[70px] w-full rounded-component border border-line bg-white px-3 py-2 text-sm text-carbon focus:border-signal focus:outline-none focus:ring-2 focus:ring-signal/20"
-              />
-            </div>
             <div className="flex justify-end gap-2">
               <Button
                 variant="ghost"
@@ -292,10 +279,9 @@ export function FaseColumn({
                 onClick={() => {
                   setIsEditingHeader(false);
                   setDraftNombre(fase.nombre);
-                  setDraftInicio(formatDateInput(fase.fecha_inicio_estimada));
-                  setDraftFin(formatDateInput(fase.fecha_fin_estimada));
+                  setDraftInicio(formatDateInput(fase.fecha_estimada_inicio));
+                  setDraftFin(formatDateInput(fase.fecha_estimada_fin));
                   setDraftDescripcion(fase.descripcion ?? "");
-                  setDraftEntregables(fase.entregables ?? "");
                 }}
               >
                 Cancelar
@@ -316,19 +302,15 @@ export function FaseColumn({
           <div className="space-y-2 pt-2">
             {features.length > 0 ? (
               features.map((feature) => (
-                <SubtareaChecklistItem
-                  key={feature.id}
-                  subtarea={feature}
-                  fasesDisponibles={fasesDisponibles}
-                  onEstadoChange={async (estado) => {
-                    await onUpdateFeature(feature.id, { estado });
-                  }}
-                  onMoverFase={async (nuevaFase) => {
-                    await onUpdateFeature(feature.id, { fase: nuevaFase });
-                  }}
-                  onClick={() => onFeatureClick(feature)}
-                />
-              ))
+              <SubtareaChecklistItem
+                key={feature.id}
+                subtarea={feature}
+                onEstadoChange={async (estado) => {
+                  await onUpdateFeature(feature.id, { estado });
+                }}
+                onClick={() => onFeatureClick(feature)}
+              />
+            ))
             ) : (
               <Card padding="sm">
                 <p className="text-sm text-graphite">Sin subtareas en esta fase.</p>

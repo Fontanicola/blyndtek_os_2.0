@@ -18,8 +18,11 @@ export type Cliente = {
   datos_facturacion: DatosFacturacion | null;
   estado: EstadoCliente;
   notas: string | null;
+  vendedor_id: string | null;
   created_at: string;
 };
 
-export type CreateClienteInput = Omit<Cliente, "id" | "created_at">;
+export type CreateClienteInput = Omit<Cliente, "id" | "created_at" | "vendedor_id"> & {
+  vendedor_id?: string | null;
+};
 export type UpdateClienteInput = Partial<CreateClienteInput>;

@@ -39,9 +39,10 @@ function ChecklistIcon({ ok }: { ok: boolean }) {
   return (
     <span
       className={[
-        "inline-flex h-5 w-5 items-center justify-center rounded-full text-xs",
-        ok ? "bg-success-light text-success" : "bg-danger-light text-danger"
+        "inline-flex h-5 min-w-5 items-center justify-center text-sm font-title leading-none",
+        ok ? "text-success" : "text-danger"
       ].join(" ")}
+      aria-hidden="true"
     >
       {ok ? "✓" : "×"}
     </span>
@@ -66,7 +67,7 @@ export function AceptacionPanel({
   const isAccepted = cotizacion.estado === "aceptada" || Boolean(resultado);
   const acceptedResult = resultado;
   const roadmapUrl = acceptedResult
-    ? `${roadmapOrigin}/roadmap/${acceptedResult.roadmap_token}`
+    ? `${roadmapOrigin}/roadmap/${acceptedResult.roadmap_slug || acceptedResult.roadmap_token}`
     : "";
 
   if (isAccepted) {
@@ -77,7 +78,7 @@ export function AceptacionPanel({
           className="space-y-4 border border-success/20 bg-success-light shadow-none"
         >
           <div className="flex items-center gap-3">
-            <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-success text-white">
+            <span className="text-lg font-title leading-none text-success" aria-hidden="true">
               ✓
             </span>
             <div>
@@ -129,7 +130,7 @@ export function AceptacionPanel({
             </div>
           ) : (
             <p className="text-sm text-graphite">
-              El link público se muestra en esta sesión cuando la aceptación devuelve el token.
+              El link público se muestra en esta sesión cuando la aceptación devuelve el slug.
             </p>
           )}
         </Card>

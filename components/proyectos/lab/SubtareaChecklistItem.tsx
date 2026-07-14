@@ -1,16 +1,16 @@
 "use client";
 
 import type { Feature, EstadoFeature } from "@/types/features";
+import type { Usuario } from "@/types/auth";
 import { cn } from "@/lib/cn";
-import type { FaseProyecto } from "@/types/fases-proyecto";
+import { UserAvatar } from "@/components/ui";
 
 export type { FaseProyecto } from "@/types/fases-proyecto";
 
 type SubtareaChecklistItemProps = {
   subtarea: Feature;
-  fasesDisponibles: FaseProyecto[];
+  responsableUsuario?: Pick<Usuario, "nombre" | "foto_url"> | null;
   onEstadoChange: (estado: EstadoFeature) => void | Promise<void>;
-  onMoverFase: (fase: string) => void | Promise<void>;
   onClick: () => void;
 };
 
@@ -21,18 +21,10 @@ function getNextEstado(estado: EstadoFeature): EstadoFeature {
   return ESTADOS[(index + 1) % ESTADOS.length] ?? "pendiente";
 }
 
-function getInitials(value: string | null | undefined) {
-  if (!value) {
-    return "--";
-  }
-
-  return value.slice(0, 2).toUpperCase();
-}
-
 function EstadoIndicator({ estado }: { estado: EstadoFeature }) {
   if (estado === "lista") {
     return (
-      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-success text-[11px] font-title text-white">
+      <span className="flex h-[18px] w-[18px] items-center justify-center rounded-full bg-success text-[10px] font-title text-white">
         ✓
       </span>
     );
@@ -40,20 +32,19 @@ function EstadoIndicator({ estado }: { estado: EstadoFeature }) {
 
   if (estado === "en_curso") {
     return (
-      <span className="flex h-5 w-5 items-center justify-center rounded-full border border-signal bg-signal-light">
-        <span className="h-2.5 w-2.5 rounded-full bg-signal" />
+      <span className="flex h-[18px] w-[18px] items-center justify-center rounded-full border border-signal bg-signal-light">
+        <span className="h-2 w-2 rounded-full bg-signal" />
       </span>
     );
   }
 
-  return <span className="h-5 w-5 rounded-full border border-[#D8DBE3] bg-white" />;
+  return <span className="h-[18px] w-[18px] rounded-full border border-[#D8DBE3] bg-white" />;
 }
 
 export function SubtareaChecklistItem({
   subtarea,
-  fasesDisponibles,
+  responsableUsuario,
   onEstadoChange,
-  onMoverFase,
   onClick
 }: SubtareaChecklistItemProps) {
   return (
@@ -92,33 +83,13 @@ export function SubtareaChecklistItem({
         </p>
         <p className="truncate text-xs text-graphite">{subtarea.descripcion}</p>
       </div>
-
-      <div className="flex items-center gap-2">
-        <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-signal-light text-[10px] font-label text-signal">
-          {getInitials(subtarea.responsable_id)}
-        </div>
-
-        <label className="sr-only" htmlFor={`fase-${subtarea.id}`}>
-          Mover a fase
-        </label>
-        <select
-          id={`fase-${subtarea.id}`}
-          value={subtarea.fase}
-          onClick={(event) => event.stopPropagation()}
-          onChange={async (event) => {
-            event.stopPropagation();
-            await onMoverFase(event.target.value);
-          }}
-          className="max-w-[140px] rounded-component border border-line bg-white px-2 py-1 text-xs text-carbon focus:border-signal focus:outline-none focus:ring-2 focus:ring-signal/20"
-        >
-          <option value="">Sin fase</option>
-          {fasesDisponibles.map((fase) => (
-            <option key={fase.id} value={fase.id}>
-              {fase.nombre}
-            </option>
-          ))}
-        </select>
-      </div>
+      <UserAvatar
+        name={responsableUsuario?.nombre ?? subtarea.responsable_id}
+        fotoUrl={responsableUsuario?.foto_url ?? null}
+        size="xs"
+        className="shrink-0"
+        textClassName="text-[9px]"
+      />
     </div>
   );
 }

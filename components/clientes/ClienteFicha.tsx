@@ -3,12 +3,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Badge, Button, Card, Input, Toast } from "@/components/ui";
+import { NotasVinculadasSection } from "@/components/notas";
 import { ProyectoCard } from "@/components/proyectos";
 import { formatFecha, formatUSD } from "@/lib/utils/formatters";
 import { useFinanzas } from "@/lib/hooks/useFinanzas";
 import { useProyectos } from "@/lib/hooks/useProyectos";
 import type { Cobro } from "@/types/cobros";
 import type { Cliente, DatosFacturacion, EstadoCliente, UpdateClienteInput } from "@/types/clientes";
+import type { Producto } from "@/types/productos";
+import type { ProductoPlan } from "@/types/productoPlanes";
 import type { Proyecto } from "@/types/proyectos";
 import type { Suscripcion } from "@/types/suscripciones";
 
@@ -145,12 +148,21 @@ const estadoVariants: Record<EstadoCliente, "success" | "warning" | "default"> =
 export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
   const router = useRouter();
   const { fetchProyectos } = useProyectos();
-  const { fetchCobros, fetchSuscripciones, activarSuscripcion } = useFinanzas();
+  const { fetchCobros, fetchSuscripciones, createSuscripcion, activarSuscripcion } = useFinanzas();
   const [activeTab, setActiveTab] = useState<TabKey>("datos");
   const [notaDraft, setNotaDraft] = useState("");
   const [proyectos, setProyectos] = useState<Proyecto[]>([]);
   const [cobros, setCobros] = useState<Cobro[]>([]);
   const [suscripcion, setSuscripcion] = useState<Suscripcion | null>(null);
+  const [productos, setProductos] = useState<Producto[]>([]);
+  const [planes, setPlanes] = useState<ProductoPlan[]>([]);
+  const [productoSeleccionadoId, setProductoSeleccionadoId] = useState("");
+  const [planSeleccionadoId, setPlanSeleccionadoId] = useState("");
+  const [montoDraft, setMontoDraft] = useState("");
+  const [montoEditable, setMontoEditable] = useState(false);
+  const [loadingProductos, setLoadingProductos] = useState(false);
+  const [loadingPlanes, setLoadingPlanes] = useState(false);
+  const [creatingSuscripcion, setCreatingSuscripcion] = useState(false);
   const [tabLoading, setTabLoading] = useState<TabKey | null>(null);
   const [tabError, setTabError] = useState<string | null>(null);
   const [activating, setActivating] = useState(false);
@@ -188,6 +200,26 @@ export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
       { cobrado: 0, pendiente: 0, vencido: 0 }
     );
   }, [cobros]);
+
+  const suscripcionProducto = useMemo(
+    () => productos.find((producto) => producto.id === suscripcion?.producto_id) ?? null,
+    [productos, suscripcion?.producto_id]
+  );
+
+  const suscripcionPlan = useMemo(
+    () => planes.find((plan) => plan.id === suscripcion?.plan_id) ?? null,
+    [planes, suscripcion?.plan_id]
+  );
+
+  const formSelectedProducto = useMemo(
+    () => productos.find((producto) => producto.id === productoSeleccionadoId) ?? null,
+    [productos, productoSeleccionadoId]
+  );
+
+  const formSelectedPlan = useMemo(
+    () => planes.find((plan) => plan.id === planSeleccionadoId) ?? null,
+    [planes, planSeleccionadoId]
+  );
 
   function updateFacturacion(field: keyof DatosFacturacion, value: string | null) {
     void onUpdate({
@@ -245,6 +277,167 @@ export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
       cancelled = true;
     };
   }, [activeTab, cliente.id, fetchCobros, fetchProyectos, fetchSuscripciones]);
+
+  useEffect(() => {
+    if (activeTab !== "suscripcion") {
+      return;
+    }
+
+    let cancelled = false;
+
+    async function loadProductos() {
+      setLoadingProductos(true);
+
+      try {
+        const response = await fetch("/api/productos");
+        const payload = (await response.json()) as { data?: Producto[]; error?: string };
+
+        if (!response.ok || !payload.data) {
+          throw new Error(payload.error ?? "No se pudieron cargar los productos.");
+        }
+
+        if (!cancelled) {
+          setProductos(payload.data);
+        }
+      } catch (loadError) {
+        if (!cancelled) {
+          setTabError(loadError instanceof Error ? loadError.message : "No se pudieron cargar los productos.");
+        }
+      } finally {
+        if (!cancelled) {
+          setLoadingProductos(false);
+        }
+      }
+    }
+
+    void loadProductos();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeTab]);
+
+  useEffect(() => {
+    if (activeTab !== "suscripcion") {
+      return;
+    }
+
+    const nextProductoId = suscripcion ? suscripcion.producto_id ?? "" : productos[0]?.id ?? "";
+    if (nextProductoId && nextProductoId !== productoSeleccionadoId) {
+      setProductoSeleccionadoId(nextProductoId);
+      return;
+    }
+
+    if (!nextProductoId) {
+      setProductoSeleccionadoId("");
+      setPlanes([]);
+      setPlanSeleccionadoId("");
+      setMontoDraft("");
+      setMontoEditable(false);
+    }
+  }, [activeTab, productos, productoSeleccionadoId, suscripcion]);
+
+  useEffect(() => {
+    if (activeTab !== "suscripcion" || !productoSeleccionadoId) {
+      setPlanes([]);
+      setPlanSeleccionadoId("");
+      if (!productoSeleccionadoId) {
+        setMontoDraft("");
+        setMontoEditable(false);
+      }
+      return;
+    }
+
+    let cancelled = false;
+
+    async function loadPlanes() {
+      setLoadingPlanes(true);
+
+      try {
+        const response = await fetch(`/api/productos/${productoSeleccionadoId}/planes`);
+        const payload = (await response.json()) as { data?: ProductoPlan[]; error?: string };
+
+        if (!response.ok || !payload.data) {
+          throw new Error(payload.error ?? "No se pudieron cargar los planes.");
+        }
+
+        if (cancelled) {
+          return;
+        }
+
+        setPlanes(payload.data);
+
+        const nextPlanId = suscripcion?.plan_id ?? payload.data[0]?.id ?? "";
+        setPlanSeleccionadoId(nextPlanId);
+
+        if (nextPlanId) {
+          const selectedPlan = payload.data.find((plan) => plan.id === nextPlanId) ?? null;
+          if (selectedPlan) {
+            setMontoDraft(String(selectedPlan.precio_mensual));
+            setMontoEditable(false);
+          }
+        } else {
+          setMontoEditable(true);
+          setMontoDraft("");
+        }
+      } catch (loadError) {
+        if (!cancelled) {
+          setTabError(loadError instanceof Error ? loadError.message : "No se pudieron cargar los planes.");
+        }
+      } finally {
+        if (!cancelled) {
+          setLoadingPlanes(false);
+        }
+      }
+    }
+
+    void loadPlanes();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeTab, productoSeleccionadoId, suscripcion]);
+
+  async function handleCreateSaaSSubscription() {
+    if (!productoSeleccionadoId || !formSelectedProducto) {
+      return;
+    }
+
+    const monto = Number(montoDraft);
+
+    if (Number.isNaN(monto) || monto < 0) {
+      setTabError("Ingresá un monto mensual válido.");
+      return;
+    }
+
+    setCreatingSuscripcion(true);
+    setTabError(null);
+
+    try {
+      const created = await createSuscripcion({
+        cliente_id: cliente.id,
+        cotizacion_id: null,
+        proyecto_id: null,
+        producto_id: productoSeleccionadoId,
+        plan_id: planSeleccionadoId || null,
+        tipo: "brick",
+        monto_mensual: monto,
+        ciclo: "mensual",
+        estado: "pendiente"
+      });
+
+      setSuscripcion(created);
+      setToast({
+        message: "Suscripción SaaS creada correctamente.",
+        type: "success",
+        visible: true
+      });
+    } catch (createError) {
+      setTabError(createError instanceof Error ? createError.message : "No se pudo crear la suscripción.");
+    } finally {
+      setCreatingSuscripcion(false);
+    }
+  }
 
   async function handleActivateSubscription() {
     if (!suscripcion) {
@@ -391,15 +584,22 @@ export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
               />
             </section>
 
-            <section className="space-y-2">
-              <h3 className="text-sm font-title text-carbon">Lead de origen</h3>
-              <p className="text-sm text-graphite">
-                {cliente.lead_id ? "Ver lead →" : "Sin lead de origen"}
-              </p>
-            </section>
+          <section className="space-y-2">
+            <h3 className="text-sm font-title text-carbon">Lead de origen</h3>
+            <p className="text-sm text-graphite">
+              {cliente.lead_id ? "Ver lead →" : "Sin lead de origen"}
+            </p>
+          </section>
 
-            <div className="space-y-2 pt-2">
-              <p className="text-xs font-label uppercase tracking-[0.08em] text-graphite">Estado</p>
+          <NotasVinculadasSection
+            entityType="cliente"
+            entityId={cliente.id}
+            entityLabel={cliente.empresa}
+            href={`/clientes?cliente_id=${cliente.id}`}
+          />
+
+          <div className="space-y-2 pt-2">
+            <p className="text-xs font-label uppercase tracking-[0.08em] text-graphite">Estado</p>
               <select
                 value={cliente.estado}
                 onChange={(event) => void onUpdate({ estado: event.target.value as EstadoCliente })}
@@ -494,6 +694,13 @@ export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
             <div className="space-y-4">
               <div className="grid gap-4 md:grid-cols-2">
                 <Card padding="md" className="space-y-1">
+                  <p className="text-xs uppercase tracking-[0.08em] text-graphite">Producto / plan</p>
+                  <p className="text-sm font-label text-carbon">
+                    {suscripcionProducto?.nombre ?? (suscripcion.producto_id ? "Producto SaaS" : "Sin producto")}
+                    {suscripcion.producto_id ? ` · ${suscripcionPlan?.nombre ?? "Personalizado"}` : ""}
+                  </p>
+                </Card>
+                <Card padding="md" className="space-y-1">
                   <p className="text-xs uppercase tracking-[0.08em] text-graphite">Tipo</p>
                   <p className="text-sm font-label text-carbon">{suscripcion.tipo}</p>
                 </Card>
@@ -538,7 +745,108 @@ export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
               ) : null}
             </div>
           ) : (
-            <EmptyState text="Este cliente no tiene suscripción de mantenimiento." />
+            <div className="space-y-5">
+              <div className="space-y-2">
+                <h3 className="text-base font-title text-carbon">Asignar SaaS</h3>
+                <p className="text-sm text-graphite">
+                  Elegí producto, plan o monto personalizado para crear la suscripción del cliente.
+                </p>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-1">
+                  <label className="text-sm font-label text-carbon">Producto</label>
+                  <select
+                    value={productoSeleccionadoId}
+                    onChange={(event) => {
+                      setProductoSeleccionadoId(event.target.value);
+                      setPlanSeleccionadoId("");
+                      setMontoDraft("");
+                      setMontoEditable(false);
+                    }}
+                    className="w-full rounded-component border border-line bg-white px-3 py-2 text-sm text-carbon focus:border-signal focus:outline-none focus:ring-2 focus:ring-signal/20"
+                  >
+                    <option value="">{loadingProductos ? "Cargando productos..." : "Seleccionar producto"}</option>
+                    {productos.map((producto) => (
+                      <option key={producto.id} value={producto.id}>
+                        {producto.nombre}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-sm font-label text-carbon">Plan</label>
+                  <select
+                    value={planSeleccionadoId || "__custom__"}
+                    onChange={(event) => {
+                      const nextValue = event.target.value;
+                      if (nextValue === "__custom__") {
+                        setPlanSeleccionadoId("");
+                        setMontoEditable(true);
+                        return;
+                      }
+
+                      const selectedPlan = planes.find((plan) => plan.id === nextValue) ?? null;
+                      setPlanSeleccionadoId(nextValue);
+                      setMontoDraft(selectedPlan ? String(selectedPlan.precio_mensual) : "");
+                      setMontoEditable(false);
+                    }}
+                    disabled={!productoSeleccionadoId || loadingPlanes}
+                    className="w-full rounded-component border border-line bg-white px-3 py-2 text-sm text-carbon focus:border-signal focus:outline-none focus:ring-2 focus:ring-signal/20 disabled:cursor-not-allowed disabled:bg-paper"
+                  >
+                    {loadingPlanes ? <option value="">Cargando planes...</option> : null}
+                    {planes.map((plan) => (
+                      <option key={plan.id} value={plan.id}>
+                        {plan.nombre} · {formatUSD(plan.precio_mensual)}
+                      </option>
+                    ))}
+                    <option value="__custom__">Personalizado</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
+                <Input
+                  label="Monto mensual"
+                  type="number"
+                  value={montoDraft}
+                  onChange={(event) => setMontoDraft(event.target.value)}
+                  readOnly={!montoEditable && Boolean(formSelectedPlan)}
+                  hint={formSelectedPlan && !montoEditable ? "Podés desbloquear el monto manualmente si querés ajustarlo." : undefined}
+                />
+
+                {formSelectedPlan && !montoEditable ? (
+                  <Button variant="ghost" size="sm" onClick={() => setMontoEditable(true)} className="w-full md:w-auto">
+                    Editar monto
+                  </Button>
+                ) : null}
+              </div>
+
+              <Card padding="md" className="space-y-2 border border-line-soft bg-paper">
+                <p className="text-xs font-label uppercase tracking-[0.08em] text-graphite">Resumen</p>
+                <p className="text-sm text-carbon">
+                  {formSelectedProducto ? formSelectedProducto.nombre : "Sin producto"}{" "}
+                  {formSelectedPlan ? `· ${formSelectedPlan.nombre}` : "· Personalizado"}
+                </p>
+                <p className="text-xs text-graphite">
+                  La suscripción se creará en estado pendiente y el cobro mensual automático seguirá funcionando.
+                </p>
+              </Card>
+
+              <div className="flex justify-end">
+                <Button
+                  className="w-full md:w-auto"
+                  loading={creatingSuscripcion}
+                  onClick={() => {
+                    void handleCreateSaaSSubscription();
+                  }}
+                  disabled={!productoSeleccionadoId || !montoDraft.trim() || loadingPlanes}
+                >
+                  Crear suscripción
+                </Button>
+              </div>
+            </div>
           )}
         </Card>
       ) : null}

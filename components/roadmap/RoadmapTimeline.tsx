@@ -1,3 +1,5 @@
+"use client";
+
 import { Badge, Card } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import type { PublicRoadmapFeature, PublicRoadmapPhase } from "@/types/roadmap-public";
@@ -67,7 +69,7 @@ export function RoadmapTimeline({ fases }: RoadmapTimelineProps) {
       {fases.length > 0 ? (
         <div className="space-y-5">
           {fases.map((fase, index) => (
-            <div key={fase.nombre} className="relative pl-8">
+            <div key={fase.id} className="relative pl-8">
               {index < fases.length - 1 ? (
                 <div className="absolute left-[11px] top-7 h-[calc(100%+20px)] w-px bg-line-soft" />
               ) : null}
@@ -87,9 +89,30 @@ export function RoadmapTimeline({ fases }: RoadmapTimelineProps) {
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <h3 className="text-base font-title text-carbon">{fase.nombre}</h3>
+                    <p className="mt-1 text-xs text-graphite">
+                      {fase.fecha_estimada_inicio || fase.fecha_estimada_fin
+                        ? [
+                            fase.fecha_estimada_inicio ? fase.fecha_estimada_inicio.slice(0, 10) : null,
+                            fase.fecha_estimada_fin ? fase.fecha_estimada_fin.slice(0, 10) : null
+                          ]
+                            .filter(Boolean)
+                            .join(" - ")
+                        : "Sin fechas estimadas"}
+                    </p>
                   </div>
-                  <Badge variant={getPhaseVariant(fase.estado)}>{getPhaseLabel(fase.estado)}</Badge>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={getPhaseVariant(fase.estado)}>{getPhaseLabel(fase.estado)}</Badge>
+                    <Badge variant="default">
+                      {fase.features_completadas}/{fase.features_totales} completadas
+                    </Badge>
+                  </div>
                 </div>
+
+                {fase.descripcion ? (
+                  <div className="space-y-2 border-t border-line-soft pt-3">
+                    {fase.descripcion ? <p className="text-sm text-carbon">{fase.descripcion}</p> : null}
+                  </div>
+                ) : null}
 
                 <div className="space-y-3">
                   {fase.features.map((feature) => {

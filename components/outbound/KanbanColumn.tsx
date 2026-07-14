@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import { Badge, Button } from "@/components/ui";
 import { cn } from "@/lib/cn";
+import type { Usuario } from "@/types/auth";
 import type { EtapaLead, Lead } from "@/types/leads";
 import { LeadCard } from "./LeadCard";
 
@@ -19,6 +20,7 @@ type KanbanColumnProps = {
   onDragLeaveColumn?: () => void;
   onDragStartLead?: (lead: Lead) => void;
   onDragEndLead?: () => void;
+  responsables?: Array<Pick<Usuario, "id" | "nombre" | "foto_url">>;
   footer?: ReactNode;
 };
 
@@ -35,8 +37,13 @@ export function KanbanColumn({
   onDragLeaveColumn,
   onDragStartLead,
   onDragEndLead,
+  responsables = [],
   footer
 }: KanbanColumnProps) {
+  function getResponsableUsuario(userId: string | null) {
+    return responsables.find((usuario) => usuario.id === userId) ?? null;
+  }
+
   return (
     <section
       className={cn(
@@ -71,6 +78,7 @@ export function KanbanColumn({
             onDragStart={onDragStartLead}
             onDragEnd={onDragEndLead}
             isDragging={draggedLeadId === lead.id}
+            responsableUsuario={getResponsableUsuario(lead.responsable_id)}
           />
         ))}
 

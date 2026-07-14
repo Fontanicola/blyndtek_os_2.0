@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { isValidGitHubRepo, normalizeGitHubRepo } from "@/lib/ai-dev";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Proyecto, UpdateProyectoInput } from "@/types/proyectos";
 
@@ -36,10 +37,19 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
   try {
     const body = (await request.json()) as UpdateProyectoInput;
     const supabase = createAdminClient();
-    const payload = {
+    const payload: UpdateProyectoInput = {
       ...body,
       nombre: body.nombre?.trim() || body.nombre
     };
+
+    if (typeof body.github_repo !== "undefined") {
+      const nextRepo = body.github_repo?.trim() || "";
+      if (nextRepo && !isValidGitHubRepo(nextRepo)) {
+        return NextResponse.json({ error: "github_repo must be in owner/repo format." }, { status: 400 });
+      }
+
+      payload.github_repo = nextRepo ? normalizeGitHubRepo(nextRepo) : null;
+    }
 
     const { data, error } = await supabase
       .from("proyectos")

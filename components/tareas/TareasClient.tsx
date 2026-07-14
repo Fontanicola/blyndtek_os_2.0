@@ -19,6 +19,7 @@ export function TareasClient({ usuario, proyectos, usuarios }: TareasClientProps
   const { tareas, loading, error, fetchTareas, createTarea, updateTarea, updateEstado, deleteTarea } =
     useTareas();
   const [showArchived, setShowArchived] = useState(false);
+  const [hideAiTasks, setHideAiTasks] = useState(false);
   const [selectedTarea, setSelectedTarea] = useState<Tarea | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [initialEstado, setInitialEstado] = useState<EstadoTarea>("nueva");
@@ -28,8 +29,18 @@ export function TareasClient({ usuario, proyectos, usuarios }: TareasClientProps
   }, [fetchTareas]);
 
   const visibleTareas = useMemo(() => {
-    return showArchived ? tareas : tareas.filter((tarea) => tarea.estado !== "terminada");
-  }, [showArchived, tareas]);
+    return tareas.filter((tarea) => {
+      if (!showArchived && tarea.estado === "terminada") {
+        return false;
+      }
+
+      if (hideAiTasks && tarea.es_ia) {
+        return false;
+      }
+
+      return true;
+    });
+  }, [hideAiTasks, showArchived, tareas]);
 
   async function handleSave(input: CreateTareaInput): Promise<void> {
     if (selectedTarea) {
@@ -44,23 +55,35 @@ export function TareasClient({ usuario, proyectos, usuarios }: TareasClientProps
   }
 
   return (
-    <div className="space-y-6">
+    <div className="flex h-full min-h-0 flex-col gap-6 overflow-hidden">
       {error ? (
         <div className="rounded-card border border-danger bg-danger-light px-4 py-3 text-sm text-danger">
           {error}
         </div>
       ) : null}
 
-      <div className="flex items-center justify-between gap-3">
-        <label className="inline-flex items-center gap-2 text-sm text-carbon">
-          <input
-            type="checkbox"
-            checked={showArchived}
-            onChange={(event) => setShowArchived(event.target.checked)}
-            className="h-4 w-4 rounded border-line text-signal focus:ring-signal/20"
-          />
-          Mostrar tareas terminadas archivadas
-        </label>
+      <div className="flex flex-shrink-0 flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-4">
+          <label className="inline-flex items-center gap-2 text-sm text-carbon">
+            <input
+              type="checkbox"
+              checked={showArchived}
+              onChange={(event) => setShowArchived(event.target.checked)}
+              className="h-4 w-4 rounded border-line text-signal focus:ring-signal/20"
+            />
+            Mostrar tareas terminadas archivadas
+          </label>
+
+          <label className="inline-flex items-center gap-2 text-sm text-carbon">
+            <input
+              type="checkbox"
+              checked={hideAiTasks}
+              onChange={(event) => setHideAiTasks(event.target.checked)}
+              className="h-4 w-4 rounded border-line text-signal focus:ring-signal/20"
+            />
+            Ocultar tareas de IA
+          </label>
+        </div>
 
         <Badge variant="default">{visibleTareas.length} tareas</Badge>
       </div>
@@ -69,7 +92,7 @@ export function TareasClient({ usuario, proyectos, usuarios }: TareasClientProps
         <div className="text-sm text-graphite">Cargando tareas...</div>
       ) : null}
 
-      <Card padding="lg" className="space-y-4">
+      <Card padding="lg" className="flex min-h-0 flex-1 flex-col overflow-hidden">
         <TareasKanban
           tareas={visibleTareas}
           proyectos={proyectos}

@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Badge, Button, Card, Input } from "@/components/ui";
+import { NotasVinculadasSection } from "@/components/notas";
 import { ETAPA_LABELS, sanitizeNumberValue, sanitizeTextValue } from "@/lib/leads";
 import type { Lead, UpdateLeadInput } from "@/types/leads";
 
@@ -339,6 +340,13 @@ export function InboundFicha({ lead, onUpdate, onPasarACotizacion }: InboundFich
               onSave={(value) => void onUpdate({ presupuesto_estimado: value })}
             />
           </section>
+
+          <NotasVinculadasSection
+            entityType="lead"
+            entityId={lead.id}
+            entityLabel={lead.empresa}
+            href={`/inbound?lead_id=${lead.id}`}
+          />
 
           <section className="space-y-3">
             <h3 className="text-sm font-title text-carbon">Toques</h3>

@@ -2,7 +2,12 @@
 
 import { useCallback, useEffect, useState } from "react";
 import type { Cobro, CreateCobroInput, EstadoCobro, UpdateCobroInput } from "@/types/cobros";
-import type { ConfigFinanzas, MetricasFinanzas } from "@/types/finanzas";
+import type {
+  CarteraClienteItem,
+  ConfigFinanzas,
+  MetricasFinanzas,
+  TesoreriaFinanzas
+} from "@/types/finanzas";
 import type { CreateEgresoInput, Egreso, UpdateEgresoInput } from "@/types/egresos";
 import type {
   CreateSuscripcionInput,
@@ -10,6 +15,7 @@ import type {
   Suscripcion,
   UpdateSuscripcionInput
 } from "@/types/suscripciones";
+import type { ComisionListado } from "@/types/comisiones";
 
 type ApiResponse<T> = {
   data?: T;
@@ -44,6 +50,7 @@ type SuscripcionFilters = {
   cliente_id?: string;
   proyecto_id?: string;
   cotizacion_id?: string;
+  producto_id?: string;
 };
 
 function buildQueryString(filters?: Record<string, string | undefined>) {
@@ -67,8 +74,11 @@ export function useFinanzas() {
   const [cobros, setCobros] = useState<Cobro[]>([]);
   const [egresos, setEgresos] = useState<Egreso[]>([]);
   const [suscripciones, setSuscripciones] = useState<Suscripcion[]>([]);
+  const [comisiones, setComisiones] = useState<ComisionListado[]>([]);
   const [metricas, setMetricas] = useState<MetricasFinanzas | null>(null);
   const [config, setConfig] = useState<ConfigFinanzas | null>(null);
+  const [carteraClientes, setCarteraClientes] = useState<CarteraClienteItem[]>([]);
+  const [tesoreria, setTesoreria] = useState<TesoreriaFinanzas | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -221,6 +231,18 @@ export function useFinanzas() {
     return payload.data;
   }, []);
 
+  const fetchComisiones = useCallback(async (filters?: { vendedor_id?: string; estado?: "pendiente" | "pagada" | "cancelada" }) => {
+    const response = await fetch(`/api/comisiones${buildQueryString(filters as Record<string, string | undefined>)}`);
+    const payload = await readJsonResponse<ApiResponse<ComisionListado[]>>(response);
+
+    if (!response.ok || !payload.data) {
+      throw new Error(payload.error ?? "No se pudieron cargar las comisiones.");
+    }
+
+    setComisiones(payload.data);
+    return payload.data;
+  }, []);
+
   const createSuscripcion = useCallback(async (input: CreateSuscripcionInput) => {
     const response = await fetch("/api/suscripciones", {
       method: "POST",
@@ -296,6 +318,30 @@ export function useFinanzas() {
     return payload.data;
   }, []);
 
+  const fetchCarteraClientes = useCallback(async () => {
+    const response = await fetch("/api/finanzas/cartera-clientes");
+    const payload = await readJsonResponse<ApiResponse<CarteraClienteItem[]>>(response);
+
+    if (!response.ok || !payload.data) {
+      throw new Error(payload.error ?? "No se pudo cargar la cartera por cliente.");
+    }
+
+    setCarteraClientes(payload.data);
+    return payload.data;
+  }, []);
+
+  const fetchTesoreria = useCallback(async () => {
+    const response = await fetch("/api/finanzas/tesoreria");
+    const payload = await readJsonResponse<ApiResponse<TesoreriaFinanzas>>(response);
+
+    if (!response.ok || !payload.data) {
+      throw new Error(payload.error ?? "No se pudo cargar la tesorería.");
+    }
+
+    setTesoreria(payload.data);
+    return payload.data;
+  }, []);
+
   const fetchConfig = useCallback(async () => {
     const response = await fetch("/api/config-finanzas");
     const payload = await readJsonResponse<ApiResponse<ConfigFinanzas>>(response);
@@ -358,14 +404,23 @@ export function useFinanzas() {
     setError(null);
 
     try {
-      await Promise.all([fetchCobros(), fetchEgresos(), fetchSuscripciones(), fetchMetricas(), fetchConfig()]);
+      await Promise.all([
+        fetchCobros(),
+        fetchEgresos(),
+        fetchSuscripciones(),
+        fetchComisiones(),
+        fetchMetricas(),
+        fetchConfig(),
+        fetchCarteraClientes(),
+        fetchTesoreria()
+      ]);
     } catch (fetchError) {
       setError(fetchError instanceof Error ? fetchError.message : "No se pudieron cargar los datos financieros.");
     } finally {
       setLoading(false);
       setSaving(false);
     }
-  }, [fetchCobros, fetchConfig, fetchEgresos, fetchMetricas, fetchSuscripciones]);
+  }, [fetchCobros, fetchCarteraClientes, fetchComisiones, fetchConfig, fetchEgresos, fetchMetricas, fetchSuscripciones, fetchTesoreria]);
 
   useEffect(() => {
     void refreshAll();
@@ -375,14 +430,18 @@ export function useFinanzas() {
     cobros,
     egresos,
     suscripciones,
+    comisiones,
     metricas,
     config,
+    carteraClientes,
+    tesoreria,
     loading,
     saving,
     error,
     setCobros,
     setEgresos,
     setSuscripciones,
+    setComisiones,
     setMetricas,
     setConfig,
     fetchCobros,
@@ -395,11 +454,14 @@ export function useFinanzas() {
     updateEgreso,
     deleteEgreso,
     fetchSuscripciones,
+    fetchComisiones,
     createSuscripcion,
     updateSuscripcion,
     deleteSuscripcion,
     activarSuscripcion,
     fetchMetricas,
+    fetchCarteraClientes,
+    fetchTesoreria,
     fetchConfig,
     updateConfig,
     generarCobrosMensuales,

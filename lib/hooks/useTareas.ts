@@ -47,7 +47,14 @@ function buildQueryString(filters?: TareaFilters) {
 }
 
 async function readJsonResponse<T>(response: Response): Promise<T> {
-  return (await response.json()) as T;
+  const contentType = response.headers.get("content-type") ?? "";
+
+  if (contentType.includes("application/json")) {
+    return (await response.json()) as T;
+  }
+
+  const text = await response.text();
+  throw new Error(text ? text.slice(0, 200) : "Unexpected non-JSON response from /api/tareas.");
 }
 
 export function useTareas() {

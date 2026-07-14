@@ -3,12 +3,15 @@
 import { useMemo, useState } from "react";
 import { Badge, Button, Card, Input } from "@/components/ui";
 import { cn } from "@/lib/cn";
+import { formatCajaLabel } from "@/lib/cajas";
 import { isCobroVencido } from "@/lib/finanzas";
 import { formatFecha, formatUSD } from "@/lib/utils/formatters";
+import type { Caja } from "@/types/cajas";
 import type { Cobro, EstadoCobro } from "@/types/cobros";
 
 type CobrosTablaProps = {
   cobros: Cobro[];
+  cajas?: Caja[];
   onMarkCobrado: (cobro: Cobro) => Promise<void> | void;
   onNew: () => void;
   onEdit?: (cobro: Cobro) => void;
@@ -50,31 +53,7 @@ function getTipoLabel(tipo: Cobro["tipo"]) {
   return "Hito";
 }
 
-function getCuentaMedioLabel(cuentaMedio: Cobro["cuenta_medio"]) {
-  if (!cuentaMedio) {
-    return "Sin medio";
-  }
-
-  if (cuentaMedio === "mercadopago") {
-    return "Mercado Pago";
-  }
-
-  if (cuentaMedio === "transferencia") {
-    return "Transferencia";
-  }
-
-  if (cuentaMedio === "efectivo") {
-    return "Efectivo";
-  }
-
-  if (cuentaMedio === "stripe") {
-    return "Stripe";
-  }
-
-  return "Otro";
-}
-
-export function CobrosTabla({ cobros, onMarkCobrado, onNew, onEdit }: CobrosTablaProps) {
+export function CobrosTabla({ cobros, cajas = [], onMarkCobrado, onNew, onEdit }: CobrosTablaProps) {
   const [estadoFilter, setEstadoFilter] = useState<EstadoCobro | "todos">("todos");
   const [tipoFilter, setTipoFilter] = useState<Cobro["tipo"] | "todos">("todos");
   const [search, setSearch] = useState("");
@@ -162,7 +141,9 @@ export function CobrosTabla({ cobros, onMarkCobrado, onNew, onEdit }: CobrosTabl
                         {cobro.concepto}
                       </button>
                     </td>
-                    <td className="px-4 py-3 text-sm text-graphite">{cobro.cliente_id}</td>
+                    <td className="px-4 py-3 text-sm text-graphite">
+                      {cobro.cliente?.empresa ?? cobro.cliente_id}
+                    </td>
                     <td className="px-4 py-3 text-sm text-graphite">{getTipoLabel(cobro.tipo)}</td>
                     <td className="px-4 py-3 text-sm font-label text-carbon">{formatUSD(cobro.monto)}</td>
                     <td className="px-4 py-3 text-sm text-graphite">{formatFecha(cobro.fecha_vencimiento)}</td>
@@ -170,8 +151,8 @@ export function CobrosTabla({ cobros, onMarkCobrado, onNew, onEdit }: CobrosTabl
                       <div className="flex flex-col gap-2">
                         <Badge variant={getEstadoVariant(cobro.estado)}>{estadoLabels[cobro.estado]}</Badge>
                         {cobro.estado === "cobrado" && cobro.cuenta_medio ? (
-                          <Badge variant="default">{getCuentaMedioLabel(cobro.cuenta_medio)}</Badge>
-                        ) : null}
+                        <Badge variant="default">{formatCajaLabel(cobro.cuenta_medio, cajas)}</Badge>
+                      ) : null}
                       </div>
                     </td>
                     <td className="px-4 py-3 text-right">

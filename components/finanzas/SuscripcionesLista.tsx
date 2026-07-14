@@ -1,16 +1,23 @@
 "use client";
 
 import { Badge, Button, Card } from "@/components/ui";
+import { cn } from "@/lib/cn";
+import { isCobroVencido } from "@/lib/finanzas";
 import { formatFecha, formatUSD } from "@/lib/utils/formatters";
+import type { Cobro } from "@/types/cobros";
+import type { Cotizacion } from "@/types/cotizaciones";
 import type { Suscripcion } from "@/types/suscripciones";
 
 type SuscripcionesListaProps = {
   suscripciones: Suscripcion[];
+  cotizaciones: Array<Pick<Cotizacion, "id" | "empresa" | "precio_total">>;
   onActivate: (suscripcion: Suscripcion) => Promise<void> | void;
+  onMarkCobrado: (suscripcion: Suscripcion, cobro: Cobro | null) => Promise<void> | void;
   onNew: () => void;
   onEdit?: (suscripcion: Suscripcion) => void;
   onGenerateMonthly: () => Promise<void> | void;
   onMarkExpired: () => Promise<void> | void;
+  cobros: Cobro[];
 };
 
 const estadoVariant = {
@@ -23,11 +30,50 @@ const estadoVariant = {
 export function SuscripcionesLista({
   suscripciones,
   onActivate,
+  onMarkCobrado,
   onNew,
   onEdit,
   onGenerateMonthly,
-  onMarkExpired
+  onMarkExpired,
+  cobros,
+  cotizaciones
 }: SuscripcionesListaProps) {
+  const today = new Date();
+  const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
+  function getCotizacionLabel(cotizacionId: string | null) {
+    if (!cotizacionId) {
+      return "Sin cotización";
+    }
+
+    return cotizaciones.find((cotizacion) => cotizacion.id === cotizacionId)?.empresa ?? "Cotización vinculada";
+  }
+
+  function getCurrentCycleCobro(suscripcion: Suscripcion) {
+    const related = cobros
+      .filter((cobro) => cobro.suscripcion_id === suscripcion.id)
+      .sort((first, second) => {
+        const diffA = Math.abs(new Date(first.fecha_vencimiento).getTime() - new Date(suscripcion.proxima_cobro ?? first.fecha_vencimiento).getTime());
+        const diffB = Math.abs(new Date(second.fecha_vencimiento).getTime() - new Date(suscripcion.proxima_cobro ?? second.fecha_vencimiento).getTime());
+        return diffA - diffB;
+      });
+
+    return related[0] ?? null;
+  }
+
+  function shouldOfferMarkCobrado(suscripcion: Suscripcion) {
+    const cycleCobro = getCurrentCycleCobro(suscripcion);
+    if (cycleCobro) {
+      return cycleCobro.estado !== "cobrado";
+    }
+
+    if (!suscripcion.proxima_cobro) {
+      return false;
+    }
+
+    return new Date(suscripcion.proxima_cobro) <= startOfToday;
+  }
+
   return (
     <div className="space-y-4">
       <Card padding="md" className="flex flex-wrap items-center justify-between gap-3">
@@ -50,10 +96,24 @@ export function SuscripcionesLista({
 
       <div className="grid gap-4 md:grid-cols-2">
         {suscripciones.map((suscripcion) => (
-          <Card key={suscripcion.id} padding="md" className="space-y-4">
+          <Card
+            key={suscripcion.id}
+            padding="md"
+            className={cn(
+              "space-y-4",
+              suscripcion.estado === "activa" &&
+                (() => {
+                  const cycleCobro = getCurrentCycleCobro(suscripcion);
+                  const proximaCobro = suscripcion.proxima_cobro;
+                  const overdueWithoutCobro = !cycleCobro && proximaCobro ? new Date(proximaCobro) < startOfToday : false;
+                  const isOverdue = cycleCobro ? cycleCobro.estado === "pendiente" && isCobroVencido(cycleCobro) : overdueWithoutCobro;
+                  return isOverdue ? "border border-danger/30 bg-danger-light" : "bg-white";
+                })()
+            )}
+          >
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="text-base font-label text-carbon">{suscripcion.cotizacion_id}</p>
+                <p className="text-base font-label text-carbon">{getCotizacionLabel(suscripcion.cotizacion_id)}</p>
                 <p className="mt-1 text-sm text-graphite">
                   {suscripcion.tipo} · {formatUSD(suscripcion.monto_mensual)}
                 </p>
@@ -76,6 +136,15 @@ export function SuscripcionesLista({
               {suscripcion.estado === "pendiente" ? (
                 <Button variant="primary" size="sm" onClick={() => void onActivate(suscripcion)}>
                   Activar
+                </Button>
+              ) : null}
+              {suscripcion.estado === "activa" && shouldOfferMarkCobrado(suscripcion) ? (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => void onMarkCobrado(suscripcion, getCurrentCycleCobro(suscripcion))}
+                >
+                  Marcar cobrado
                 </Button>
               ) : null}
               {onEdit ? (

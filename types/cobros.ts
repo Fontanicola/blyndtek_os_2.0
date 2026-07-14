@@ -1,10 +1,13 @@
 export type TipoCobro = "one_pay" | "hito" | "mantenimiento" | "brick";
 export type EstadoCobro = "pendiente" | "facturado" | "cobrado" | "vencido";
-export type CuentaMedio = "transferencia" | "mercadopago" | "efectivo" | "stripe" | "otro";
+export type CuentaMedio = string;
 
 export type Cobro = {
   id: string;
   cliente_id: string;
+  cliente?: {
+    empresa: string;
+  } | null;
   proyecto_id: string | null;
   suscripcion_id: string | null;
   cotizacion_id: string | null;

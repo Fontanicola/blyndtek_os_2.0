@@ -29,14 +29,14 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
     const payload: {
       nombre?: string;
       descripcion?: string;
-      fase?: string;
+      fase_id?: string;
       estado?: Feature["estado"];
       responsable_id?: string;
       orden?: number;
     } = {
       nombre: body.nombre?.trim() || body.nombre,
       descripcion: body.descripcion?.trim() || body.descripcion,
-      fase: typeof body.fase === "string" ? body.fase.trim() : body.fase,
+      fase_id: typeof body.fase_id === "string" ? body.fase_id.trim() : body.fase_id,
       ...(body.estado ? { estado: body.estado } : {}),
       ...(body.responsable_id ? { responsable_id: body.responsable_id } : {}),
       ...(typeof body.orden === "number" ? { orden: body.orden } : {})
@@ -60,7 +60,14 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
       await sincronizarDesdeFeature(params.id, body.estado);
     }
 
-    return NextResponse.json({ data: data as Feature, project });
+    const feature = data
+      ? (() => {
+          const next = { ...(data as Record<string, unknown>) };
+          delete next.fase;
+          return next as Feature;
+        })()
+      : null;
+    return NextResponse.json({ data: feature as Feature, project });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unexpected error";
     return NextResponse.json({ error: message }, { status: 500 });

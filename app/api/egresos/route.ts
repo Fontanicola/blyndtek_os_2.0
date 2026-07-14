@@ -12,6 +12,7 @@ function parseCategoria(searchParams: URLSearchParams): CategoriaEgreso | null {
     categoria === "marketing_ads" ||
     categoria === "impuestos_contable" ||
     categoria === "sueldos_honorarios" ||
+    categoria === "comisiones" ||
     categoria === "otro"
   ) {
     return categoria;

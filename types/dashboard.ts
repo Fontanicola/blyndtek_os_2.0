@@ -7,6 +7,11 @@ export type DashboardPipelineStage = {
   ponderado: number;
 };
 
+export type DashboardLeadStageCount = {
+  etapa: string;
+  cantidad: number;
+};
+
 export type DashboardWinRateChannel = {
   porcentaje: number | null;
   leads: number;
@@ -19,10 +24,28 @@ export type DashboardRunwayPoint = {
   caja: number;
 };
 
+export type DashboardFinancialPoint = {
+  month: string;
+  label: string;
+  ingresos: number;
+  egresos: number;
+  margen: number;
+  clientes_activos: number;
+};
+
+export type DashboardRecentFeature = {
+  id: string;
+  nombre: string;
+  proyecto_id: string;
+  proyecto_nombre: string;
+  updated_at: string;
+};
+
 export type DashboardComercial = {
   pipeline_ponderado: number;
   pipeline_ponderado_anterior: number;
   pipeline_por_etapa: DashboardPipelineStage[];
+  leads_por_etapa: DashboardLeadStageCount[];
   win_rate_por_canal: {
     outbound: DashboardWinRateChannel;
     inbound: DashboardWinRateChannel;
@@ -38,12 +61,15 @@ export type DashboardFinanciero = {
   mrr_anterior: number;
   net_new_mrr_mes: number;
   churn: number;
+  quema_neta: number;
   runway_meses: number | null;
+  runway_estado: "normal" | "estable" | "agotado";
   runway_serie: DashboardRunwayPoint[];
   cobros_pendientes: number;
   cobros_vencidos: number;
   pl_mes_actual: number;
   pl_mes_anterior: number;
+  historico_pl: DashboardFinancialPoint[];
 };
 
 export type DashboardEntrega = {
@@ -53,6 +79,7 @@ export type DashboardEntrega = {
   desvio_promedio_dias: number | null;
   features_completadas_semana: number;
   features_completadas_semana_anterior: number;
+  features_recientes: DashboardRecentFeature[];
 };
 
 export type DashboardResponse = {

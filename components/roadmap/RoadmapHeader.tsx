@@ -33,11 +33,12 @@ export function RoadmapHeader({ roadmap }: RoadmapHeaderProps) {
       <div className="flex flex-wrap items-start justify-between gap-6">
         <div className="space-y-5">
           <Image
-            src="/Logo_Blyndtek_plataforma.svg"
+            src="/Logo_Blyndtek_plataforma_negro.svg"
             alt="Blyndtek"
-            width={152}
-            height={36}
-            className="h-8 w-auto"
+            width={132}
+            height={28}
+            className="object-contain"
+            style={{ width: "auto", height: "28px" }}
             priority
           />
 

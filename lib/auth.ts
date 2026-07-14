@@ -7,7 +7,11 @@ import { createClient } from "@/lib/supabase/server";
 import type { AuthSession, Rol, Usuario } from "@/types/auth";
 import type { Database } from "@/types/supabase";
 
-const memberAllowedPrefixes = ["/proyectos", "/tareas", "/calendario"] as const;
+const roleAllowedPrefixes: Record<Rol, readonly string[]> = {
+  admin: ["/"],
+  miembro: ["/proyectos", "/tareas", "/calendario"],
+  comercial: ["/outbound", "/inbound", "/clientes", "/cotizador", "/tareas", "/calendario", "/notas", "/wiki", "/archivos", "/perfil"]
+};
 
 async function fetchUsuarioById(
   supabase: SupabaseClient<Database>,
@@ -15,7 +19,7 @@ async function fetchUsuarioById(
 ): Promise<Usuario | null> {
   const { data, error } = await supabase
     .from("usuarios")
-    .select("id, nombre, email, rol, google_calendar_token, activo, created_at")
+    .select("id, nombre, email, rol, google_calendar_token, foto_url, activo, created_at")
     .eq("id", userId)
     .single();
 
@@ -31,13 +35,21 @@ export function canRoleAccess(rol: Rol, pathname: string): boolean {
     return true;
   }
 
-  return memberAllowedPrefixes.some(
+  return (roleAllowedPrefixes[rol] ?? []).some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
   );
 }
 
 export function getDefaultRouteForRole(rol: Rol): string {
-  return rol === "admin" ? "/dashboard" : "/proyectos";
+  if (rol === "admin") {
+    return "/dashboard";
+  }
+
+  if (rol === "comercial") {
+    return "/outbound";
+  }
+
+  return "/proyectos";
 }
 
 export async function getSession(): Promise<AuthSession | null> {
@@ -87,7 +99,7 @@ export async function getCurrentUser(): Promise<Usuario | null> {
     );
     const { data, error } = await supabaseAdmin
       .from("usuarios")
-      .select("id, nombre, email, rol, google_calendar_token, activo, created_at")
+      .select("id, nombre, email, rol, google_calendar_token, foto_url, activo, created_at")
       .eq("id", user.id)
       .single();
 

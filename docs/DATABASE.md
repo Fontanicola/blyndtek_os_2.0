@@ -126,8 +126,48 @@
 | valor_total | numeric | No especificado |  |
 | notas_arquitectura | text | No especificado |  |
 | roadmap_token | text | No especificado | único, generado al crear |
+| roadmap_slug | text | Sí | único, generado al crear a partir del cliente |
+| url_sistema | text | Sí | URL pública o staging del sistema del cliente |
+| credenciales_cliente | jsonb | Sí | usuario, contraseña y notas; se revelan solo con PIN |
+| roadmap_pin | text | Sí | PIN de acceso de 4-6 dígitos para credenciales del roadmap |
 | roadmap_publico_activo | bool | No especificado |  |
 | created_at | timestamptz | No especificado |  |
+
+## Tabla: productos
+
+**PK:** `id`
+
+**FKs:** ninguna
+
+**RLS esperada:** acceso para `admin` sí; acceso para `miembro` no.
+
+| Campo | Tipo | Nullable | Notas |
+| --- | --- | --- | --- |
+| id | uuid | No | PK |
+| nombre | text | No especificado | nombre visible del producto SaaS |
+| slug | text | No especificado | identificador estable y único |
+| descripcion | text | Sí | resumen comercial/operativo |
+| precio_mensual_default | numeric | Sí | precio base sugerido |
+| color | text | No especificado | token visual (`signal|success|warning|danger|graphite`) |
+| created_at | timestamptz | No especificado |  |
+
+## Tabla: producto_planes
+
+**PK:** `id`
+
+**FKs:** `producto_id` → `productos.id`
+
+**RLS esperada:** acceso para `admin` sí; acceso para `miembro` no.
+
+| Campo | Tipo | Nullable | Notas |
+| --- | --- | --- | --- |
+| id | uuid | No | PK |
+| producto_id | uuid | No | FK → `productos` |
+| nombre | text | No | nombre visible del plan |
+| precio_mensual | numeric | No | precio de referencia del plan |
+| descripcion | text | Sí | descripción comercial u operativa |
+| orden | int | No | para ordenar planes dentro del producto |
+| created_at | timestamptz | No |  |
 
 ## Tabla: features
 
@@ -148,6 +188,26 @@
 | responsable_id | uuid | No especificado | FK → `usuarios` |
 | orden | int | No especificado | para ordenar dentro de la fase |
 | created_at | timestamptz | No especificado |  |
+
+## Tabla: producto_features
+
+**PK:** `id`
+
+**FKs:** `producto_id` → `productos.id`; `solicitado_por_cliente_id` → `clientes.id`
+
+**RLS esperada:** acceso para `admin` sí; acceso para `miembro` no.
+
+| Campo | Tipo | Nullable | Notas |
+| --- | --- | --- | --- |
+| id | uuid | No | PK |
+| producto_id | uuid | No | FK → `productos` |
+| titulo | text | No |  |
+| descripcion | text | Sí |  |
+| estado | enum (`idea|planificado|en_desarrollo|lanzado`) | No |  |
+| prioridad | enum (`alta|media|baja`) | No |  |
+| solicitado_por_cliente_id | uuid | Sí | FK → `clientes` |
+| orden | int | No | para ordenar dentro de la columna |
+| created_at | timestamptz | No |  |
 
 ## Tabla: cuentas_servicios
 
@@ -246,7 +306,7 @@
 | --- | --- | --- | --- |
 | id | uuid | No | PK |
 | concepto | text | No especificado |  |
-| categoria | enum (`dominios|hosting_infraestructura|herramientas_software|marketing_ads|impuestos_contable|sueldos_honorarios|otro`) | No especificado |  |
+| categoria | enum (`dominios|hosting_infraestructura|herramientas_software|marketing_ads|impuestos_contable|sueldos_honorarios|comisiones|otro`) | No especificado |  |
 | monto | numeric (USD) | No especificado |  |
 | fecha | date | No especificado |  |
 | recurrente | bool | No especificado |  |
@@ -254,6 +314,7 @@
 | pagado | bool | No especificado | si el egreso ya fue abonado |
 | fecha_pago | date | No especificado | fecha en que se pagó |
 | proyecto_id | uuid | No especificado | imputación opcional a proyecto |
+| comision_id | uuid | Sí | FK → `comisiones` para egresos generados al pagar comisiones |
 | notas | text | No especificado |  |
 | created_at | timestamptz | No especificado |  |
 
@@ -261,7 +322,7 @@
 
 **PK:** `id`
 
-**FKs:** `cliente_id` → `clientes.id`; `proyecto_id` → `proyectos.id`; `cotizacion_id` → `cotizaciones.id`
+**FKs:** `cliente_id` → `clientes.id`; `proyecto_id` → `proyectos.id`; `cotizacion_id` → `cotizaciones.id`; `producto_id` → `productos.id`; `plan_id` → `producto_planes.id`
 
 **RLS esperada:** acceso para `admin` sí; acceso para `miembro` no.
 
@@ -270,7 +331,9 @@
 | id | uuid | No | PK |
 | cliente_id | uuid | No especificado | FK → `clientes` |
 | proyecto_id | uuid | Sí | FK → `proyectos` (nullable) |
-| cotizacion_id | uuid | No especificado | FK → `cotizaciones` |
+| cotizacion_id | uuid | Sí | FK → `cotizaciones` (nullable) |
+| producto_id | uuid | Sí | FK → `productos` (suscripción SaaS opcional) |
+| plan_id | uuid | Sí | FK → `producto_planes` (nullable) |
 | tipo | enum (`mantenimiento|brick`) | No especificado |  |
 | monto_mensual | numeric | No especificado |  |
 | ciclo | enum (`mensual|anual`) | No especificado |  |
@@ -295,6 +358,218 @@
 | caja_inicial | numeric | No especificado | editable, punto de partida del runway |
 | updated_at | timestamptz | No especificado |  |
 
+## Tabla: carpetas
+
+**PK:** `id`
+
+**FKs:** `carpeta_padre_id` → `carpetas.id`; `cliente_id` → `clientes.id`; `proyecto_id` → `proyectos.id`
+
+**RLS esperada:** acceso para `admin` sí; acceso para `miembro` no.
+
+| Campo | Tipo | Nullable | Notas |
+| --- | --- | --- | --- |
+| id | uuid | No | PK |
+| nombre | text | No especificado | nombre visible de la carpeta |
+| seccion | enum (`clientes|proyectos|comercial|finanzas|general`) | No especificado | sección funcional |
+| carpeta_padre_id | uuid | Sí | carpeta padre dentro de la misma sección |
+| cliente_id | uuid | Sí | carpeta raíz automática de cliente |
+| proyecto_id | uuid | Sí | carpeta raíz automática de proyecto |
+| orden | int | No especificado | orden visual dentro de la carpeta/sección |
+| es_automatica | bool | No especificado | true si la creó el sistema |
+| creado_por | uuid | Sí | usuario que la creó manualmente |
+| created_at | timestamptz | No especificado |  |
+
+## Tabla: archivos
+
+**PK:** `id`
+
+**FKs:** `carpeta_id` → `carpetas.id`
+
+**RLS esperada:** acceso para `admin` sí; acceso para `miembro` no.
+
+| Campo | Tipo | Nullable | Notas |
+| --- | --- | --- | --- |
+| id | uuid | No | PK |
+| nombre | text | No especificado | nombre legible original |
+| carpeta_id | uuid | Sí | carpeta contenedora |
+| orden | int | No especificado | orden visual dentro de la carpeta |
+| storage_path | text | No especificado | path real en `archivos-blyndtek` |
+| tipo_mime | text | Sí | MIME detectado al subir |
+| tamanio_bytes | bigint | Sí | tamaño en bytes |
+| en_papelera | bool | No especificado | soft delete |
+| eliminado_at | timestamptz | Sí | fecha de envío a papelera |
+| subido_por | uuid | Sí | usuario que subió el archivo |
+| created_at | timestamptz | No especificado |  |
+
+## Tabla: cajas
+
+**PK:** `id`
+
+**FKs:** ninguna
+
+**RLS esperada:** acceso para `admin` sí; acceso para `miembro` no.
+
+| Campo | Tipo | Nullable | Notas |
+| --- | --- | --- | --- |
+| id | uuid | No | PK |
+| nombre | text | No especificado | nombre visible de la caja |
+| slug | text | No especificado | identificador estable usado en `cobros.cuenta_medio` y `egresos.cuenta_medio` |
+| color | text | No especificado | token visual (`success|signal|warning|danger|graphite`) |
+| activa | bool | No especificado | si aparece en selects y tesorería |
+| orden | int | No especificado | orden visual |
+| created_at | timestamptz | No especificado |  |
+
+## Tabla: tarjetas
+
+**PK:** `id`
+
+**FKs:** ninguna
+
+**RLS esperada:** acceso para `admin` sí; acceso para `miembro` no.
+
+| Campo | Tipo | Nullable | Notas |
+| --- | --- | --- | --- |
+| id | uuid | No | PK |
+| alias | text | No especificado | nombre corto para identificar rápido la tarjeta |
+| banco | text | Sí | banco/emisor |
+| titular | text | Sí | titular de referencia |
+| ultimos_4 | text | No especificado | últimos 4 dígitos; nunca se guarda PAN completo |
+| vencimiento | text | Sí | formato `MM/AA` |
+| tipo | enum (`debito|credito|prepaga`) | No especificado |  |
+| uso_habitual | text | Sí | descripción libre de uso frecuente |
+| notas | text | Sí | observaciones de referencia |
+| created_at | timestamptz | No especificado |  |
+
+## Tabla: sesiones_tiempo
+
+**PK:** `id`
+
+**FKs:** `fase_id -> fases_proyecto.id`, `usuario_id -> usuarios.id`
+
+**RLS esperada:** acceso para `admin` sí; acceso para `miembro` sí sobre sus propias sesiones y lectura agregada de tiempos por proyecto/fase según la UI.
+
+| Campo | Tipo | Nullable | Notas |
+| --- | --- | --- | --- |
+| id | uuid | No | PK |
+| fase_id | uuid | No | fase a la que pertenece la sesión |
+| usuario_id | uuid | No | usuario que inició el cronómetro |
+| inicio | timestamptz | No especificado | instante de arranque |
+| fin | timestamptz | Sí | instante de pausa/cierre |
+| duracion_segundos | int | Sí | duración calculada al cerrar |
+| nota | text | Sí | nota opcional al pausar |
+| created_at | timestamptz | No especificado |  |
+
+## Tabla: checklist_qa
+
+**PK:** `id`
+
+**FKs:** `fase_id -> fases_proyecto.id`, `completado_por -> usuarios.id`
+
+**RLS esperada:** acceso para `admin` sí; acceso para `miembro` sí sobre lectura y edición de checklist de fases.
+
+| Campo | Tipo | Nullable | Notas |
+| --- | --- | --- | --- |
+| id | uuid | No | PK |
+| fase_id | uuid | No | fase a la que pertenece la checklist |
+| item | text | No | ítem de verificación manual |
+| completado | bool | No | estado del ítem |
+| completado_por | uuid | Sí | usuario que lo marcó |
+| completado_at | timestamptz | Sí | fecha de completado |
+| orden | int | No | orden visual dentro de la checklist |
+| generado_por_ia | bool | No | true si lo generó Claude |
+| created_at | timestamptz | No |  |
+
+## Tabla: carpetas_notas
+
+**PK:** `id`
+
+**FKs:** `created_by` → `usuarios.id`
+
+**RLS esperada:** acceso para `admin` sí; acceso para `miembro` sí sobre sus carpetas.
+
+| Campo | Tipo | Nullable | Notas |
+| --- | --- | --- | --- |
+| id | uuid | No | PK |
+| nombre | text | No |  |
+| orden | int | No | orden visual dentro de la lista |
+| creado_por | uuid | Sí | FK → `usuarios` |
+| created_at | timestamptz | No |  |
+
+## Tabla: notas
+
+**PK:** `id`
+
+**FKs:** `carpeta_id` → `carpetas_notas.id`; `cliente_id` → `clientes.id`; `proyecto_id` → `proyectos.id`; `lead_id` → `leads.id`; `creado_por` → `usuarios.id`
+
+**RLS esperada:** acceso para `admin` sí; acceso para `miembro` sí sobre sus notas.
+
+| Campo | Tipo | Nullable | Notas |
+| --- | --- | --- | --- |
+| id | uuid | No | PK |
+| titulo | text | No |  |
+| contenido | jsonb | No | JSON estructurado de TipTap |
+| carpeta_id | uuid | Sí | FK → `carpetas_notas` |
+| fijada | bool | No | nota fijada |
+| en_papelera | bool | No | soft delete |
+| eliminada_at | timestamptz | Sí | fecha de borrado lógico |
+| cliente_id | uuid | Sí | vínculo opcional |
+| proyecto_id | uuid | Sí | vínculo opcional |
+| lead_id | uuid | Sí | vínculo opcional |
+| tags | text[] | Sí | etiquetas libres de la nota |
+| creado_por | uuid | Sí | FK → `usuarios` |
+| updated_at | timestamptz | No |  |
+| created_at | timestamptz | No |  |
+
+## Tabla: notas_etiquetas
+
+**PK:** `id`
+
+**FKs:** ninguna
+
+**RLS esperada:** acceso para `admin` sí; acceso para `miembro` sí sobre lectura y creación básica.
+
+| Campo | Tipo | Nullable | Notas |
+| --- | --- | --- | --- |
+| id | uuid | No | PK |
+| nombre | text | No | nombre visible de la etiqueta |
+| color | text | No | tono reutilizable de etiqueta (`default|amarillo|rosa|celeste|verde|violeta`) |
+| created_at | timestamptz | No |  |
+
+## Tabla: wiki_categorias
+
+**PK:** `id`
+
+**FKs:** `creado_por` → `usuarios.id`
+
+**RLS esperada:** acceso para `admin` sí; acceso para `miembro` sí.
+
+| Campo | Tipo | Nullable | Notas |
+| --- | --- | --- | --- |
+| id | uuid | No | PK |
+| nombre | text | No |  |
+| orden | int | No | orden visual dentro de la lista |
+| creado_por | uuid | Sí | FK → `usuarios` |
+| created_at | timestamptz | No |  |
+
+## Tabla: wiki_articulos
+
+**PK:** `id`
+
+**FKs:** `categoria_id` → `wiki_categorias.id`; `creado_por` → `usuarios.id`
+
+**RLS esperada:** acceso para `admin` sí; acceso para `miembro` sí.
+
+| Campo | Tipo | Nullable | Notas |
+| --- | --- | --- | --- |
+| id | uuid | No | PK |
+| titulo | text | No |  |
+| contenido | jsonb | No | JSON estructurado de TipTap |
+| categoria_id | uuid | Sí | FK → `wiki_categorias` |
+| orden | int | No | orden visual dentro de la categoría |
+| creado_por | uuid | Sí | FK → `usuarios` |
+| updated_at | timestamptz | No |  |
+| created_at | timestamptz | No |  |
+
 ## Tabla: usuarios
 
 **PK:** `id`
@@ -309,6 +584,7 @@
 | nombre | text | No especificado |  |
 | email | text | No especificado |  |
 | rol | enum (`admin|miembro`) | No especificado |  |
+| foto_url | text | Sí | URL proxy de la foto de perfil |
 | google_calendar_token | text | No especificado | OAuth, encriptado |
 | activo | bool | No especificado |  |
 | created_at | timestamptz | No especificado |  |
@@ -325,6 +601,10 @@
 - `proyectos.cliente_id` → `clientes.id`
 - `proyectos.responsable_id` → `usuarios.id`
 - `proyectos.devs_asignados` → `usuarios.id` (array FK)
+- `productos` no tiene dependencias salientes
+- `producto_planes.producto_id` → `productos.id`
+- `producto_features.producto_id` → `productos.id`
+- `producto_features.solicitado_por_cliente_id` → `clientes.id`
 - `features.proyecto_id` → `proyectos.id`
 - `features.responsable_id` → `usuarios.id`
 - `cuentas_servicios.proyecto_id` → `proyectos.id`
@@ -335,9 +615,21 @@
 - `cobros.proyecto_id` → `proyectos.id`
 - `cobros.suscripcion_id` → `suscripciones.id`
 - `cobros.cotizacion_id` → `cotizaciones.id`
+- `cobros.cuenta_medio` → `cajas.slug` por convención de datos
 - `suscripciones.cliente_id` → `clientes.id`
 - `suscripciones.proyecto_id` → `proyectos.id`
 - `suscripciones.cotizacion_id` → `cotizaciones.id`
+- `suscripciones.producto_id` → `productos.id`
+- `suscripciones.plan_id` → `producto_planes.id`
+- `egresos.comision_id` → `comisiones.id`
+- `wiki_categorias.creado_por` → `usuarios.id`
+- `wiki_articulos.categoria_id` → `wiki_categorias.id`
+- `wiki_articulos.creado_por` → `usuarios.id`
+- `carpetas.carpeta_padre_id` → `carpetas.id`
+- `carpetas.cliente_id` → `clientes.id`
+- `carpetas.proyecto_id` → `proyectos.id`
+- `archivos.carpeta_id` → `carpetas.id`
+- `egresos.cuenta_medio` → `cajas.slug` por convención de datos
 
 ### Orden de creación de tablas
 
@@ -347,14 +639,48 @@ Orden sugerido respetando dependencias de FK:
 2. `leads`
 3. `clientes`
 4. `cotizaciones`
-5. `proyectos`
-6. `features`
-7. `cuentas_servicios`
-8. `tareas`
-9. `eventos`
-10. `suscripciones`
-11. `cobros`
-12. `egresos`
-13. `config_finanzas`
+5. `productos`
+6. `producto_planes`
+7. `proyectos`
+8. `features`
+9. `producto_features`
+10. `cuentas_servicios`
+11. `tareas`
+12. `eventos`
+13. `suscripciones`
+14. `cobros`
+15. `egresos`
+16. `config_finanzas`
+17. `cajas`
+18. `wiki_categorias`
+19. `wiki_articulos`
+20. `carpetas`
+21. `archivos`
+22. `tarjetas`
 
 Nota: `usuarios` debe existir antes que `leads`, `proyectos`, `features`, `tareas` y `eventos`. `suscripciones` y `cobros` tienen una referencia circular potencial que hay que resolver con FK nullable o deferrable.
+
+### Columnas nuevas registradas
+
+- `proyectos.github_repo` texto nullable con formato `owner/repo`.
+- `fases_proyecto.ai_dev_estado` texto enumerado para el estado de AI Dev.
+- `fases_proyecto.ai_dev_iniciado_at` timestamptz nullable.
+- `fases_proyecto.ai_dev_error` texto nullable.
+- `fases_proyecto.pr_url` texto nullable.
+- `fases_proyecto.pr_numero` integer nullable.
+- `fases_proyecto.sql_pendiente` texto nullable.
+- `fases_proyecto.sql_ejecutado` boolean.
+- `sesiones_tiempo.usuario_id` ahora admite `null` para registros automáticos de IA.
+- `sesiones_tiempo.es_ia` boolean para distinguir tiempo generado por AI Dev.
+- `tareas.es_ia` boolean para marcar tareas generadas o movidas por AI Dev.
+- `usuarios.supervisor_id` uuid nullable para dejar preparada la jerarquía comercial futura.
+- `leads.vendedor_id` uuid nullable para scoping de leads por comercial.
+- `clientes.vendedor_id` uuid nullable para scoping de clientes por comercial.
+- `carpetas_compartidas` vincula carpetas con usuarios comerciales o internos autorizados para heredar acceso.
+- `comisiones` registra las comisiones generadas al aceptar cotizaciones, con base, porcentaje, monto y estado de pago.
+- `config_comisiones` guarda el piso, tiers y bono vigentes para calcular comisiones sin hardcodear valores.
+- `egresos.comision_id` uuid nullable para trazar el egreso generado al pagar una comisión y mantener el impacto contable y de runway en caja real.
+
+### Tabla nueva
+
+- `ai_dev_ejecuciones`: registra cada corrida de AI Dev por fase con modelos usados, estado, PR, tokens, costo estimado, usuario que inició y timestamps de inicio/fin.

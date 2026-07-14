@@ -27,7 +27,7 @@ function buildInitialForm(
     return {
       titulo: tarea.titulo,
       proyecto_id: tarea.proyecto_id ?? "",
-      responsable_id: tarea.responsable_id,
+      responsable_id: tarea.responsable_id ?? "",
       prioridad: tarea.prioridad,
       fecha_limite: tarea.fecha_limite ?? "",
       estado: tarea.estado,

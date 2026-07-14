@@ -1,12 +1,14 @@
 "use client";
 
-import { Badge, Card } from "@/components/ui";
+import { Badge, Card, UserAvatar } from "@/components/ui";
 import { cn } from "@/lib/cn";
+import type { Usuario } from "@/types/auth";
 import type { Feature } from "@/types/features";
 
 type FeatureCardProps = {
   feature: Feature;
   faseLabel?: string | null;
+  responsableUsuario?: Pick<Usuario, "nombre" | "foto_url"> | null;
   onClick?: () => void;
   draggable?: boolean;
   isDragging?: boolean;
@@ -14,17 +16,10 @@ type FeatureCardProps = {
   onDragEnd?: () => void;
 };
 
-function getInitials(value: string | null) {
-  if (!value) {
-    return "--";
-  }
-
-  return value.slice(0, 2).toUpperCase();
-}
-
 export function FeatureCard({
   feature,
   faseLabel,
+  responsableUsuario,
   onClick,
   draggable = false,
   isDragging = false,
@@ -69,9 +64,13 @@ export function FeatureCard({
             </Badge>
           )}
 
-          <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-signal-light text-[10px] font-label text-signal">
-            {getInitials(feature.responsable_id)}
-          </div>
+          <UserAvatar
+            name={responsableUsuario?.nombre ?? feature.responsable_id}
+            fotoUrl={responsableUsuario?.foto_url ?? null}
+            size="xs"
+            className="shrink-0"
+            textClassName="text-[9px]"
+          />
         </div>
       </div>
     </Card>

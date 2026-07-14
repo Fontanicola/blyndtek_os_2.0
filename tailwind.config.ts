@@ -25,6 +25,13 @@ const config: Config = {
         "success-light": "#F0FFF4",
         warning: "#D97706",
         "warning-light": "#FFFBEB",
+        postit: {
+          amarillo: "#FFF6D8",
+          rosa: "#FFE3EC",
+          celeste: "#E3F0FF",
+          verde: "#E3FFEE",
+          violeta: "#F1E3FF"
+        },
         line: "#D8DBE3",
         "line-soft": "#EAECF0",
         "danger-hover": "#B91C1C"

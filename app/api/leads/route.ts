@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getCurrentUser } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { CanalLead, CreateLeadInput, EtapaLead, Lead, NivelConfianza } from "@/types/leads";
 
@@ -22,6 +23,12 @@ function buildLeadFilters(searchParams: URLSearchParams) {
 
 export async function GET(request: NextRequest) {
   try {
+    const currentUser = await getCurrentUser();
+
+    if (!currentUser) {
+      return NextResponse.json({ error: "No autenticado." }, { status: 401 });
+    }
+
     const supabase = createAdminClient();
     const { canal, etapa, responsableId, rubro, ubicacion, nivelConfianza } = buildLeadFilters(
       request.nextUrl.searchParams
@@ -32,6 +39,12 @@ export async function GET(request: NextRequest) {
       .select("*")
       .eq("canal", canal)
       .order("updated_at", { ascending: false });
+
+    if (currentUser.rol === "comercial") {
+      query = query.eq("vendedor_id", currentUser.id);
+    } else if (currentUser.rol !== "admin") {
+      return NextResponse.json({ error: "No autorizado." }, { status: 403 });
+    }
 
     if (etapa) {
       query = query.eq("etapa", etapa);
@@ -70,6 +83,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = (await request.json()) as CreateLeadInput;
     const canal = body.canal;
+    const currentUser = await getCurrentUser();
 
     if (!body.empresa?.trim()) {
       return NextResponse.json({ error: "Empresa is required" }, { status: 400 });
@@ -79,10 +93,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid canal" }, { status: 400 });
     }
 
+    if (!currentUser) {
+      return NextResponse.json({ error: "No autenticado." }, { status: 401 });
+    }
+
+    if (currentUser.rol !== "admin" && currentUser.rol !== "comercial") {
+      return NextResponse.json({ error: "No autorizado." }, { status: 403 });
+    }
+
     const supabase = createAdminClient();
     const payload: CreateLeadInput = {
       ...body,
-      canal
+      canal,
+      vendedor_id: currentUser.rol === "comercial" ? currentUser.id : body.vendedor_id ?? null
     };
 
     const { data, error } = await supabase

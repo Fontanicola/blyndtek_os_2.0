@@ -102,6 +102,7 @@ export type ResultadoCascada = {
   cliente_id: string;
   proyecto_id: string;
   roadmap_token: string;
+  roadmap_slug: string;
   cobros_creados: number;
   suscripcion_id: string | null;
 };

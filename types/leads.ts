@@ -35,9 +35,12 @@ export type Lead = {
   presupuesto_estimado: number | null;
   motivo_descarte: string | null;
   notas: string | null;
+  vendedor_id: string | null;
   created_at: string;
   updated_at: string;
 };
 
-export type CreateLeadInput = Omit<Lead, "id" | "created_at" | "updated_at">;
+export type CreateLeadInput = Omit<Lead, "id" | "created_at" | "updated_at" | "vendedor_id"> & {
+  vendedor_id?: string | null;
+};
 export type UpdateLeadInput = Partial<CreateLeadInput>;

@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button, EntitySelect, Input, Modal } from "@/components/ui";
 import { getProyectoDisplayLabel } from "@/lib/proyectos/labels";
 import type { Cliente } from "@/types/clientes";
 import type { Proyecto } from "@/types/proyectos";
 import type { Cotizacion } from "@/types/cotizaciones";
 import type { CreateSuscripcionInput, EstadoSuscripcion, Suscripcion } from "@/types/suscripciones";
+import type { Producto } from "@/types/productos";
 
 type SuscripcionModalProps = {
   isOpen: boolean;
@@ -30,17 +31,26 @@ export function SuscripcionModal({
   const [clienteId, setClienteId] = useState(suscripcion?.cliente_id ?? "");
   const [proyectoId, setProyectoId] = useState(suscripcion?.proyecto_id ?? "");
   const [cotizacionId, setCotizacionId] = useState(suscripcion?.cotizacion_id ?? "");
+  const [productoId, setProductoId] = useState(suscripcion?.producto_id ?? "");
   const [tipo, setTipo] = useState<CreateSuscripcionInput["tipo"]>(suscripcion?.tipo ?? "mantenimiento");
   const [montoMensual, setMontoMensual] = useState(String(suscripcion?.monto_mensual ?? ""));
   const [ciclo, setCiclo] = useState<CreateSuscripcionInput["ciclo"]>(suscripcion?.ciclo ?? "mensual");
   const [estado, setEstado] = useState<EstadoSuscripcion>(suscripcion?.estado ?? "pendiente");
   const [fechaInicio, setFechaInicio] = useState(suscripcion?.fecha_inicio ?? "");
   const [proximaCobro, setProximaCobro] = useState(suscripcion?.proxima_cobro ?? "");
+  const [productos, setProductos] = useState<Array<Pick<Producto, "id" | "nombre" | "slug" | "descripcion">>>([]);
+  const [loadingProductos, setLoadingProductos] = useState(false);
+  const productoIdRef = useRef(productoId);
+
+  useEffect(() => {
+    productoIdRef.current = productoId;
+  }, [productoId]);
 
   useEffect(() => {
     setClienteId(suscripcion?.cliente_id ?? "");
     setProyectoId(suscripcion?.proyecto_id ?? "");
     setCotizacionId(suscripcion?.cotizacion_id ?? "");
+    setProductoId(suscripcion?.producto_id ?? "");
     setTipo(suscripcion?.tipo ?? "mantenimiento");
     setMontoMensual(String(suscripcion?.monto_mensual ?? ""));
     setCiclo(suscripcion?.ciclo ?? "mensual");
@@ -48,6 +58,44 @@ export function SuscripcionModal({
     setFechaInicio(suscripcion?.fecha_inicio ?? "");
     setProximaCobro(suscripcion?.proxima_cobro ?? "");
   }, [isOpen, suscripcion]);
+
+  useEffect(() => {
+    if (!isOpen || tipo !== "brick") {
+      return;
+    }
+
+    let cancelled = false;
+
+    async function loadProductos() {
+      setLoadingProductos(true);
+
+      try {
+        const response = await fetch("/api/productos");
+        const payload = (await response.json()) as { data?: Array<Pick<Producto, "id" | "nombre" | "slug" | "descripcion">>; error?: string };
+
+        if (!response.ok || !payload.data) {
+          throw new Error(payload.error ?? "No se pudieron cargar los productos.");
+        }
+
+        if (!cancelled) {
+          setProductos(payload.data);
+          if (!productoIdRef.current && payload.data[0]) {
+            setProductoId(payload.data[0].id);
+          }
+        }
+      } finally {
+        if (!cancelled) {
+          setLoadingProductos(false);
+        }
+      }
+    }
+
+    void loadProductos();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen, tipo]);
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={suscripcion ? "Editar suscripción" : "Nueva suscripción"} size="md">
@@ -67,8 +115,9 @@ export function SuscripcionModal({
         <EntitySelect
           label="Cotización"
           value={cotizacionId || null}
-          required
-          placeholder="Seleccionar cotización"
+          required={tipo !== "brick"}
+          allowEmpty={tipo === "brick"}
+          placeholder={tipo === "brick" ? "Sin cotización" : "Seleccionar cotización"}
           options={cotizaciones.map((cotizacion) => ({
             id: cotizacion.id,
             label: cotizacion.empresa,
@@ -96,7 +145,13 @@ export function SuscripcionModal({
             <label className="text-sm font-label text-carbon">Tipo</label>
             <select
               value={tipo}
-              onChange={(event) => setTipo(event.target.value as CreateSuscripcionInput["tipo"])}
+              onChange={(event) => {
+                const nextTipo = event.target.value as CreateSuscripcionInput["tipo"];
+                setTipo(nextTipo);
+                if (nextTipo !== "brick") {
+                  setProductoId("");
+                }
+              }}
               className="w-full rounded-component border border-line bg-white px-3 py-2 text-sm text-carbon focus:border-signal focus:outline-none focus:ring-2 focus:ring-signal/20"
             >
               <option value="mantenimiento">Mantenimiento</option>
@@ -115,6 +170,23 @@ export function SuscripcionModal({
             </select>
           </div>
         </div>
+
+        {tipo === "brick" ? (
+          <EntitySelect
+            label="Producto"
+            value={productoId || null}
+            allowEmpty
+            loading={loadingProductos}
+            placeholder="Sin producto"
+            options={productos.map((producto) => ({
+              id: producto.id,
+              label: producto.nombre,
+              sublabel: producto.descripcion ?? producto.slug
+            }))}
+            onChange={(id) => setProductoId(id ?? "")}
+            helperText="Asociá la suscripción al producto SaaS correspondiente."
+          />
+        ) : null}
         <div className="grid gap-4 md:grid-cols-2">
           <Input label="Monto mensual" type="number" value={montoMensual} onChange={(event) => setMontoMensual(event.target.value)} />
           <div className="space-y-1">
@@ -141,14 +213,17 @@ export function SuscripcionModal({
           </Button>
           <Button
             onClick={() => {
-              if (!clienteId.trim() || !cotizacionId.trim() || !montoMensual.trim()) {
+              const requiresCotizacion = tipo !== "brick";
+
+              if (!clienteId.trim() || !montoMensual.trim() || (requiresCotizacion && !cotizacionId.trim())) {
                 return;
               }
 
               void onSave({
                 cliente_id: clienteId.trim(),
                 proyecto_id: proyectoId.trim() || null,
-                cotizacion_id: cotizacionId.trim(),
+                cotizacion_id: cotizacionId.trim() || null,
+                producto_id: tipo === "brick" ? productoId.trim() || null : null,
                 tipo,
                 monto_mensual: Number(montoMensual),
                 ciclo,

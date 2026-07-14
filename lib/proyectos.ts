@@ -27,8 +27,8 @@ export function groupFeaturesByPhase(features: Feature[]) {
   const grouped = new Map<string, Feature[]>();
 
   for (const feature of features) {
-    const current = grouped.get(feature.fase) ?? [];
-    grouped.set(feature.fase, [...current, feature]);
+    const current = grouped.get(feature.fase_id) ?? [];
+    grouped.set(feature.fase_id, [...current, feature]);
   }
 
   return Array.from(grouped.entries()).map(([fase, items]) => ({

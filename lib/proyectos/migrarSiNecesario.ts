@@ -6,9 +6,9 @@ function uniquePhaseIds(features: Feature[]) {
   const ordered: string[] = [];
 
   for (const feature of features) {
-    if (!seen.has(feature.fase)) {
-      seen.add(feature.fase);
-      ordered.push(feature.fase);
+    if (!seen.has(feature.fase_id)) {
+      seen.add(feature.fase_id);
+      ordered.push(feature.fase_id);
     }
   }
 
@@ -25,6 +25,7 @@ export function migrarSiNecesario(fases: FaseProyecto[], features: Feature[]): F
     proyecto_id: "",
     nombre: faseId,
     estado: "pendiente" as const,
+    prioridad: "media" as const,
     orden: index + 1,
     created_at: new Date(0).toISOString()
   }));

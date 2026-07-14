@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
-import type { CreateTareaInput, EstadoTarea, PrioridadTarea, Tarea } from "@/types/tareas";
+import { crearTareaConAdminClient } from "@/lib/tareas/crearTarea";
+import type { EstadoTarea, PrioridadTarea, Tarea } from "@/types/tareas";
 
 type TareasResponse = {
   data: Tarea[];
@@ -32,7 +33,30 @@ export async function GET(request: NextRequest) {
     const prioridad = parsePrioridad(searchParams.get("prioridad"));
     const estado = parseEstado(searchParams.get("estado"));
 
-    let query = supabase.from("tareas").select("*").order("fecha_limite", { ascending: true, nullsFirst: false });
+    let query = supabase
+      .from("tareas")
+      .select(
+        `
+          id,
+          titulo,
+          proyecto_id,
+          feature_id,
+          responsable_id,
+          prioridad,
+          fecha_limite,
+          estado,
+          notas,
+          es_ia,
+          created_at,
+          features (
+            fase_id,
+            fases_proyecto (
+              nombre
+            )
+          )
+        `
+      )
+      .order("fecha_limite", { ascending: true, nullsFirst: false });
 
     if (proyectoId) {
       query = query.eq("proyecto_id", proyectoId);
@@ -56,7 +80,24 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ data: (data ?? []) as Tarea[] } satisfies TareasResponse);
+    const tareas = (data ?? []).map((row) => {
+      const featureRelation = (row as {
+        features?: {
+          fase_id?: string | null;
+          fases_proyecto?: { nombre?: string | null } | null;
+        } | null;
+      }).features;
+
+      const next = { ...(row as Record<string, unknown>) };
+      delete next.features;
+
+      return {
+        ...(next as Tarea),
+        fase_nombre: featureRelation?.fases_proyecto?.nombre ?? null
+      };
+    });
+
+    return NextResponse.json({ data: tareas } satisfies TareasResponse);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unexpected error";
     return NextResponse.json({ error: message }, { status: 500 });
@@ -66,38 +107,17 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const currentUser = await getCurrentUser();
-    const body = (await request.json()) as CreateTareaInput;
-
-    if (!body.titulo?.trim()) {
-      return NextResponse.json({ error: "titulo is required" }, { status: 400 });
-    }
 
     const supabase = createAdminClient();
-    const responsableId = body.responsable_id?.trim() || currentUser?.id;
+    const body = (await request.json()) as Parameters<typeof crearTareaConAdminClient>[1];
+    const tarea = await crearTareaConAdminClient(supabase, body, { defaultResponsableId: currentUser?.id });
 
-    if (!responsableId) {
-      return NextResponse.json({ error: "responsable_id is required" }, { status: 400 });
-    }
-
-    const payload = {
-      titulo: body.titulo.trim(),
-      proyecto_id: body.proyecto_id?.trim() || null,
-      feature_id: body.feature_id?.trim() || null,
-      responsable_id: responsableId,
-      prioridad: body.prioridad ?? "media",
-      fecha_limite: body.fecha_limite ?? null,
-      estado: body.estado ?? "nueva",
-      notas: body.notas ?? null
-    };
-
-    const { data, error } = await supabase.from("tareas").insert(payload).select("*").single();
-
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-
-    return NextResponse.json({ data: data as Tarea }, { status: 201 });
+    return NextResponse.json({ data: tarea }, { status: 201 });
   } catch (error) {
+    if (error instanceof Error && error.message.endsWith("is required")) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+
     const message = error instanceof Error ? error.message : "Unexpected error";
     return NextResponse.json({ error: message }, { status: 500 });
   }

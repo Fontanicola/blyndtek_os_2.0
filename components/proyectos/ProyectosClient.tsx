@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button, Card, EntityMultiSelect, EntitySelect, Input, Modal } from "@/components/ui";
+import { cn } from "@/lib/cn";
 import { useFeatures } from "@/lib/hooks/useFeatures";
 import { useProyectos } from "@/lib/hooks/useProyectos";
 import type { Cliente } from "@/types/clientes";
@@ -15,11 +16,11 @@ type ProyectosClientProps = {
   usuario: Usuario | null;
   clientes: Array<Pick<Cliente, "id" | "empresa" | "estado">>;
   cotizaciones: Array<Pick<Cotizacion, "id" | "empresa" | "precio_total">>;
-  usuarios: Array<Pick<Usuario, "id" | "nombre" | "email" | "rol">>;
+  usuarios: Array<Pick<Usuario, "id" | "nombre" | "email" | "rol" | "foto_url">>;
+  initialSelectedProjectId?: string | null;
 };
 
 type ProyectosViewMode = "list" | "detail";
-type EstadoFilter = Proyecto["estado"] | "todos";
 
 function getClienteNombre(clienteId: string, clientes: ProyectosClientProps["clientes"]) {
   return clientes.find((cliente) => cliente.id === clienteId)?.empresa ?? "Cliente";
@@ -34,16 +35,25 @@ function getUserLabel(usuario: ProyectosClientProps["usuarios"][number]) {
   return usuario.nombre;
 }
 
-export function ProyectosClient({ usuario, clientes, cotizaciones, usuarios }: ProyectosClientProps) {
+function getProjectCompactLabel(proyecto: Proyecto, clienteNombre: string) {
+  const first = clienteNombre.trim().charAt(0) || proyecto.nombre.trim().charAt(0) || "P";
+  const second = proyecto.nombre.trim().charAt(0) || "";
+  return `${first}${second}`.toUpperCase();
+}
+
+export function ProyectosClient({
+  usuario,
+  clientes,
+  cotizaciones,
+  usuarios,
+  initialSelectedProjectId = null
+}: ProyectosClientProps) {
   const isAdmin = usuario?.rol === "admin";
   const { proyectos, loading, error, setProyectos, createProyecto, updateProyecto } = useProyectos();
   const { features, fetchFeatures } = useFeatures();
-  const filtersRef = useRef<HTMLDivElement | null>(null);
-  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
-  const [mobileMode, setMobileMode] = useState<ProyectosViewMode>("list");
-  const [search, setSearch] = useState("");
-  const [estadoFilter, setEstadoFilter] = useState<EstadoFilter>("todos");
-  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(initialSelectedProjectId);
+  const [mobileMode, setMobileMode] = useState<ProyectosViewMode>(initialSelectedProjectId ? "detail" : "list");
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [newProjectOpen, setNewProjectOpen] = useState(false);
   const [projectForm, setProjectForm] = useState<CreateProyectoInput>({
     cotizacion_id: "",
@@ -61,10 +71,20 @@ export function ProyectosClient({ usuario, clientes, cotizaciones, usuarios }: P
   });
 
   useEffect(() => {
-    if (!selectedProjectId && proyectos.length > 0) {
+    if (selectedProjectId) {
+      return;
+    }
+
+    if (initialSelectedProjectId && proyectos.some((proyecto) => proyecto.id === initialSelectedProjectId)) {
+      setSelectedProjectId(initialSelectedProjectId);
+      setMobileMode("detail");
+      return;
+    }
+
+    if (proyectos.length > 0) {
       setSelectedProjectId(proyectos[0]?.id ?? null);
     }
-  }, [proyectos, selectedProjectId]);
+  }, [initialSelectedProjectId, proyectos, selectedProjectId]);
 
   const selectedProject = useMemo(
     () => proyectos.find((proyecto) => proyecto.id === selectedProjectId) ?? null,
@@ -77,31 +97,7 @@ export function ProyectosClient({ usuario, clientes, cotizaciones, usuarios }: P
     }
   }, [fetchFeatures, selectedProject]);
 
-  useEffect(() => {
-    function handlePointerDown(event: MouseEvent) {
-      if (!filtersRef.current) {
-        return;
-      }
-
-      if (!filtersRef.current.contains(event.target as Node)) {
-        setFiltersOpen(false);
-      }
-    }
-
-    document.addEventListener("mousedown", handlePointerDown);
-    return () => document.removeEventListener("mousedown", handlePointerDown);
-  }, []);
-
-  const filteredProjects = useMemo(() => {
-    return proyectos.filter((proyecto) => {
-      const matchesSearch =
-        proyecto.nombre.toLowerCase().includes(search.toLowerCase()) ||
-        getClienteNombre(proyecto.cliente_id, clientes).toLowerCase().includes(search.toLowerCase());
-      const matchesEstado = estadoFilter === "todos" || proyecto.estado === estadoFilter;
-
-      return matchesSearch && matchesEstado;
-    });
-  }, [clientes, estadoFilter, proyectos, search]);
+  const filteredProjects = useMemo(() => proyectos, [proyectos]);
 
   async function handleCreateProyecto() {
     if (!projectForm.nombre.trim() || !projectForm.cliente_id.trim()) {
@@ -129,144 +125,145 @@ export function ProyectosClient({ usuario, clientes, cotizaciones, usuarios }: P
   }
 
   return (
-    <div className="space-y-6">
+    <div className="flex h-full min-h-0 flex-col gap-6">
       {error ? (
         <div className="rounded-card border border-danger bg-danger-light px-4 py-3 text-sm text-danger">
           {error}
         </div>
       ) : null}
 
-      <div className="grid gap-4 md:grid-cols-[320px_minmax(0,1fr)]">
+      <div
+        className={
+          sidebarCollapsed
+            ? "grid flex-1 min-h-0 gap-4 md:grid-cols-[88px_minmax(0,1fr)]"
+            : "grid flex-1 min-h-0 gap-4 md:grid-cols-[320px_minmax(0,1fr)]"
+        }
+      >
         <Card
           padding="lg"
-          className="flex min-h-0 flex-col overflow-visible md:sticky md:top-0 md:h-[calc(100vh-160px)]"
+          className="flex h-full min-h-0 flex-col overflow-hidden md:sticky md:top-0"
         >
-          <div ref={filtersRef} className="relative space-y-3">
-            <div className="flex items-end gap-2">
-              <Input
-                label="Buscar"
-                placeholder="Buscar por nombre o cliente"
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                className="flex-1"
-              />
-
+          <div
+            className={cn(
+              "border-b border-line-soft pb-3",
+              sidebarCollapsed ? "flex justify-center" : "flex items-center justify-end gap-2"
+            )}
+          >
+            {sidebarCollapsed ? (
               <Button
-                variant="secondary"
-                size="md"
-                className="shrink-0 whitespace-nowrap"
-                onClick={() => setFiltersOpen((current) => !current)}
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 px-0 text-graphite"
+                onClick={() => setSidebarCollapsed((current) => !current)}
+                aria-label="Expandir panel"
               >
-                Filtros
+                ▸
               </Button>
-            </div>
-
-            {filtersOpen ? (
-              <div className="absolute left-0 right-0 top-full z-30 mt-2 rounded-card border border-line-soft bg-white p-3 shadow-modal">
-                <div className="space-y-3">
-                  <div>
-                    <p className="text-xs font-label uppercase tracking-[0.16em] text-graphite">Estado</p>
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      {(["todos", "por_empezar", "en_desarrollo", "implementacion", "entregado", "soporte", "pausado"] as const).map(
-                        (estado) => (
-                          <button
-                            key={estado}
-                            type="button"
-                            onClick={() => {
-                              setEstadoFilter(estado);
-                              setFiltersOpen(false);
-                            }}
-                            className={[
-                              "rounded-pill px-3 py-1.5 text-sm font-label transition-colors duration-fast ease-fast",
-                              estadoFilter === estado
-                                ? "bg-signal-light text-signal"
-                                : "bg-paper text-graphite hover:bg-white hover:text-carbon"
-                            ].join(" ")}
-                          >
-                            {estado === "todos" ? "Todos" : estado.replaceAll("_", " ")}
-                          </button>
-                        )
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between gap-3 border-t border-line-soft pt-3">
-                    <p className="text-xs text-graphite">
-                      {estadoFilter === "todos" ? "Sin filtro de estado" : `Estado: ${estadoFilter.replaceAll("_", " ")}`}
-                    </p>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        setEstadoFilter("todos");
-                        setFiltersOpen(false);
-                      }}
-                    >
-                      Limpiar
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            ) : null}
+            ) : (
+              <>
+                <p className="mr-auto text-sm font-label text-carbon">Proyectos</p>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 px-0"
+                  onClick={() => setSidebarCollapsed((current) => !current)}
+                  aria-label="Achicar panel"
+                >
+                  ◂
+                </Button>
+              </>
+            )}
           </div>
 
-          <div className="mt-4 min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">
+          <div className="mt-4 min-h-0 flex-1 overflow-y-auto pr-1">
             {filteredProjects.length > 0 ? (
-              filteredProjects.map((proyecto) => (
-                <ProyectoCard
-                  key={proyecto.id}
-                  proyecto={proyecto}
-                  clienteNombre={getClienteNombre(proyecto.cliente_id, clientes)}
-                  onClick={() => {
-                    setSelectedProjectId(proyecto.id);
-                    setMobileMode("detail");
-                  }}
-                  selected={selectedProjectId === proyecto.id}
-                />
-              ))
+              sidebarCollapsed ? (
+                <div className="space-y-2">
+                  {filteredProjects.map((proyecto) => {
+                    const clienteNombre = getClienteNombre(proyecto.cliente_id, clientes);
+                    const isSelected = selectedProjectId === proyecto.id;
+
+                    return (
+                      <button
+                        key={proyecto.id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedProjectId(proyecto.id);
+                          setMobileMode("detail");
+                        }}
+                        title={`${clienteNombre} · ${proyecto.nombre}`}
+                        className={cn(
+                          "flex h-14 w-full items-center justify-center rounded-component border border-line-soft text-xs font-label transition-colors duration-fast ease-fast",
+                          isSelected ? "bg-signal-light text-signal" : "bg-white text-graphite hover:bg-paper"
+                        )}
+                      >
+                        {getProjectCompactLabel(proyecto, clienteNombre)}
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div>
+                  {filteredProjects.map((proyecto) => (
+                    <ProyectoCard
+                      key={proyecto.id}
+                      proyecto={proyecto}
+                      clienteNombre={getClienteNombre(proyecto.cliente_id, clientes)}
+                      onClick={() => {
+                        setSelectedProjectId(proyecto.id);
+                        setMobileMode("detail");
+                      }}
+                      selected={selectedProjectId === proyecto.id}
+                    />
+                  ))}
+                </div>
+              )
             ) : (
               <Card padding="lg">
-                <p className="text-sm text-graphite">No hay proyectos con esos filtros.</p>
+                <p className="text-sm text-graphite">No hay proyectos.</p>
               </Card>
             )}
           </div>
+
+          <div className={cn("border-t border-line-soft pt-4", sidebarCollapsed ? "px-0" : "p-4")}>
+            <Button
+              className={cn("mx-auto", sidebarCollapsed ? "h-11 w-11 px-0" : "w-full")}
+              onClick={() => setNewProjectOpen(true)}
+            >
+              {sidebarCollapsed ? "+" : "Nuevo proyecto"}
+            </Button>
+          </div>
         </Card>
 
-        <div className={mobileMode === "detail" ? "block" : "hidden md:block"}>
+        <div className={mobileMode === "detail" ? "block h-full min-h-0" : "hidden md:block md:min-h-0"}>
           {selectedProject ? (
-            <>
+            <div className="flex h-full min-h-0 flex-col overflow-hidden">
               <div className="mb-4 flex md:hidden">
                 <Button variant="secondary" size="sm" onClick={() => setMobileMode("list")}>
                   ← Volver
                 </Button>
               </div>
-              <ProyectoFicha
-                proyecto={selectedProject}
-                clienteNombre={getClienteNombre(selectedProject.cliente_id, clientes)}
-                isAdmin={isAdmin}
-                features={features}
-                clientes={clientes}
-                proyectos={proyectos}
-                usuarios={usuarios}
-                onProyectoUpdated={handleProyectoUpdated}
-                onNuevoProyecto={() => setNewProjectOpen(true)}
-                onUpdateProyecto={async (input) => {
-                  const updated = await updateProyecto(selectedProject.id, input);
-                  return updated;
-                }}
-              />
-            </>
-          ) : (
-            <div className="space-y-4">
-              <div className="flex justify-end">
-                <Button size="sm" onClick={() => setNewProjectOpen(true)}>
-                  Nuevo proyecto
-                </Button>
+              <div className="min-h-0 flex-1 overflow-y-auto">
+                <ProyectoFicha
+                  proyecto={selectedProject}
+                  clienteNombre={getClienteNombre(selectedProject.cliente_id, clientes)}
+                  isAdmin={isAdmin}
+                  features={features}
+                  clientes={clientes}
+                  proyectos={proyectos}
+                  usuarios={usuarios}
+                  onProyectoUpdated={handleProyectoUpdated}
+                  onUpdateProyecto={async (input) => {
+                    const updated = await updateProyecto(selectedProject.id, input);
+                    return updated;
+                  }}
+                />
               </div>
-              <Card padding="lg" className="flex min-h-[320px] items-center justify-center">
-                <p className="text-sm text-graphite">Seleccioná un proyecto para ver su ficha</p>
-              </Card>
             </div>
+          ) : (
+            <Card padding="lg" className="flex min-h-[320px] items-center justify-center">
+              <p className="text-sm text-graphite">Seleccioná un proyecto para ver su ficha</p>
+            </Card>
           )}
         </div>
       </div>

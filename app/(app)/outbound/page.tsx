@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { KanbanColumn, LeadFormRapido, LeadModal } from "@/components/outbound";
 import { Badge, Button, FilterPopover, Input } from "@/components/ui";
 import {
@@ -11,6 +11,7 @@ import {
 } from "@/lib/leads";
 import { useLeads } from "@/lib/hooks/useLeads";
 import { SearchIcon } from "@/components/icons";
+import type { Usuario } from "@/types/auth";
 import type { CreateLeadInput, EtapaLead, Lead, UpdateLeadInput } from "@/types/leads";
 
 type FilterState = {
@@ -48,6 +49,34 @@ export default function OutboundPage() {
   const [activeQuickForm, setActiveQuickForm] = useState<EtapaLead | null>(null);
   const [draggedLeadId, setDraggedLeadId] = useState<string | null>(null);
   const [dragOverEtapa, setDragOverEtapa] = useState<EtapaLead | null>(null);
+  const [usuarios, setUsuarios] = useState<Array<Pick<Usuario, "id" | "nombre" | "foto_url">>>([]);
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadUsuarios() {
+      try {
+        const response = await fetch("/api/usuarios");
+        const payload = (await response.json()) as {
+          data?: Array<Pick<Usuario, "id" | "nombre" | "foto_url">>;
+        };
+
+        if (mounted && response.ok && payload.data) {
+          setUsuarios(payload.data);
+        }
+      } catch {
+        if (mounted) {
+          setUsuarios([]);
+        }
+      }
+    }
+
+    void loadUsuarios();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const visibleLeads = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase();
@@ -274,6 +303,7 @@ export default function OutboundPage() {
               etapa={etapa}
               label={ETAPA_LABELS[etapa]}
               leads={visibleLeads.filter((lead) => lead.etapa === etapa)}
+              responsables={usuarios}
               onLeadClick={handleOpenLead}
               onAddLead={(nextEtapa) => {
                 setActiveQuickForm(nextEtapa);

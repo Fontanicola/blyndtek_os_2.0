@@ -22,12 +22,13 @@ function buildFeaturePhases(features: Feature[]): FaseProyecto[] {
   const phases = new Map<string, FaseProyecto>();
 
   for (const feature of features) {
-    if (!phases.has(feature.fase)) {
-      phases.set(feature.fase, {
-        id: feature.fase,
+    if (!phases.has(feature.fase_id)) {
+      phases.set(feature.fase_id, {
+        id: feature.fase_id,
         proyecto_id: "",
-        nombre: feature.fase,
+        nombre: feature.fase_id,
         estado: "pendiente",
+        prioridad: "media",
         orden: 1000 + phases.size,
         created_at: new Date(0).toISOString()
       });
@@ -81,7 +82,7 @@ export function LabCanvas({
     () =>
       fasesDisponibles.map((fase) => ({
         fase,
-        features: features.filter((feature) => feature.fase === fase.id)
+        features: features.filter((feature) => feature.fase_id === fase.id)
       })),
     [features, fasesDisponibles]
   );
@@ -111,7 +112,6 @@ export function LabCanvas({
             projectId={projectId}
             fase={fase}
             features={phaseFeatures}
-            fasesDisponibles={fasesDisponibles}
             onCreateFeature={async (input) => {
               await onCreateFeature({
                 ...input,
@@ -158,11 +158,11 @@ export function LabCanvas({
         )}
       </div>
 
-      <FeatureModal
-        isOpen={selectedFeature !== null}
-        feature={selectedFeature}
-        fasesDisponibles={fasesDisponibles}
-        defaultFaseId={selectedFeature?.fase ?? ""}
+        <FeatureModal
+          isOpen={selectedFeature !== null}
+          feature={selectedFeature}
+          fasesDisponibles={fasesDisponibles}
+        defaultFaseId={selectedFeature?.fase_id ?? ""}
         onClose={() => setSelectedFeature(null)}
         onSave={async (input) => {
           if (!selectedFeature) {

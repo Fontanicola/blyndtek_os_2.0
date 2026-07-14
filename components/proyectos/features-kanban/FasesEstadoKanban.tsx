@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Badge, Button, Card } from "@/components/ui";
+import { Badge, Button, Card, Toast } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { useFeatures } from "@/lib/hooks/useFeatures";
 import { useFasesProyecto } from "@/lib/hooks/useFasesProyecto";
@@ -9,6 +9,9 @@ import { migrarSiNecesario } from "@/lib/proyectos/migrarSiNecesario";
 import type { EstadoFaseProyecto, FaseProyecto, UpdateFaseProyectoInput } from "@/types/fases-proyecto";
 import type { Feature } from "@/types/features";
 import type { Proyecto } from "@/types/proyectos";
+import type { Usuario } from "@/types/auth";
+import type { CronometroSesionActiva } from "@/lib/hooks/useCronometro";
+import type { ProyectoTiempoResponse } from "@/types/sesionesTiempo";
 import { FeatureModal } from "../lab/FeatureModal";
 import { NuevaFaseForm } from "../lab/NuevaFaseForm";
 import { FaseCardExpandible } from "./FaseCardExpandible";
@@ -25,10 +28,33 @@ function sortFases(fases: FaseProyecto[]) {
 
 type FasesEstadoKanbanProps = {
   proyecto: Proyecto;
+  tiempoProyecto: ProyectoTiempoResponse | null;
+  sesionActiva: CronometroSesionActiva | null;
+  tiempoTranscurrido: number;
+  usuarios: Array<Pick<Usuario, "id" | "nombre" | "foto_url">>;
+  onIniciarCronometro: (faseId: string) => Promise<void> | void;
+  onPausarCronometro: (sesionId: string, nota?: string) => Promise<void> | void;
 };
 
-export function FasesEstadoKanban({ proyecto }: FasesEstadoKanbanProps) {
-  const { fases, loading: loadingFases, fetchFases, createFase, updateFase, deleteFase, updateEstadoFase } =
+export function FasesEstadoKanban({
+  proyecto,
+  tiempoProyecto,
+  sesionActiva,
+  tiempoTranscurrido,
+  usuarios,
+  onIniciarCronometro,
+  onPausarCronometro
+}: FasesEstadoKanbanProps) {
+  const {
+    fases,
+    loading: loadingFases,
+    fetchFases,
+    createFase,
+    updateFase,
+    deleteFase,
+    updateEstadoFase,
+    setFases
+  } =
     useFasesProyecto();
   const { features, loading: loadingFeatures, fetchFeatures, createFeature, updateFeature, deleteFeature } =
     useFeatures();
@@ -39,6 +65,15 @@ export function FasesEstadoKanban({ proyecto }: FasesEstadoKanbanProps) {
   const [newPhaseLoading, setNewPhaseLoading] = useState(false);
   const [selectedFeature, setSelectedFeature] = useState<Feature | null>(null);
   const [creatingFeaturePhaseId, setCreatingFeaturePhaseId] = useState<string | null>(null);
+  const [toast, setToast] = useState<{
+    visible: boolean;
+    message: string;
+    type: "success" | "info" | "warning" | "error";
+  }>({
+    visible: false,
+    message: "",
+    type: "success"
+  });
 
   useEffect(() => {
     void Promise.all([fetchFases(proyecto.id), fetchFeatures(proyecto.id)]);
@@ -54,8 +89,8 @@ export function FasesEstadoKanban({ proyecto }: FasesEstadoKanbanProps) {
     }
 
     for (const feature of features) {
-      const current = grouped.get(feature.fase) ?? [];
-      grouped.set(feature.fase, [...current, feature]);
+      const current = grouped.get(feature.fase_id) ?? [];
+      grouped.set(feature.fase_id, [...current, feature]);
     }
 
     return grouped;
@@ -91,15 +126,28 @@ export function FasesEstadoKanban({ proyecto }: FasesEstadoKanbanProps) {
     [fasesDisponibles]
   );
 
+  async function handleDrop(faseId: string, estado: EstadoFaseProyecto) {
+    const previousFases = fases;
+
+    setFases((current) => current.map((fase) => (fase.id === faseId ? { ...fase, estado } : fase)));
+
+    try {
+      await updateEstadoFase(faseId, estado);
+    } catch (error) {
+      setFases(previousFases);
+      setToast({
+        visible: true,
+        message: error instanceof Error ? error.message : "No se pudo actualizar la fase.",
+        type: "error"
+      });
+      throw error;
+    }
+  }
+
   return (
-    <div className="space-y-4">
+    <div className="flex h-full min-h-0 flex-col space-y-4">
       <div className="flex items-center justify-between gap-3">
-        <div>
-          <h3 className="text-base font-title text-carbon">Features</h3>
-          <p className="mt-1 text-sm text-graphite">
-            Fases del proyecto organizadas por estado. Cada card puede expandirse para editar sus subtareas.
-          </p>
-        </div>
+        <h3 className="text-base font-title text-carbon">Features</h3>
         <Badge variant="default">{features.length} subtareas</Badge>
       </div>
 
@@ -109,12 +157,12 @@ export function FasesEstadoKanban({ proyecto }: FasesEstadoKanbanProps) {
         </Card>
       ) : null}
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid flex-1 min-h-0 items-stretch grid-cols-3 gap-4">
         {groupedByEstado.map(({ estado, label, fases: fasesEstado }) => (
           <section
             key={estado}
             className={cn(
-              "flex min-h-[560px] w-full flex-col rounded-card bg-paper p-3 transition-all duration-fast ease-fast",
+              "flex h-full min-h-0 w-full flex-col overflow-hidden rounded-card bg-paper p-3 transition-all duration-fast ease-fast",
               dropTargetEstado === estado && "ring-2 ring-signal"
             )}
             onDragOver={(event) => {
@@ -129,7 +177,11 @@ export function FasesEstadoKanban({ proyecto }: FasesEstadoKanbanProps) {
               const faseId = draggedFaseId ?? event.dataTransfer.getData("text/plain");
 
               if (faseId) {
-                await updateEstadoFase(faseId, estado);
+                try {
+                  await handleDrop(faseId, estado);
+                } catch {
+                  // El toast y el rollback ya se manejaron en handleDrop.
+                }
               }
 
               setDraggedFaseId(null);
@@ -143,14 +195,14 @@ export function FasesEstadoKanban({ proyecto }: FasesEstadoKanbanProps) {
               </div>
             </div>
 
-            <div className="flex-1 space-y-3 overflow-y-auto pr-1">
+            <div className="min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">
               {fasesEstado.length > 0 ? (
                 fasesEstado.map((fase) => (
                   <FaseCardExpandible
                     key={fase.id}
                     fase={fase}
                     subtareas={featuresByFase.get(fase.id) ?? []}
-                    fasesDisponibles={fasesDisponibles}
+                    usuarios={usuarios}
                     isExpanded={expandedById[fase.id] ?? false}
                     onToggleExpand={() => {
                       setExpandedById((current) => ({ ...current, [fase.id]: !current[fase.id] }));
@@ -168,12 +220,18 @@ export function FasesEstadoKanban({ proyecto }: FasesEstadoKanbanProps) {
                     onSubtareaEstadoChange={async (feature, estadoFeature) => {
                       await updateFeature(feature.id, { estado: estadoFeature });
                     }}
-                    onSubtareaMoverFase={async (feature, nuevaFaseId) => {
-                      await updateFeature(feature.id, { fase: nuevaFaseId });
-                    }}
                     onSubtareaClick={(feature) => {
                       setCreatingFeaturePhaseId(null);
                       setSelectedFeature(feature);
+                    }}
+                    tiempoProyecto={tiempoProyecto}
+                    sesionActiva={sesionActiva}
+                    tiempoTranscurrido={tiempoTranscurrido}
+                    onIniciarCronometro={onIniciarCronometro}
+                    onPausarCronometro={onPausarCronometro}
+                    githubRepo={proyecto.github_repo}
+                    onRefreshProyecto={async () => {
+                      await fetchFases(proyecto.id);
                     }}
                     draggable
                     isDragging={draggedFaseId === fase.id}
@@ -228,7 +286,7 @@ export function FasesEstadoKanban({ proyecto }: FasesEstadoKanbanProps) {
         feature={selectedFeature}
         fasesDisponibles={fasesDisponibles}
         defaultEstado="pendiente"
-        defaultFaseId={creatingFeaturePhaseId ?? selectedFeature?.fase ?? ""}
+        defaultFaseId={creatingFeaturePhaseId ?? selectedFeature?.fase_id ?? ""}
         onClose={() => {
           setSelectedFeature(null);
           setCreatingFeaturePhaseId(null);
@@ -241,7 +299,7 @@ export function FasesEstadoKanban({ proyecto }: FasesEstadoKanbanProps) {
               proyecto_id: proyecto.id,
               nombre: input.nombre?.trim() ?? "",
               descripcion: input.descripcion?.trim() ?? "",
-              fase: input.fase?.trim() ?? creatingFeaturePhaseId ?? "",
+              fase_id: input.fase_id?.trim() ?? creatingFeaturePhaseId ?? "",
               estado: input.estado,
               responsable_id: input.responsable_id ?? undefined
             });
@@ -254,6 +312,13 @@ export function FasesEstadoKanban({ proyecto }: FasesEstadoKanbanProps) {
           await deleteFeature(id);
           setSelectedFeature(null);
         }}
+      />
+
+      <Toast
+        visible={toast.visible}
+        message={toast.message}
+        type={toast.type}
+        onHide={() => setToast((current) => ({ ...current, visible: false }))}
       />
     </div>
   );

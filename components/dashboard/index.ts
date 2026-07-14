@@ -1,6 +1,8 @@
 export { CapacidadEntrega } from "./CapacidadEntrega";
 export { DashboardClient } from "./DashboardClient";
 export { DashboardSeccion } from "./DashboardSeccion";
+export { EmbudoLeads } from "./EmbudoLeads";
+export { FeaturesRecientes } from "./FeaturesRecientes";
 export { MetricaGrande } from "./MetricaGrande";
 export { PipelineChart } from "./PipelineChart";
 export { RunwayProyectado } from "./RunwayProyectado";

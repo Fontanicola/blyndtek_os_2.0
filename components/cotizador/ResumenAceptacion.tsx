@@ -36,7 +36,7 @@ export function ResumenAceptacion({ cotizacion }: ResumenAceptacionProps) {
 
       <div className="space-y-3">
         <div className="flex items-start gap-3 rounded-card bg-white px-4 py-3">
-          <span className="mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-signal-light text-signal">
+          <span className="mt-0.5 text-sm font-title leading-none text-signal" aria-hidden="true">
             ✓
           </span>
           <p className="text-sm text-carbon">
@@ -45,7 +45,7 @@ export function ResumenAceptacion({ cotizacion }: ResumenAceptacionProps) {
         </div>
 
         <div className="flex items-start gap-3 rounded-card bg-white px-4 py-3">
-          <span className="mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-signal-light text-signal">
+          <span className="mt-0.5 text-sm font-title leading-none text-signal" aria-hidden="true">
             ✓
           </span>
           <p className="text-sm text-carbon">
@@ -56,7 +56,7 @@ export function ResumenAceptacion({ cotizacion }: ResumenAceptacionProps) {
 
         {hasMaintenance ? (
           <div className="flex items-start gap-3 rounded-card bg-white px-4 py-3">
-            <span className="mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-signal-light text-signal">
+            <span className="mt-0.5 text-sm font-title leading-none text-signal" aria-hidden="true">
               ✓
             </span>
             <p className="text-sm text-carbon">
@@ -66,7 +66,7 @@ export function ResumenAceptacion({ cotizacion }: ResumenAceptacionProps) {
         ) : null}
 
         <div className="flex items-start gap-3 rounded-card bg-white px-4 py-3">
-          <span className="mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-signal-light text-signal">
+          <span className="mt-0.5 text-sm font-title leading-none text-signal" aria-hidden="true">
             ✓
           </span>
           <p className="text-sm text-carbon">
@@ -78,7 +78,7 @@ export function ResumenAceptacion({ cotizacion }: ResumenAceptacionProps) {
         </div>
 
         <div className="flex items-start gap-3 rounded-card bg-white px-4 py-3">
-          <span className="mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-signal-light text-signal">
+          <span className="mt-0.5 text-sm font-title leading-none text-signal" aria-hidden="true">
             ✓
           </span>
           <p className="text-sm text-carbon">1 link público de roadmap</p>

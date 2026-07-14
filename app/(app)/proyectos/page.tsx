@@ -7,7 +7,13 @@ import type { Usuario } from "@/types/auth";
 
 export const dynamic = "force-dynamic";
 
-export default async function ProyectosPage() {
+type ProyectosPageProps = {
+  searchParams?: {
+    project_id?: string | string[];
+  };
+};
+
+export default async function ProyectosPage({ searchParams }: ProyectosPageProps) {
   const usuario = await getCurrentUser();
   const supabase = createAdminClient();
 
@@ -20,14 +26,25 @@ export default async function ProyectosPage() {
         .order("created_at", { ascending: false }),
       supabase
         .from("usuarios")
-        .select("id, nombre, email, rol")
+        .select("id, nombre, email, rol, foto_url")
         .eq("activo", true)
         .order("nombre", { ascending: true })
     ]);
 
   const clientes = (clientesData ?? []) as Array<Pick<Cliente, "id" | "empresa" | "estado">>;
   const cotizaciones = (cotizacionesData ?? []) as Array<Pick<Cotizacion, "id" | "empresa" | "precio_total">>;
-  const usuarios = (usuariosData ?? []) as Array<Pick<Usuario, "id" | "nombre" | "email" | "rol">>;
+  const usuarios = (usuariosData ?? []) as Array<Pick<Usuario, "id" | "nombre" | "email" | "rol" | "foto_url">>;
+  const initialSelectedProjectId = Array.isArray(searchParams?.project_id)
+    ? searchParams?.project_id[0] ?? null
+    : searchParams?.project_id ?? null;
 
-  return <ProyectosClient usuario={usuario} clientes={clientes} cotizaciones={cotizaciones} usuarios={usuarios} />;
+  return (
+    <ProyectosClient
+      usuario={usuario}
+      clientes={clientes}
+      cotizaciones={cotizaciones}
+      usuarios={usuarios}
+      initialSelectedProjectId={initialSelectedProjectId}
+    />
+  );
 }

@@ -5,7 +5,7 @@ import { Button, EntitySelect, Input, Modal } from "@/components/ui";
 import { getProyectoDisplayLabel } from "@/lib/proyectos/labels";
 import type { CategoriaEgreso, CreateEgresoInput, Egreso } from "@/types/egresos";
 import type { Proyecto } from "@/types/proyectos";
-import type { CuentaMedio } from "@/types/cobros";
+import type { Caja } from "@/types/cajas";
 
 type EgresoModalProps = {
   isOpen: boolean;
@@ -13,6 +13,7 @@ type EgresoModalProps = {
   onSave: (input: CreateEgresoInput) => Promise<void> | void;
   egreso?: Egreso | null;
   proyectos: Array<Pick<Proyecto, "id" | "nombre" | "estado" | "cliente_id"> & { clienteNombre?: string | null }>;
+  cajas: Caja[];
 };
 
 const categorias: Array<{ value: CategoriaEgreso; label: string }> = [
@@ -22,23 +23,16 @@ const categorias: Array<{ value: CategoriaEgreso; label: string }> = [
   { value: "marketing_ads", label: "Marketing/Ads" },
   { value: "impuestos_contable", label: "Impuestos/Contable" },
   { value: "sueldos_honorarios", label: "Sueldos/Honorarios" },
+  { value: "comisiones", label: "Comisiones" },
   { value: "otro", label: "Otro" }
 ];
 
-const cuentaMedioOptions: Array<{ value: CuentaMedio; label: string }> = [
-  { value: "transferencia", label: "Transferencia" },
-  { value: "mercadopago", label: "Mercado Pago" },
-  { value: "efectivo", label: "Efectivo" },
-  { value: "stripe", label: "Stripe" },
-  { value: "otro", label: "Otro" }
-];
-
-export function EgresoModal({ isOpen, onClose, onSave, egreso, proyectos }: EgresoModalProps) {
+export function EgresoModal({ isOpen, onClose, onSave, egreso, proyectos, cajas }: EgresoModalProps) {
   const [concepto, setConcepto] = useState(egreso?.concepto ?? "");
   const [categoria, setCategoria] = useState<CategoriaEgreso>(egreso?.categoria ?? "otro");
   const [monto, setMonto] = useState(String(egreso?.monto ?? ""));
   const [fecha, setFecha] = useState(egreso?.fecha ?? new Date().toISOString().slice(0, 10));
-  const [cuentaMedio, setCuentaMedio] = useState<CreateEgresoInput["cuenta_medio"]>(egreso?.cuenta_medio ?? "transferencia");
+  const [cuentaMedio, setCuentaMedio] = useState<CreateEgresoInput["cuenta_medio"]>(egreso?.cuenta_medio ?? cajas[0]?.slug ?? null);
   const [pagado, setPagado] = useState(Boolean(egreso?.pagado));
   const [fechaPago, setFechaPago] = useState(egreso?.fecha_pago ?? new Date().toISOString().slice(0, 10));
   const [proyectoId, setProyectoId] = useState(egreso?.proyecto_id ?? "");
@@ -50,13 +44,13 @@ export function EgresoModal({ isOpen, onClose, onSave, egreso, proyectos }: Egre
     setCategoria(egreso?.categoria ?? "otro");
     setMonto(String(egreso?.monto ?? ""));
     setFecha(egreso?.fecha ?? new Date().toISOString().slice(0, 10));
-    setCuentaMedio(egreso?.cuenta_medio ?? "transferencia");
+    setCuentaMedio(egreso?.cuenta_medio ?? cajas[0]?.slug ?? null);
     setPagado(Boolean(egreso?.pagado));
     setFechaPago(egreso?.fecha_pago ?? new Date().toISOString().slice(0, 10));
     setProyectoId(egreso?.proyecto_id ?? "");
     setRecurrente(Boolean(egreso?.recurrente));
     setNotas(egreso?.notas ?? "");
-  }, [egreso, isOpen]);
+  }, [egreso, cajas, isOpen]);
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={egreso ? "Editar egreso" : "Nuevo egreso"} size="md">
@@ -83,13 +77,16 @@ export function EgresoModal({ isOpen, onClose, onSave, egreso, proyectos }: Egre
           <div className="space-y-1">
             <label className="text-sm font-label text-carbon">Cuenta / medio de pago</label>
             <select
-              value={cuentaMedio ?? "transferencia"}
-              onChange={(event) => setCuentaMedio(event.target.value as CuentaMedio)}
+              value={cuentaMedio ?? ""}
+              onChange={(event) => setCuentaMedio(event.target.value || null)}
               className="w-full rounded-component border border-line bg-white px-3 py-2 text-sm text-carbon focus:border-signal focus:outline-none focus:ring-2 focus:ring-signal/20"
             >
-              {cuentaMedioOptions.map((item) => (
-                <option key={item.value} value={item.value}>
-                  {item.label}
+              <option value="" disabled>
+                Seleccionar caja
+              </option>
+              {cajas.map((item) => (
+                <option key={item.id} value={item.slug}>
+                  {item.nombre}
                 </option>
               ))}
             </select>

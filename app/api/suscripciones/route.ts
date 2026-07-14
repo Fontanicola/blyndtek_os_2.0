@@ -11,6 +11,44 @@ function parseEstado(searchParams: URLSearchParams): EstadoSuscripcion | null {
   return null;
 }
 
+async function resolvePlan(
+  supabase: ReturnType<typeof createAdminClient>,
+  productoId: string | null | undefined,
+  planId: string | null | undefined
+) {
+  if (!planId) {
+    return {
+      productoId: productoId ?? null,
+      planId: null,
+      montoMensual: undefined as number | undefined
+    };
+  }
+
+  const { data: plan, error } = await supabase
+    .from("producto_planes")
+    .select("id, producto_id, precio_mensual")
+    .eq("id", planId)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  if (!plan) {
+    throw new Error("plan_id is invalid");
+  }
+
+  if (productoId && plan.producto_id !== productoId) {
+    throw new Error("plan_id does not belong to the selected producto_id");
+  }
+
+  return {
+    productoId: plan.producto_id,
+    planId: plan.id,
+    montoMensual: plan.precio_mensual
+  };
+}
+
 export async function GET(request: NextRequest) {
   try {
     const admin = await getAdminUser();
@@ -24,6 +62,7 @@ export async function GET(request: NextRequest) {
     const clienteId = params.get("cliente_id")?.trim() || null;
     const proyectoId = params.get("proyecto_id")?.trim() || null;
     const cotizacionId = params.get("cotizacion_id")?.trim() || null;
+    const productoId = params.get("producto_id")?.trim() || null;
 
     let query = supabase.from("suscripciones").select("*").order("created_at", { ascending: false });
 
@@ -41,6 +80,10 @@ export async function GET(request: NextRequest) {
 
     if (cotizacionId) {
       query = query.eq("cotizacion_id", cotizacionId);
+    }
+
+    if (productoId) {
+      query = query.eq("producto_id", productoId);
     }
 
     const { data, error } = await query;
@@ -69,24 +112,40 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "cliente_id is required" }, { status: 400 });
     }
 
-    if (!body.cotizacion_id?.trim()) {
-      return NextResponse.json({ error: "cotizacion_id is required" }, { status: 400 });
-    }
-
     if (!body.tipo) {
       return NextResponse.json({ error: "tipo is required" }, { status: 400 });
     }
 
-    if (typeof body.monto_mensual !== "number" || Number.isNaN(body.monto_mensual) || body.monto_mensual < 0) {
+    const supabase = createAdminClient();
+    let resolvedPlan: { productoId: string | null; planId: string | null; montoMensual?: number } | null = null;
+
+    try {
+      resolvedPlan = await resolvePlan(supabase, body.producto_id ?? null, body.plan_id ?? null);
+    } catch (resolveError) {
+      return NextResponse.json(
+        { error: resolveError instanceof Error ? resolveError.message : "plan_id is invalid" },
+        { status: 400 }
+      );
+    }
+
+    const montoMensual =
+      typeof body.monto_mensual === "number" && !Number.isNaN(body.monto_mensual)
+        ? body.monto_mensual
+        : resolvedPlan?.montoMensual;
+
+    if (typeof montoMensual !== "number" || Number.isNaN(montoMensual) || montoMensual < 0) {
       return NextResponse.json({ error: "monto_mensual must be a valid number" }, { status: 400 });
     }
 
-    const supabase = createAdminClient();
     const payload: CreateSuscripcionInput = {
       ...body,
       proyecto_id: body.proyecto_id ?? null,
+      cotizacion_id: body.cotizacion_id ?? null,
       fecha_inicio: body.fecha_inicio ?? null,
       proxima_cobro: body.proxima_cobro ?? null,
+      producto_id: resolvedPlan?.productoId ?? null,
+      plan_id: resolvedPlan?.planId ?? null,
+      monto_mensual: montoMensual,
       estado: body.estado ?? "pendiente",
       fecha_baja: body.fecha_baja ?? null,
       motivo_baja: body.motivo_baja ?? null

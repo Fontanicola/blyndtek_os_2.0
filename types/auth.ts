@@ -1,4 +1,4 @@
-export type Rol = "admin" | "miembro";
+export type Rol = "admin" | "miembro" | "comercial";
 
 export type Usuario = {
   id: string;
@@ -6,6 +6,7 @@ export type Usuario = {
   email: string;
   rol: Rol;
   google_calendar_token: string | null;
+  foto_url: string | null;
   activo: boolean;
   created_at: string;
 };

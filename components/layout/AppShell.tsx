@@ -14,6 +14,7 @@ type AppShellProps = {
 export function AppShell({ children, usuario }: AppShellProps) {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   useEffect(() => {
     setIsOpen(false);
@@ -21,7 +22,7 @@ export function AppShell({ children, usuario }: AppShellProps) {
 
   return (
     <div className="flex h-screen overflow-hidden bg-canvas">
-      <Sidebar usuario={usuario} />
+      <Sidebar usuario={usuario} collapsed={sidebarCollapsed} onToggleCollapse={() => setSidebarCollapsed((current) => !current)} />
       <Sidebar usuario={usuario} mobile isOpen={isOpen} onClose={() => setIsOpen(false)} />
 
       <div className="flex min-w-0 flex-1 flex-col pt-2 pr-0 md:pt-4 md:pr-0">

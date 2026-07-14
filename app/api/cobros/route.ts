@@ -3,6 +3,11 @@ import { getAdminUser } from "@/lib/require-admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Cobro, CreateCobroInput, EstadoCobro, TipoCobro } from "@/types/cobros";
 
+type ClienteRow = {
+  id: string;
+  empresa: string;
+};
+
 function parseEstado(searchParams: URLSearchParams): EstadoCobro | null {
   const estado = searchParams.get("estado");
   if (estado === "pendiente" || estado === "facturado" || estado === "cobrado" || estado === "vencido") {
@@ -77,7 +82,33 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ data: (data ?? []) as Cobro[] });
+    const cobros = (data ?? []) as Cobro[];
+    const clienteIds = [...new Set(cobros.map((cobro) => cobro.cliente_id).filter(Boolean))];
+
+    if (clienteIds.length === 0) {
+      return NextResponse.json({ data: cobros.map((cobro) => ({ ...cobro, cliente: null })) });
+    }
+
+    const { data: clientes, error: clientesError } = await supabase
+      .from("clientes")
+      .select("id, empresa")
+      .in("id", clienteIds)
+      .returns<ClienteRow[]>();
+
+    if (clientesError) {
+      return NextResponse.json({ error: clientesError.message }, { status: 500 });
+    }
+
+    const clientesMap = new Map((clientes ?? []).map((cliente) => [cliente.id, cliente.empresa] as const));
+
+    return NextResponse.json({
+      data: cobros.map((cobro) => ({
+        ...cobro,
+        cliente: {
+          empresa: clientesMap.get(cobro.cliente_id) ?? cobro.cliente_id
+        }
+      }))
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unexpected error";
     return NextResponse.json({ error: message }, { status: 500 });

@@ -19,7 +19,7 @@ type FeaturesKanbanProps = {
   projectId: string;
   features: Feature[];
   fasesDisponibles: FaseProyecto[];
-  usuarios: Array<Pick<Usuario, "id" | "nombre" | "email" | "rol">>;
+  usuarios: Array<Pick<Usuario, "id" | "nombre" | "email" | "rol" | "foto_url">>;
   onCreateFeature: (input: CreateFeatureInput) => Promise<unknown> | void;
   onUpdateFeature: (id: string, input: UpdateFeatureInput) => Promise<unknown> | void;
   onDeleteFeature: (id: string) => Promise<unknown> | void;
@@ -27,14 +27,22 @@ type FeaturesKanbanProps = {
 };
 
 function getFaseLabel(feature: Feature, fasesDisponibles: FaseProyecto[]) {
-  const fase = fasesDisponibles.find((item) => item.id === feature.fase);
-  return fase?.nombre ?? (feature.fase?.trim() ? feature.fase : null);
+  const fase = fasesDisponibles.find((item) => item.id === feature.fase_id);
+  return fase?.nombre ?? (feature.fase_id?.trim() ? feature.fase_id : null);
 }
 
 function sortFases(fasesDisponibles: FaseProyecto[]) {
   return [...fasesDisponibles].sort(
     (first, second) => first.orden - second.orden || first.nombre.localeCompare(second.nombre)
   );
+}
+
+function getUserById(userId: string | null, usuarios: FeaturesKanbanProps["usuarios"]) {
+  if (!userId) {
+    return null;
+  }
+
+  return usuarios.find((usuario) => usuario.id === userId) ?? null;
 }
 
 export function FeaturesKanban({
@@ -68,7 +76,7 @@ export function FeaturesKanban({
       return features;
     }
 
-    return features.filter((feature) => feature.fase === selectedPhaseFilter);
+    return features.filter((feature) => feature.fase_id === selectedPhaseFilter);
   }, [features, selectedPhaseFilter]);
 
   const grouped = useMemo(
@@ -157,6 +165,7 @@ export function FeaturesKanban({
                     key={feature.id}
                     feature={feature}
                     faseLabel={getFaseLabel(feature, fasesDisponibles)}
+                    responsableUsuario={getUserById(feature.responsable_id, usuarios)}
                     onClick={() => setEditingFeature(feature)}
                     draggable
                     isDragging={draggedFeatureId === feature.id}
@@ -204,7 +213,7 @@ export function FeaturesKanban({
               proyecto_id: projectId,
               nombre: input.nombre?.trim() ?? "",
               descripcion: input.descripcion?.trim() ?? "",
-              fase: input.fase?.trim() ?? "",
+              fase_id: input.fase_id?.trim() ?? "",
               estado: input.estado,
               responsable_id: input.responsable_id ?? undefined
             });

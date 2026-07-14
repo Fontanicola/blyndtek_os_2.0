@@ -8,6 +8,8 @@ export default async function TareasPage() {
   const [usuario, supportData] = await Promise.all([getCurrentUser(), getTaskSupportData()]);
 
   return (
-    <TareasClient usuario={usuario} proyectos={supportData.proyectos} usuarios={supportData.usuarios} />
+    <div className="flex h-full min-h-0 flex-col overflow-hidden">
+      <TareasClient usuario={usuario} proyectos={supportData.proyectos} usuarios={supportData.usuarios} />
+    </div>
   );
 }

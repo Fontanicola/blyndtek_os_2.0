@@ -7,6 +7,7 @@ export type CategoriaEgreso =
   | "marketing_ads"
   | "impuestos_contable"
   | "sueldos_honorarios"
+  | "comisiones"
   | "otro";
 
 export type Egreso = {
@@ -20,6 +21,7 @@ export type Egreso = {
   pagado: boolean;
   fecha_pago: string | null;
   proyecto_id: string | null;
+  comision_id: string | null;
   notas: string | null;
   created_at: string;
 };
@@ -34,6 +36,7 @@ export type CreateEgresoInput = {
   pagado?: boolean;
   fecha_pago?: string | null;
   proyecto_id?: string | null;
+  comision_id?: string | null;
   notas?: string | null;
 };
 

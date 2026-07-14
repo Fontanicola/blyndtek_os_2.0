@@ -39,8 +39,20 @@ function getProjectName(projectId: string | null, proyectos: TaskProjectOption[]
     : null;
 }
 
-function getUserName(userId: string, usuarios: TaskUserOption[]) {
+function getUserName(userId: string | null, usuarios: TaskUserOption[]) {
+  if (!userId) {
+    return null;
+  }
+
   return usuarios.find((usuario) => usuario.id === userId)?.nombre ?? null;
+}
+
+function getUserById(userId: string | null, usuarios: TaskUserOption[]) {
+  if (!userId) {
+    return null;
+  }
+
+  return usuarios.find((usuario) => usuario.id === userId) ?? null;
 }
 
 export function TareasKanban({
@@ -64,12 +76,12 @@ export function TareasKanban({
   );
 
   return (
-    <div className="grid grid-cols-3 gap-4">
+    <div className="grid h-full min-h-0 grid-cols-3 gap-4">
       {grouped.map((column) => (
         <section
           key={column.estado}
           className={cn(
-            "flex min-h-[560px] w-full flex-col rounded-card bg-paper p-3 transition-all duration-fast ease-fast",
+            "flex h-full min-h-0 w-full flex-col rounded-card bg-paper p-3 transition-all duration-fast ease-fast",
             dropTarget === column.estado && "ring-2 ring-signal"
           )}
           onDragOver={(event) => {
@@ -88,14 +100,14 @@ export function TareasKanban({
             setDropTarget(null);
           }}
         >
-          <div className="mb-3 flex items-center justify-between gap-3">
+          <div className="mb-3 flex flex-shrink-0 items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               <h3 className="text-sm font-label text-graphite">{column.label}</h3>
               <Badge variant="default">{column.tareas.length}</Badge>
             </div>
           </div>
 
-          <div className="flex-1 space-y-3 overflow-y-auto pr-1">
+          <div className="flex-1 min-h-0 space-y-3 overflow-y-auto pr-1">
             {column.tareas.length > 0 ? (
               column.tareas.map((tarea) => (
                 <TareaCard
@@ -103,6 +115,7 @@ export function TareasKanban({
                   tarea={tarea}
                   proyectoNombre={getProjectName(tarea.proyecto_id, proyectos)}
                   responsableNombre={getUserName(tarea.responsable_id, usuarios)}
+                  responsableUsuario={getUserById(tarea.responsable_id, usuarios)}
                   onClick={() => onTareaClick(tarea)}
                   draggable
                   isDragging={draggedTaskId === tarea.id}
@@ -117,7 +130,7 @@ export function TareasKanban({
             )}
           </div>
 
-          <div className="pt-3">
+          <div className="flex-shrink-0 pt-3">
             <Button
               variant="ghost"
               size="sm"
