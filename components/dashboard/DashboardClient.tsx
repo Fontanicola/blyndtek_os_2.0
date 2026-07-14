@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
-import { Badge, Card } from "@/components/ui";
+import { useMemo, type ReactNode } from "react";
+import { Card } from "@/components/ui";
 import { MetricaCard, PLChart } from "@/components/finanzas";
 import {
   BellIcon,
@@ -13,7 +13,7 @@ import {
   ProyectosIcon,
   TareasIcon
 } from "@/components/icons";
-import { formatFecha, formatUSD } from "@/lib/utils/formatters";
+import { formatUSD } from "@/lib/utils/formatters";
 import type { DashboardPeriod } from "@/types/dashboard";
 import type { BadgeVariant } from "@/types/ui";
 import { useDashboard } from "@/lib/hooks/useDashboard";
@@ -22,12 +22,6 @@ import { DashboardSeccion } from "./DashboardSeccion";
 import { EmbudoLeads } from "./EmbudoLeads";
 import { FeaturesRecientes } from "./FeaturesRecientes";
 import { WinRateChart } from "./WinRateChart";
-
-const periodOptions: Array<{ value: DashboardPeriod; label: string }> = [
-  { value: "month", label: "Este mes" },
-  { value: "quarter", label: "Último trimestre" },
-  { value: "year", label: "Este año" }
-];
 
 type DashboardMetricCard = {
   label: string;
@@ -176,7 +170,7 @@ function DashboardSkeleton() {
 }
 
 export function DashboardClient() {
-  const [period, setPeriod] = useState<DashboardPeriod>("month");
+  const period: DashboardPeriod = "month";
   const { dashboard, loading, error } = useDashboard(period);
 
   const financialCards = useMemo<DashboardMetricCard[]>(() => {
@@ -327,27 +321,6 @@ export function DashboardClient() {
 
   return (
     <div className="space-y-10 pb-24">
-      <div className="flex flex-wrap items-center justify-end gap-3">
-        <div className="inline-flex rounded-pill bg-white p-1 shadow-soft">
-          {periodOptions.map((option) => (
-            <button
-              key={option.value}
-              type="button"
-              onClick={() => setPeriod(option.value)}
-              className={
-                period === option.value
-                  ? "rounded-pill bg-signal px-4 py-2 text-sm font-label text-white"
-                  : "rounded-pill px-4 py-2 text-sm font-label text-graphite transition-colors duration-fast ease-fast hover:text-carbon"
-              }
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>
-
-        <Badge variant="default">Actualizado {dashboard ? formatFecha(dashboard.updated_at) : "recientemente"}</Badge>
-      </div>
-
       {loading ? <DashboardSkeleton /> : null}
 
       {error ? (
