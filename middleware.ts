@@ -1,5 +1,4 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { normalizeSupabaseUrl } from "@/lib/supabase/config";
 import type { Rol } from "@/types/auth";
 
 const roleAllowedPrefixes: Record<Rol, readonly string[]> = {
@@ -19,6 +18,10 @@ const roleAllowedPrefixes: Record<Rol, readonly string[]> = {
     "/perfil"
   ]
 };
+
+function normalizeSupabaseUrl(url: string): string {
+  return url.replace(/\/rest\/v1\/?$/, "").replace(/\/+$/, "");
+}
 
 function canRoleAccess(rol: Rol, pathname: string): boolean {
   if (rol === "admin") {
@@ -121,9 +124,24 @@ function extractAccessTokenFromCookies(request: NextRequest) {
   const baseName = `sb-${projectRef}-auth-token`;
   const cookies = request.cookies.getAll();
 
+  const decodeCookieValue = (rawValue: string) => {
+    if (rawValue.startsWith("base64-")) {
+      const base64Part = rawValue.slice("base64-".length);
+      try {
+        return atob(base64Part);
+      } catch {
+        return rawValue;
+      }
+    }
+
+    return rawValue;
+  };
+
   const parseCookieValue = (rawValue: string) => {
+    const decodedValue = decodeCookieValue(rawValue);
+
     try {
-      const parsed = JSON.parse(rawValue) as
+      const parsed = JSON.parse(decodedValue) as
         | { access_token?: string }
         | Array<{ access_token?: string }>
         | string;
@@ -138,7 +156,7 @@ function extractAccessTokenFromCookies(request: NextRequest) {
 
       return parsed.access_token ?? null;
     } catch {
-      return rawValue || null;
+      return decodedValue || null;
     }
   };
 

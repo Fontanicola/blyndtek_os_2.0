@@ -401,6 +401,8 @@
 - Esta regla es crítica porque ya se rompió más de una vez por regresiones de dependencias y disparó bundles demasiado grandes para Edge Runtime.
 - La verificación de sesión y rol en middleware debe mantenerse liviana y compatible con Vercel Edge, incluso si la lógica de usuarios o permisos cambia en otras partes del sistema.
 - El middleware nunca debe redirigir una ruta a sí misma: si `/login` falla por auth inválida, debe limpiar cookies de sesión corruptas y dejar renderizar login en vez de crear un loop irrecuperable.
+- El parser manual de cookies del middleware debe soportar explícitamente el prefijo `base64-` de `@supabase/ssr` y decodificarlo antes de parsear JSON, porque ese formato ya está en producción y puede cambiar de nuevo en el futuro.
+- Middleware `middleware.ts` debe mantenerse autocontenido y con imports mínimos: no depender de helpers compartidos de `lib/supabase/` si eso puede arrastrar el bundle Edge a una regresión de deploy por resolución indirecta.
 
 ## 2026-07-13 — Runway Lab con ingresos pendientes opcionales
 

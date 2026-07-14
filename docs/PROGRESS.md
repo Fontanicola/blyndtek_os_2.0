@@ -1528,3 +1528,17 @@ Estado general actual: Fase 0 completa. Cimientos técnicos listos: documentaci�
 - Se corrigieron `app/api/wiki/seed-estandares/route.ts` y `app/api/archivos/[id]/descargar/route.ts`, que seguían teniendo comillas escapadas literales `\"` en el fuente.
 - Se volvió a correr el grep global sobre `*.ts` y `*.tsx` fuera de `node_modules` y `.next`, y no quedaron resultados.
 - Verificación ejecutada: `npm run build` y `npm run lint` pasan correctamente luego del ajuste.
+
+## 2026-07-14 — Middleware: soporte al prefijo `base64-` de cookies Supabase SSR
+
+- Se confirmó que la cookie `sb-*-auth-token` llega en el formato `base64-...` usado por `@supabase/ssr`, con el JSON real codificado en base64.
+- `middleware.ts` ahora decodifica ese prefijo con `atob()` antes de intentar `JSON.parse()`, y mantiene compatibilidad con cookies viejas que no usen ese formato.
+- La causa exacta del falso negativo de sesión era que el parser devolvía el valor crudo con el prefijo `base64-`, invalidando el access token enviado a Supabase.
+- Verificación local ejecutada: `npm run build` y `npm run lint` pasan correctamente luego del fix.
+
+## 2026-07-14 — Middleware Edge desacoplado de `lib/supabase/config`
+
+- `lib/supabase/config.ts` sólo contenía helpers puros de URL y no importaba módulos incompatibles; aun así, `middleware.ts` quedó desacoplado para evitar que Vercel arrastre ese archivo compartido al bundle Edge por el alias `@/lib/supabase/config`.
+- `middleware.ts` ahora define su propio `normalizeSupabaseUrl()` local, de forma autocontenida, y no depende de ningún módulo compartido de `lib/supabase/`.
+- La medida es preventiva y de robustez: el middleware mantiene imports mínimos y evita repetir el problema de deploy por dependencia indirecta en Edge Runtime.
+- Verificación local ejecutada: `npm run build` y `npm run lint` pasan correctamente luego del cambio.
