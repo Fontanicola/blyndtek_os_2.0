@@ -10,6 +10,16 @@ Estado general actual: Fase 0 completa. Cimientos técnicos listos: documentaci�
 
 ## Actualización 2026-07-14
 
+- Se agregó soporte de passkeys experimentales de Supabase como método adicional de acceso, sin reemplazar contraseña.
+- `lib/supabase/client.ts` quedó configurado con `auth.experimental.passkey = true` al crear el cliente browser.
+- En `/perfil` se agregó la sección para registrar y eliminar passkeys locales de usuario, sincronizadas con la metadata de `public.passkeys`.
+- En `/login` se agregó login primero con Touch ID / huella cuando el dispositivo soporta passkeys, manteniendo siempre disponible el formulario tradicional de email y contraseña.
+- La versión instalada de `@supabase/supabase-js` ya cumplía el mínimo requerido (`^2.108.2`), así que no hubo que tocar `package.json`.
+- Verificación local completa: `npm run build` y `npm run lint` pasaron sin errores.
+- Nota operativa: la activación real de Passkeys en Supabase Authentication → Passkeys sigue siendo manual en el dashboard; no se puede habilitar por código desde el repo.
+
+## Actualización 2026-07-14
+
 - Se habilitó la edición de cobros tipo `hito` desde la ficha del cliente, reusando `CobroModal` en modo edición.
 - `app/api/cobros/[id]/route.ts` ahora registra cambios en `cobros_historial_cambios` cuando varían `monto` o `fecha_vencimiento`, incluyendo nota opcional y usuario que modificó.
 - `components/clientes/ClienteFicha.tsx` ahora muestra un botón `Editar` en hitos, permite expandir el historial de cambios por fila y refresca el cobro editado en la tabla.
@@ -1654,3 +1664,14 @@ $ find . -maxdepth 3 \( -name 'middleware.*' -o -name 'proxy.*' \) -not -path '.
 - Se configuró el proyecto `blyndtek-os-2-0` con framework `nextjs` y se agregó `vercel.json` para conservar esa configuración en futuros deploys.
 - Deployment productivo verificado como `READY`: `dpl_FhxbDPppU2o6HFdeJ4c418RNYgw1`.
 - Verificación HTTP: `/login` responde `200`; `/` responde `307` hacia `/login`; `/dashboard` responde `307` hacia `/login` sin sesión. Ya no aparece `404 NOT_FOUND` ni `MIDDLEWARE_INVOCATION_FAILED`.
+
+## 2026-07-14 — Recalculo manual de avance de proyectos
+- `lib/proyectos/recalcularAvance.ts` ya mantenía la fórmula combinada correcta: fases sin features usan `fase.estado`, fases con features usan el porcentaje de features en `lista`.
+- La causa real del avance desactualizado fue el disparo: el proyecto `Sistema de Gestión Integral` se cargó por SQL directo, así que nunca pasó por los endpoints que llaman al helper automáticamente.
+- Se agregó `app/api/proyectos/[id]/recalcular-avance/route.ts` para recalcular bajo demanda.
+- Se ejecutó manualmente para `Sistema de Gestión Integral` (`0a061805-6ab3-46a9-981c-b70c1b040157`) y el `avance_pct` resultante quedó en `34%`.
+
+## 2026-07-14 — Backfill de tareas faltantes ejecutado
+- Se ejecutó el backfill retroactivo para todas las features sin tarea vinculada en el sistema.
+- Resultado: se detectaron `78` features sin tarea y se crearon `78` tareas nuevas.
+- Las `78` features de `Funes Exclusivos` ya quedaron visibles en `/tareas` con su tarea vinculada correspondiente.

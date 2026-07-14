@@ -2028,6 +2028,38 @@ export type Database = {
           }
         ];
       };
+      passkeys: {
+        Row: {
+          id: string;
+          usuario_id: string;
+          passkey_id: string;
+          nombre_dispositivo: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          usuario_id: string;
+          passkey_id: string;
+          nombre_dispositivo: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          usuario_id?: string;
+          passkey_id?: string;
+          nombre_dispositivo?: string;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "passkeys_usuario_id_fkey";
+            columns: ["usuario_id"];
+            isOneToOne: false;
+            referencedRelation: "usuarios";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;

@@ -647,6 +647,22 @@
 | activo | bool | No especificado |  |
 | created_at | timestamptz | No especificado |  |
 
+## Tabla: passkeys
+
+**PK:** `id`
+
+**FKs:** `usuario_id` → `usuarios.id`
+
+**Uso:** espejo local de los passkeys registrados vía Supabase Auth para poder listarlos, nombrarlos y eliminarlos desde `/perfil` sin reemplazar la credencial real.
+
+| Campo | Tipo | Nullable | Notas |
+| --- | --- | --- | --- |
+| id | uuid | No | PK |
+| usuario_id | uuid | No | FK → `usuarios` |
+| passkey_id | text | No | Identificador del passkey real de Supabase |
+| nombre_dispositivo | text | No | Nombre amigable visible en la UI |
+| created_at | timestamptz | No |  |
+
 ## Relaciones
 
 ### Resumen del grafo de FKs

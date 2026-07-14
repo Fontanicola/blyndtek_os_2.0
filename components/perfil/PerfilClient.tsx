@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Badge, Button, Card, Input, Toast, UserAvatar } from "@/components/ui";
 import { cn } from "@/lib/cn";
+import { createClient } from "@/lib/supabase/client";
 import type { Usuario } from "@/types/auth";
 
 type PerfilClientProps = {
@@ -16,8 +17,71 @@ type ToastState = {
   type: "success" | "info" | "warning" | "error";
 };
 
+type PasskeyItem = {
+  id: string;
+  friendly_name?: string;
+  created_at: string;
+  last_used_at?: string;
+};
+
+function formatDate(value: string) {
+  return new Intl.DateTimeFormat("es-AR", {
+    dateStyle: "medium"
+  }).format(new Date(value));
+}
+
+function getBrowserName() {
+  const userAgent = navigator.userAgent;
+
+  if (userAgent.includes("Edg/")) {
+    return "Edge";
+  }
+
+  if (userAgent.includes("Chrome/") && !userAgent.includes("Edg/")) {
+    return "Chrome";
+  }
+
+  if (userAgent.includes("Firefox/")) {
+    return "Firefox";
+  }
+
+  if (userAgent.includes("Safari/") && !userAgent.includes("Chrome/")) {
+    return "Safari";
+  }
+
+  return "Browser";
+}
+
+function getDeviceName() {
+  const uaNavigator = navigator as Navigator & { userAgentData?: { platform?: string } };
+  const platform = uaNavigator.userAgentData?.platform ?? navigator.platform ?? navigator.userAgent ?? "Dispositivo";
+
+  if (/Mac/i.test(platform)) {
+    return `MacBook — ${getBrowserName()}`;
+  }
+
+  if (/iPhone/i.test(platform)) {
+    return `iPhone — ${getBrowserName()}`;
+  }
+
+  if (/iPad/i.test(platform)) {
+    return `iPad — ${getBrowserName()}`;
+  }
+
+  if (/Win/i.test(platform)) {
+    return `Windows — ${getBrowserName()}`;
+  }
+
+  if (/Linux/i.test(platform)) {
+    return `Linux — ${getBrowserName()}`;
+  }
+
+  return `${platform} — ${getBrowserName()}`;
+}
+
 export function PerfilClient({ usuario }: PerfilClientProps) {
   const router = useRouter();
+  const supabase = useMemo(() => createClient(), []);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [profile, setProfile] = useState<Usuario>(usuario);
   const [nombreDraft, setNombreDraft] = useState(usuario.nombre);
@@ -27,6 +91,11 @@ export function PerfilClient({ usuario }: PerfilClientProps) {
   const [passwordNueva, setPasswordNueva] = useState("");
   const [passwordConfirmacion, setPasswordConfirmacion] = useState("");
   const [savingPassword, setSavingPassword] = useState(false);
+  const [passkeyAvailable, setPasskeyAvailable] = useState(false);
+  const [passkeys, setPasskeys] = useState<PasskeyItem[]>([]);
+  const [loadingPasskeys, setLoadingPasskeys] = useState(false);
+  const [savingPasskey, setSavingPasskey] = useState(false);
+  const [deletingPasskeyId, setDeletingPasskeyId] = useState<string | null>(null);
   const [toast, setToast] = useState<ToastState>({
     visible: false,
     message: "",
@@ -39,6 +108,72 @@ export function PerfilClient({ usuario }: PerfilClientProps) {
     setProfile(usuario);
     setNombreDraft(usuario.nombre);
   }, [usuario]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    setPasskeyAvailable(Boolean(window.PublicKeyCredential));
+  }, []);
+
+  useEffect(() => {
+    if (!passkeyAvailable) {
+      return;
+    }
+
+    let active = true;
+
+    async function loadPasskeys() {
+      setLoadingPasskeys(true);
+
+      try {
+        const { data, error } = await supabase.auth.passkey.list();
+
+        if (error) {
+          throw error;
+        }
+
+        if (!active) {
+          return;
+        }
+
+        const nextPasskeys = data ?? [];
+        setPasskeys(nextPasskeys);
+
+        const deviceName = getDeviceName();
+
+        await Promise.all(
+          nextPasskeys.map(async (passkey) => {
+            await fetch("/api/perfil/passkeys", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json"
+              },
+              body: JSON.stringify({
+                passkey_id: passkey.id,
+                nombre_dispositivo: passkey.friendly_name ?? deviceName
+              })
+            });
+          })
+        );
+      } catch {
+        if (active) {
+          setPasskeys([]);
+        }
+      } finally {
+        if (active) {
+          setLoadingPasskeys(false);
+        }
+      }
+    }
+
+    void loadPasskeys();
+
+    return () => {
+      active = false;
+    };
+  }, [passkeyAvailable, supabase]);
 
   function showToast(message: string, type: ToastState["type"] = "info") {
     setToast({ visible: true, message, type });
@@ -173,6 +308,111 @@ export function PerfilClient({ usuario }: PerfilClientProps) {
     }
   }
 
+  async function refreshPasskeys() {
+    const { data, error } = await supabase.auth.passkey.list();
+
+    if (error) {
+      throw error;
+    }
+
+    setPasskeys(data ?? []);
+    return data ?? [];
+  }
+
+  async function syncPasskeyRecord(passkeyId: string, nombreDispositivo: string) {
+    const response = await fetch("/api/perfil/passkeys", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        passkey_id: passkeyId,
+        nombre_dispositivo: nombreDispositivo
+      })
+    });
+
+    return response.ok;
+  }
+
+  async function removePasskeyRecord(passkeyId: string) {
+    const response = await fetch("/api/perfil/passkeys", {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ passkey_id: passkeyId })
+    });
+
+    return response.ok;
+  }
+
+  async function handleRegisterPasskey() {
+    setSavingPasskey(true);
+
+    try {
+      const { data, error } = await supabase.auth.registerPasskey();
+
+      if (error || !data) {
+        throw error ?? new Error("No se pudo registrar el passkey.");
+      }
+
+      const deviceName = getDeviceName();
+
+      try {
+        await supabase.auth.passkey.update({
+          passkeyId: data.id,
+          friendlyName: deviceName
+        });
+      } catch {
+        // If friendly-name sync fails, keep the authenticated passkey anyway.
+      }
+
+      const localSynced = await syncPasskeyRecord(data.id, deviceName);
+      await refreshPasskeys();
+
+      if (localSynced) {
+        showToast("Passkey activado.", "success");
+      } else {
+        showToast(
+          "Passkey activado, pero no se pudo guardar el registro local.",
+          "warning"
+        );
+      }
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : "No se pudo registrar el passkey.", "error");
+    } finally {
+      setSavingPasskey(false);
+    }
+  }
+
+  async function handleDeletePasskey(passkeyId: string) {
+    setDeletingPasskeyId(passkeyId);
+
+    try {
+      const { error } = await supabase.auth.passkey.delete({ passkeyId });
+
+      if (error) {
+        throw error;
+      }
+
+      const localRemoved = await removePasskeyRecord(passkeyId);
+      await refreshPasskeys();
+
+      if (localRemoved) {
+        showToast("Passkey eliminado.", "success");
+      } else {
+        showToast(
+          "Passkey eliminado, pero no se pudo quitar el registro local.",
+          "warning"
+        );
+      }
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : "No se pudo eliminar el passkey.", "error");
+    } finally {
+      setDeletingPasskeyId(null);
+    }
+  }
+
   return (
     <>
       <div className="space-y-6">
@@ -269,6 +509,63 @@ export function PerfilClient({ usuario }: PerfilClientProps) {
             <h2 className="text-lg font-title text-carbon">Seguridad</h2>
             <p className="mt-1 text-sm text-graphite">Cambiá tu contraseña cuando lo necesites.</p>
           </div>
+
+          {passkeyAvailable ? (
+            <div className="space-y-4 rounded-card border border-line-soft bg-paper/40 p-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="space-y-1">
+                  <p className="text-sm font-title text-carbon">Inicio de sesión con Touch ID / huella</p>
+                  <p className="text-sm text-graphite">
+                    Registrá un passkey para entrar más rápido desde este dispositivo.
+                  </p>
+                </div>
+
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => void handleRegisterPasskey()}
+                  loading={savingPasskey}
+                  className="shrink-0"
+                >
+                  Activar inicio de sesión con Touch ID / huella
+                </Button>
+              </div>
+
+              <div className="space-y-3">
+                {loadingPasskeys ? (
+                  <p className="text-sm text-graphite">Buscando passkeys registradas...</p>
+                ) : passkeys.length > 0 ? (
+                  passkeys.map((passkey) => (
+                    <div
+                      key={passkey.id}
+                      className="flex flex-col gap-3 rounded-component border border-line-soft bg-white p-4 sm:flex-row sm:items-center sm:justify-between"
+                    >
+                      <div className="space-y-1">
+                        <p className="text-sm font-label text-carbon">
+                          {passkey.friendly_name ?? "Passkey"}
+                        </p>
+                        <p className="text-xs text-graphite">
+                          Registrado el {formatDate(passkey.created_at)}
+                        </p>
+                      </div>
+
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => void handleDeletePasskey(passkey.id)}
+                        loading={deletingPasskeyId === passkey.id}
+                        className="self-start text-danger hover:text-danger"
+                      >
+                        Eliminar
+                      </Button>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-sm text-graphite">Todavía no hay passkeys registradas.</p>
+                )}
+              </div>
+            </div>
+          ) : null}
 
           <form className="space-y-4" onSubmit={handlePasswordChange}>
             <Input

@@ -395,6 +395,13 @@
 - Si hubo negociación, el historial queda guardado en `leads_negociaciones` y el monto final acordado es el que alimenta el cálculo de comisión, no el propuesto original.
 - La comisión se calcula sobre el monto total del cierre (desarrollo + mensual) y conserva la misma lógica centralizada de `lib/comisiones/calcular.ts`.
 
+## 2026-07-14 — Passkeys como login adicional
+
+- Passkeys se usan como una capacidad experimental y adicional de Supabase Auth, no como reemplazo de la contraseña.
+- El login con passkey identifica un dispositivo para acelerar el acceso, pero la cuenta sigue teniendo email/contraseña como método base y visible.
+- La UI de `/perfil` permite registrar, nombrar y eliminar passkeys locales sincronizados con la metadata interna, mientras que Supabase conserva la credencial real.
+- Si el dashboard de Supabase no tiene activado `Authentication → Passkeys`, el flujo no funcionará aunque el código esté listo.
+
 ## 2026-07-14 — Middleware Edge blindado y autocontenido
 
 - Decisión final luego de cuatro caídas de producción: el proyecto no usa `middleware.ts`. Se eliminó el Edge middleware por completo para que Vercel no genere una Edge Function capaz de arrastrar APIs Node incompatibles (`__dirname`, `process.version`, etc.).

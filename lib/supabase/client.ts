@@ -20,5 +20,11 @@ function getSupabaseBrowserEnv() {
 export function createClient() {
   const { url, anonKey } = getSupabaseBrowserEnv();
 
-  return createBrowserClient<Database>(url, anonKey);
+  return createBrowserClient<Database>(url, anonKey, {
+    auth: {
+      experimental: {
+        passkey: true
+      }
+    }
+  });
 }
