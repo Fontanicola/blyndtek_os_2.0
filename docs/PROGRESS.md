@@ -10,6 +10,14 @@ Estado general actual: Fase 0 completa. Cimientos técnicos listos: documentaci�
 
 ## Actualización 2026-07-14
 
+- Se agregó Conditional UI para passkeys en `/login`, permitiendo que el navegador sugiera el passkey apenas se enfoca el campo de email.
+- `LoginForm.tsx` ahora usa `autoComplete="username webauthn"` en email y `autoComplete="current-password webauthn"` en password, con foco automático en el email.
+- El flujo condicional usa `PublicKeyCredential.isConditionalMediationAvailable()` y `auth.passkey.startAuthentication()` / `verifyAuthentication()` en segundo plano.
+- El botón explícito `Touch ID` se mantiene como respaldo manual para browsers o dispositivos que no soportan Conditional UI.
+- Verificación local completa: `npm run lint` y `npm run build` pasaron sin errores.
+
+## Actualización 2026-07-14
+
 - Se agregó soporte de passkeys experimentales de Supabase como método adicional de acceso, sin reemplazar contraseña.
 - `lib/supabase/client.ts` quedó configurado con `auth.experimental.passkey = true` al crear el cliente browser.
 - En `/perfil` se agregó la sección para registrar y eliminar passkeys locales de usuario, sincronizadas con la metadata de `public.passkeys`.

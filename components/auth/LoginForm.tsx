@@ -1,9 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { Badge, Button, Input } from "@/components/ui";
 import { createClient } from "@/lib/supabase/client";
+import {
+  deserializeCredentialRequestOptions,
+  serializeCredentialRequestResponse
+} from "@supabase/auth-js/dist/module/lib/webauthn";
+import type { AuthenticationCredential } from "@supabase/auth-js/dist/module/lib/webauthn.dom";
 
 type LoginStatus = "idle" | "loading" | "error";
 
@@ -34,18 +39,104 @@ function FingerprintIcon() {
 
 export function LoginForm() {
   const supabase = useMemo(() => createClient(), []);
+  const conditionalAbortRef = useRef<AbortController | null>(null);
+  const conditionalLoginStartedRef = useRef(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [status, setStatus] = useState<LoginStatus>("idle");
   const [errorMessage, setErrorMessage] = useState("");
   const [passkeySupported, setPasskeySupported] = useState(false);
-  const [showPasswordForm, setShowPasswordForm] = useState(true);
+
+  const handleConditionalPasskeyLogin = useCallback(async () => {
+    if (conditionalLoginStartedRef.current) {
+      return;
+    }
+
+    conditionalLoginStartedRef.current = true;
+    conditionalAbortRef.current?.abort();
+
+    const controller = new AbortController();
+    conditionalAbortRef.current = controller;
+
+    try {
+      const { data: options, error: optionsError } = await supabase.auth.passkey.startAuthentication();
+
+      if (optionsError || !options) {
+        return;
+      }
+
+      const publicKeyOptions = deserializeCredentialRequestOptions(options.options) as PublicKeyCredentialRequestOptions;
+      const credential = (await navigator.credentials.get({
+        publicKey: publicKeyOptions,
+        mediation: "conditional",
+        signal: controller.signal
+      })) as AuthenticationCredential | null;
+
+      if (!credential) {
+        return;
+      }
+
+      const serialized = serializeCredentialRequestResponse(credential);
+      const { error: verifyError } = await supabase.auth.passkey.verifyAuthentication({
+        challengeId: options.challenge_id,
+        credential: serialized
+      });
+
+      if (verifyError) {
+        return;
+      }
+
+      setStatus("idle");
+      window.location.href = "/dashboard";
+    } catch {
+      // Conditional UI is intentionally silent if the browser cancels or does not complete.
+    } finally {
+      conditionalLoginStartedRef.current = false;
+      if (conditionalAbortRef.current === controller) {
+        conditionalAbortRef.current = null;
+      }
+    }
+  }, [supabase]);
 
   useEffect(() => {
-    const supported = typeof window !== "undefined" && Boolean(window.PublicKeyCredential);
-    setPasskeySupported(supported);
-    setShowPasswordForm(!supported);
-  }, []);
+    let cancelled = false;
+
+    async function initializePasskeySupport() {
+      const supported = typeof window !== "undefined" && Boolean(window.PublicKeyCredential);
+      if (cancelled) {
+        return;
+      }
+
+      setPasskeySupported(supported);
+
+      if (!supported) {
+        return;
+      }
+
+      try {
+        const credentialApi = window.PublicKeyCredential as typeof window.PublicKeyCredential & {
+          isConditionalMediationAvailable?: () => Promise<boolean>;
+        };
+        const available = await credentialApi.isConditionalMediationAvailable?.();
+
+        if (cancelled) {
+          return;
+        }
+        if (available) {
+          void handleConditionalPasskeyLogin();
+        }
+      } catch {
+        // Silent fallback to the explicit button and password form.
+      }
+    }
+
+    void initializePasskeySupport();
+
+    return () => {
+      cancelled = true;
+      conditionalAbortRef.current?.abort();
+    };
+  }, [handleConditionalPasskeyLogin]);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -68,6 +159,7 @@ export function LoginForm() {
   }
 
   async function handlePasskeyLogin() {
+    conditionalAbortRef.current?.abort();
     setStatus("loading");
     setErrorMessage("");
 
@@ -100,7 +192,7 @@ export function LoginForm() {
 
         <div className="mt-8 border-t border-line-soft" />
 
-        {passkeySupported && !showPasswordForm ? (
+        {passkeySupported ? (
           <div className="mt-8 space-y-6">
             <Button
               type="button"
@@ -113,74 +205,49 @@ export function LoginForm() {
               <FingerprintIcon />
               Touch ID
             </Button>
-
-            <div className="text-center">
-              <button
-                type="button"
-                className="text-sm font-label text-graphite transition-colors hover:text-carbon"
-                onClick={() => setShowPasswordForm(true)}
-              >
-                Usar contraseña en su lugar
-              </button>
-            </div>
           </div>
         ) : null}
 
-        {(!passkeySupported || showPasswordForm) ? (
-          <form onSubmit={handleSubmit} className="mt-8 space-y-4">
-            {passkeySupported ? (
-              <div className="text-center">
-                <button
-                  type="button"
-                  className="text-sm font-label text-graphite transition-colors hover:text-carbon"
-                  onClick={() => setShowPasswordForm(false)}
-                >
-                  Usar Touch ID
-                </button>
-              </div>
-            ) : null}
+        <div className="mt-8 text-center">
+          <p className="text-sm font-label text-graphite">Usar contraseña en su lugar</p>
+        </div>
 
-            <Input
-              label="Email"
-              type="email"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              placeholder="tu@blyndtek.com"
-              required
-            />
-            <Input
-              label="Password"
-              type="password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              placeholder="••••••••"
-              required
-            />
-            <Button
-              type="submit"
-              variant="primary"
-              size="lg"
-              loading={status === "loading"}
-              className="mt-4 w-full"
-            >
-              Ingresar
-            </Button>
+        <form onSubmit={handleSubmit} className="mt-8 space-y-4">
+          <Input
+            label="Email"
+            type="email"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            placeholder="tu@blyndtek.com"
+            required
+            autoComplete="username webauthn"
+            autoFocus
+          />
+          <Input
+            label="Password"
+            type="password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            placeholder="••••••••"
+            required
+            autoComplete="current-password webauthn"
+          />
+          <Button
+            type="submit"
+            variant="primary"
+            size="lg"
+            loading={status === "loading"}
+            className="mt-4 w-full"
+          >
+            Ingresar
+          </Button>
 
-            {status === "error" ? (
-              <Badge variant="danger" className="inline-flex">
-                {errorMessage}
-              </Badge>
-            ) : null}
-          </form>
-        ) : null}
-
-        {passkeySupported && !showPasswordForm && status === "error" ? (
-          <div className="mt-4">
+          {status === "error" ? (
             <Badge variant="danger" className="inline-flex">
               {errorMessage}
             </Badge>
-          </div>
-        ) : null}
+          ) : null}
+        </form>
       </div>
     </section>
   );
