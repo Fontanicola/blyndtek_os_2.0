@@ -1,5 +1,6 @@
 "use client";
 
+import { forwardRef } from "react";
 import type { ChangeEvent, InputHTMLAttributes, KeyboardEventHandler, FocusEventHandler, ReactNode } from "react";
 import { cn } from "@/lib/cn";
 
@@ -21,6 +22,7 @@ type InputProps = {
   className?: string;
   leftIcon?: ReactNode;
   rightIcon?: ReactNode;
+  rightAction?: ReactNode;
   name?: string;
   id?: string;
   readOnly?: boolean;
@@ -29,31 +31,35 @@ type InputProps = {
   autoFocus?: boolean;
 };
 
-export function Input({
-  label,
-  placeholder,
-  value,
-  onChange,
-  type = "text",
-  inputMode,
-  maxLength,
-  minLength,
-  pattern,
-  autoComplete,
-  error,
-  hint,
-  disabled = false,
-  required = false,
-  className,
-  leftIcon,
-  rightIcon,
-  name,
-  id,
-  readOnly = false,
-  onBlur,
-  onKeyDown,
-  autoFocus
-}: InputProps) {
+export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
+  {
+    label,
+    placeholder,
+    value,
+    onChange,
+    type = "text",
+    inputMode,
+    maxLength,
+    minLength,
+    pattern,
+    autoComplete,
+    error,
+    hint,
+    disabled = false,
+    required = false,
+    className,
+    leftIcon,
+    rightIcon,
+    rightAction,
+    name,
+    id,
+    readOnly = false,
+    onBlur,
+    onKeyDown,
+    autoFocus
+  },
+  ref
+) {
   const inputId = id ?? name ?? label?.toLowerCase().replace(/\s+/g, "-");
 
   return (
@@ -73,6 +79,7 @@ export function Input({
         ) : null}
 
         <input
+          ref={ref}
           id={inputId}
           name={name}
           type={type}
@@ -94,7 +101,7 @@ export function Input({
             "w-full rounded-component border border-line bg-white px-3 py-2 text-base text-carbon transition-all duration-fast ease-fast",
             "placeholder:text-graphite focus:border-signal focus:outline-none focus:ring-2 focus:ring-signal/20",
             Boolean(leftIcon) && "pl-10",
-            Boolean(rightIcon) && "pr-10",
+            Boolean(rightIcon || rightAction) && "pr-12",
             error && "border-danger focus:border-danger focus:ring-danger/20",
             disabled && "cursor-not-allowed bg-paper opacity-60"
           )}
@@ -105,10 +112,16 @@ export function Input({
             {rightIcon}
           </span>
         ) : null}
+
+        {rightAction ? (
+          <span className="absolute inset-y-0 right-1.5 flex items-center">
+            {rightAction}
+          </span>
+        ) : null}
       </div>
 
       {error ? <p className="mt-1 text-xs text-danger">{error}</p> : null}
       {!error && hint ? <p className="mt-1 text-xs text-graphite">{hint}</p> : null}
     </div>
   );
-}
+});
