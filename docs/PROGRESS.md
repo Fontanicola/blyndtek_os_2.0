@@ -27,6 +27,15 @@ Estado general actual: Fase 0 completa. Cimientos técnicos listos: documentaci�
 - Confirmé que `app/api/roadmap/[token]/route.ts` ya lee los hitos directamente desde `cobros`, así que cualquier edición se refleja automáticamente en el roadmap público sin cambios extra.
 - Verificación local completa: `npm run build` y `npm run lint` pasaron sin errores.
 
+## Actualización 2026-07-15
+
+- Se agregó la sección admin-only `Agentes` en la navegación y se creó la vista `/agentes` para configurar agentes escalables, por ahora con `Asesor Financiero` como primer caso.
+- `lib/agentes/calcularMetricasAsesor.ts` calcula la base determinística real del asesor con runway, margen, excedente, capacidad, pipeline y concentración de riesgo; la IA solo sintetiza ese snapshot, no inventa números.
+- Se creó `app/api/agentes/asesor-financiero/analizar/route.ts` para generar y persistir análisis con Claude (`claude-sonnet-4-6`), y se agregó la tab `Asesor` dentro de Finanzas para mostrar el análisis reciente y dispararlo bajo demanda.
+- La automatización mensual quedó montada con el mismo patrón recurrente ya usado en el repo: `pg_cron` / `net.http_post` hacia la route de análisis, condicionado por `agente_config.resumen_automatico_activo`.
+- Se documentaron las tablas `agentes`, `agente_config` y `agente_analisis` en `docs/DATABASE.md` junto con sus relaciones.
+- Verificación local completa: `npm run lint` y `npm run build` pasaron sin errores.
+
 ## Fase 0 — Cimientos
 
 ### ✅ 0.1 — Documentación fundacional

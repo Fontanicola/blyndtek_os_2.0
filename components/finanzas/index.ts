@@ -13,3 +13,4 @@ export { TesoreriaCard } from "./TesoreriaCard";
 export { TarjetasSeccion } from "./TarjetasSeccion";
 export { SuscripcionModal } from "./SuscripcionModal";
 export { SuscripcionesLista } from "./SuscripcionesLista";
+export { AsesorFinancieroTab } from "./AsesorFinancieroTab";

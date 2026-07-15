@@ -14,3 +14,4 @@ export { MenuIcon } from "./MenuIcon";
 export { BellIcon } from "./BellIcon";
 export { LogoutIcon } from "./LogoutIcon";
 export { SearchIcon } from "./SearchIcon";
+export { AgentesIcon } from "./AgentesIcon";

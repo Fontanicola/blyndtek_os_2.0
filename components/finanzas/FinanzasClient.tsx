@@ -26,16 +26,19 @@ import { ComisionesTabla } from "./ComisionesTabla";
 import { TesoreriaCard } from "./TesoreriaCard";
 import { SuscripcionModal } from "./SuscripcionModal";
 import { SuscripcionesLista } from "./SuscripcionesLista";
+import { AsesorFinancieroTab } from "./AsesorFinancieroTab";
 import type { ComisionListado } from "@/types/comisiones";
 import type { Usuario } from "@/types/auth";
 import type { Cotizacion } from "@/types/cotizaciones";
+import type { AgenteAnalisis } from "@/types/agentes";
 import type { ReactNode } from "react";
 
 type FinanzasClientProps = {
   cotizaciones: Array<Pick<Cotizacion, "id" | "empresa" | "precio_total">>;
+  asesorFinancieroAnalisis: AgenteAnalisis | null;
 };
 
-type TabKey = "resumen" | "cobros" | "egresos" | "suscripciones" | "comisiones" | "tesoreria" | "runway-lab" | "tarjetas";
+type TabKey = "resumen" | "cobros" | "egresos" | "suscripciones" | "comisiones" | "tesoreria" | "runway-lab" | "tarjetas" | "asesor";
 
 type MetricCardData = {
   label: string;
@@ -59,7 +62,8 @@ const tabs: Array<{ key: TabKey; label: string }> = [
   { key: "comisiones", label: "Comisiones" },
   { key: "tesoreria", label: "Tesorería" },
   { key: "runway-lab", label: "Runway Lab" },
-  { key: "tarjetas", label: "Tarjetas" }
+  { key: "tarjetas", label: "Tarjetas" },
+  { key: "asesor", label: "Asesor" }
 ];
 
 function getTrendDirection(current: number, previous: number | null | undefined) {
@@ -83,7 +87,7 @@ function addOneMonth(dateString: string) {
   return new Date(date.getFullYear(), date.getMonth() + 1, date.getDate()).toISOString().slice(0, 10);
 }
 
-export function FinanzasClient({ cotizaciones }: FinanzasClientProps) {
+export function FinanzasClient({ cotizaciones, asesorFinancieroAnalisis }: FinanzasClientProps) {
   const {
     cobros,
     egresos,
@@ -625,6 +629,10 @@ export function FinanzasClient({ cotizaciones }: FinanzasClientProps) {
         ) : null}
 
         {activeTab === "tarjetas" ? <TarjetasSeccion showToast={showToast} /> : null}
+
+        {activeTab === "asesor" ? (
+          <AsesorFinancieroTab analisisReciente={asesorFinancieroAnalisis} showToast={showToast} />
+        ) : null}
       </div>
 
       <CobroModal

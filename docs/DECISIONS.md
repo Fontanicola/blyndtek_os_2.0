@@ -446,3 +446,10 @@
 - `Contrato` quedó como el único punto de entrada activo para generar cuotas y la suscripción de mantenimiento de un cliente.
 - El Cotizador se deprecó como módulo activo de la app: se retiró de la navegación, se eliminaron sus rutas y sus endpoints de generación/aceptación, pero la tabla `cotizaciones` se conserva con datos históricos reales para ARC Global, Funes Exclusivos y Cubelo.
 - Cualquier nuevo flujo comercial que necesite materializar cuotas o suscripciones debe pasar por `Contrato` para mantener una sola lógica de negocio y evitar duplicación entre casos de uso.
+
+## 2026-07-15 — Agentes con cálculo determinístico + síntesis de Claude
+
+- El módulo de Agentes separa estrictamente la capa determinística de cálculo en código de la capa de redacción en lenguaje natural con Claude.
+- La IA nunca inventa cifras: `calcularMetricasAsesor.ts` arma el snapshot con números reales y Claude sólo explica opciones, riesgos y caminos posibles sobre esa base.
+- La primera versión del módulo se diseñó para escalar a más agentes futuros sin rehacer la navegación, las rutas ni el almacenamiento del historial.
+- El disparo automático mensual del asesor depende de `agente_config.resumen_automatico_activo`; si está desactivado, el cron puede correr pero el análisis no se genera.

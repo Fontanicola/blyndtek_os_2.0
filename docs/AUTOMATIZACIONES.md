@@ -37,6 +37,7 @@ Hay dos migraciones nuevas:
 
 - `supabase/migrations/003_automatizaciones.sql`
 - `supabase/migrations/004_cron_jobs.sql`
+- `supabase/migrations/008_agentes_asesor_financiero.sql`
 
 ### Cómo aplicarlas
 
@@ -61,6 +62,11 @@ O bien, manualmente desde Supabase SQL Editor copiando cada archivo.
 - Programa los jobs de `cobros-mensuales` y `marcar-vencidos`.
 - Deja comentado `sync-google-calendar` hasta que esa Edge Function deje de ser stub.
 
+`008_agentes_asesor_financiero.sql`
+
+- Programa el análisis mensual del agente `asesor-financiero` contra `POST /api/agentes/asesor-financiero/analizar`.
+- El route del análisis decide en runtime si genera o no el resumen automático según `agente_config.resumen_automatico_activo`.
+
 ## 3. Placeholders a reemplazar
 
 Antes de correr `004_cron_jobs.sql`, reemplazá:
@@ -69,6 +75,13 @@ Antes de correr `004_cron_jobs.sql`, reemplazá:
 - `YOUR_SERVICE_ROLE_KEY`
 
 Usá el ref real del proyecto Supabase y una service role key válida.
+
+Antes de correr `008_agentes_asesor_financiero.sql`, reemplazá:
+
+- `YOUR_APP_URL`
+- `YOUR_SERVICE_ROLE_KEY`
+
+Usá la URL real de producción del sitio y una service role key válida.
 
 ## 4. Verificación
 
@@ -95,6 +108,7 @@ Buscá:
 - Los cobros vencidos pasan a estado `vencido`.
 - Las features completadas recalculan el avance del proyecto.
 - Los toques de leads agendan el siguiente recordatorio automáticamente.
+- El asesor financiero genera un análisis mensual sólo cuando `resumen_automatico_activo` está encendido.
 
 ## 5. Nota sobre Google Calendar
 

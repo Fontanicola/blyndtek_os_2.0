@@ -7,6 +7,7 @@ import {
   FinanzasIcon,
   SaasIcon,
   OutboundIcon,
+  AgentesIcon,
   NotasIcon,
   WikiIcon,
   ProyectosIcon,
@@ -103,6 +104,13 @@ export const navigationItems: NavItem[] = [
     label: "Equipo comercial",
     href: "/equipo-comercial",
     icon: createElement(OutboundIcon),
+    roles: ["admin"],
+    section: "control"
+  },
+  {
+    label: "Agentes",
+    href: "/agentes",
+    icon: createElement(AgentesIcon),
     roles: ["admin"],
     section: "control"
   }

@@ -688,6 +688,56 @@
 | nombre_dispositivo | text | No | Nombre amigable visible en la UI |
 | created_at | timestamptz | No |  |
 
+## Tabla: agentes
+
+**PK:** `id`
+
+**Uso:** catálogo de agentes de Blyndtek OS. Por ahora contiene el agente `asesor-financiero`, pero la estructura queda lista para escalar a más agentes.
+
+| Campo | Tipo | Nullable | Notas |
+| --- | --- | --- | --- |
+| id | uuid | No | PK |
+| slug | text | No | identificador estable del agente |
+| nombre | text | No | nombre visible en UI |
+| descripcion | text | Sí | descripción resumida |
+| activo | bool | No | habilita / oculta el agente |
+| color | text | No | variante visual del agente |
+| created_at | timestamptz | No |  |
+
+## Tabla: agente_config
+
+**PK:** `id`
+
+**FKs:** `agente_id` → `agentes.id`
+
+**Uso:** configuración persistente por agente, editable desde `/agentes`.
+
+| Campo | Tipo | Nullable | Notas |
+| --- | --- | --- | --- |
+| id | uuid | No | PK |
+| agente_id | uuid | No | FK → `agentes` |
+| clave | text | No | parámetro configurable (`runway_objetivo_meses`, `resumen_automatico_activo`, `frecuencia_resumen`) |
+| valor | jsonb | No | valor tipado en JSON |
+| updated_at | timestamptz | No |  |
+
+## Tabla: agente_analisis
+
+**PK:** `id`
+
+**FKs:** `agente_id` → `agentes.id`; `generado_por` → `usuarios.id`
+
+**Uso:** historial de análisis generados por el asesor financiero, tanto bajo demanda como automáticos.
+
+| Campo | Tipo | Nullable | Notas |
+| --- | --- | --- | --- |
+| id | uuid | No | PK |
+| agente_id | uuid | No | FK → `agentes` |
+| tipo | text/enum (`automatico|bajo_demanda`) | No | origen del análisis |
+| datos_calculados | jsonb | No | snapshot de métricas determinísticas |
+| analisis_texto | text | No | síntesis redactada por Claude |
+| generado_por | uuid | Sí | FK → `usuarios` cuando fue manual |
+| created_at | timestamptz | No |  |
+
 ## Relaciones
 
 ### Resumen del grafo de FKs
@@ -729,6 +779,9 @@
 - `wiki_categorias.creado_por` → `usuarios.id`
 - `wiki_articulos.categoria_id` → `wiki_categorias.id`
 - `wiki_articulos.creado_por` → `usuarios.id`
+- `agente_config.agente_id` → `agentes.id`
+- `agente_analisis.agente_id` → `agentes.id`
+- `agente_analisis.generado_por` → `usuarios.id`
 - `carpetas.carpeta_padre_id` → `carpetas.id`
 - `carpetas.cliente_id` → `clientes.id`
 - `carpetas.proyecto_id` → `proyectos.id`
@@ -763,6 +816,9 @@ Orden sugerido respetando dependencias de FK:
 22. `carpetas`
 23. `archivos`
 24. `tarjetas`
+25. `agentes`
+26. `agente_config`
+27. `agente_analisis`
 
 Nota: `usuarios` debe existir antes que `leads`, `proyectos`, `features`, `tareas`, `eventos` y `eventos_invitados`. `contratos`, `suscripciones` y `cobros` se apoyan en `clientes` y deben poder crearse con FKs nullable o deferrable según el orden de carga.
 
@@ -792,6 +848,7 @@ Nota: `usuarios` debe existir antes que `leads`, `proyectos`, `features`, `tarea
 - `cobros.contrato_id` uuid nullable para vincular cada cuota/hito al contrato del que nació.
 - `suscripciones.contrato_id` uuid nullable para vincular la suscripción de mantenimiento al contrato que la originó o la reemplazó.
 - `comisiones` no tiene `proyecto_id`; cualquier referencia de proyecto para reporting debe resolverse vía `cliente_id` / `cotizacion_id` y joins a `proyectos` según contexto.
+- `agentes`, `agente_config` y `agente_analisis` soportan el módulo de Agentes; `agente_analisis` guarda tanto la base determinística como la síntesis en lenguaje natural.
 
 ### Tabla nueva
 
