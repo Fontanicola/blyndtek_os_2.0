@@ -1675,3 +1675,9 @@ $ find . -maxdepth 3 \( -name 'middleware.*' -o -name 'proxy.*' \) -not -path '.
 - Se ejecutó el backfill retroactivo para todas las features sin tarea vinculada en el sistema.
 - Resultado: se detectaron `78` features sin tarea y se crearon `78` tareas nuevas.
 - Las `78` features de `Funes Exclusivos` ya quedaron visibles en `/tareas` con su tarea vinculada correspondiente.
+
+## 2026-07-15 — Contrato de cliente con redefinición segura
+- Se agregó la sección `Contrato` dentro de `ClienteFicha` para definir el valor total, cantidad de cuotas, día de pago, primera cuota y mantenimiento de una sola vez.
+- Se creó `app/api/clientes/[id]/contrato/route.ts` para generar el contrato activo, crear automáticamente las cuotas como cobros `hito` y, si aplica, crear o reasignar la suscripción de mantenimiento.
+- La redefinición confirma explícitamente el impacto antes de guardar y preserva intactos todos los cobros ya marcados como `cobrado`; sólo se reemplazan las cuotas todavía pendientes/facturadas/vencidas del contrato anterior.
+- Verificación local ejecutada: `npm run lint` y `npm run build` pasan correctamente.

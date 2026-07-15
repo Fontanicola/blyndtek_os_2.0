@@ -28,19 +28,6 @@ function formatMoneyTick(value: number) {
   return `${sign}$${absolute.toLocaleString("en-US")}`;
 }
 
-function formatTooltipValue(
-  dataKey: string | undefined,
-  value: string | number | ReadonlyArray<string | number> | undefined
-) {
-  const numericValue = Array.isArray(value) ? Number(value[0] ?? 0) : Number(value ?? 0);
-
-  if (dataKey === "clientes_activos") {
-    return `${numericValue.toLocaleString("en-US")} clientes`;
-  }
-
-  return formatUSD(numericValue);
-}
-
 export function PLChart({ data }: PLChartProps) {
   const chartId = useId().replace(/:/g, "");
   const ingresosGradient = `pl-ingresos-${chartId}`;
@@ -134,18 +121,29 @@ export function PLChart({ data }: PLChartProps) {
               />
               <Tooltip
                 content={({ active, payload, label }: TooltipContentProps<number, string>) => {
-                  if (!active || !payload?.length) {
+                  const point = payload?.[0]?.payload as MonthlyFinancialPoint | undefined;
+
+                  if (!active || !point) {
                     return null;
                   }
 
                   return (
-                    <div className="rounded-card border border-white/80 bg-white/95 p-3 text-sm shadow-modal backdrop-blur">
+                    <div className="rounded-card border border-white/80 bg-white/95 p-4 text-sm shadow-modal backdrop-blur">
                       <p className="mb-2 font-label text-carbon">{label}</p>
-                      {payload.map((entry) => (
-                        <p key={`${entry.dataKey}`} className="text-xs" style={{ color: entry.color }}>
-                          {entry.name}: {formatTooltipValue(entry.dataKey as string | undefined, entry.value)}
+                      <div className="space-y-1.5">
+                        <p className="text-xs" style={{ color: SIGNAL }}>
+                          Ingresos: {formatUSD(point.ingresos)}
                         </p>
-                      ))}
+                        <p className="text-xs" style={{ color: DANGER }}>
+                          Egresos: {formatUSD(point.egresos)}
+                        </p>
+                        <p className="text-xs" style={{ color: SUCCESS }}>
+                          Margen: {formatUSD(point.margen)}
+                        </p>
+                        <p className="text-xs" style={{ color: GRAPHITE }}>
+                          Clientes activos: {point.clientes_activos.toLocaleString("en-US")}
+                        </p>
+                      </div>
                     </div>
                   );
                 }}

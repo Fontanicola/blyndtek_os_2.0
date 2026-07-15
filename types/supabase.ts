@@ -161,10 +161,71 @@ export type Database = {
           }
         ];
       };
+      contratos: {
+        Row: {
+          id: string;
+          cliente_id: string;
+          valor_total: number;
+          cantidad_cuotas: number;
+          dia_pago: number;
+          fecha_primera_cuota: string;
+          valor_mantenimiento_mensual: number | null;
+          dia_facturacion_mantenimiento: number | null;
+          estado: "activo" | "reemplazado";
+          reemplaza_a: string | null;
+          motivo_redefinicion: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          cliente_id: string;
+          valor_total: number;
+          cantidad_cuotas: number;
+          dia_pago: number;
+          fecha_primera_cuota: string;
+          valor_mantenimiento_mensual?: number | null;
+          dia_facturacion_mantenimiento?: number | null;
+          estado?: "activo" | "reemplazado";
+          reemplaza_a?: string | null;
+          motivo_redefinicion?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          cliente_id?: string;
+          valor_total?: number;
+          cantidad_cuotas?: number;
+          dia_pago?: number;
+          fecha_primera_cuota?: string;
+          valor_mantenimiento_mensual?: number | null;
+          dia_facturacion_mantenimiento?: number | null;
+          estado?: "activo" | "reemplazado";
+          reemplaza_a?: string | null;
+          motivo_redefinicion?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "contratos_cliente_id_fkey";
+            columns: ["cliente_id"];
+            isOneToOne: false;
+            referencedRelation: "clientes";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "contratos_reemplaza_a_fkey";
+            columns: ["reemplaza_a"];
+            isOneToOne: false;
+            referencedRelation: "contratos";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
       cobros: {
         Row: {
           id: string;
           cliente_id: string;
+          contrato_id: string | null;
           proyecto_id: string | null;
           suscripcion_id: string | null;
           cotizacion_id: string | null;
@@ -182,6 +243,7 @@ export type Database = {
         Insert: {
           id?: string;
           cliente_id: string;
+          contrato_id?: string | null;
           proyecto_id?: string | null;
           suscripcion_id?: string | null;
           cotizacion_id?: string | null;
@@ -199,6 +261,7 @@ export type Database = {
         Update: {
           id?: string;
           cliente_id?: string;
+          contrato_id?: string | null;
           proyecto_id?: string | null;
           suscripcion_id?: string | null;
           cotizacion_id?: string | null;
@@ -219,6 +282,13 @@ export type Database = {
             columns: ["cliente_id"];
             isOneToOne: false;
             referencedRelation: "clientes";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "cobros_contrato_id_fkey";
+            columns: ["contrato_id"];
+            isOneToOne: false;
+            referencedRelation: "contratos";
             referencedColumns: ["id"];
           },
           {
@@ -1824,6 +1894,7 @@ export type Database = {
         Row: {
           id: string;
           cliente_id: string;
+          contrato_id: string | null;
           proyecto_id: string | null;
           cotizacion_id: string | null;
           producto_id: string | null;
@@ -1841,6 +1912,7 @@ export type Database = {
         Insert: {
           id?: string;
           cliente_id: string;
+          contrato_id?: string | null;
           proyecto_id?: string | null;
           cotizacion_id?: string | null;
           producto_id?: string | null;
@@ -1858,6 +1930,7 @@ export type Database = {
         Update: {
           id?: string;
           cliente_id?: string;
+          contrato_id?: string | null;
           proyecto_id?: string | null;
           cotizacion_id?: string | null;
           producto_id?: string | null;
@@ -1878,6 +1951,13 @@ export type Database = {
             columns: ["cliente_id"];
             isOneToOne: false;
             referencedRelation: "clientes";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "suscripciones_contrato_id_fkey";
+            columns: ["contrato_id"];
+            isOneToOne: false;
+            referencedRelation: "contratos";
             referencedColumns: ["id"];
           },
           {

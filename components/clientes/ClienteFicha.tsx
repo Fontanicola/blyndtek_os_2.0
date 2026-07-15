@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Badge, Button, Card, Input, Toast } from "@/components/ui";
+import { Badge, Button, Card, Input, Modal, Toast } from "@/components/ui";
 import { CobroModal } from "@/components/finanzas";
 import { NotasVinculadasSection } from "@/components/notas";
 import { ProyectoCard } from "@/components/proyectos";
@@ -17,6 +17,7 @@ import type { Lead } from "@/types/leads";
 import type { Producto } from "@/types/productos";
 import type { ProductoPlan } from "@/types/productoPlanes";
 import type { Proyecto } from "@/types/proyectos";
+import type { Contrato, ContratoDetalle, CreateContratoInput } from "@/types/contratos";
 import type { Suscripcion } from "@/types/suscripciones";
 
 type ClienteFichaProps = {
@@ -24,15 +25,54 @@ type ClienteFichaProps = {
   onUpdate: (input: UpdateClienteInput) => void | Promise<void>;
 };
 
-type TabKey = "datos" | "proyectos" | "cobros" | "suscripcion" | "historial";
+type TabKey = "datos" | "proyectos" | "contrato" | "cobros" | "suscripcion" | "historial";
 
 const tabs: Array<{ key: TabKey; label: string }> = [
   { key: "datos", label: "Datos generales" },
   { key: "proyectos", label: "Proyectos" },
+  { key: "contrato", label: "Contrato" },
   { key: "cobros", label: "Cobros" },
   { key: "suscripcion", label: "Suscripción" },
   { key: "historial", label: "Historial" }
 ];
+
+type ContractFormState = {
+  valor_total: string;
+  cantidad_cuotas: string;
+  dia_pago: string;
+  fecha_primera_cuota: string;
+  valor_mantenimiento_mensual: string;
+  dia_facturacion_mantenimiento: string;
+  motivo_redefinicion: string;
+};
+
+const emptyContractForm = (): ContractFormState => ({
+  valor_total: "",
+  cantidad_cuotas: "",
+  dia_pago: "",
+  fecha_primera_cuota: "",
+  valor_mantenimiento_mensual: "",
+  dia_facturacion_mantenimiento: "",
+  motivo_redefinicion: ""
+});
+
+function contractFormFromData(contrato: Contrato | null): ContractFormState {
+  if (!contrato) {
+    return emptyContractForm();
+  }
+
+  return {
+    valor_total: String(contrato.valor_total),
+    cantidad_cuotas: String(contrato.cantidad_cuotas),
+    dia_pago: String(contrato.dia_pago),
+    fecha_primera_cuota: contrato.fecha_primera_cuota,
+    valor_mantenimiento_mensual:
+      contrato.valor_mantenimiento_mensual != null ? String(contrato.valor_mantenimiento_mensual) : "",
+    dia_facturacion_mantenimiento:
+      contrato.dia_facturacion_mantenimiento != null ? String(contrato.dia_facturacion_mantenimiento) : "",
+    motivo_redefinicion: contrato.motivo_redefinicion ?? ""
+  };
+}
 
 function formatTimestamp(date = new Date()) {
   return new Intl.DateTimeFormat("es-AR", {
@@ -168,6 +208,7 @@ export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
   const [notaDraft, setNotaDraft] = useState("");
   const [proyectos, setProyectos] = useState<Proyecto[]>([]);
   const [cobros, setCobros] = useState<Cobro[]>([]);
+  const [contratoDetalle, setContratoDetalle] = useState<ContratoDetalle | null>(null);
   const [cobroModalOpen, setCobroModalOpen] = useState(false);
   const [selectedCobro, setSelectedCobro] = useState<Cobro | null>(null);
   const [expandedCobros, setExpandedCobros] = useState<Record<string, boolean>>({});
@@ -179,6 +220,10 @@ export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
   const [planSeleccionadoId, setPlanSeleccionadoId] = useState("");
   const [montoDraft, setMontoDraft] = useState("");
   const [montoEditable, setMontoEditable] = useState(false);
+  const [contratoForm, setContratoForm] = useState<ContractFormState>(() => emptyContractForm());
+  const [contratoEditing, setContratoEditing] = useState(false);
+  const [contratoConfirmOpen, setContratoConfirmOpen] = useState(false);
+  const [savingContrato, setSavingContrato] = useState(false);
   const [loadingProductos, setLoadingProductos] = useState(false);
   const [loadingPlanes, setLoadingPlanes] = useState(false);
   const [creatingSuscripcion, setCreatingSuscripcion] = useState(false);
@@ -219,6 +264,32 @@ export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
       { cobrado: 0, pendiente: 0, vencido: 0 }
     );
   }, [cobros]);
+
+  const contratoActivo = contratoDetalle?.contrato ?? null;
+  const contratoResumen = contratoDetalle?.cobros_resumen ?? {
+    cobrado: { cantidad: 0, monto: 0 },
+    pendiente: { cantidad: 0, monto: 0 },
+    facturado: { cantidad: 0, monto: 0 },
+    vencido: { cantidad: 0, monto: 0 },
+    total: { cantidad: 0, monto: 0 }
+  };
+  const contratoPendienteMonto =
+    contratoResumen.pendiente.monto + contratoResumen.facturado.monto + contratoResumen.vencido.monto;
+  const contratoCuotasPendientes =
+    contratoResumen.pendiente.cantidad + contratoResumen.facturado.cantidad + contratoResumen.vencido.cantidad;
+  const contratoProgresoPct = contratoActivo
+    ? Math.min(100, Math.round((contratoResumen.cobrado.monto / contratoActivo.valor_total) * 100))
+    : 0;
+  const contratoImpacto = contratoActivo
+    ? {
+        cobradas: contratoResumen.cobrado.cantidad,
+        montoCobradas: contratoResumen.cobrado.monto,
+        pendientes: contratoCuotasPendientes,
+        montoPendiente: contratoPendienteMonto,
+        nuevoValorTotal: Number(contratoForm.valor_total) || contratoActivo.valor_total,
+        nuevasCuotas: Number(contratoForm.cantidad_cuotas) || contratoActivo.cantidad_cuotas
+      }
+    : null;
 
   const suscripcionProducto = useMemo(
     () => productos.find((producto) => producto.id === suscripcion?.producto_id) ?? null,
@@ -261,6 +332,23 @@ export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
           const data = await fetchProyectos({ cliente_id: cliente.id });
           if (!cancelled) {
             setProyectos(data);
+          }
+        }
+
+        if (activeTab === "contrato") {
+          setTabLoading("contrato");
+          const response = await fetch(`/api/clientes/${cliente.id}/contrato`);
+          const payload = (await response.json()) as { data?: ContratoDetalle; error?: string };
+
+          if (!response.ok || !payload.data) {
+            throw new Error(payload.error ?? "No se pudo cargar el contrato.");
+          }
+
+          if (!cancelled) {
+            setContratoDetalle(payload.data);
+            setContratoEditing(false);
+            setContratoConfirmOpen(false);
+            setContratoForm(contractFormFromData(payload.data.contrato));
           }
         }
 
@@ -518,6 +606,131 @@ export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
     }
   }
 
+  function startContractRedefinition() {
+    if (!contratoActivo) {
+      return;
+    }
+
+    setContratoEditing(true);
+    setContratoConfirmOpen(false);
+    setContratoForm(contractFormFromData(contratoActivo));
+  }
+
+  function cancelContractEditing() {
+    setContratoEditing(false);
+    setContratoConfirmOpen(false);
+    setContratoForm(contractFormFromData(contratoActivo));
+  }
+
+  async function persistContrato(input: CreateContratoInput) {
+    setSavingContrato(true);
+    setTabError(null);
+
+    try {
+      const response = await fetch(`/api/clientes/${cliente.id}/contrato`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(input)
+      });
+      const payload = (await response.json()) as { data?: ContratoDetalle & { resumen?: unknown }; error?: string };
+
+      if (!response.ok || !payload.data) {
+        throw new Error(payload.error ?? "No se pudo generar el contrato.");
+      }
+
+      const refreshed = await fetch(`/api/clientes/${cliente.id}/contrato`);
+      const refreshedPayload = (await refreshed.json()) as { data?: ContratoDetalle; error?: string };
+
+      if (!refreshed.ok || !refreshedPayload.data) {
+        throw new Error(refreshedPayload.error ?? "No se pudo recargar el contrato.");
+      }
+
+      setContratoDetalle(refreshedPayload.data);
+      setContratoEditing(false);
+      setContratoConfirmOpen(false);
+      setContratoForm(contractFormFromData(refreshedPayload.data.contrato));
+      setToast({
+        message: contratoActivo ? "Contrato redefinido correctamente." : "Plan de pago generado correctamente.",
+        type: "success",
+        visible: true
+      });
+    } catch (error) {
+      setTabError(error instanceof Error ? error.message : "No se pudo guardar el contrato.");
+    } finally {
+      setSavingContrato(false);
+    }
+  }
+
+  async function handleContractSubmit() {
+    const valorTotal = Number(contratoForm.valor_total);
+    const cantidadCuotas = Number(contratoForm.cantidad_cuotas);
+    const diaPago = Number(contratoForm.dia_pago);
+    const valorMantenimientoMensual = contratoForm.valor_mantenimiento_mensual.trim()
+      ? Number(contratoForm.valor_mantenimiento_mensual)
+      : null;
+    const diaFacturacionMantenimiento = contratoForm.dia_facturacion_mantenimiento.trim()
+      ? Number(contratoForm.dia_facturacion_mantenimiento)
+      : null;
+    const diaFacturacionMantenimientoValidado = diaFacturacionMantenimiento ?? NaN;
+
+    if (Number.isNaN(valorTotal) || valorTotal <= 0) {
+      setTabError("Ingresá un valor total válido.");
+      return;
+    }
+
+    if (!Number.isInteger(cantidadCuotas) || cantidadCuotas < 1) {
+      setTabError("La cantidad de cuotas debe ser al menos 1.");
+      return;
+    }
+
+    if (!Number.isInteger(diaPago) || diaPago < 1 || diaPago > 28) {
+      setTabError("El día de pago debe estar entre 1 y 28.");
+      return;
+    }
+
+    if (!contratoForm.fecha_primera_cuota.trim()) {
+      setTabError("Ingresá la fecha de la primera cuota.");
+      return;
+    }
+
+    if (valorMantenimientoMensual != null && (Number.isNaN(valorMantenimientoMensual) || valorMantenimientoMensual < 0)) {
+      setTabError("Ingresá un valor de mantenimiento válido.");
+      return;
+    }
+
+    if (valorMantenimientoMensual != null && valorMantenimientoMensual > 0) {
+      if (
+        !Number.isInteger(diaFacturacionMantenimientoValidado) ||
+        diaFacturacionMantenimientoValidado < 1 ||
+        diaFacturacionMantenimientoValidado > 28
+      ) {
+        setTabError("El día de facturación del mantenimiento debe estar entre 1 y 28.");
+        return;
+      }
+    }
+
+    const payload: CreateContratoInput = {
+      valor_total: valorTotal,
+      cantidad_cuotas: cantidadCuotas,
+      dia_pago: diaPago,
+      fecha_primera_cuota: contratoForm.fecha_primera_cuota.trim(),
+      valor_mantenimiento_mensual:
+        valorMantenimientoMensual != null && valorMantenimientoMensual > 0 ? valorMantenimientoMensual : null,
+      dia_facturacion_mantenimiento:
+        valorMantenimientoMensual != null && valorMantenimientoMensual > 0 ? diaFacturacionMantenimientoValidado : null,
+      motivo_redefinicion: contratoForm.motivo_redefinicion.trim() || null
+    };
+
+    if (contratoActivo && contratoEditing && !contratoConfirmOpen) {
+      setContratoConfirmOpen(true);
+      return;
+    }
+
+    await persistContrato(payload);
+  }
+
   async function handleOpenCobroHistory(cobro: Cobro) {
     if (expandedCobros[cobro.id]) {
       setExpandedCobros((current) => ({
@@ -569,6 +782,107 @@ export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
       setTabError(error instanceof Error ? error.message : "No se pudo actualizar el cobro.");
     }
   }
+
+  const contratoFormulario = (
+    <div className="space-y-4">
+      <div className="grid gap-4 md:grid-cols-2">
+        <Input
+          label="Valor total del contrato"
+          type="number"
+          inputMode="decimal"
+          value={contratoForm.valor_total}
+          onChange={(event) => setContratoForm((current) => ({ ...current, valor_total: event.target.value }))}
+          required
+          hint="Monto total del plan en USD."
+        />
+
+        <Input
+          label="Cantidad de cuotas"
+          type="number"
+          inputMode="numeric"
+          value={contratoForm.cantidad_cuotas}
+          onChange={(event) => setContratoForm((current) => ({ ...current, cantidad_cuotas: event.target.value }))}
+          required
+          hint="Cada cuota se genera como cobro independiente."
+        />
+
+        <Input
+          label="Día de pago"
+          type="number"
+          inputMode="numeric"
+          value={contratoForm.dia_pago}
+          onChange={(event) => setContratoForm((current) => ({ ...current, dia_pago: event.target.value }))}
+          required
+          hint="Entre 1 y 28 para evitar saltos de calendario."
+        />
+
+        <Input
+          label="Fecha de la primera cuota"
+          type="date"
+          value={contratoForm.fecha_primera_cuota}
+          onChange={(event) => setContratoForm((current) => ({ ...current, fecha_primera_cuota: event.target.value }))}
+          required
+        />
+
+        <Input
+          label="Valor de mantenimiento mensual"
+          type="number"
+          inputMode="decimal"
+          value={contratoForm.valor_mantenimiento_mensual}
+          onChange={(event) =>
+            setContratoForm((current) => ({ ...current, valor_mantenimiento_mensual: event.target.value }))
+          }
+          hint="Opcional. Dejalo vacío o en 0 si no aplica."
+        />
+
+        <Input
+          label="Día de facturación del mantenimiento"
+          type="number"
+          inputMode="numeric"
+          value={contratoForm.dia_facturacion_mantenimiento}
+          onChange={(event) =>
+            setContratoForm((current) => ({ ...current, dia_facturacion_mantenimiento: event.target.value }))
+          }
+          hint="Solo si hay mantenimiento. Entre 1 y 28."
+          disabled={!contratoForm.valor_mantenimiento_mensual.trim() || Number(contratoForm.valor_mantenimiento_mensual) <= 0}
+        />
+      </div>
+
+      {contratoActivo && contratoEditing ? (
+        <div className="rounded-card border border-warning bg-warning-light px-4 py-3 text-sm text-carbon">
+          Al confirmar la redefinición, las cuotas ya cobradas quedan intactas y solo se reemplazan las pendientes.
+        </div>
+      ) : null}
+
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <button
+          type="button"
+          onClick={() => setActiveTab("cobros")}
+          className="text-sm text-signal transition-colors duration-fast ease-fast hover:text-signal-hover"
+        >
+          Ver cuotas y editarlas individualmente
+        </button>
+
+        <div className="flex flex-wrap gap-2">
+          {contratoActivo && contratoEditing ? (
+            <Button variant="ghost" onClick={cancelContractEditing}>
+              Cancelar
+            </Button>
+          ) : null}
+
+          <Button
+            variant={contratoActivo ? "secondary" : "primary"}
+            loading={savingContrato}
+            onClick={() => {
+              void handleContractSubmit();
+            }}
+          >
+            {contratoActivo && contratoEditing ? "Redefinir contrato" : "Generar plan de pago"}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <div className="flex h-full flex-col gap-4">
@@ -738,6 +1052,97 @@ export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
             </div>
           ) : (
             <EmptyState text="Este cliente no tiene proyectos todavía." />
+          )}
+        </Card>
+      ) : null}
+
+      {activeTab === "contrato" ? (
+        <Card padding="lg" className="space-y-5">
+          {tabLoading === "contrato" ? (
+            <p className="text-sm text-graphite">Cargando contrato...</p>
+          ) : contratoActivo ? (
+            <div className="space-y-5">
+              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                <Card padding="md" className="space-y-1">
+                  <p className="text-xs uppercase tracking-[0.08em] text-graphite">Valor total</p>
+                  <p className="text-lg font-title text-carbon">{formatUSD(contratoActivo.valor_total)}</p>
+                </Card>
+                <Card padding="md" className="space-y-1">
+                  <p className="text-xs uppercase tracking-[0.08em] text-graphite">Cuotas</p>
+                  <p className="text-lg font-title text-carbon">{contratoActivo.cantidad_cuotas}</p>
+                </Card>
+                <Card padding="md" className="space-y-1">
+                  <p className="text-xs uppercase tracking-[0.08em] text-graphite">Cobrado</p>
+                  <p className="text-lg font-title text-carbon">{formatUSD(contratoResumen.cobrado.monto)}</p>
+                  <p className="text-xs text-graphite">
+                    {contratoResumen.cobrado.cantidad} de {contratoActivo.cantidad_cuotas} cuotas
+                  </p>
+                </Card>
+                <Card padding="md" className="space-y-1">
+                  <p className="text-xs uppercase tracking-[0.08em] text-graphite">Mantenimiento</p>
+                  <p className="text-lg font-title text-carbon">
+                    {contratoActivo.valor_mantenimiento_mensual != null
+                      ? formatUSD(contratoActivo.valor_mantenimiento_mensual)
+                      : "Sin mantenimiento"}
+                  </p>
+                  <p className="text-xs text-graphite">
+                    {contratoActivo.dia_facturacion_mantenimiento != null
+                      ? `Factura el día ${contratoActivo.dia_facturacion_mantenimiento}`
+                      : "Sin día de facturación"}
+                  </p>
+                </Card>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between gap-3 text-xs font-label uppercase tracking-[0.08em] text-graphite">
+                  <span>Avance del plan</span>
+                  <span>{contratoProgresoPct}%</span>
+                </div>
+                <div className="h-3 overflow-hidden rounded-full bg-paper">
+                  <div
+                    className="h-full rounded-full bg-signal transition-all duration-fast ease-fast"
+                    style={{ width: `${contratoProgresoPct}%` }}
+                  />
+                </div>
+                <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-graphite">
+                  <span>{formatUSD(contratoResumen.cobrado.monto)} cobrados</span>
+                  <span>{formatUSD(contratoPendienteMonto)} pendientes / por facturar</span>
+                </div>
+              </div>
+
+              {contratoEditing ? contratoFormulario : null}
+
+              {!contratoEditing ? (
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <button
+                    type="button"
+                    onClick={startContractRedefinition}
+                    className="rounded-component border border-line bg-white px-4 py-2 text-sm font-label text-carbon transition-colors duration-fast ease-fast hover:bg-paper"
+                  >
+                    Redefinir contrato
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("cobros")}
+                    className="text-sm text-signal transition-colors duration-fast ease-fast hover:text-signal-hover"
+                  >
+                    Ver cuotas y editarlas individualmente
+                  </button>
+                </div>
+              ) : null}
+            </div>
+          ) : (
+            <div className="space-y-5">
+              <div className="space-y-2">
+                <h3 className="text-base font-title text-carbon">Generar contrato</h3>
+                <p className="text-sm text-graphite">
+                  Definí el plan completo del cliente una sola vez. Las cuotas se generan automáticamente.
+                </p>
+              </div>
+
+              {contratoFormulario}
+            </div>
           )}
         </Card>
       ) : null}
@@ -1078,6 +1483,75 @@ export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
           </div>
         </Card>
       ) : null}
+
+      <Modal
+        isOpen={contratoConfirmOpen}
+        onClose={() => setContratoConfirmOpen(false)}
+        title="Confirmar redefinición"
+        size="lg"
+      >
+        <div className="space-y-4">
+          <div className="rounded-card border border-warning bg-warning-light px-4 py-3 text-sm text-carbon">
+            <p className="font-title text-carbon">Este cambio impacta solo lo pendiente.</p>
+            <p className="mt-2">
+              Este cliente tiene <strong>{formatUSD(contratoImpacto?.montoCobradas ?? 0)}</strong> ya cobrados en{" "}
+              <strong>{contratoImpacto?.cobradas ?? 0}</strong> cuotas. Eso queda intacto.
+            </p>
+            <p className="mt-2">
+              Se van a eliminar <strong>{contratoImpacto?.pendientes ?? 0}</strong> cuotas pendientes por{" "}
+              <strong>{formatUSD(contratoImpacto?.montoPendiente ?? 0)}</strong> y se va a generar un nuevo plan de{" "}
+              <strong>{contratoImpacto?.nuevasCuotas ?? 0}</strong> cuotas por{" "}
+              <strong>{formatUSD(contratoImpacto?.nuevoValorTotal ?? 0)}</strong>.
+            </p>
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-sm font-label text-carbon" htmlFor="contrato-motivo-redefinicion">
+              Motivo de la renegociación
+            </label>
+            <textarea
+              id="contrato-motivo-redefinicion"
+              value={contratoForm.motivo_redefinicion}
+              onChange={(event) =>
+                setContratoForm((current) => ({ ...current, motivo_redefinicion: event.target.value }))
+              }
+              placeholder="Cliente pidió ajustar plazos, monto o mantenimiento..."
+              className="min-h-[120px] w-full rounded-component border border-line bg-white px-3 py-2 text-sm text-carbon transition-all duration-fast ease-fast placeholder:text-graphite focus:border-signal focus:outline-none focus:ring-2 focus:ring-signal/20"
+            />
+          </div>
+
+          <div className="flex items-center justify-end gap-3">
+            <Button variant="ghost" onClick={() => setContratoConfirmOpen(false)}>
+              Cancelar
+            </Button>
+            <Button
+              variant="danger"
+              loading={savingContrato}
+              onClick={() => {
+                void persistContrato({
+                  valor_total: Number(contratoForm.valor_total),
+                  cantidad_cuotas: Number(contratoForm.cantidad_cuotas),
+                  dia_pago: Number(contratoForm.dia_pago),
+                  fecha_primera_cuota: contratoForm.fecha_primera_cuota.trim(),
+                  valor_mantenimiento_mensual:
+                    contratoForm.valor_mantenimiento_mensual.trim() &&
+                    Number(contratoForm.valor_mantenimiento_mensual) > 0
+                      ? Number(contratoForm.valor_mantenimiento_mensual)
+                      : null,
+                  dia_facturacion_mantenimiento:
+                    contratoForm.valor_mantenimiento_mensual.trim() &&
+                    Number(contratoForm.valor_mantenimiento_mensual) > 0
+                      ? Number(contratoForm.dia_facturacion_mantenimiento)
+                      : null,
+                  motivo_redefinicion: contratoForm.motivo_redefinicion.trim() || null
+                });
+              }}
+            >
+              Confirmar redefinición
+            </Button>
+          </div>
+        </div>
+      </Modal>
 
       <CobroModal
         isOpen={cobroModalOpen}

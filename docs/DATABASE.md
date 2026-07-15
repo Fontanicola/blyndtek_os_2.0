@@ -294,7 +294,7 @@
 
 **PK:** `id`
 
-**FKs:** `cliente_id` → `clientes.id`; `proyecto_id` → `proyectos.id`; `suscripcion_id` → `suscripciones.id`; `cotizacion_id` → `cotizaciones.id`
+**FKs:** `cliente_id` → `clientes.id`; `contrato_id` → `contratos.id`; `proyecto_id` → `proyectos.id`; `suscripcion_id` → `suscripciones.id`; `cotizacion_id` → `cotizaciones.id`
 
 **RLS esperada:** acceso para `admin` sí; acceso para `miembro` no.
 
@@ -302,6 +302,7 @@
 | --- | --- | --- | --- |
 | id | uuid | No | PK |
 | cliente_id | uuid | No especificado | FK → `clientes` |
+| contrato_id | uuid | Sí | FK → `contratos` (nullable) |
 | proyecto_id | uuid | Sí | FK → `proyectos` (nullable) |
 | suscripcion_id | uuid | Sí | FK → `suscripciones` (nullable) |
 | cotizacion_id | uuid | Sí | FK → `cotizaciones` (nullable) |
@@ -360,11 +361,34 @@
 | notas | text | No especificado |  |
 | created_at | timestamptz | No especificado |  |
 
+## Tabla: contratos
+
+**PK:** `id`
+
+**FKs:** `cliente_id` → `clientes.id`; `reemplaza_a` → `contratos.id`
+
+**RLS esperada:** acceso para `admin` sí; acceso para `miembro` no.
+
+| Campo | Tipo | Nullable | Notas |
+| --- | --- | --- | --- |
+| id | uuid | No | PK |
+| cliente_id | uuid | No especificado | FK → `clientes` |
+| valor_total | numeric (USD) | No especificado | valor total pactado |
+| cantidad_cuotas | int | No especificado | total de cuotas generadas |
+| dia_pago | int | No especificado | día de vencimiento recurrente entre 1 y 28 |
+| fecha_primera_cuota | date | No especificado | vencimiento inicial del plan |
+| valor_mantenimiento_mensual | numeric | Sí | monto de mantenimiento mensual, si aplica |
+| dia_facturacion_mantenimiento | int | Sí | día de facturación del mantenimiento entre 1 y 28 |
+| estado | enum (`activo|reemplazado`) | No especificado | contrato vigente o reemplazado |
+| reemplaza_a | uuid | Sí | FK al contrato anterior cuando se redefine |
+| motivo_redefinicion | text | Sí | motivo opcional de renegociación |
+| created_at | timestamptz | No especificado |  |
+
 ## Tabla: suscripciones
 
 **PK:** `id`
 
-**FKs:** `cliente_id` → `clientes.id`; `proyecto_id` → `proyectos.id`; `cotizacion_id` → `cotizaciones.id`; `producto_id` → `productos.id`; `plan_id` → `producto_planes.id`
+**FKs:** `cliente_id` → `clientes.id`; `proyecto_id` → `proyectos.id`; `cotizacion_id` → `cotizaciones.id`; `contrato_id` → `contratos.id`; `producto_id` → `productos.id`; `plan_id` → `producto_planes.id`
 
 **RLS esperada:** acceso para `admin` sí; acceso para `miembro` no.
 
@@ -374,6 +398,7 @@
 | cliente_id | uuid | No especificado | FK → `clientes` |
 | proyecto_id | uuid | Sí | FK → `proyectos` (nullable) |
 | cotizacion_id | uuid | Sí | FK → `cotizaciones` (nullable) |
+| contrato_id | uuid | Sí | FK → `contratos` (nullable) |
 | producto_id | uuid | Sí | FK → `productos` (suscripción SaaS opcional) |
 | plan_id | uuid | Sí | FK → `producto_planes` (nullable) |
 | tipo | enum (`mantenimiento|brick`) | No especificado |  |
@@ -688,6 +713,7 @@
 - `eventos_invitados.evento_id` → `eventos.id`
 - `eventos_invitados.usuario_id` → `usuarios.id`
 - `cobros.cliente_id` → `clientes.id`
+- `cobros.contrato_id` → `contratos.id`
 - `cobros.proyecto_id` → `proyectos.id`
 - `cobros.suscripcion_id` → `suscripciones.id`
 - `cobros.cotizacion_id` → `cotizaciones.id`
@@ -695,6 +721,7 @@
 - `suscripciones.cliente_id` → `clientes.id`
 - `suscripciones.proyecto_id` → `proyectos.id`
 - `suscripciones.cotizacion_id` → `cotizaciones.id`
+- `suscripciones.contrato_id` → `contratos.id`
 - `suscripciones.producto_id` → `productos.id`
 - `suscripciones.plan_id` → `producto_planes.id`
 - `egresos.comision_id` → `comisiones.id`
@@ -724,18 +751,19 @@ Orden sugerido respetando dependencias de FK:
 11. `tareas`
 12. `eventos`
 13. `eventos_invitados`
-14. `suscripciones`
-15. `cobros`
-16. `egresos`
-17. `config_finanzas`
-18. `cajas`
-19. `wiki_categorias`
-20. `wiki_articulos`
-21. `carpetas`
-22. `archivos`
-23. `tarjetas`
+14. `contratos`
+15. `suscripciones`
+16. `cobros`
+17. `egresos`
+18. `config_finanzas`
+19. `cajas`
+20. `wiki_categorias`
+21. `wiki_articulos`
+22. `carpetas`
+23. `archivos`
+24. `tarjetas`
 
-Nota: `usuarios` debe existir antes que `leads`, `proyectos`, `features`, `tareas`, `eventos` y `eventos_invitados`. `suscripciones` y `cobros` tienen una referencia circular potencial que hay que resolver con FK nullable o deferrable.
+Nota: `usuarios` debe existir antes que `leads`, `proyectos`, `features`, `tareas`, `eventos` y `eventos_invitados`. `contratos`, `suscripciones` y `cobros` se apoyan en `clientes` y deben poder crearse con FKs nullable o deferrable según el orden de carga.
 
 ### Columnas nuevas registradas
 
@@ -758,6 +786,9 @@ Nota: `usuarios` debe existir antes que `leads`, `proyectos`, `features`, `tarea
 - `config_comisiones` guarda el piso, tiers y bono vigentes para calcular comisiones sin hardcodear valores.
 - `egresos.comision_id` uuid nullable para trazar el egreso generado al pagar una comisión y mantener el impacto contable y de runway en caja real.
 - `cobros_historial_cambios` guarda el historial de cambios de monto y fecha de vencimiento de los hitos editados desde la ficha del cliente.
+- `contratos` guarda el plan activo de pago por cliente con valor total, cantidad de cuotas, día de pago, fecha de primera cuota, mantenimiento opcional y el enlace al contrato anterior reemplazado.
+- `cobros.contrato_id` uuid nullable para vincular cada cuota/hito al contrato del que nació.
+- `suscripciones.contrato_id` uuid nullable para vincular la suscripción de mantenimiento al contrato que la originó o la reemplazó.
 - `comisiones` no tiene `proyecto_id`; cualquier referencia de proyecto para reporting debe resolverse vía `cliente_id` / `cotizacion_id` y joins a `proyectos` según contexto.
 
 ### Tabla nueva

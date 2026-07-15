@@ -21,6 +21,7 @@ export type Cobro = {
   cliente?: {
     empresa: string;
   } | null;
+  contrato_id: string | null;
   proyecto_id: string | null;
   suscripcion_id: string | null;
   cotizacion_id: string | null;
@@ -39,6 +40,7 @@ export type Cobro = {
 
 export type CreateCobroInput = {
   cliente_id: string;
+  contrato_id?: string | null;
   proyecto_id?: string | null;
   suscripcion_id?: string | null;
   cotizacion_id?: string | null;

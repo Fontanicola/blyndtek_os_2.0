@@ -421,3 +421,10 @@
 - Los pendientes sin fecha esperada se excluyen del cálculo en vez de asumir un mes arbitrario, para no inflar la proyección con datos inventados.
 - El `Runway Lab` presenta esa decisión como un switch visible, y la misma regla queda disponible también desde el endpoint `GET /api/finanzas/runway`.
 - Las hipótesis de costo siguen sumándose sobre la base elegida, sin cambiar su lógica ni mezclar el tratamiento de ingresos con el de escenarios.
+
+## 2026-07-15 — Redefinición de contratos sin tocar cobros cobrados
+
+- Redefinir un contrato nunca puede eliminar ni modificar cobros con estado `cobrado`.
+- Si el cliente ya tenía cobros cobrados, esos quedan intactos y sólo se reemplazan las cuotas todavía pendientes, facturadas o vencidas.
+- El modal de confirmación debe mostrar explícitamente cuántas cuotas ya están cobradas y cuántas pendientes se van a reemplazar antes de ejecutar el guardado.
+- La suscripción de mantenimiento, si existe, se mantiene vinculada al contrato más reciente para que Finanzas siga leyendo una sola fuente de verdad.

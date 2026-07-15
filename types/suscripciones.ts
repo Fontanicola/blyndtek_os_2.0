@@ -5,6 +5,7 @@ export type EstadoSuscripcion = "pendiente" | "activa" | "pausada" | "baja";
 export type Suscripcion = {
   id: string;
   cliente_id: string;
+  contrato_id: string | null;
   proyecto_id: string | null;
   cotizacion_id: string | null;
   producto_id: string | null;
@@ -22,6 +23,7 @@ export type Suscripcion = {
 
 export type CreateSuscripcionInput = {
   cliente_id: string;
+  contrato_id?: string | null;
   proyecto_id?: string | null;
   cotizacion_id?: string | null;
   producto_id?: string | null;
