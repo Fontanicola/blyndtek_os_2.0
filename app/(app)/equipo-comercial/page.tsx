@@ -156,7 +156,7 @@ export default async function EquipoComercialPage() {
   const metrics = users.map((user) => buildMetrics({ user, leads, clientes, cotizaciones, comisiones }));
 
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-hidden">
+    <div className="flex min-h-full flex-col pb-6">
       <div className="space-y-6">
         <div className="space-y-2">
           <h1 className="text-2xl font-title text-carbon">Equipo comercial</h1>
