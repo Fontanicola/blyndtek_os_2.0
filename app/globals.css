@@ -18,6 +18,21 @@
     background-color: theme("colors.paper");
     color: theme("colors.carbon");
   }
+
+  select {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 18' fill='none'%3E%3Cpath d='M4.5 6.75L9 11.25L13.5 6.75' stroke='%23606A7D' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.85rem center;
+    background-size: 0.85rem 0.85rem;
+    padding-right: 2.5rem;
+  }
+
+  select::-ms-expand {
+    display: none;
+  }
 }
 
 @media print {

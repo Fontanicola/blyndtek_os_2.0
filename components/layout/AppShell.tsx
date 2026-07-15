@@ -31,7 +31,7 @@ export function AppShell({ children, usuario }: AppShellProps) {
       <Sidebar usuario={usuario} mobile isOpen={isOpen} onClose={() => setIsOpen(false)} />
 
       <div className="flex min-w-0 flex-1 flex-col pt-2 pr-0 md:pt-4 md:pr-0">
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-tl-card bg-white shadow-soft">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-tl-card bg-white shadow-[0_2px_10px_rgba(11,14,20,0.06)]">
           <Topbar
             usuario={usuario}
             onMenuToggle={() => setIsOpen((previous) => !previous)}

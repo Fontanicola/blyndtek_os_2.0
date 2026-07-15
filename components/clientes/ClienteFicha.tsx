@@ -116,6 +116,24 @@ function formatDateTime(value: string) {
   }).format(new Date(value));
 }
 
+function formatFechaCorta(value: string | null | undefined) {
+  if (!value) {
+    return "Sin fecha";
+  }
+
+  const parsed = new Date(value);
+
+  if (Number.isNaN(parsed.getTime())) {
+    return "Sin fecha";
+  }
+
+  return new Intl.DateTimeFormat("es-AR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric"
+  }).format(parsed);
+}
+
 function InlineText({
   label,
   value,
@@ -1311,11 +1329,12 @@ export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
               </div>
 
               <div className="overflow-hidden rounded-card border border-line-soft">
-                <div className="grid grid-cols-[minmax(0,2fr)_auto_auto_auto_auto_auto] gap-3 border-b border-line-soft bg-paper px-4 py-3 text-xs font-label uppercase tracking-[0.08em] text-graphite">
+                <div className="grid grid-cols-[minmax(280px,360px)_92px_110px_110px_120px_120px_96px] gap-3 border-b border-line-soft bg-paper px-4 py-3 text-xs font-label uppercase tracking-[0.08em] text-graphite">
                   <span>Concepto</span>
                   <span>Tipo</span>
-                  <span>Monto</span>
+                  <span>Emisión</span>
                   <span>Vencimiento</span>
+                  <span>Monto</span>
                   <span>Estado</span>
                   <span className="sr-only">Acciones</span>
                 </div>
@@ -1326,11 +1345,16 @@ export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
 
                     return (
                       <div key={cobro.id} className="border-b border-line-soft last:border-b-0">
-                        <div className="grid grid-cols-[minmax(0,2fr)_auto_auto_auto_auto_auto] items-center gap-3 px-4 py-3 text-sm">
+                        <div className="grid grid-cols-[minmax(280px,360px)_92px_110px_110px_120px_120px_96px] items-center gap-3 px-4 py-3 text-sm">
                           <span className="truncate font-label text-carbon">{cobro.concepto}</span>
                           <Badge variant="default">{cobro.tipo}</Badge>
+                          <span className="whitespace-nowrap text-graphite" title={formatFecha(cobro.fecha_emision)}>
+                            {formatFechaCorta(cobro.fecha_emision)}
+                          </span>
+                          <span className="whitespace-nowrap text-graphite" title={formatFecha(cobro.fecha_vencimiento)}>
+                            {formatFechaCorta(cobro.fecha_vencimiento)}
+                          </span>
                           <span className="text-carbon">{formatUSD(cobro.monto)}</span>
-                          <span className="text-graphite">{formatFecha(cobro.fecha_vencimiento)}</span>
                           <CobroBadge estado={cobro.estado} />
                           <div className="flex items-center justify-end gap-1">
                             <button

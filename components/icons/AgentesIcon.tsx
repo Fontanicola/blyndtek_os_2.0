@@ -1,14 +1,17 @@
 export function AgentesIcon() {
   return (
     <svg viewBox="0 0 18 18" fill="none" aria-hidden="true" className="h-[18px] w-[18px]">
-      <circle cx="5" cy="5.25" r="1.25" stroke="currentColor" strokeWidth="1.4" />
-      <circle cx="13" cy="5.25" r="1.25" stroke="currentColor" strokeWidth="1.4" />
-      <circle cx="9" cy="12.5" r="1.25" stroke="currentColor" strokeWidth="1.4" />
-      <path d="M6.1 5.85L8.1 8.9" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-      <path d="M11.9 5.85L9.9 8.9" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-      <path d="M6.1 5.85H11.9" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-      <path d="M5.8 6.8L8.2 11.2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-      <path d="M12.2 6.8L9.8 11.2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+      <circle cx="9" cy="9" r="5.5" stroke="currentColor" strokeWidth="1.4" />
+      <path d="M9 3.5V5.25" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+      <path d="M9 12.75V14.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+      <path d="M3.5 9H5.25" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+      <path d="M12.75 9H14.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+      <path
+        d="M9 6.25L10.3 8.1L12.5 8.2L11 9.65L11.45 11.75L9.5 10.75L7.55 11.75L8 9.65L6.5 8.2L8.7 8.1L9 6.25Z"
+        stroke="currentColor"
+        strokeWidth="1.2"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }

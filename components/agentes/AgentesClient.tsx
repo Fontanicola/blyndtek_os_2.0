@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Badge, Button, Card, Input, Spinner, Toast } from "@/components/ui";
+import { AgentesIcon } from "@/components/icons";
 import { formatUSD } from "@/lib/utils/formatters";
 import type { Agente, AgenteAnalisis, AgenteConfig } from "@/types/agentes";
 
@@ -41,6 +42,7 @@ function analysisPreview(value: string) {
 
 export function AgentesClient({ agentes }: AgentesClientProps) {
   const [selectedSlug, setSelectedSlug] = useState(agentes[0]?.slug ?? "");
+  const [expandedDescriptions, setExpandedDescriptions] = useState<Record<string, boolean>>({});
   const selectedAgent = useMemo(
     () => agentes.find((agente) => agente.slug === selectedSlug) ?? agentes[0] ?? null,
     [agentes, selectedSlug]
@@ -72,6 +74,13 @@ export function AgentesClient({ agentes }: AgentesClientProps) {
 
   function hideToast() {
     setToast((current) => ({ ...current, visible: false }));
+  }
+
+  function toggleDescription(id: string) {
+    setExpandedDescriptions((current) => ({
+      ...current,
+      [id]: !current[id]
+    }));
   }
 
   async function handleSave() {
@@ -118,6 +127,7 @@ export function AgentesClient({ agentes }: AgentesClientProps) {
       <div className="flex w-80 flex-shrink-0 flex-col gap-3">
         {agentes.map((agente) => {
           const isSelected = agente.slug === selectedAgent?.slug;
+          const isExpanded = expandedDescriptions[agente.id] ?? false;
 
           return (
             <Card
@@ -126,16 +136,48 @@ export function AgentesClient({ agentes }: AgentesClientProps) {
               onClick={() => setSelectedSlug(agente.slug)}
               className={
                 isSelected
-                  ? "border border-signal/20 bg-signal-light shadow-modal"
-                  : "border border-transparent hover:border-line"
+                  ? "border border-signal/20 bg-signal-light shadow-soft"
+                  : "border border-transparent shadow-soft hover:border-line"
               }
             >
               <div className="flex items-start justify-between gap-3">
-                <div className="space-y-1">
-                  <p className="font-title text-base text-carbon">{agente.nombre}</p>
-                  <p className="text-sm text-graphite">{agente.descripcion ?? "Agente disponible"}</p>
+                <div className="min-w-0 space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-pill bg-paper text-signal">
+                      <AgentesIcon />
+                    </span>
+                    <p className="truncate font-title text-base text-carbon">{agente.nombre}</p>
+                  </div>
+                  {isExpanded ? <p className="text-sm leading-6 text-graphite">{agente.descripcion ?? "Agente disponible"}</p> : null}
                 </div>
-                <Badge variant={agente.activo ? "success" : "ghost"}>{agente.activo ? "Activo" : "Inactivo"}</Badge>
+                <div className="flex shrink-0 items-start gap-2">
+                  <Badge variant={agente.activo ? "success" : "ghost"}>{agente.activo ? "Activo" : "Inactivo"}</Badge>
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      toggleDescription(agente.id);
+                    }}
+                    className="mt-0.5 inline-flex h-8 w-8 items-center justify-center rounded-pill text-graphite transition-colors duration-fast ease-fast hover:bg-paper hover:text-carbon"
+                    aria-label={isExpanded ? "Ocultar descripción" : "Ver descripción"}
+                    title={isExpanded ? "Ocultar descripción" : "Ver descripción"}
+                  >
+                    <svg
+                      viewBox="0 0 18 18"
+                      fill="none"
+                      aria-hidden="true"
+                      className={["h-4 w-4 transition-transform duration-fast ease-fast", isExpanded ? "rotate-180" : "rotate-0"].join(" ")}
+                    >
+                      <path
+                        d="M4.5 6.75L9 11.25L13.5 6.75"
+                        stroke="currentColor"
+                        strokeWidth="1.75"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </button>
+                </div>
               </div>
             </Card>
           );
@@ -251,7 +293,7 @@ export function AgentesClient({ agentes }: AgentesClientProps) {
                     return (
                       <details
                         key={analisis.id}
-                        className="rounded-card border border-line bg-white p-4 shadow-card"
+                        className="rounded-card border border-line bg-white p-4 shadow-soft"
                       >
                         <summary className="cursor-pointer list-none">
                           <div className="flex items-start justify-between gap-3">

@@ -2,23 +2,33 @@ export function ProyectosIcon() {
   return (
     <svg viewBox="0 0 18 18" fill="none" aria-hidden="true" className="h-[18px] w-[18px]">
       <rect
-        x="3.75"
-        y="4"
-        width="10.5"
-        height="9.5"
+        x="3.25"
+        y="4.25"
+        width="11.5"
+        height="9.25"
         rx="2"
         stroke="currentColor"
         strokeWidth="1.5"
       />
       <path
-        d="M7 4V3.25C7 2.97 7.22 2.75 7.5 2.75H10.5C10.78 2.75 11 2.97 11 3.25V4"
+        d="M6.75 4.25V3.5C6.75 3.22 6.97 3 7.25 3h3.5c.28 0 .5.22.5.5v.75"
         stroke="currentColor"
         strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
       />
       <path
-        d="M3.75 8.5H14.25"
+        d="M3.25 8.5H14.75"
         stroke="currentColor"
         strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M6 11H12"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
       />
     </svg>
   );

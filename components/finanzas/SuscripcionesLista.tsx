@@ -5,11 +5,13 @@ import { cn } from "@/lib/cn";
 import { isCobroVencido } from "@/lib/finanzas";
 import { formatFecha, formatUSD } from "@/lib/utils/formatters";
 import type { Cobro } from "@/types/cobros";
+import type { Cliente } from "@/types/clientes";
 import type { Cotizacion } from "@/types/cotizaciones";
 import type { Suscripcion } from "@/types/suscripciones";
 
 type SuscripcionesListaProps = {
   suscripciones: Suscripcion[];
+  clientes: Array<Pick<Cliente, "id" | "empresa">>;
   cotizaciones: Array<Pick<Cotizacion, "id" | "empresa" | "precio_total">>;
   onActivate: (suscripcion: Suscripcion) => Promise<void> | void;
   onMarkCobrado: (suscripcion: Suscripcion, cobro: Cobro | null) => Promise<void> | void;
@@ -29,6 +31,7 @@ const estadoVariant = {
 
 export function SuscripcionesLista({
   suscripciones,
+  clientes,
   onActivate,
   onMarkCobrado,
   onNew,
@@ -41,12 +44,16 @@ export function SuscripcionesLista({
   const today = new Date();
   const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
 
-  function getCotizacionLabel(cotizacionId: string | null) {
-    if (!cotizacionId) {
-      return "Sin cotización";
+  function getClienteLabel(clienteId: string | null, cotizacionId: string | null) {
+    if (clienteId) {
+      return clientes.find((cliente) => cliente.id === clienteId)?.empresa ?? "Cliente vinculado";
     }
 
-    return cotizaciones.find((cotizacion) => cotizacion.id === cotizacionId)?.empresa ?? "Cotización vinculada";
+    if (cotizacionId) {
+      return cotizaciones.find((cotizacion) => cotizacion.id === cotizacionId)?.empresa ?? "Cotización vinculada";
+    }
+
+    return "Cliente vinculado";
   }
 
   function getCurrentCycleCobro(suscripcion: Suscripcion) {
@@ -113,7 +120,9 @@ export function SuscripcionesLista({
           >
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="text-base font-label text-carbon">{getCotizacionLabel(suscripcion.cotizacion_id)}</p>
+                <p className="text-base font-label text-carbon">
+                  {getClienteLabel(suscripcion.cliente_id, suscripcion.cotizacion_id)}
+                </p>
                 <p className="mt-1 text-sm text-graphite">
                   {suscripcion.tipo} · {formatUSD(suscripcion.monto_mensual)}
                 </p>

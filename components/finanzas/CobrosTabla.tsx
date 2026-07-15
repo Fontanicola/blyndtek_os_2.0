@@ -5,7 +5,7 @@ import { Badge, Button, Card, Input } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { formatCajaLabel } from "@/lib/cajas";
 import { isCobroVencido } from "@/lib/finanzas";
-import { formatFecha, formatUSD } from "@/lib/utils/formatters";
+import { formatUSD } from "@/lib/utils/formatters";
 import type { Caja } from "@/types/cajas";
 import type { Cobro, EstadoCobro } from "@/types/cobros";
 
@@ -51,6 +51,24 @@ function getTipoLabel(tipo: Cobro["tipo"]) {
     return "Brick";
   }
   return "Hito";
+}
+
+function formatFechaCorta(value: string | null | undefined) {
+  if (!value) {
+    return "Sin fecha";
+  }
+
+  const parsed = new Date(value);
+
+  if (Number.isNaN(parsed.getTime())) {
+    return "Sin fecha";
+  }
+
+  return new Intl.DateTimeFormat("es-AR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric"
+  }).format(parsed);
 }
 
 export function CobrosTabla({ cobros, cajas = [], onMarkCobrado, onNew, onEdit }: CobrosTablaProps) {
@@ -120,6 +138,7 @@ export function CobrosTabla({ cobros, cajas = [], onMarkCobrado, onNew, onEdit }
                 <th className="px-4 py-3">Concepto</th>
                 <th className="px-4 py-3">Cliente</th>
                 <th className="px-4 py-3">Tipo</th>
+                <th className="px-4 py-3">Emisión</th>
                 <th className="px-4 py-3">Monto</th>
                 <th className="px-4 py-3">Vencimiento</th>
                 <th className="px-4 py-3">Estado</th>
@@ -145,14 +164,15 @@ export function CobrosTabla({ cobros, cajas = [], onMarkCobrado, onNew, onEdit }
                       {cobro.cliente?.empresa ?? cobro.cliente_id}
                     </td>
                     <td className="px-4 py-3 text-sm text-graphite">{getTipoLabel(cobro.tipo)}</td>
+                    <td className="px-4 py-3 text-sm text-graphite whitespace-nowrap">{formatFechaCorta(cobro.fecha_emision)}</td>
                     <td className="px-4 py-3 text-sm font-label text-carbon">{formatUSD(cobro.monto)}</td>
-                    <td className="px-4 py-3 text-sm text-graphite">{formatFecha(cobro.fecha_vencimiento)}</td>
+                    <td className="px-4 py-3 text-sm text-graphite whitespace-nowrap">{formatFechaCorta(cobro.fecha_vencimiento)}</td>
                     <td className="px-4 py-3">
                       <div className="flex flex-col gap-2">
                         <Badge variant={getEstadoVariant(cobro.estado)}>{estadoLabels[cobro.estado]}</Badge>
                         {cobro.estado === "cobrado" && cobro.cuenta_medio ? (
-                        <Badge variant="default">{formatCajaLabel(cobro.cuenta_medio, cajas)}</Badge>
-                      ) : null}
+                          <Badge variant="default">{formatCajaLabel(cobro.cuenta_medio, cajas)}</Badge>
+                        ) : null}
                       </div>
                     </td>
                     <td className="px-4 py-3 text-right">
@@ -170,7 +190,7 @@ export function CobrosTabla({ cobros, cajas = [], onMarkCobrado, onNew, onEdit }
               })}
               {filteredCobros.length === 0 ? (
                 <tr>
-                  <td className="px-4 py-8 text-center text-sm text-graphite" colSpan={7}>
+                  <td className="px-4 py-8 text-center text-sm text-graphite" colSpan={8}>
                     No hay cobros para mostrar.
                   </td>
                 </tr>

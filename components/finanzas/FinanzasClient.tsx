@@ -512,6 +512,7 @@ export function FinanzasClient({ cotizaciones, asesorFinancieroAnalisis }: Finan
         {activeTab === "suscripciones" ? (
         <SuscripcionesLista
           suscripciones={suscripciones}
+          clientes={clientes.map((cliente) => ({ id: cliente.id, empresa: cliente.empresa }))}
           cotizaciones={cotizaciones}
           cobros={cobros}
           onActivate={async (suscripcion) => {
