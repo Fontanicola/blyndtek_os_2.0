@@ -2,6 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { Badge, Button, Card } from "@/components/ui";
+import { FinanzasIcon } from "@/components/icons";
+import { MetricaCard } from "./MetricaCard";
 import { formatFecha, formatUSD } from "@/lib/utils/formatters";
 import type { ComisionListado } from "@/types/comisiones";
 import type { Usuario } from "@/types/auth";
@@ -78,14 +80,13 @@ export function ComisionesTabla({ comisiones, vendedores, onMarkPagada }: Comisi
   return (
     <div className="space-y-4">
       <div className="grid gap-4 md:grid-cols-2">
-        <Card padding="md" className="space-y-2">
-          <p className="text-xs font-label uppercase tracking-[0.08em] text-graphite">Comisiones pagadas del mes</p>
-          <p className="text-2xl font-title text-carbon">{formatUSD(pagadasMes)}</p>
-        </Card>
-        <Card padding="md" className="space-y-2">
-          <p className="text-xs font-label uppercase tracking-[0.08em] text-graphite">Comisiones pendientes totales</p>
-          <p className="text-2xl font-title text-carbon">{formatUSD(pendientesTotales)}</p>
-        </Card>
+        <MetricaCard label="Comisiones pagadas del mes" value={formatUSD(pagadasMes)} icono={<FinanzasIcon />} colorIcono="success" />
+        <MetricaCard
+          label="Comisiones pendientes totales"
+          value={formatUSD(pendientesTotales)}
+          icono={<FinanzasIcon />}
+          colorIcono={pendientesTotales > 0 ? "warning" : "graphite"}
+        />
       </div>
 
       <Card padding="md" className="space-y-4">

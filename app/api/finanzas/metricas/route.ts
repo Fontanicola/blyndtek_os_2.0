@@ -53,6 +53,7 @@ export async function GET() {
     const today = new Date();
     const { start: monthStart, end: monthEnd } = currentMonthBounds(today);
     const mrr = suscripciones.reduce((total, item) => total + item.monto_mensual, 0);
+    const cobrosCobrados = cobros.filter((cobro) => cobro.estado === "cobrado");
 
     const cobrosPendientes = cobros
       .filter((cobro) => cobro.estado === "pendiente")
@@ -60,28 +61,28 @@ export async function GET() {
 
     const cobrosVencidos = cobros.filter((cobro) => isCobroVencido(cobro, today)).reduce((total, cobro) => total + cobro.monto, 0);
     const comisionesPendientesUsd = comisionesPendientes.reduce((total, comision) => total + comision.monto_comision, 0);
+    const facturacionTotal = cobrosCobrados.reduce((total, cobro) => total + cobro.monto, 0);
 
-    const ingresosMes = cobros
-      .filter((cobro) => cobro.estado === "cobrado" && cobro.fecha_cobro)
+    const ingresosMes = cobrosCobrados
       .filter((cobro) => {
-        const fecha = new Date(cobro.fecha_cobro ?? cobro.fecha_emision);
+        const fecha = new Date(cobro.fecha_cobro ?? cobro.fecha_emision ?? cobro.created_at);
         return fecha >= monthStart && fecha < monthEnd;
       })
       .reduce((total, cobro) => total + cobro.monto, 0);
 
-    const egresosMes = calcularEgresosPeriodo(egresos, monthStart, monthEnd)
-      .reduce((total, egreso) => total + egreso.monto, 0);
+    const egresosMes = calcularEgresosPeriodo(egresos, monthStart, monthEnd).reduce((total, egreso) => total + egreso.monto, 0);
 
     const plMes = ingresosMes - egresosMes;
     const cajaActual =
       config.caja_inicial +
-      cobros.filter((cobro) => cobro.estado === "cobrado").reduce((total, cobro) => total + cobro.monto, 0) -
+      cobrosCobrados.reduce((total, cobro) => total + cobro.monto, 0) -
       egresos.filter((egreso) => egreso.pagado).reduce((total, egreso) => total + egreso.monto, 0);
     const runwayProjection = calculateRunwayProjection(cajaActual, cobros, egresos, suscripciones, today);
     const historicoPl = buildMonthlyFinancialSeries(cobros, egresos, suscripciones, 12);
 
     const metricas: MetricasFinanzas = {
       mrr,
+      facturacion_total: facturacionTotal,
       cobros_pendientes: cobrosPendientes,
       cobros_vencidos: cobrosVencidos,
       comisiones_pendientes_usd: comisionesPendientesUsd,

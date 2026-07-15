@@ -40,6 +40,7 @@ export type TesoreriaFinanzas = {
 
 export type MetricasFinanzas = {
   mrr: number;
+  facturacion_total: number;
   cobros_pendientes: number;
   cobros_vencidos: number;
   comisiones_pendientes_usd: number;

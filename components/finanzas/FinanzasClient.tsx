@@ -38,6 +38,7 @@ type MetricCardData = {
   value: string;
   icono?: ReactNode;
   colorIcono?: "signal" | "success" | "danger" | "warning" | "graphite";
+  description?: string;
   trend?: string;
   direction?: "up" | "down";
   status?: {
@@ -185,9 +186,14 @@ export function FinanzasClient() {
       ? { label: "Sin quema neta", variant: "success" as const }
       : metricas?.runway_estado === "agotado"
         ? { label: "Caja agotada", variant: "danger" as const }
-        : metricas?.runway_estado === "normal"
+    : metricas?.runway_estado === "normal"
           ? { label: "En curso", variant: "signal" as const }
           : undefined;
+  const facturacionTotal = metricas?.facturacion_total ?? 0;
+  const cajaActual = tesoreria?.balance_total ?? metricas?.caja_actual ?? 0;
+  const porCobrar = (metricas?.cobros_pendientes ?? 0) + (metricas?.cobros_vencidos ?? 0);
+  const cobrosPendientesCardColor = porCobrar > 0 ? "warning" : "graphite";
+  const cajaCardColor = cajaActual > 0 ? "success" : cajaActual < 0 ? "danger" : "warning";
 
   function showToast(message: string, type: "success" | "info" | "warning" | "error" = "info") {
     setToast({ message, type, visible: true });
@@ -331,26 +337,19 @@ export function FinanzasClient() {
       status: runwayStatus
     },
     {
-      label: "Cobros pendientes",
-      value: formatUSD(metricas?.cobros_pendientes ?? 0),
+      label: "Facturación total",
+      value: formatUSD(facturacionTotal),
       icono: <FinanzasIcon />,
-      colorIcono: "warning",
+      colorIcono: "signal",
       trend: undefined,
       direction: undefined
     },
     {
-      label: "Cobros vencidos",
-      value: formatUSD(metricas?.cobros_vencidos ?? 0),
-      icono: <BellIcon />,
-      colorIcono: "danger",
-      trend: undefined,
-      direction: undefined
-    },
-    {
-      label: "Comisiones pendientes",
-      value: formatUSD(metricas?.comisiones_pendientes_usd ?? 0),
+      label: "Caja actual",
+      value: formatUSD(cajaActual),
       icono: <FinanzasIcon />,
-      colorIcono: (metricas?.comisiones_pendientes_usd ?? 0) > 0 ? "warning" : "graphite",
+      colorIcono: cajaCardColor,
+      description: `${formatUSD(porCobrar)} por cobrar`,
       trend: undefined,
       direction: undefined
     },
@@ -423,7 +422,7 @@ export function FinanzasClient() {
         {activeTab === "resumen" ? (
         <div className="flex flex-col gap-6">
           <div className="overflow-x-auto pb-1">
-            <div className="grid min-w-[1340px] grid-cols-6 gap-4">
+            <div className="grid min-w-[1120px] grid-cols-5 gap-4">
               {metricCards.map((card) => (
                 <MetricaCard
                   key={card.label}
@@ -431,6 +430,7 @@ export function FinanzasClient() {
                   value={card.value}
                   icono={card.icono}
                   colorIcono={card.colorIcono}
+                  description={card.description}
                   trend={card.trend}
                   direction={card.direction}
                   status={card.status}
@@ -448,6 +448,20 @@ export function FinanzasClient() {
 
         {activeTab === "cobros" ? (
         <div className="flex flex-col gap-6">
+          <div className="grid gap-4 md:grid-cols-2">
+            <MetricaCard
+              label="Cobros pendientes"
+              value={formatUSD(metricas?.cobros_pendientes ?? 0)}
+              icono={<FinanzasIcon />}
+              colorIcono={cobrosPendientesCardColor}
+            />
+            <MetricaCard
+              label="Cobros vencidos"
+              value={formatUSD(metricas?.cobros_vencidos ?? 0)}
+              icono={<BellIcon />}
+              colorIcono={(metricas?.cobros_vencidos ?? 0) > 0 ? "danger" : "graphite"}
+            />
+          </div>
           <CarteraClientesChart data={carteraClientes} />
           <CobrosTabla
             cobros={cobros}
@@ -533,11 +547,13 @@ export function FinanzasClient() {
         ) : null}
 
         {activeTab === "comisiones" ? (
-        <ComisionesTabla
-          comisiones={comisiones}
-          vendedores={usuariosComerciales}
-          onMarkPagada={handleMarkComisionPagada}
-        />
+        <div className="flex flex-col gap-4">
+          <ComisionesTabla
+            comisiones={comisiones}
+            vendedores={usuariosComerciales}
+            onMarkPagada={handleMarkComisionPagada}
+          />
+        </div>
         ) : null}
 
         {activeTab === "tesoreria" ? (

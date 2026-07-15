@@ -434,3 +434,9 @@
 - Los costos cargados desde la ficha del cliente son egresos normales con `cliente_id` opcional, no una tabla paralela.
 - Esa elección hace que impacten automáticamente en P&L, runway, tesorería y cualquier otra vista que ya lea de `egresos`, sin duplicar lógica ni mantener dos fuentes de verdad.
 - Si un egreso también se vincula a un proyecto, esa relación se conserva como dato adicional, pero la entidad financiera principal sigue siendo siempre `egresos`.
+
+## 2026-07-15 — P&L y facturación total usan caja cobrada completa
+
+- El P&L general y la `Facturación total` consideran todos los cobros con estado `cobrado`, sin distinguir tipo.
+- La empresa no separa "ingreso de suscripción" de "ingreso de desarrollo" a nivel de rentabilidad general: todo cobro cobrado es ingreso real de caja.
+- Las métricas de pendiente y vencido siguen existiendo, pero sólo como lectura operativa; no alteran la definición de ingreso real del P&L.

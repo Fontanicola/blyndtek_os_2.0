@@ -1689,3 +1689,12 @@ $ find . -maxdepth 3 \( -name 'middleware.*' -o -name 'proxy.*' \) -not -path '.
 - `components/finanzas/EgresoModal.tsx` ahora acepta `defaults` y `saving`, así el alta de costos desde la ficha arranca ya vinculada al cliente y, si existe, a su proyecto activo.
 - `lib/finanzas/calcularEgresosPeriodo.ts` ahora acepta `clienteId` opcional para filtrar egresos por cliente sin romper el helper compartido.
 - Verificación local ejecutada: `npm run lint` y `npm run build` pasan correctamente.
+
+## 2026-07-15 — P&L y Resumen financiero reorganizados
+
+- Se auditó el cálculo de `historico_pl` y se confirmó que no filtraba por tipo de cobro; el ajuste se centró en dejar explícito que todo cobro `cobrado` cuenta como ingreso real, incluyendo facturación de desarrollo, contratos y mantenimiento.
+- `app/api/finanzas/metricas/route.ts` ahora expone `facturacion_total` y calcula el ingreso mensual y el histórico con el criterio completo de caja cobrada.
+- La tab `Resumen` de Finanzas quedó con 5 cards: `MRR actual`, `Runway`, `Facturación total`, `Caja actual` y `P&L del mes`.
+- Las cards de `Cobros pendientes` y `Cobros vencidos` se movieron a la tab `Cobros`, y `Comisiones pendientes` quedó en la tab `Comisiones`.
+- Verificación real con datos importados: los hitos cobrados de julio 2026 suman `USD 6.000`, y varios venían con `fecha_emision`/`fecha_cobro` nulas; por eso el histórico ahora usa `created_at` como fallback de accounting date para no dejar esos ingresos fuera del mes.
+- Verificación local ejecutada: `npm run lint` y `npm run build` pasan correctamente.

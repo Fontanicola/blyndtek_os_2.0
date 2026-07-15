@@ -71,6 +71,12 @@ export function getCobroEffectiveDueDate(cobro: Pick<Cobro, "fecha_vencimiento" 
   return effectiveDate;
 }
 
+function getCobroAccountingDate(
+  cobro: Pick<Cobro, "fecha_cobro" | "fecha_emision" | "created_at">
+) {
+  return cobro.fecha_cobro ?? cobro.fecha_emision ?? cobro.created_at;
+}
+
 export function isCobroVencido(
   cobro: Pick<Cobro, "estado" | "fecha_vencimiento" | "tolerancia_dias">,
   reference = new Date()
@@ -118,7 +124,7 @@ export function buildMonthlyFinancialSeries(
     const ingresos = cobros
       .filter((cobro) => cobro.estado === "cobrado")
       .filter((cobro) => {
-        const date = new Date(cobro.fecha_cobro ?? cobro.fecha_emision);
+        const date = new Date(getCobroAccountingDate(cobro));
         return formatMonthKey(date) === monthKey;
       })
       .reduce((total, cobro) => total + cobro.monto, 0);
