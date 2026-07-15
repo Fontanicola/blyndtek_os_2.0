@@ -16,8 +16,9 @@ type SidebarProps = {
   isOpen?: boolean;
   onClose?: () => void;
   collapsed?: boolean;
-  onToggleCollapse?: () => void;
   mobile?: boolean;
+  onMouseEnter?: () => void;
+  onMouseLeave?: () => void;
 };
 
 export function Sidebar({
@@ -25,8 +26,9 @@ export function Sidebar({
   isOpen = false,
   onClose,
   collapsed = false,
-  onToggleCollapse,
-  mobile = false
+  mobile = false,
+  onMouseEnter,
+  onMouseLeave
 }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
@@ -89,30 +91,18 @@ export function Sidebar({
             : "hidden md:flex",
           mobile && (isOpen ? "translate-x-0" : "-translate-x-full")
         )}
+        onMouseEnter={mobile ? undefined : onMouseEnter}
+        onMouseLeave={mobile ? undefined : onMouseLeave}
       >
         <div className={cn("flex h-16 items-center border-b border-line-soft", collapsed ? "justify-center px-2" : "px-5")}>
-          <button
-            type="button"
-            onClick={onToggleCollapse}
-            aria-label={collapsed ? "Expandir sidebar" : "Colapsar sidebar"}
-            disabled={!onToggleCollapse}
-            className={cn(
-              "inline-flex items-center justify-center rounded-component transition-all duration-fast ease-fast hover:bg-white/70",
-              !onToggleCollapse && "cursor-default hover:bg-transparent"
-            )}
-          >
-            <Image
-              src={collapsed ? "/Logo_Blyndtek_isotipo.svg" : "/Logo_Blyndtek_plataforma_negro.svg"}
-              alt="Blyndtek OS"
-              width={collapsed ? 38 : 132}
-              height={28}
-              className={cn(
-                "h-7 w-auto transition-transform duration-normal ease-normal",
-                collapsed ? "scale-100" : "scale-100"
-              )}
-              priority
-            />
-          </button>
+          <Image
+            src={collapsed ? "/Logo_Blyndtek_isotipo.svg" : "/Logo_Blyndtek_plataforma.svg"}
+            alt="Blyndtek OS"
+            width={collapsed ? 38 : 132}
+            height={28}
+            className="h-7 w-auto"
+            priority
+          />
         </div>
 
         <nav className="flex-1 overflow-y-auto py-2">
