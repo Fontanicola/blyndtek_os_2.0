@@ -817,6 +817,7 @@ export type Database = {
           cuenta_medio: string | null;
           pagado: boolean;
           fecha_pago: string | null;
+          cliente_id: string | null;
           proyecto_id: string | null;
           comision_id: string | null;
           notas: string | null;
@@ -840,6 +841,7 @@ export type Database = {
           cuenta_medio?: string | null;
           pagado?: boolean;
           fecha_pago?: string | null;
+          cliente_id?: string | null;
           proyecto_id?: string | null;
           comision_id?: string | null;
           notas?: string | null;
@@ -863,12 +865,21 @@ export type Database = {
           cuenta_medio?: string | null;
           pagado?: boolean;
           fecha_pago?: string | null;
+          cliente_id?: string | null;
           proyecto_id?: string | null;
           comision_id?: string | null;
           notas?: string | null;
           created_at?: string;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "egresos_cliente_id_fkey";
+            columns: ["cliente_id"];
+            isOneToOne: false;
+            referencedRelation: "clientes";
+            referencedColumns: ["id"];
+          }
+        ];
       };
       eventos: {
         Row: {

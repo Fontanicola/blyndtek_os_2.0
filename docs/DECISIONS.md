@@ -428,3 +428,9 @@
 - Si el cliente ya tenía cobros cobrados, esos quedan intactos y sólo se reemplazan las cuotas todavía pendientes, facturadas o vencidas.
 - El modal de confirmación debe mostrar explícitamente cuántas cuotas ya están cobradas y cuántas pendientes se van a reemplazar antes de ejecutar el guardado.
 - La suscripción de mantenimiento, si existe, se mantiene vinculada al contrato más reciente para que Finanzas siga leyendo una sola fuente de verdad.
+
+## 2026-07-15 — Costos por cliente como egresos normales
+
+- Los costos cargados desde la ficha del cliente son egresos normales con `cliente_id` opcional, no una tabla paralela.
+- Esa elección hace que impacten automáticamente en P&L, runway, tesorería y cualquier otra vista que ya lea de `egresos`, sin duplicar lógica ni mantener dos fuentes de verdad.
+- Si un egreso también se vincula a un proyecto, esa relación se conserva como dato adicional, pero la entidad financiera principal sigue siendo siempre `egresos`.

@@ -20,6 +20,7 @@ export type Egreso = {
   cuenta_medio: CuentaMedio | null;
   pagado: boolean;
   fecha_pago: string | null;
+  cliente_id: string | null;
   proyecto_id: string | null;
   comision_id: string | null;
   notas: string | null;
@@ -35,6 +36,7 @@ export type CreateEgresoInput = {
   cuenta_medio?: CuentaMedio | null;
   pagado?: boolean;
   fecha_pago?: string | null;
+  cliente_id?: string | null;
   proyecto_id?: string | null;
   comision_id?: string | null;
   notas?: string | null;

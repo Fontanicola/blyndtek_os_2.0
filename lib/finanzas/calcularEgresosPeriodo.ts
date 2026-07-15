@@ -9,9 +9,13 @@ function isValidDate(value: string | null | undefined) {
   return !Number.isNaN(parsed.getTime());
 }
 
-export function calcularEgresosPeriodo(egresos: Egreso[], start: Date, end: Date) {
+export function calcularEgresosPeriodo(egresos: Egreso[], start: Date, end: Date, clienteId?: string) {
   return egresos.filter((egreso) => {
     if (!egreso.pagado) {
+      return false;
+    }
+
+    if (clienteId && egreso.cliente_id !== clienteId) {
       return false;
     }
 

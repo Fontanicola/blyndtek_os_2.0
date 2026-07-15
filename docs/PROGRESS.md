@@ -1681,3 +1681,11 @@ $ find . -maxdepth 3 \( -name 'middleware.*' -o -name 'proxy.*' \) -not -path '.
 - Se creó `app/api/clientes/[id]/contrato/route.ts` para generar el contrato activo, crear automáticamente las cuotas como cobros `hito` y, si aplica, crear o reasignar la suscripción de mantenimiento.
 - La redefinición confirma explícitamente el impacto antes de guardar y preserva intactos todos los cobros ya marcados como `cobrado`; sólo se reemplazan las cuotas todavía pendientes/facturadas/vencidas del contrato anterior.
 - Verificación local ejecutada: `npm run lint` y `npm run build` pasan correctamente.
+
+## 2026-07-15 — Costos por cliente y rentabilidad mensual
+
+- `ClienteFicha` sumó el tab `Financiero` con métricas de ingreso mensual, costo mensual, margen mensual y margen %, además de un gráfico de rentabilidad de 6 meses por cliente.
+- Se agregaron `app/api/clientes/[id]/costos/route.ts` y `app/api/clientes/[id]/rentabilidad/route.ts` para listar, crear y resumir egresos vinculados al cliente, sin duplicar tablas ni lógica general de Finanzas.
+- `components/finanzas/EgresoModal.tsx` ahora acepta `defaults` y `saving`, así el alta de costos desde la ficha arranca ya vinculada al cliente y, si existe, a su proyecto activo.
+- `lib/finanzas/calcularEgresosPeriodo.ts` ahora acepta `clienteId` opcional para filtrar egresos por cliente sin romper el helper compartido.
+- Verificación local ejecutada: `npm run lint` y `npm run build` pasan correctamente.

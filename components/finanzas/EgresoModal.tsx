@@ -12,8 +12,10 @@ type EgresoModalProps = {
   onClose: () => void;
   onSave: (input: CreateEgresoInput) => Promise<void> | void;
   egreso?: Egreso | null;
+  defaults?: Partial<CreateEgresoInput>;
   proyectos: Array<Pick<Proyecto, "id" | "nombre" | "estado" | "cliente_id"> & { clienteNombre?: string | null }>;
   cajas: Caja[];
+  saving?: boolean;
 };
 
 const categorias: Array<{ value: CategoriaEgreso; label: string }> = [
@@ -27,30 +29,47 @@ const categorias: Array<{ value: CategoriaEgreso; label: string }> = [
   { value: "otro", label: "Otro" }
 ];
 
-export function EgresoModal({ isOpen, onClose, onSave, egreso, proyectos, cajas }: EgresoModalProps) {
-  const [concepto, setConcepto] = useState(egreso?.concepto ?? "");
-  const [categoria, setCategoria] = useState<CategoriaEgreso>(egreso?.categoria ?? "otro");
-  const [monto, setMonto] = useState(String(egreso?.monto ?? ""));
-  const [fecha, setFecha] = useState(egreso?.fecha ?? new Date().toISOString().slice(0, 10));
-  const [cuentaMedio, setCuentaMedio] = useState<CreateEgresoInput["cuenta_medio"]>(egreso?.cuenta_medio ?? cajas[0]?.slug ?? null);
-  const [pagado, setPagado] = useState(Boolean(egreso?.pagado));
-  const [fechaPago, setFechaPago] = useState(egreso?.fecha_pago ?? new Date().toISOString().slice(0, 10));
-  const [proyectoId, setProyectoId] = useState(egreso?.proyecto_id ?? "");
-  const [recurrente, setRecurrente] = useState(Boolean(egreso?.recurrente));
-  const [notas, setNotas] = useState(egreso?.notas ?? "");
+function getInitialState(egreso: Egreso | null | undefined, defaults: Partial<CreateEgresoInput> | undefined, cajas: Caja[]) {
+  return {
+    concepto: egreso?.concepto ?? defaults?.concepto ?? "",
+    categoria: egreso?.categoria ?? defaults?.categoria ?? "otro",
+    monto: String(egreso?.monto ?? defaults?.monto ?? ""),
+    fecha: egreso?.fecha ?? defaults?.fecha ?? new Date().toISOString().slice(0, 10),
+    cuentaMedio: egreso?.cuenta_medio ?? defaults?.cuenta_medio ?? cajas[0]?.slug ?? null,
+    pagado: Boolean(egreso?.pagado ?? defaults?.pagado),
+    fechaPago: egreso?.fecha_pago ?? defaults?.fecha_pago ?? new Date().toISOString().slice(0, 10),
+    proyectoId: egreso?.proyecto_id ?? defaults?.proyecto_id ?? "",
+    recurrente: Boolean(egreso?.recurrente ?? defaults?.recurrente),
+    notas: egreso?.notas ?? defaults?.notas ?? ""
+  };
+}
+
+export function EgresoModal({ isOpen, onClose, onSave, egreso, defaults, proyectos, cajas, saving }: EgresoModalProps) {
+  const initialState = getInitialState(egreso, defaults, cajas);
+  const [concepto, setConcepto] = useState(initialState.concepto);
+  const [categoria, setCategoria] = useState<CategoriaEgreso>(initialState.categoria);
+  const [monto, setMonto] = useState(initialState.monto);
+  const [fecha, setFecha] = useState(initialState.fecha);
+  const [cuentaMedio, setCuentaMedio] = useState<CreateEgresoInput["cuenta_medio"]>(initialState.cuentaMedio);
+  const [pagado, setPagado] = useState(initialState.pagado);
+  const [fechaPago, setFechaPago] = useState(initialState.fechaPago);
+  const [proyectoId, setProyectoId] = useState(initialState.proyectoId);
+  const [recurrente, setRecurrente] = useState(initialState.recurrente);
+  const [notas, setNotas] = useState(initialState.notas);
 
   useEffect(() => {
-    setConcepto(egreso?.concepto ?? "");
-    setCategoria(egreso?.categoria ?? "otro");
-    setMonto(String(egreso?.monto ?? ""));
-    setFecha(egreso?.fecha ?? new Date().toISOString().slice(0, 10));
-    setCuentaMedio(egreso?.cuenta_medio ?? cajas[0]?.slug ?? null);
-    setPagado(Boolean(egreso?.pagado));
-    setFechaPago(egreso?.fecha_pago ?? new Date().toISOString().slice(0, 10));
-    setProyectoId(egreso?.proyecto_id ?? "");
-    setRecurrente(Boolean(egreso?.recurrente));
-    setNotas(egreso?.notas ?? "");
-  }, [egreso, cajas, isOpen]);
+    const nextState = getInitialState(egreso, defaults, cajas);
+    setConcepto(nextState.concepto);
+    setCategoria(nextState.categoria);
+    setMonto(nextState.monto);
+    setFecha(nextState.fecha);
+    setCuentaMedio(nextState.cuentaMedio);
+    setPagado(nextState.pagado);
+    setFechaPago(nextState.fechaPago);
+    setProyectoId(nextState.proyectoId);
+    setRecurrente(nextState.recurrente);
+    setNotas(nextState.notas);
+  }, [egreso, defaults, cajas, isOpen]);
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={egreso ? "Editar egreso" : "Nuevo egreso"} size="md">
@@ -144,6 +163,7 @@ export function EgresoModal({ isOpen, onClose, onSave, egreso, proyectos, cajas 
             Cancelar
           </Button>
           <Button
+            loading={saving}
             onClick={() =>
               void onSave({
                 concepto: concepto.trim(),

@@ -724,6 +724,7 @@
 - `suscripciones.contrato_id` → `contratos.id`
 - `suscripciones.producto_id` → `productos.id`
 - `suscripciones.plan_id` → `producto_planes.id`
+- `egresos.cliente_id` → `clientes.id`
 - `egresos.comision_id` → `comisiones.id`
 - `wiki_categorias.creado_por` → `usuarios.id`
 - `wiki_articulos.categoria_id` → `wiki_categorias.id`
@@ -781,6 +782,7 @@ Nota: `usuarios` debe existir antes que `leads`, `proyectos`, `features`, `tarea
 - `usuarios.supervisor_id` uuid nullable para dejar preparada la jerarquía comercial futura.
 - `leads.vendedor_id` uuid nullable para scoping de leads por comercial.
 - `clientes.vendedor_id` uuid nullable para scoping de clientes por comercial.
+- `egresos.cliente_id` uuid nullable para costos por cliente que siguen impactando Finanzas general sin tabla paralela.
 - `carpetas_compartidas` vincula carpetas con usuarios comerciales o internos autorizados para heredar acceso.
 - `comisiones` registra las comisiones generadas al aceptar cotizaciones, con base, porcentaje, monto y estado de pago.
 - `config_comisiones` guarda el piso, tiers y bono vigentes para calcular comisiones sin hardcodear valores.

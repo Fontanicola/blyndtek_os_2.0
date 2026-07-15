@@ -3,7 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Badge, Button, Card, Input, Modal, Toast } from "@/components/ui";
-import { CobroModal } from "@/components/finanzas";
+import { CobroModal, EgresoModal, MetricaCard } from "@/components/finanzas";
+import { DashboardIcon, FinanzasIcon } from "@/components/icons";
 import { NotasVinculadasSection } from "@/components/notas";
 import { ProyectoCard } from "@/components/proyectos";
 import { formatFecha, formatUSD } from "@/lib/utils/formatters";
@@ -11,6 +12,7 @@ import { useFinanzas } from "@/lib/hooks/useFinanzas";
 import { useProyectos } from "@/lib/hooks/useProyectos";
 import { LeadNegociacionesSection } from "@/components/leads/LeadNegociacionesSection";
 import type { Cobro } from "@/types/cobros";
+import type { CreateEgresoInput, Egreso } from "@/types/egresos";
 import type { CobroModalInput } from "@/components/finanzas/CobroModal";
 import type { Cliente, DatosFacturacion, EstadoCliente, UpdateClienteInput } from "@/types/clientes";
 import type { Lead } from "@/types/leads";
@@ -19,22 +21,40 @@ import type { ProductoPlan } from "@/types/productoPlanes";
 import type { Proyecto } from "@/types/proyectos";
 import type { Contrato, ContratoDetalle, CreateContratoInput } from "@/types/contratos";
 import type { Suscripcion } from "@/types/suscripciones";
+import { ClienteRentabilidadChart } from "./ClienteRentabilidadChart";
 
 type ClienteFichaProps = {
   cliente: Cliente;
   onUpdate: (input: UpdateClienteInput) => void | Promise<void>;
 };
 
-type TabKey = "datos" | "proyectos" | "contrato" | "cobros" | "suscripcion" | "historial";
+type TabKey = "datos" | "proyectos" | "contrato" | "financiero" | "cobros" | "suscripcion" | "historial";
 
 const tabs: Array<{ key: TabKey; label: string }> = [
   { key: "datos", label: "Datos generales" },
   { key: "proyectos", label: "Proyectos" },
   { key: "contrato", label: "Contrato" },
+  { key: "financiero", label: "Financiero" },
   { key: "cobros", label: "Cobros" },
   { key: "suscripcion", label: "Suscripción" },
   { key: "historial", label: "Historial" }
 ];
+
+type ClienteRentabilidadPoint = {
+  mes: string;
+  ingresos: number;
+  costos: number;
+  margen: number;
+};
+
+type ClienteRentabilidadData = {
+  ingreso_mensual_recurrente: number;
+  ingreso_cobrado_periodo: number;
+  costo_mensual: number;
+  margen_mensual: number;
+  margen_pct: number | null;
+  historico_6_meses: ClienteRentabilidadPoint[];
+};
 
 type ContractFormState = {
   valor_total: string;
@@ -200,6 +220,17 @@ const estadoVariants: Record<EstadoCliente, "success" | "warning" | "default"> =
   inactivo: "default"
 };
 
+const egresoCategoriaLabels: Record<Egreso["categoria"], string> = {
+  dominios: "Dominios",
+  hosting_infraestructura: "Hosting / Infraestructura",
+  herramientas_software: "Herramientas / Software",
+  marketing_ads: "Marketing / Ads",
+  impuestos_contable: "Impuestos / Contable",
+  sueldos_honorarios: "Sueldos / Honorarios",
+  comisiones: "Comisiones",
+  otro: "Otro"
+};
+
 export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
   const router = useRouter();
   const { fetchProyectos } = useProyectos();
@@ -208,9 +239,13 @@ export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
   const [notaDraft, setNotaDraft] = useState("");
   const [proyectos, setProyectos] = useState<Proyecto[]>([]);
   const [cobros, setCobros] = useState<Cobro[]>([]);
+  const [egresosCliente, setEgresosCliente] = useState<Egreso[]>([]);
   const [contratoDetalle, setContratoDetalle] = useState<ContratoDetalle | null>(null);
+  const [rentabilidad, setRentabilidad] = useState<ClienteRentabilidadData | null>(null);
   const [cobroModalOpen, setCobroModalOpen] = useState(false);
+  const [egresoModalOpen, setEgresoModalOpen] = useState(false);
   const [selectedCobro, setSelectedCobro] = useState<Cobro | null>(null);
+  const [selectedEgresoDefaults, setSelectedEgresoDefaults] = useState<Partial<CreateEgresoInput> | null>(null);
   const [expandedCobros, setExpandedCobros] = useState<Record<string, boolean>>({});
   const [suscripcion, setSuscripcion] = useState<Suscripcion | null>(null);
   const [productos, setProductos] = useState<Producto[]>([]);
@@ -227,6 +262,7 @@ export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
   const [loadingProductos, setLoadingProductos] = useState(false);
   const [loadingPlanes, setLoadingPlanes] = useState(false);
   const [creatingSuscripcion, setCreatingSuscripcion] = useState(false);
+  const [creatingCosto, setCreatingCosto] = useState(false);
   const [tabLoading, setTabLoading] = useState<TabKey | null>(null);
   const [tabError, setTabError] = useState<string | null>(null);
   const [activating, setActivating] = useState(false);
@@ -291,6 +327,14 @@ export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
       }
     : null;
 
+  const proyectoActivoParaCosto = useMemo(
+    () =>
+      proyectos.find((proyecto) => proyecto.estado === "en_desarrollo" || proyecto.estado === "implementacion") ??
+      proyectos[0] ??
+      null,
+    [proyectos]
+  );
+
   const suscripcionProducto = useMemo(
     () => productos.find((producto) => producto.id === suscripcion?.producto_id) ?? null,
     [productos, suscripcion?.producto_id]
@@ -310,6 +354,9 @@ export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
     () => planes.find((plan) => plan.id === planSeleccionadoId) ?? null,
     [planes, planSeleccionadoId]
   );
+
+  const rentabilidadHistorico = rentabilidad?.historico_6_meses ?? [];
+  const costosCargados = egresosCliente.length > 0;
 
   function updateFacturacion(field: keyof DatosFacturacion, value: string | null) {
     void onUpdate({
@@ -349,6 +396,35 @@ export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
             setContratoEditing(false);
             setContratoConfirmOpen(false);
             setContratoForm(contractFormFromData(payload.data.contrato));
+          }
+        }
+
+        if (activeTab === "financiero") {
+          setTabLoading("financiero");
+          const [proyectosData, costosResponse, rentabilidadResponse] = await Promise.all([
+            fetchProyectos({ cliente_id: cliente.id }),
+            fetch(`/api/clientes/${cliente.id}/costos`),
+            fetch(`/api/clientes/${cliente.id}/rentabilidad?period=month`)
+          ]);
+
+          const costosPayload = (await costosResponse.json()) as { data?: Egreso[]; error?: string };
+          const rentabilidadPayload = (await rentabilidadResponse.json()) as {
+            data?: ClienteRentabilidadData;
+            error?: string;
+          };
+
+          if (!costosResponse.ok || !costosPayload.data) {
+            throw new Error(costosPayload.error ?? "No se pudieron cargar los costos del cliente.");
+          }
+
+          if (!rentabilidadResponse.ok || !rentabilidadPayload.data) {
+            throw new Error(rentabilidadPayload.error ?? "No se pudo cargar la rentabilidad del cliente.");
+          }
+
+          if (!cancelled) {
+            setProyectos(proyectosData);
+            setEgresosCliente(costosPayload.data);
+            setRentabilidad(rentabilidadPayload.data);
           }
         }
 
@@ -758,6 +834,72 @@ export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
   function handleEditCobro(cobro: Cobro) {
     setSelectedCobro(cobro);
     setCobroModalOpen(true);
+  }
+
+  function handleOpenCostoModal() {
+    setSelectedEgresoDefaults(
+      proyectoActivoParaCosto
+        ? {
+            proyecto_id: proyectoActivoParaCosto.id,
+            fecha: new Date().toISOString().slice(0, 10),
+            recurrente: false,
+            pagado: false
+          }
+        : {
+            fecha: new Date().toISOString().slice(0, 10),
+            recurrente: false,
+            pagado: false
+          }
+    );
+    setEgresoModalOpen(true);
+  }
+
+  function closeCostoModal() {
+    setEgresoModalOpen(false);
+    setSelectedEgresoDefaults(null);
+  }
+
+  async function handleSaveCosto(input: CreateEgresoInput) {
+    setTabError(null);
+    setCreatingCosto(true);
+
+    try {
+      const response = await fetch(`/api/clientes/${cliente.id}/costos`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          ...input,
+          proyecto_id: input.proyecto_id?.trim() || null
+        })
+      });
+      const payload = (await response.json()) as { data?: Egreso; error?: string };
+
+      if (!response.ok || !payload.data) {
+        throw new Error(payload.error ?? "No se pudo crear el costo.");
+      }
+
+      setEgresosCliente((current) => [payload.data!, ...current]);
+      setToast({
+        message: "Costo agregado correctamente.",
+        type: "success",
+        visible: true
+      });
+      setEgresoModalOpen(false);
+      setSelectedEgresoDefaults(null);
+
+      const refresh = await fetch(`/api/clientes/${cliente.id}/rentabilidad?period=month`);
+      const refreshPayload = (await refresh.json()) as { data?: ClienteRentabilidadData; error?: string };
+
+      if (refresh.ok && refreshPayload.data) {
+        setRentabilidad(refreshPayload.data);
+      }
+    } catch (error) {
+      setTabError(error instanceof Error ? error.message : "No se pudo crear el costo.");
+    } finally {
+      setCreatingCosto(false);
+    }
   }
 
   async function handleSaveCobro(input: CobroModalInput) {
@@ -1270,6 +1412,82 @@ export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
         </Card>
       ) : null}
 
+      {activeTab === "financiero" ? (
+        <div className="space-y-5">
+          {tabLoading === "financiero" ? <p className="text-sm text-graphite">Cargando información financiera...</p> : null}
+
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            <MetricaCard
+              label="Ingreso Mensual"
+              value={formatUSD(rentabilidad?.ingreso_mensual_recurrente ?? 0)}
+              icono={<DashboardIcon />}
+              colorIcono="signal"
+            />
+            <MetricaCard
+              label="Costo Mensual"
+              value={formatUSD(rentabilidad?.costo_mensual ?? 0)}
+              icono={<FinanzasIcon />}
+              colorIcono="danger"
+            />
+            <MetricaCard
+              label="Margen Mensual"
+              value={formatUSD(rentabilidad?.margen_mensual ?? 0)}
+              icono={<DashboardIcon />}
+              colorIcono="success"
+            />
+            <MetricaCard
+              label="Margen %"
+              value={rentabilidad?.margen_pct == null ? "—" : `${rentabilidad.margen_pct.toFixed(1)}%`}
+              icono={<DashboardIcon />}
+              colorIcono={rentabilidad?.margen_pct == null ? "graphite" : "warning"}
+            />
+          </div>
+
+          {costosCargados ? <ClienteRentabilidadChart data={rentabilidadHistorico} /> : null}
+
+          <Card padding="lg" className="space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="space-y-1">
+                <h3 className="text-base font-title text-carbon">Costos de este cliente</h3>
+                <p className="text-sm text-graphite">
+                  Egresos vinculados al cliente para seguir impacto real en Finanzas.
+                </p>
+              </div>
+
+              <Button onClick={handleOpenCostoModal}>+ Agregar costo</Button>
+            </div>
+
+            {costosCargados ? (
+              <div className="overflow-hidden rounded-card border border-line-soft">
+                <div className="grid grid-cols-[minmax(0,2fr)_auto_auto_auto_auto] gap-3 border-b border-line-soft bg-paper px-4 py-3 text-xs font-label uppercase tracking-[0.08em] text-graphite">
+                  <span>Concepto</span>
+                  <span>Categoría</span>
+                  <span>Monto</span>
+                  <span>Recurrente</span>
+                  <span>Estado</span>
+                </div>
+                <div className="divide-y divide-line-soft bg-white">
+                  {egresosCliente.map((egreso) => (
+                    <div
+                      key={egreso.id}
+                      className="grid grid-cols-[minmax(0,2fr)_auto_auto_auto_auto] items-center gap-3 px-4 py-3 text-sm"
+                    >
+                      <span className="truncate font-label text-carbon">{egreso.concepto}</span>
+                      <span className="text-graphite">{egresoCategoriaLabels[egreso.categoria]}</span>
+                      <span className="text-carbon">{formatUSD(egreso.monto)}</span>
+                      <span className="text-graphite">{egreso.recurrente ? "Sí" : "No"}</span>
+                      <Badge variant={egreso.pagado ? "success" : "warning"}>{egreso.pagado ? "Pagado" : "Pendiente"}</Badge>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <EmptyState text="Todavía no hay costos cargados para este cliente." />
+            )}
+          </Card>
+        </div>
+      ) : null}
+
       {activeTab === "suscripcion" ? (
         <Card padding="lg" className="space-y-4">
           {tabLoading === "suscripcion" ? (
@@ -1572,6 +1790,22 @@ export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
         cotizaciones={[]}
         suscripciones={suscripcion ? [suscripcion] : []}
         cajas={[]}
+      />
+
+      <EgresoModal
+        isOpen={egresoModalOpen}
+        onClose={closeCostoModal}
+        onSave={handleSaveCosto}
+        defaults={selectedEgresoDefaults ?? undefined}
+        proyectos={proyectos.map((proyecto) => ({
+          id: proyecto.id,
+          nombre: proyecto.nombre,
+          estado: proyecto.estado,
+          cliente_id: proyecto.cliente_id,
+          clienteNombre: cliente.empresa
+        }))}
+        cajas={[]}
+        saving={creatingCosto}
       />
 
       <Toast
