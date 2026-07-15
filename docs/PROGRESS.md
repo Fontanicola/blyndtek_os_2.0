@@ -1698,3 +1698,12 @@ $ find . -maxdepth 3 \( -name 'middleware.*' -o -name 'proxy.*' \) -not -path '.
 - Las cards de `Cobros pendientes` y `Cobros vencidos` se movieron a la tab `Cobros`, y `Comisiones pendientes` quedó en la tab `Comisiones`.
 - Verificación real con datos importados: los hitos cobrados de julio 2026 suman `USD 6.000`, y varios venían con `fecha_emision`/`fecha_cobro` nulas; por eso el histórico ahora usa `created_at` como fallback de accounting date para no dejar esos ingresos fuera del mes.
 - Verificación local ejecutada: `npm run lint` y `npm run build` pasan correctamente.
+
+## 2026-07-15 — Contrato unificado y Cotizador retirado de la UI activa
+
+- La lógica de creación/redefinición de contrato quedó extraída en `lib/contratos/crearOActualizarContrato.ts` y ahora la reutilizan tanto la ficha de cliente como el cierre de un lead en `ganado`.
+- El flujo de `lead -> ganado` crea automáticamente el Cliente y luego genera el Contrato con una única cuota inicial y, si corresponde, la suscripción de mantenimiento.
+- El módulo Cotizador quedó retirado de la UI/API activa: se eliminaron sus rutas y componentes, y la navegación dejó de exponer `/cotizador`; la tabla `cotizaciones` conserva su historial para consulta y trazabilidad.
+- `app/api/dashboard/route.ts` pasó a calcular `ticket_promedio` desde contratos activos por cliente, para no depender de cotizaciones como fuente activa.
+- `Finanzas` ahora recibe las cotizaciones desde el servidor para alimentar los selectores de cobro/suscripción sin depender de endpoints de cotizaciones ya deprecados.
+- Verificación local ejecutada: `npm run lint` y `npm run build` pasan correctamente.

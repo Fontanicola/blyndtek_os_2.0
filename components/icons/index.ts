@@ -1,7 +1,6 @@
 export { OutboundIcon } from "./OutboundIcon";
 export { InboundIcon } from "./InboundIcon";
 export { ClientesIcon } from "./ClientesIcon";
-export { CotizadorIcon } from "./CotizadorIcon";
 export { ProyectosIcon } from "./ProyectosIcon";
 export { TareasIcon } from "./TareasIcon";
 export { CalendarioIcon } from "./CalendarioIcon";

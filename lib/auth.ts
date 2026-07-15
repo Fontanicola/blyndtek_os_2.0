@@ -15,7 +15,6 @@ const roleAllowedPrefixes: Record<Rol, readonly string[]> = {
     "/leads",
     "/outbound",
     "/clientes",
-    "/cotizador",
     "/tareas",
     "/calendario",
     "/notas",

@@ -7,7 +7,7 @@ import { getAdminUser } from "@/lib/require-admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Cliente } from "@/types/clientes";
 import type { Cobro } from "@/types/cobros";
-import type { Cotizacion } from "@/types/cotizaciones";
+import type { Contrato } from "@/types/contratos";
 import type { Egreso } from "@/types/egresos";
 import type { Feature } from "@/types/features";
 import type { Lead } from "@/types/leads";
@@ -132,6 +132,36 @@ function calculateChurn(suscripciones: Suscripcion[], start: Date, end: Date) {
     .reduce((total, suscripcion) => total + suscripcion.monto_mensual, 0);
 }
 
+type ContratoConTimestamp = Contrato & {
+  updated_at?: string;
+};
+
+function getContratoTimestamp(contrato: ContratoConTimestamp) {
+  return contrato.updated_at ?? contrato.created_at;
+}
+
+function getActiveContractsByCliente(contratos: ContratoConTimestamp[]) {
+  const contratosPorCliente = new Map<string, ContratoConTimestamp>();
+
+  for (const contrato of contratos) {
+    if (contrato.estado !== "activo") {
+      continue;
+    }
+
+    const previous = contratosPorCliente.get(contrato.cliente_id);
+    if (!previous) {
+      contratosPorCliente.set(contrato.cliente_id, contrato);
+      continue;
+    }
+
+    if (new Date(getContratoTimestamp(contrato)).getTime() > new Date(getContratoTimestamp(previous)).getTime()) {
+      contratosPorCliente.set(contrato.cliente_id, contrato);
+    }
+  }
+
+  return Array.from(contratosPorCliente.values());
+}
+
 function getLastUpdatedAt(...groups: Array<Array<{ updated_at?: string; created_at?: string }>>) {
   let latest: Date | null = null;
 
@@ -191,10 +221,10 @@ export async function GET(request: NextRequest) {
     const previousWeek = getPreviousWeekRange();
     const supabase = createAdminClient();
 
-    const [ 
+    const [
       leadsResult,
       clientesResult,
-      cotizacionesResult,
+      contratosResult,
       proyectosResult,
       featuresResult,
       cobrosResult,
@@ -204,7 +234,7 @@ export async function GET(request: NextRequest) {
     ] = await Promise.all([
       supabase.from("leads").select("*"),
       supabase.from("clientes").select("*"),
-      supabase.from("cotizaciones").select("*"),
+      supabase.from("contratos").select("*"),
       supabase.from("proyectos").select("*"),
       supabase.from("features").select("*"),
       supabase.from("cobros").select("*"),
@@ -216,7 +246,7 @@ export async function GET(request: NextRequest) {
     const errors = [
       leadsResult.error,
       clientesResult.error,
-      cotizacionesResult.error,
+      contratosResult.error,
       proyectosResult.error,
       featuresResult.error,
       cobrosResult.error,
@@ -231,7 +261,7 @@ export async function GET(request: NextRequest) {
 
     const leads = (leadsResult.data ?? []) as Lead[];
     const clientes = (clientesResult.data ?? []) as Cliente[];
-    const cotizaciones = (cotizacionesResult.data ?? []) as Cotizacion[];
+    const contratos = (contratosResult.data ?? []) as ContratoConTimestamp[];
     const proyectos = (proyectosResult.data ?? []) as Proyecto[];
     const features = (featuresResult.data ?? []) as Feature[];
     const cobros = (cobrosResult.data ?? []) as Cobro[];
@@ -243,8 +273,9 @@ export async function GET(request: NextRequest) {
     const previousLeads = leads.filter((lead) => isInRange(lead.created_at, range.previousStart, range.previousEnd));
     const periodClientes = clientes.filter((cliente) => isInRange(cliente.created_at, range.start, range.end));
     const previousClientes = clientes.filter((cliente) => isInRange(cliente.created_at, range.previousStart, range.previousEnd));
-    const periodCotizaciones = cotizaciones.filter((cotizacion) => cotizacion.estado === "aceptada" && isInRange(cotizacion.updated_at, range.start, range.end));
-    const previousCotizaciones = cotizaciones.filter((cotizacion) => cotizacion.estado === "aceptada" && isInRange(cotizacion.updated_at, range.previousStart, range.previousEnd));
+    const activeContracts = getActiveContractsByCliente(contratos);
+    const periodContracts = activeContracts.filter((contrato) => isInRange(getContratoTimestamp(contrato), range.start, range.end));
+    const previousContracts = activeContracts.filter((contrato) => isInRange(getContratoTimestamp(contrato), range.previousStart, range.previousEnd));
 
     const pipelineStages = buildPipelineStages(periodLeads);
     const pipelineStagesPrev = buildPipelineStages(previousLeads);
@@ -255,8 +286,8 @@ export async function GET(request: NextRequest) {
     const winRateOutbound = buildWinRateChannel(periodLeads, periodClientes, "outbound");
     const winRateInbound = buildWinRateChannel(periodLeads, periodClientes, "inbound");
 
-    const ticketPromedio = average(periodCotizaciones.map((cotizacion) => cotizacion.precio_total ?? 0));
-    const ticketPromedioAnterior = average(previousCotizaciones.map((cotizacion) => cotizacion.precio_total ?? 0));
+    const ticketPromedio = average(periodContracts.map((contrato) => contrato.valor_total ?? 0));
+    const ticketPromedioAnterior = average(previousContracts.map((contrato) => contrato.valor_total ?? 0));
 
     const leadMap = new Map(leads.map((lead) => [lead.id, lead]));
     const cycleValues = periodClientes
@@ -362,7 +393,7 @@ export async function GET(request: NextRequest) {
     const latestUpdatedAt = getLastUpdatedAt(
       leads,
       clientes,
-      cotizaciones,
+      contratos,
       proyectos,
       featuresConTimestamp,
       cobros,

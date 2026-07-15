@@ -440,3 +440,9 @@
 - El P&L general y la `Facturación total` consideran todos los cobros con estado `cobrado`, sin distinguir tipo.
 - La empresa no separa "ingreso de suscripción" de "ingreso de desarrollo" a nivel de rentabilidad general: todo cobro cobrado es ingreso real de caja.
 - Las métricas de pendiente y vencido siguen existiendo, pero sólo como lectura operativa; no alteran la definición de ingreso real del P&L.
+
+## 2026-07-15 — Contrato como único punto activo para cuotas y suscripción
+
+- `Contrato` quedó como el único punto de entrada activo para generar cuotas y la suscripción de mantenimiento de un cliente.
+- El Cotizador se deprecó como módulo activo de la app: se retiró de la navegación, se eliminaron sus rutas y sus endpoints de generación/aceptación, pero la tabla `cotizaciones` se conserva con datos históricos reales para ARC Global, Funes Exclusivos y Cubelo.
+- Cualquier nuevo flujo comercial que necesite materializar cuotas o suscripciones debe pasar por `Contrato` para mantener una sola lógica de negocio y evitar duplicación entre casos de uso.

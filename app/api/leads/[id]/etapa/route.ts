@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { getLeadEtapaIndex } from "@/lib/leads";
 import { crearComisionVenta } from "@/lib/comisiones/crearComisionVenta";
+import { crearOActualizarContrato } from "@/lib/contratos/crearOActualizarContrato";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { crearTareaConAdminClient } from "@/lib/tareas/crearTarea";
 import { ensureClienteDesdeLead } from "@/lib/clientes/ensureClienteDesdeLead";
@@ -324,10 +325,22 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
           }
         }
 
+      const montoVenta = Number((ganadoFinalDesarrollo ?? 0) + (ganadoFinalMensual ?? 0));
+      const hoy = new Date();
+      const diaPago = Math.min(hoy.getDate(), 28);
+      const mantenimientoMensual = ganadoFinalMensual ?? 0;
+
+      await crearOActualizarContrato(supabase, cliente.id, {
+        valor_total: montoVenta,
+        cantidad_cuotas: 1,
+        dia_pago: diaPago,
+        fecha_primera_cuota: hoy.toISOString().slice(0, 10),
+        valor_mantenimiento_mensual: mantenimientoMensual > 0 ? mantenimientoMensual : null,
+        dia_facturacion_mantenimiento: mantenimientoMensual > 0 ? diaPago : null
+      });
+
         if (cliente.vendedor_id) {
           try {
-            const montoVenta = Number((ganadoFinalDesarrollo ?? 0) + (ganadoFinalMensual ?? 0));
-
             await crearComisionVenta(supabase, {
               vendedorId: cliente.vendedor_id,
               clienteId: cliente.id,

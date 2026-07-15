@@ -6,7 +6,6 @@ import { MetricaCard, PLChart } from "@/components/finanzas";
 import {
   BellIcon,
   CalendarioIcon,
-  CotizadorIcon,
   DashboardIcon,
   FinanzasIcon,
   OutboundIcon,
@@ -255,7 +254,7 @@ export function DashboardClient() {
       {
         label: "Ticket promedio",
         value: comercial.ticket_promedio == null ? "Sin datos suficientes" : formatUSD(comercial.ticket_promedio),
-        icono: <CotizadorIcon />,
+        icono: <FinanzasIcon />,
         colorIcono: "success",
         trend: formatSignedPercentChange(comercial.ticket_promedio, comercial.ticket_promedio_anterior),
         direction:

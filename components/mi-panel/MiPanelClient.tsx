@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Badge, Card } from "@/components/ui";
-import { ClientesIcon, CotizadorIcon, DashboardIcon, FinanzasIcon, OutboundIcon } from "@/components/icons";
+import { ClientesIcon, DashboardIcon, FinanzasIcon, OutboundIcon } from "@/components/icons";
 import { MetricaCard } from "@/components/finanzas/MetricaCard";
 import { VentasChart } from "@/components/mi-panel/VentasChart";
 import { cn } from "@/lib/cn";
@@ -48,7 +48,7 @@ function SalesIcon() {
 }
 
 function OpportunityIcon() {
-  return <CotizadorIcon />;
+  return <FinanzasIcon />;
 }
 
 function CommissionsIcon() {

@@ -7,7 +7,6 @@ import { BellIcon, DashboardIcon, FinanzasIcon } from "@/components/icons";
 import { useCajas } from "@/lib/hooks/useCajas";
 import { useClientes } from "@/lib/hooks/useClientes";
 import { buildMonthlyFinancialSeries } from "@/lib/finanzas";
-import { useCotizaciones } from "@/lib/hooks/useCotizaciones";
 import { formatUSD } from "@/lib/utils/formatters";
 import { useProyectos } from "@/lib/hooks/useProyectos";
 import { useFinanzas } from "@/lib/hooks/useFinanzas";
@@ -29,7 +28,12 @@ import { SuscripcionModal } from "./SuscripcionModal";
 import { SuscripcionesLista } from "./SuscripcionesLista";
 import type { ComisionListado } from "@/types/comisiones";
 import type { Usuario } from "@/types/auth";
+import type { Cotizacion } from "@/types/cotizaciones";
 import type { ReactNode } from "react";
+
+type FinanzasClientProps = {
+  cotizaciones: Array<Pick<Cotizacion, "id" | "empresa" | "precio_total">>;
+};
 
 type TabKey = "resumen" | "cobros" | "egresos" | "suscripciones" | "comisiones" | "tesoreria" | "runway-lab" | "tarjetas";
 
@@ -79,7 +83,7 @@ function addOneMonth(dateString: string) {
   return new Date(date.getFullYear(), date.getMonth() + 1, date.getDate()).toISOString().slice(0, 10);
 }
 
-export function FinanzasClient() {
+export function FinanzasClient({ cotizaciones }: FinanzasClientProps) {
   const {
     cobros,
     egresos,
@@ -107,7 +111,6 @@ export function FinanzasClient() {
   const { cajas, fetchCajas, createCaja, updateCaja, deleteCaja } = useCajas();
   const { clientes } = useClientes();
   const { proyectos } = useProyectos();
-  const { cotizaciones } = useCotizaciones();
   const [usuariosComerciales, setUsuariosComerciales] = useState<Array<Pick<Usuario, "id" | "nombre" | "rol">>>([]);
   const proyectosConCliente = useMemo(
     () =>
