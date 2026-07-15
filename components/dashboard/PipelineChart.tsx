@@ -1,6 +1,5 @@
 "use client";
 
-import { useId } from "react";
 import {
   Bar,
   BarChart,
@@ -30,10 +29,6 @@ function formatMoneyTick(value: string | number) {
 }
 
 export function PipelineChart({ data }: PipelineChartProps) {
-  const chartId = useId().replace(/:/g, "");
-  const gradientId = `pipeline-bars-${chartId}`;
-  const shadowId = `pipeline-shadow-${chartId}`;
-
   return (
     <Card padding="md" className="space-y-5 overflow-hidden bg-white">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -47,17 +42,7 @@ export function PipelineChart({ data }: PipelineChartProps) {
       <div className="h-[320px]">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} margin={{ top: 16, right: 18, bottom: 8, left: 8 }} barCategoryGap="30%">
-            <defs>
-              <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#6881FF" stopOpacity="1" />
-                <stop offset="52%" stopColor="#1F44FF" stopOpacity="0.96" />
-                <stop offset="100%" stopColor="#172FBE" stopOpacity="1" />
-              </linearGradient>
-              <filter id={shadowId} x="-30%" y="-30%" width="160%" height="180%">
-                <feDropShadow dx="0" dy="10" stdDeviation="9" floodColor="#0B0E14" floodOpacity="0.13" />
-              </filter>
-            </defs>
-            <CartesianGrid stroke="#E6EAF2" strokeDasharray="4 8" vertical={false} />
+            <CartesianGrid stroke="#E8ECF3" strokeDasharray="2 10" vertical={false} />
             <XAxis dataKey="etapa" tick={{ fill: "#5A6373", fontSize: 11 }} axisLine={false} tickLine={false} />
             <YAxis tick={{ fill: "#5A6373", fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={formatMoneyTick} />
             <Tooltip
@@ -74,7 +59,7 @@ export function PipelineChart({ data }: PipelineChartProps) {
                 );
               }}
             />
-            <Bar dataKey="ponderado" name="Valor ponderado" fill={`url(#${gradientId})`} barSize={22} filter={`url(#${shadowId})`} />
+            <Bar dataKey="ponderado" name="Valor ponderado" fill="#1F44FF" radius={[8, 8, 2, 2]} barSize={18} />
           </BarChart>
         </ResponsiveContainer>
       </div>

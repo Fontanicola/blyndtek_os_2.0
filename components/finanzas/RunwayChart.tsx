@@ -2,7 +2,7 @@
 
 import { useId, useMemo } from "react";
 import {
-  Bar,
+  Area,
   CartesianGrid,
   ComposedChart,
   Line,
@@ -47,7 +47,6 @@ function formatAxisUSD(value: string | number, maxValue: number) {
 export function RunwayChart({ data, comparisonData, comparisonLabel = "Comparativa" }: RunwayChartProps) {
   const chartId = useId().replace(/:/g, "");
   const cajaGradient = `runway-caja-${chartId}`;
-  const shadowFilter = `runway-shadow-${chartId}`;
 
   const chartData = useMemo<ChartPoint[]>(
     () =>
@@ -94,15 +93,12 @@ export function RunwayChart({ data, comparisonData, comparisonLabel = "Comparati
             <ComposedChart data={chartData} margin={{ top: 20, right: 24, bottom: 10, left: 0 }}>
               <defs>
                 <linearGradient id={cajaGradient} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#6881FF" stopOpacity="1" />
-                  <stop offset="48%" stopColor={SIGNAL} stopOpacity="0.96" />
-                  <stop offset="100%" stopColor="#172FBE" stopOpacity="1" />
+                  <stop offset="0%" stopColor={SIGNAL} stopOpacity="0.26" />
+                  <stop offset="68%" stopColor={SIGNAL} stopOpacity="0.06" />
+                  <stop offset="100%" stopColor={SIGNAL} stopOpacity="0" />
                 </linearGradient>
-                <filter id={shadowFilter} x="-30%" y="-30%" width="160%" height="180%">
-                  <feDropShadow dx="0" dy="10" stdDeviation="9" floodColor="#0B0E14" floodOpacity="0.14" />
-                </filter>
               </defs>
-              <CartesianGrid stroke="#E6EAF2" strokeDasharray="4 8" vertical={false} />
+              <CartesianGrid stroke="#E8ECF3" strokeDasharray="2 10" vertical={false} />
               <XAxis
                 dataKey="label"
                 tick={{ fill: "#5A6373", fontSize: 11 }}
@@ -141,22 +137,25 @@ export function RunwayChart({ data, comparisonData, comparisonLabel = "Comparati
                   );
                 }}
               />
-              <Bar
+              <Area
                 dataKey="caja"
                 name="Caja actual"
+                type="monotone"
+                stroke={SIGNAL}
+                strokeWidth={2.8}
                 fill={`url(#${cajaGradient})`}
-                radius={[4, 4, 0, 0]}
-                barSize={20}
-                filter={`url(#${shadowFilter})`}
+                dot={false}
+                activeDot={{ r: 4, fill: "#FFFFFF", stroke: SIGNAL, strokeWidth: 2.5 }}
               />
               {comparisonData ? (
                 <Line
                   dataKey="comparativa"
                   name={comparisonLabel}
                   stroke={comparisonStroke}
-                  strokeWidth={2}
-                  strokeDasharray="6 4"
-                  dot={{ r: 3 }}
+                  strokeWidth={2.2}
+                  strokeDasharray="7 6"
+                  dot={false}
+                  activeDot={{ r: 4, fill: "#FFFFFF", stroke: comparisonStroke, strokeWidth: 2.5 }}
                   type="monotone"
                 />
               ) : null}

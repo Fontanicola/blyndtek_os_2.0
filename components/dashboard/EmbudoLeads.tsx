@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useMemo } from "react";
+import { useMemo } from "react";
 import {
   Bar,
   BarChart,
@@ -27,13 +27,7 @@ const LABELS: Record<string, string> = {
   descartado: "Descartado"
 };
 
-const HEX_SIGNAL = "#1F44FF";
-
 export function EmbudoLeads({ data }: EmbudoLeadsProps) {
-  const uid = useId().replace(/:/g, "");
-  const gradientId = `dash-funnel-${uid}`;
-  const shadowId = `dash-funnel-shadow-${uid}`;
-
   const chartData = useMemo(
     () =>
       data.map((item) => ({
@@ -69,17 +63,7 @@ export function EmbudoLeads({ data }: EmbudoLeadsProps) {
               margin={{ top: 12, right: 28, bottom: 8, left: 8 }}
               barCategoryGap="28%"
             >
-              <defs>
-                <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="0">
-                  <stop offset="0%" stopColor="#172FBE" stopOpacity="1" />
-                  <stop offset="45%" stopColor={HEX_SIGNAL} stopOpacity="0.96" />
-                  <stop offset="100%" stopColor="#7C92FF" stopOpacity="0.55" />
-                </linearGradient>
-                <filter id={shadowId} x="-30%" y="-30%" width="160%" height="180%">
-                  <feDropShadow dx="0" dy="8" stdDeviation="8" floodColor="#0B0E14" floodOpacity="0.12" />
-                </filter>
-              </defs>
-              <CartesianGrid stroke="#E6EAF2" strokeDasharray="4 8" horizontal={false} />
+              <CartesianGrid stroke="#E8ECF3" strokeDasharray="2 10" horizontal={false} />
               <XAxis
                 type="number"
                 tick={{ fontSize: 11, fill: "#5A6373" }}
@@ -115,14 +99,7 @@ export function EmbudoLeads({ data }: EmbudoLeadsProps) {
                   );
                 }}
               />
-              <Bar
-                dataKey="cantidad"
-                name="Leads"
-                fill={`url(#${gradientId})`}
-                radius={[0, 12, 12, 0]}
-                barSize={18}
-                filter={`url(#${shadowId})`}
-              />
+              <Bar dataKey="cantidad" name="Leads" fill="#1F44FF" radius={[0, 9, 9, 0]} barSize={16} />
             </BarChart>
           </ResponsiveContainer>
         </div>

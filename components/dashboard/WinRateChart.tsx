@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useMemo } from "react";
+import { useMemo } from "react";
 import {
   Bar,
   BarChart,
@@ -27,11 +27,6 @@ function formatPercent(value: number | string) {
 }
 
 export function WinRateChart({ outbound, inbound }: WinRateChartProps) {
-  const uid = useId().replace(/:/g, "");
-  const outboundGradientId = `dash-winrate-outbound-${uid}`;
-  const inboundGradientId = `dash-winrate-inbound-${uid}`;
-  const shadowId = `dash-winrate-shadow-${uid}`;
-
   const data = useMemo(
     () => [
       {
@@ -71,22 +66,7 @@ export function WinRateChart({ outbound, inbound }: WinRateChartProps) {
           <div className="h-[280px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={data} margin={{ top: 12, right: 20, bottom: 8, left: 0 }} barCategoryGap="32%">
-                <defs>
-                  <linearGradient id={outboundGradientId} x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#6881FF" stopOpacity="1" />
-                    <stop offset="50%" stopColor={HEX_SIGNAL} stopOpacity="0.96" />
-                    <stop offset="100%" stopColor="#172FBE" stopOpacity="1" />
-                  </linearGradient>
-                  <linearGradient id={inboundGradientId} x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#65D69A" stopOpacity="1" />
-                    <stop offset="50%" stopColor={HEX_SUCCESS} stopOpacity="0.95" />
-                    <stop offset="100%" stopColor="#1F7A4C" stopOpacity="1" />
-                  </linearGradient>
-                  <filter id={shadowId} x="-30%" y="-30%" width="160%" height="180%">
-                    <feDropShadow dx="0" dy="10" stdDeviation="9" floodColor="#0B0E14" floodOpacity="0.13" />
-                  </filter>
-                </defs>
-                <CartesianGrid stroke="#E6EAF2" strokeDasharray="4 8" vertical={false} />
+                <CartesianGrid stroke="#E8ECF3" strokeDasharray="2 10" vertical={false} />
                 <XAxis
                   dataKey="canal"
                   tick={{ fontSize: 11, fill: "#5A6373" }}
@@ -125,22 +105,25 @@ export function WinRateChart({ outbound, inbound }: WinRateChartProps) {
                 <Bar
                   dataKey="porcentaje"
                   name="Conversión"
-                  radius={[0, 12, 12, 0]}
-                  barSize={18}
-                  shape={(
-                    props: {
-                      x?: number;
-                      y?: number;
-                      width?: number;
-                      height?: number;
-                      payload?: { canal?: string };
-                    }
-                  ) => {
-                    const { x, y, width, height, payload } = props;
-                    const fill = payload?.canal === "Outbound" ? `url(#${outboundGradientId})` : `url(#${inboundGradientId})`;
-
-                    return <rect x={x} y={y} width={width} height={height} rx={12} ry={12} fill={fill} filter={`url(#${shadowId})`} />;
-                  }}
+                  radius={[8, 8, 2, 2]}
+                  barSize={22}
+                  shape={(props: {
+                    x?: number;
+                    y?: number;
+                    width?: number;
+                    height?: number;
+                    payload?: { canal?: string };
+                  }) => (
+                    <rect
+                      x={props.x ?? 0}
+                      y={props.y ?? 0}
+                      width={props.width ?? 0}
+                      height={props.height ?? 0}
+                      rx={8}
+                      ry={8}
+                      fill={props.payload?.canal === "Outbound" ? HEX_SIGNAL : HEX_SUCCESS}
+                    />
+                  )}
                 />
               </BarChart>
             </ResponsiveContainer>

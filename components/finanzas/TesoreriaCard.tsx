@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import { Badge, Button, Card, Input, Modal } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { CAJA_COLOR_OPTIONS, getCajaLightBg } from "@/lib/cajas";
 import { formatFecha, formatUSD } from "@/lib/utils/formatters";
 import type { Caja } from "@/types/cajas";
 import type { TesoreriaCajaBalance, TesoreriaFinanzas } from "@/types/finanzas";
-import { Line, LineChart, ResponsiveContainer } from "recharts";
+import { Area, AreaChart, ResponsiveContainer } from "recharts";
 
 type TesoreriaCardProps = {
   data: TesoreriaFinanzas | null;
@@ -35,6 +35,9 @@ function formatMovement(item: TesoreriaCajaBalance) {
 }
 
 function CajaCard({ item }: { item: TesoreriaCajaBalance }) {
+  const chartId = useId().replace(/:/g, "");
+  const incomeGradient = `caja-income-${chartId}`;
+  const expenseGradient = `caja-expense-${chartId}`;
   const isInactive = !item.activa && !item.es_sin_asignar;
   const colorTone = getCajaLightBg(item.color);
   const shouldHide = item.es_sin_asignar && item.total_cobrado === 0 && item.total_egresado === 0;
@@ -79,10 +82,34 @@ function CajaCard({ item }: { item: TesoreriaCajaBalance }) {
         <div className="pt-1">
           <div className="h-[56px] overflow-hidden rounded-component border border-white bg-[#F7F9FC] px-2 py-1 shadow-soft">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={item.historico} margin={{ top: 2, right: 0, bottom: 2, left: 0 }}>
-                <Line dataKey="cobrado" stroke="#38A169" strokeWidth={2} dot={false} type="monotone" />
-                <Line dataKey="egresado" stroke="#E53E3E" strokeWidth={2} dot={false} type="monotone" />
-              </LineChart>
+              <AreaChart data={item.historico} margin={{ top: 2, right: 0, bottom: 2, left: 0 }}>
+                <defs>
+                  <linearGradient id={incomeGradient} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#38A169" stopOpacity="0.24" />
+                    <stop offset="100%" stopColor="#38A169" stopOpacity="0" />
+                  </linearGradient>
+                  <linearGradient id={expenseGradient} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#E53E3E" stopOpacity="0.18" />
+                    <stop offset="100%" stopColor="#E53E3E" stopOpacity="0" />
+                  </linearGradient>
+                </defs>
+                <Area
+                  dataKey="cobrado"
+                  stroke="#38A169"
+                  strokeWidth={2.2}
+                  fill={`url(#${incomeGradient})`}
+                  dot={false}
+                  type="monotone"
+                />
+                <Area
+                  dataKey="egresado"
+                  stroke="#E53E3E"
+                  strokeWidth={2.2}
+                  fill={`url(#${expenseGradient})`}
+                  dot={false}
+                  type="monotone"
+                />
+              </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useMemo } from "react";
-import { Bar, CartesianGrid, ComposedChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import type { TooltipContentProps } from "recharts/types/component/Tooltip";
 import { Card } from "@/components/ui";
 import { formatUSD } from "@/lib/utils/formatters";
@@ -41,8 +41,7 @@ function ChartSkeleton() {
 
 export function MRRChart({ data, loading = false }: MRRChartProps) {
   const chartId = useId().replace(/:/g, "");
-  const mrrGradient = `mrr-bars-${chartId}`;
-  const shadowFilter = `mrr-shadow-${chartId}`;
+  const mrrGradient = `mrr-area-${chartId}`;
   const hasData = data.some((point) => point.mrr > 0);
 
   const chartData = useMemo(
@@ -75,18 +74,15 @@ export function MRRChart({ data, loading = false }: MRRChartProps) {
       ) : (
         <div className="h-[320px]">
           <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart data={chartData} margin={{ top: 16, right: 24, bottom: 8, left: 8 }}>
+            <AreaChart data={chartData} margin={{ top: 16, right: 24, bottom: 8, left: 8 }}>
               <defs>
                 <linearGradient id={mrrGradient} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#6881FF" stopOpacity="1" />
-                  <stop offset="48%" stopColor={HEX_SIGNAL} stopOpacity="0.96" />
-                  <stop offset="100%" stopColor="#172FBE" stopOpacity="1" />
+                  <stop offset="0%" stopColor={HEX_SIGNAL} stopOpacity="0.28" />
+                  <stop offset="68%" stopColor={HEX_SIGNAL} stopOpacity="0.06" />
+                  <stop offset="100%" stopColor={HEX_SIGNAL} stopOpacity="0" />
                 </linearGradient>
-                <filter id={shadowFilter} x="-30%" y="-30%" width="160%" height="180%">
-                  <feDropShadow dx="0" dy="10" stdDeviation="9" floodColor="#0B0E14" floodOpacity="0.14" />
-                </filter>
               </defs>
-              <CartesianGrid stroke="#E6EAF2" strokeDasharray="4 8" vertical={false} />
+              <CartesianGrid stroke="#E8ECF3" strokeDasharray="2 10" vertical={false} />
               <XAxis
                 dataKey="label"
                 tick={{ fontSize: 11, fill: "#5A6373" }}
@@ -120,15 +116,17 @@ export function MRRChart({ data, loading = false }: MRRChartProps) {
                   );
                 }}
               />
-              <Bar
+              <Area
                 dataKey="mrr"
                 name="MRR"
+                type="monotone"
+                stroke={HEX_SIGNAL}
+                strokeWidth={2.8}
                 fill={`url(#${mrrGradient})`}
-                radius={[4, 4, 0, 0]}
-                barSize={22}
-                filter={`url(#${shadowFilter})`}
+                dot={false}
+                activeDot={{ r: 4, fill: "#FFFFFF", stroke: HEX_SIGNAL, strokeWidth: 2.5 }}
               />
-            </ComposedChart>
+            </AreaChart>
           </ResponsiveContainer>
         </div>
       )}

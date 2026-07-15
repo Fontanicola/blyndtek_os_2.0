@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useMemo } from "react";
+import { useMemo } from "react";
 import {
   Bar,
   BarChart,
@@ -32,18 +32,17 @@ const STAGE_LABELS: Record<string, string> = {
   descartado: "Descartado"
 };
 
-const STAGE_GRADIENTS: Record<string, [string, string]> = {
-  por_contactar: ["#E8EEFF", "#A7B9FF"],
-  contactado: ["#DCE5FF", "#7E9AFF"],
-  seguimiento: ["#C9D6FF", "#5F82FF"],
-  calificado: ["#B2C4FF", "#365DFF"],
-  cotizacion: ["#93ADFF", "#1F44FF"],
-  ganado: ["#E3FFEE", "#38A169"],
-  descartado: ["#FFF5F5", "#E53E3E"]
+const STAGE_COLORS: Record<string, string> = {
+  por_contactar: "#DDE4FF",
+  contactado: "#C2CFFF",
+  seguimiento: "#9FB2FF",
+  calificado: "#718DFF",
+  cotizacion: "#1F44FF",
+  ganado: "#38A169",
+  descartado: "#F0A6A6"
 };
 
 export function LeadsPorEtapaChart({ data }: LeadsPorEtapaChartProps) {
-  const uid = useId().replace(/:/g, "");
   const chartData = useMemo(
     () =>
       data.map((item) => ({
@@ -55,15 +54,6 @@ export function LeadsPorEtapaChart({ data }: LeadsPorEtapaChartProps) {
 
   const hasData = chartData.some((item) => item.cantidad > 0);
   const maxValue = Math.max(1, ...chartData.map((item) => item.cantidad));
-
-  const gradientIds = useMemo(
-    () =>
-      chartData.reduce<Record<string, string>>((acc, item) => {
-        acc[item.etapa] = `commercial-stage-${item.etapa}-${uid}`;
-        return acc;
-      }, {}),
-    [chartData, uid]
-  );
 
   return (
     <Card padding="md" className="space-y-5 overflow-hidden bg-white">
@@ -88,20 +78,7 @@ export function LeadsPorEtapaChart({ data }: LeadsPorEtapaChartProps) {
               margin={{ top: 12, right: 24, bottom: 8, left: 8 }}
               barCategoryGap="28%"
             >
-              <defs>
-                {chartData.map((item) => {
-                  const [startColor, endColor] = STAGE_GRADIENTS[item.etapa] ?? ["#E8EEFF", "#1F44FF"];
-                  const id = gradientIds[item.etapa];
-
-                  return (
-                    <linearGradient key={item.etapa} id={id} x1="0" y1="0" x2="1" y2="0">
-                      <stop offset="0%" stopColor={startColor} stopOpacity="1" />
-                      <stop offset="100%" stopColor={endColor} stopOpacity="1" />
-                    </linearGradient>
-                  );
-                })}
-              </defs>
-              <CartesianGrid stroke="#E6EAF2" strokeDasharray="4 8" horizontal={false} />
+              <CartesianGrid stroke="#E8ECF3" strokeDasharray="2 10" horizontal={false} />
               <XAxis
                 type="number"
                 tick={{ fontSize: 11, fill: "#5A6373" }}
@@ -141,24 +118,25 @@ export function LeadsPorEtapaChart({ data }: LeadsPorEtapaChartProps) {
               <Bar
                 dataKey="cantidad"
                 name="Leads"
-                radius={[0, 12, 12, 0]}
+                radius={[0, 9, 9, 0]}
                 barSize={16}
-                shape={(props) => {
-                  const item = props.payload as (typeof chartData)[number] | undefined;
-                  const id = item ? gradientIds[item.etapa] : undefined;
-
-                  return (
-                    <rect
-                      x={props.x}
-                      y={props.y}
-                      width={props.width}
-                      height={props.height}
-                      rx={12}
-                      ry={12}
-                      fill={id ? `url(#${id})` : "#E8EEFF"}
-                    />
-                  );
-                }}
+                shape={(props: {
+                  x?: number;
+                  y?: number;
+                  width?: number;
+                  height?: number;
+                  payload?: { etapa?: string };
+                }) => (
+                  <rect
+                    x={props.x ?? 0}
+                    y={props.y ?? 0}
+                    width={props.width ?? 0}
+                    height={props.height ?? 0}
+                    rx={9}
+                    ry={9}
+                    fill={STAGE_COLORS[props.payload?.etapa ?? ""] ?? "#DDE4FF"}
+                  />
+                )}
               />
             </BarChart>
           </ResponsiveContainer>

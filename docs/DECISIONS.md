@@ -402,12 +402,6 @@
 - La UI de `/perfil` permite registrar, nombrar y eliminar passkeys locales sincronizados con la metadata interna, mientras que Supabase conserva la credencial real.
 - Si el dashboard de Supabase no tiene activado `Authentication → Passkeys`, el flujo no funcionará aunque el código esté listo.
 
-## 2026-07-14 — Conditional UI para passkeys
-
-- Conditional UI baja la fricción a enfocar el campo de email en vez de exigir un click explícito, pero sigue dependiendo de que el navegador soporte WebAuthn y de que haya un passkey registrado.
-- El estándar no permite biometría verdaderamente pasiva sin ninguna interacción del usuario; el navegador siempre exige algún gesto mínimo de enfoque/selección por seguridad.
-- El botón `Touch ID` se mantiene como camino de respaldo visible para browsers o dispositivos que no soportan Conditional UI, sin eliminar el login con contraseña.
-
 ## 2026-07-14 — Middleware Edge blindado y autocontenido
 
 - Decisión final luego de cuatro caídas de producción: el proyecto no usa `middleware.ts`. Se eliminó el Edge middleware por completo para que Vercel no genere una Edge Function capaz de arrastrar APIs Node incompatibles (`__dirname`, `process.version`, etc.).

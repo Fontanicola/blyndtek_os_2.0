@@ -3,7 +3,7 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import type { TooltipContentProps } from "recharts/types/component/Tooltip";
 import {
-  Bar,
+  Area,
   CartesianGrid,
   ComposedChart,
   Line,
@@ -207,7 +207,6 @@ export function RunwayLab({
 }: RunwayLabProps) {
   const chartId = useId().replace(/:/g, "");
   const actualGradient = `runway-lab-actual-${chartId}`;
-  const actualShadow = `runway-lab-shadow-${chartId}`;
   const [hypotheses, setHypotheses] = useState<RunwayHypothesis[]>([]);
   const [nombre, setNombre] = useState("");
   const [monto, setMonto] = useState("");
@@ -567,15 +566,12 @@ export function RunwayLab({
             <ComposedChart data={chartData} margin={{ top: 20, right: 28, bottom: 12, left: 4 }}>
               <defs>
                 <linearGradient id={actualGradient} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#6881FF" stopOpacity="1" />
-                  <stop offset="48%" stopColor="#1F44FF" stopOpacity="0.96" />
-                  <stop offset="100%" stopColor="#172FBE" stopOpacity="1" />
+                  <stop offset="0%" stopColor="#1F44FF" stopOpacity="0.28" />
+                  <stop offset="68%" stopColor="#1F44FF" stopOpacity="0.06" />
+                  <stop offset="100%" stopColor="#1F44FF" stopOpacity="0" />
                 </linearGradient>
-                <filter id={actualShadow} x="-30%" y="-30%" width="160%" height="180%">
-                  <feDropShadow dx="0" dy="10" stdDeviation="9" floodColor="#0B0E14" floodOpacity="0.14" />
-                </filter>
               </defs>
-              <CartesianGrid stroke="#E6EAF2" strokeDasharray="4 8" vertical={false} />
+              <CartesianGrid stroke="#E8ECF3" strokeDasharray="2 10" vertical={false} />
               <XAxis dataKey="label" tick={{ fontSize: 11, fill: "#5A6373" }} axisLine={false} tickLine={false} />
               <YAxis
                 tick={{ fontSize: 11, fill: "#5A6373" }}
@@ -606,13 +602,15 @@ export function RunwayLab({
                   );
                 }}
               />
-              <Bar
+              <Area
                 dataKey="actual"
                 name="Runway actual"
+                type="monotone"
+                stroke="#1F44FF"
+                strokeWidth={2.8}
                 fill={`url(#${actualGradient})`}
-                radius={[4, 4, 0, 0]}
-                barSize={20}
-                filter={`url(#${actualShadow})`}
+                dot={false}
+                activeDot={{ r: 4, fill: "#FFFFFF", stroke: "#1F44FF", strokeWidth: 2.5 }}
               />
               {activeHypotheses.length > 0 ? (
                 <Line
@@ -620,9 +618,10 @@ export function RunwayLab({
                   dataKey="escenario"
                   name="Con escenario"
                   stroke={scenarioTone === "success" ? "#38A169" : scenarioTone === "danger" ? "#E53E3E" : "#D97706"}
-                  strokeWidth={2}
-                  strokeDasharray="4 4"
-                  dot={{ r: 3, fill: scenarioTone === "success" ? "#38A169" : scenarioTone === "danger" ? "#E53E3E" : "#D97706", stroke: "#FFFFFF", strokeWidth: 1 }}
+                  strokeWidth={2.2}
+                  strokeDasharray="7 6"
+                  dot={false}
+                  activeDot={{ r: 4, fill: "#FFFFFF", stroke: scenarioTone === "success" ? "#38A169" : scenarioTone === "danger" ? "#E53E3E" : "#D97706", strokeWidth: 2.5 }}
                 />
               ) : null}
             </ComposedChart>

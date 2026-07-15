@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo } from "react";
-import { Bar, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { useId, useMemo } from "react";
+import { Area, Bar, CartesianGrid, ComposedChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import type { TooltipContentProps } from "recharts/types/component/Tooltip";
 import { Card } from "@/components/ui";
 import { formatUSD } from "@/lib/utils/formatters";
@@ -30,6 +30,8 @@ function formatMoneyTick(value: number) {
 }
 
 export function VentasChart({ data }: VentasChartProps) {
+  const chartId = useId().replace(/:/g, "");
+  const amountGradient = `ventas-area-${chartId}`;
   const hasData = useMemo(
     () => data.some((point) => point.cantidad_ventas > 0 || point.monto_total_usd > 0),
     [data]
@@ -54,7 +56,14 @@ export function VentasChart({ data }: VentasChartProps) {
           <div className="w-full">
             <ResponsiveContainer width="100%" height={360}>
               <ComposedChart data={data} margin={{ top: 20, right: 24, left: 12, bottom: 12 }}>
-                <CartesianGrid strokeDasharray="4 8" stroke="#E6EAF2" vertical={false} />
+                <defs>
+                  <linearGradient id={amountGradient} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={SIGNAL} stopOpacity="0.28" />
+                    <stop offset="68%" stopColor={SIGNAL} stopOpacity="0.06" />
+                    <stop offset="100%" stopColor={SIGNAL} stopOpacity="0" />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="2 10" stroke="#E8ECF3" vertical={false} />
                 <XAxis
                   dataKey="mes"
                   tick={{ fontSize: 12, fill: GRAPHITE }}
@@ -99,21 +108,22 @@ export function VentasChart({ data }: VentasChartProps) {
                   }}
                 />
                 <Bar
-                  yAxisId="left"
-                  dataKey="monto_total_usd"
-                  name="Monto"
-                  fill={SIGNAL}
-                  radius={[4, 4, 0, 0]}
-                  barSize={16}
-                />
-                <Line
                   yAxisId="right"
                   dataKey="cantidad_ventas"
                   name="Ventas"
-                  stroke={GRAPHITE}
-                  strokeWidth={1.35}
-                  strokeDasharray="5 6"
-                  dot={{ r: 2.5, fill: GRAPHITE, stroke: "#FFFFFF", strokeWidth: 1.5 }}
+                  fill="#CBD3E1"
+                  radius={[6, 6, 0, 0]}
+                  barSize={12}
+                />
+                <Area
+                  yAxisId="left"
+                  dataKey="monto_total_usd"
+                  name="Monto"
+                  stroke={SIGNAL}
+                  strokeWidth={2.8}
+                  fill={`url(#${amountGradient})`}
+                  dot={false}
+                  activeDot={{ r: 4, fill: "#FFFFFF", stroke: SIGNAL, strokeWidth: 2.5 }}
                   type="monotone"
                 />
               </ComposedChart>

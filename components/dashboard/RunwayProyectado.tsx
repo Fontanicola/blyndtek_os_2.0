@@ -2,9 +2,8 @@
 
 import { useId } from "react";
 import {
-  Bar,
+  Area,
   ComposedChart,
-  Line,
   CartesianGrid,
   ResponsiveContainer,
   Tooltip,
@@ -33,7 +32,6 @@ function formatMoneyTick(value: string | number) {
 export function RunwayProyectado({ data }: RunwayProyectadoProps) {
   const chartId = useId().replace(/:/g, "");
   const gradientId = `dashboard-runway-${chartId}`;
-  const shadowId = `dashboard-runway-shadow-${chartId}`;
 
   return (
     <Card padding="md" className="space-y-5 overflow-hidden bg-white">
@@ -50,15 +48,12 @@ export function RunwayProyectado({ data }: RunwayProyectadoProps) {
           <ComposedChart data={data} margin={{ top: 16, right: 18, bottom: 8, left: 8 }}>
             <defs>
               <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#6881FF" stopOpacity="1" />
-                <stop offset="50%" stopColor="#1F44FF" stopOpacity="0.96" />
-                <stop offset="100%" stopColor="#172FBE" stopOpacity="1" />
+                <stop offset="0%" stopColor="#1F44FF" stopOpacity="0.28" />
+                <stop offset="68%" stopColor="#1F44FF" stopOpacity="0.06" />
+                <stop offset="100%" stopColor="#1F44FF" stopOpacity="0" />
               </linearGradient>
-              <filter id={shadowId} x="-30%" y="-30%" width="160%" height="180%">
-                <feDropShadow dx="0" dy="10" stdDeviation="9" floodColor="#0B0E14" floodOpacity="0.13" />
-              </filter>
             </defs>
-            <CartesianGrid stroke="#E6EAF2" strokeDasharray="4 8" vertical={false} />
+            <CartesianGrid stroke="#E8ECF3" strokeDasharray="2 10" vertical={false} />
             <XAxis dataKey="label" tick={{ fill: "#5A6373", fontSize: 11 }} axisLine={false} tickLine={false} />
             <YAxis tick={{ fill: "#5A6373", fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={formatMoneyTick} />
             <Tooltip
@@ -75,14 +70,14 @@ export function RunwayProyectado({ data }: RunwayProyectadoProps) {
                 );
               }}
             />
-            <Bar dataKey="caja" name="Caja" fill={`url(#${gradientId})`} barSize={20} filter={`url(#${shadowId})`} />
-            <Line
+            <Area
               dataKey="caja"
-              name="Tendencia"
-              stroke="#111827"
-              strokeWidth={1.25}
-              strokeDasharray="5 6"
-              dot={{ r: 2.5, fill: "#111827", stroke: "#FFFFFF", strokeWidth: 1 }}
+              name="Caja"
+              stroke="#1F44FF"
+              strokeWidth={2.8}
+              fill={`url(#${gradientId})`}
+              dot={false}
+              activeDot={{ r: 4, fill: "#FFFFFF", stroke: "#1F44FF", strokeWidth: 2.5 }}
               type="monotone"
             />
           </ComposedChart>
