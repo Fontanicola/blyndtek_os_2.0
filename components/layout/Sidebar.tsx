@@ -95,14 +95,27 @@ export function Sidebar({
         onMouseLeave={mobile ? undefined : onMouseLeave}
         >
         <div className={cn("flex h-16 items-center border-b border-line-soft", collapsed ? "justify-center px-2" : "px-5")}>
-          <Image
-            src={collapsed ? "/Logo_Blyndtek_isotipo.svg" : "/Logo_Blyndtek_plataforma_negro.svg"}
-            alt="Blyndtek OS"
-            width={collapsed ? 36 : 132}
-            height={collapsed ? 36 : 28}
-            className={collapsed ? "h-9 w-9 shrink-0" : "h-7 w-[132px] max-w-none shrink-0"}
-            priority
-          />
+          {collapsed ? (
+            <div className="relative h-9 w-9 shrink-0 overflow-hidden">
+              <Image
+                src="/Logo_Blyndtek_plataforma_negro.svg"
+                alt="Blyndtek OS"
+                fill
+                sizes="36px"
+                className="object-cover object-left"
+                priority
+              />
+            </div>
+          ) : (
+            <Image
+              src="/Logo_Blyndtek_plataforma_negro.svg"
+              alt="Blyndtek OS"
+              width={132}
+              height={28}
+              className="h-7 w-[132px] max-w-none shrink-0"
+              priority
+            />
+          )}
         </div>
 
         <nav className="flex-1 overflow-y-auto py-2">
