@@ -1333,16 +1333,18 @@ export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
               </div>
 
               <div className="overflow-hidden rounded-card border border-line-soft">
-                <div className="grid grid-cols-[minmax(280px,360px)_92px_110px_110px_120px_120px_96px] gap-3 border-b border-line-soft bg-paper px-4 py-3 text-xs font-label uppercase tracking-[0.08em] text-graphite">
-                  <span>Concepto</span>
-                  <span>Tipo</span>
-                  <span>Emisión</span>
-                  <span>Vencimiento</span>
-                  <span>Monto</span>
-                  <span>Estado</span>
-                  <span className="sr-only">Acciones</span>
-                </div>
-                <div className="divide-y divide-line-soft bg-white">
+                <div className="overflow-x-auto">
+                  <div className="min-w-[920px]">
+                    <div className="grid grid-cols-[minmax(280px,360px)_92px_110px_110px_120px_120px_96px] gap-3 border-b border-line-soft bg-paper px-4 py-3 text-xs font-label uppercase tracking-[0.08em] text-graphite">
+                      <span>Concepto</span>
+                      <span>Tipo</span>
+                      <span>Emisión</span>
+                      <span>Vencimiento</span>
+                      <span>Monto</span>
+                      <span>Estado</span>
+                      <span className="sr-only">Acciones</span>
+                    </div>
+                    <div className="divide-y divide-line-soft bg-white">
                   {cobros.map((cobro) => {
                     const historial = cobro.historial ?? [];
                     const isExpanded = expandedCobros[cobro.id] && historial.length > 0;
@@ -1431,6 +1433,8 @@ export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
                       </div>
                     );
                   })}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
