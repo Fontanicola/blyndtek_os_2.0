@@ -8,6 +8,7 @@ import { DashboardIcon, FinanzasIcon } from "@/components/icons";
 import { NotasVinculadasSection } from "@/components/notas";
 import { ProyectoCard } from "@/components/proyectos";
 import { formatFecha, formatUSD } from "@/lib/utils/formatters";
+import { useCajas } from "@/lib/hooks/useCajas";
 import { useFinanzas } from "@/lib/hooks/useFinanzas";
 import { useProyectos } from "@/lib/hooks/useProyectos";
 import { LeadNegociacionesSection } from "@/components/leads/LeadNegociacionesSection";
@@ -251,6 +252,7 @@ const egresoCategoriaLabels: Record<Egreso["categoria"], string> = {
 
 export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
   const router = useRouter();
+  const { cajas } = useCajas();
   const { fetchProyectos } = useProyectos();
   const { fetchCobros, fetchCobro, fetchSuscripciones, createSuscripcion, activarSuscripcion, updateCobro } = useFinanzas();
   const [activeTab, setActiveTab] = useState<TabKey>("datos");
@@ -300,6 +302,8 @@ export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
       .map((entry) => entry.trim())
       .filter(Boolean);
   }, [cliente.notas]);
+
+  const cajasActivas = useMemo(() => cajas.filter((caja) => caja.activa), [cajas]);
 
   const cobrosResumen = useMemo(() => {
     return cobros.reduce(
@@ -1813,7 +1817,7 @@ export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
         }))}
         cotizaciones={[]}
         suscripciones={suscripcion ? [suscripcion] : []}
-        cajas={[]}
+        cajas={cajasActivas}
       />
 
       <EgresoModal
@@ -1828,7 +1832,7 @@ export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
           cliente_id: proyecto.cliente_id,
           clienteNombre: cliente.empresa
         }))}
-        cajas={[]}
+        cajas={cajasActivas}
         saving={creatingCosto}
       />
 

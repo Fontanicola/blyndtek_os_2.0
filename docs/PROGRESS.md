@@ -36,6 +36,13 @@ Estado general actual: Fase 0 completa. Cimientos técnicos listos: documentaci�
 - Se documentaron las tablas `agentes`, `agente_config` y `agente_analisis` en `docs/DATABASE.md` junto con sus relaciones.
 - Verificación local completa: `npm run lint` y `npm run build` pasaron sin errores.
 
+## Actualización 2026-07-16
+
+- Se corrigió el flujo `+ Agregar costo` dentro de la ficha del cliente para reutilizar el `EgresoModal` real con las cajas activas reales del sistema.
+- La causa exacta era que `components/clientes/ClienteFicha.tsx` estaba pasando `cajas={[]}` al modal, dejando el selector vacío aunque `/finanzas → Egresos` sí cargaba opciones correctamente.
+- Ahora la ficha consume `useCajas()`, filtra `cajasActivas` y se las pasa a `EgresoModal`, por lo que el selector muestra las mismas opciones que el flujo general.
+- Verificación local completa: `npm run lint` y `npm run build` pasaron sin errores.
+
 ## Fase 0 — Cimientos
 
 ### ✅ 0.1 — Documentación fundacional
