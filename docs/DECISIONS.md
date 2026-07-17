@@ -473,3 +473,9 @@
 - El adelanto no se trata como una cuota más: es el primer hito del plan de pago y se calcula como un porcentaje configurable del valor total.
 - Cuando un contrato se genera o se redefine, el adelanto se crea primero y después se distribuye el saldo restante entre las cuotas posteriores.
 - En una redefinición, la protección de datos financieros reales sigue vigente: si el adelanto ya fue cobrado, nunca se elimina ni se modifica; sólo se reemplazan los hitos pendientes.
+
+## 2026-07-17 — lucide-react como librería estándar de íconos
+
+- Todos los íconos de UI del sistema se centralizan en `components/ui/icons.tsx`, que reexporta `lucide-react` con tamaño y `strokeWidth` estandarizados.
+- Los SVG dibujados a mano quedan prohibidos para íconos de interfaz; sólo se conservan las excepciones ya definidas: logos de marca, gráficos de datos y los fondos circulares de `MetricaCard` y tiles de Archivos.
+- Esta decisión evita que cada módulo vuelva a inventar su propio trazo, grosor o variante visual para representar el mismo concepto.

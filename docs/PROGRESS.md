@@ -1820,3 +1820,9 @@ $ find . -maxdepth 3 \( -name 'middleware.*' -o -name 'proxy.*' \) -not -path '.
 - `ClienteFicha` suma el campo `Adelanto (%)` y la `Fecha del adelanto` en el tab `Contrato`, y muestra el adelanto separado del resto de las cuotas en el resumen del contrato activo.
 - La tab `Cobros` del cliente ahora permite marcar un hito como cobrado con un click, resalta en rojo los pendientes vencidos y refresca el resumen del contrato al editar o cobrar un hito.
 - Verificación local ejecutada: `npm run lint` y `npm run build` pasan correctamente.
+
+## 2026-07-17 — Migración masiva de íconos a lucide-react
+
+- Se centralizó el sistema de íconos en `components/ui/icons.tsx` con `lucide-react` y un grosor uniforme para toda la UI.
+- Se reemplazaron los SVG dibujados a mano en módulos de Archivos, Clientes, Login, Notas, Agentes, Proyectos, Finanzas, Dashboard, Perfil, Tareas, Calendario, Roadmap, Saas y componentes compartidos por el registro centralizado.
+- Aproximadamente 20 archivos quedaron tocados por esta limpieza; las excepciones respetadas fueron logo de marca, gráficos de datos y los fondos circulares permitidos en `MetricaCard` y tiles de Archivos.

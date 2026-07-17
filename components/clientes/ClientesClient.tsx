@@ -4,29 +4,11 @@ import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { ClienteCard, ClienteFicha, ClienteModal } from "@/components/clientes";
 import { Button, Input } from "@/components/ui";
+import { SearchIcon } from "@/components/ui/icons";
 import { useInboundLeads } from "@/lib/hooks/useInboundLeads";
 import { useClientes } from "@/lib/hooks/useClientes";
 import type { CreateClienteInput, EstadoCliente } from "@/types/clientes";
 import { useLeads } from "@/lib/hooks/useLeads";
-
-function SearchIcon() {
-  return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <circle cx="11" cy="11" r="7" />
-      <path d="m20 20-3.5-3.5" />
-    </svg>
-  );
-}
 
 export default function ClientesPage() {
   const searchParams = useSearchParams();

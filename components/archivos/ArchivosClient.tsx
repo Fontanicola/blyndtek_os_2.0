@@ -18,6 +18,16 @@ import {
   ProyectosIcon,
   WikiIcon
 } from "@/components/icons";
+import {
+  ChevronRightIcon,
+  FileIcon as FileOutlineIcon,
+  FileSpreadsheetIcon,
+  FileTextIcon,
+  FolderIcon,
+  ImageIcon,
+  LinkIcon,
+  MoreVerticalIcon
+} from "@/components/ui/icons";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import { useArchivos } from "@/lib/hooks/useArchivos";
 import { useCarpetas } from "@/lib/hooks/useCarpetas";
@@ -140,95 +150,34 @@ function FileGlyph({ archivo }: { archivo: Archivo }) {
     archivo.nombre.toLowerCase().endsWith(".docx");
 
   if (kind === "image") {
-    return (
-      <span className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-signal-light text-signal">
-        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className="h-6 w-6">
-          <rect x="4.5" y="5.5" width="15" height="13" rx="2" stroke="currentColor" strokeWidth="1.6" />
-          <path d="M8 13 10.75 10.25L14 13.5L16 11.5L19 14.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-          <circle cx="9" cy="9.25" r="1.1" fill="currentColor" />
-        </svg>
-      </span>
-    );
+    return <ImageIcon className="h-6 w-6" />;
   }
 
   if (isSpreadsheet) {
-    return (
-      <span className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-success-light text-success">
-        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className="h-6 w-6">
-          <rect x="4.5" y="4.5" width="15" height="15" rx="2" stroke="currentColor" strokeWidth="1.6" />
-          <path d="M8 7.5h8M8 11h8M8 14.5h8M11.25 7.5v12" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-        </svg>
-      </span>
-    );
+    return <FileSpreadsheetIcon className="h-6 w-6" />;
   }
 
   if (kind === "pdf") {
-    return (
-      <span className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-danger-light text-danger">
-        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className="h-6 w-6">
-          <path d="M7 4.5h7l3 3v12H7z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
-          <path d="M14 4.5v3h3" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
-          <text x="12" y="15.3" textAnchor="middle" fill="currentColor" fontSize="4.2" fontWeight="700">
-            PDF
-          </text>
-        </svg>
-      </span>
-    );
+    return <FileTextIcon className="h-6 w-6" />;
   }
 
   if (kind === "document" || isDocument) {
-    return (
-      <span className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-signal-light text-signal">
-        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className="h-6 w-6">
-          <path d="M7 4.5h7l3 3v12H7z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
-          <path d="M14 4.5v3h3" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
-          <path d="M8.5 12h7M8.5 15h5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-        </svg>
-      </span>
-    );
+    return <FileTextIcon className="h-6 w-6" />;
   }
 
-  return (
-    <span className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-paper text-graphite">
-      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className="h-6 w-6">
-        <path d="M7 4.5h7l3 3v12H7z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
-        <path d="M14 4.5v3h3" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
-      </svg>
-    </span>
-  );
+  return <FileOutlineIcon className="h-6 w-6" />;
 }
 
 function FolderGlyph() {
-  return (
-    <span className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-warning-light text-warning">
-      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className="h-6 w-6">
-        <path d="M4.5 7.5A2 2 0 0 1 6.5 5.5h4l2 2H17.5A2 2 0 0 1 19.5 9.5v7A2 2 0 0 1 17.5 18.5h-11A2 2 0 0 1 4.5 16.5v-9Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
-      </svg>
-    </span>
-  );
+  return <FolderIcon className="h-6 w-6" />;
 }
 
 function LinkGlyph() {
-  return (
-    <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-signal-light text-signal">
-      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className="h-3 w-3">
-        <path d="M10 14 14 10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-        <path d="M8.5 15.5 6.5 17.5a3 3 0 1 1-4.24-4.24L4.5 11" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-        <path d="M15.5 8.5 17.5 6.5a3 3 0 1 1 4.24 4.24L19.5 13" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-      </svg>
-    </span>
-  );
+  return <LinkIcon className="h-3 w-3" />;
 }
 
 function ActionDots() {
-  return (
-    <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" className="h-4 w-4">
-      <path
-        d="M10 4.5a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5Zm0 4.5a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5Zm0 4.5a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5Z"
-        fill="currentColor"
-      />
-    </svg>
-  );
+  return <MoreVerticalIcon className="h-4 w-4" />;
 }
 
 function getEntryTone(entry: Entry) {
@@ -1517,14 +1466,7 @@ export function ArchivosClient() {
                         }
                         className="rounded-component p-1 text-graphite transition-colors duration-fast ease-fast hover:bg-white hover:text-carbon"
                       >
-                        <svg
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          aria-hidden="true"
-                          className={cn("h-4 w-4 transition-transform duration-fast ease-fast", expanded && "rotate-90")}
-                        >
-                          <path d="m9 6 6 6-6 6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
+                        <ChevronRightIcon className={cn("h-4 w-4 transition-transform duration-fast ease-fast", expanded && "rotate-90")} />
                       </button>
                     </div>
 

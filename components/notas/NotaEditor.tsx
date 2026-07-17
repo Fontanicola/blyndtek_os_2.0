@@ -299,7 +299,7 @@ export function NotaEditor({
                   title={`Compartida con ${sharedUserIds.length} usuario${sharedUserIds.length === 1 ? "" : "s"}`}
                   className="inline-flex items-center text-signal"
                 >
-                  <PeopleIcon />
+                  <UsersIcon />
                 </span>
               ) : null}
 
@@ -312,7 +312,7 @@ export function NotaEditor({
                   }}
                   title={nota.fijada ? "Quitar fijada" : "Fijar nota"}
                 >
-                  <PinIcon filled={nota.fijada} />
+                  <PinIcon fill={nota.fijada ? "currentColor" : "none"} />
                 </IconButton>
 
                 <div ref={menuRef} className="relative">

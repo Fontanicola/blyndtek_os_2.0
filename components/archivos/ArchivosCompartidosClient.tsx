@@ -2,6 +2,13 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Badge, Button, Spinner, Toast } from "@/components/ui";
+import {
+  FileIcon as FileOutlineGlyph,
+  FileSpreadsheetIcon,
+  FileTextIcon,
+  FolderIcon as FolderGlyphIcon,
+  ImageIcon
+} from "@/components/ui/icons";
 import { cn } from "@/lib/cn";
 import { formatArchivoSize, getArchivoKind, getSeccionLabel, sortCarpetasArchivos } from "@/lib/archivos";
 import { useCarpetas } from "@/lib/hooks/useCarpetas";
@@ -14,85 +21,29 @@ type ArchivosCompartidosClientProps = {
 };
 
 function FolderIcon() {
-  return (
-    <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-warning-light text-warning">
-      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className="h-5 w-5">
-        <path
-          d="M4.5 7.5A2 2 0 0 1 6.5 5.5h4l2 2H17.5A2 2 0 0 1 19.5 9.5v7A2 2 0 0 1 17.5 18.5h-11A2 2 0 0 1 4.5 16.5v-9Z"
-          stroke="currentColor"
-          strokeWidth="1.6"
-          strokeLinejoin="round"
-        />
-      </svg>
-    </span>
-  );
+  return <FolderGlyphIcon className="h-5 w-5" />;
 }
 
 function FileIcon({ archivo }: { archivo: Archivo }) {
   const kind = getArchivoKind(archivo.tipo_mime);
 
   if (kind === "image") {
-    return (
-      <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-signal-light text-signal">
-        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className="h-5 w-5">
-          <rect x="4.5" y="5.5" width="15" height="13" rx="2" stroke="currentColor" strokeWidth="1.6" />
-          <path
-            d="M8 13 10.75 10.25L14 13.5L16 11.5L19 14.5"
-            stroke="currentColor"
-            strokeWidth="1.6"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-      </span>
-    );
+    return <ImageIcon className="h-5 w-5" />;
   }
 
   if (kind === "pdf") {
-    return (
-      <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-danger-light text-danger">
-        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className="h-5 w-5">
-          <path d="M7 4.5h7l3 3v12H7z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
-          <path d="M14 4.5v3h3" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
-          <text x="12" y="15.2" textAnchor="middle" fill="currentColor" fontSize="4.2" fontWeight="700">
-            PDF
-          </text>
-        </svg>
-      </span>
-    );
+    return <FileTextIcon className="h-5 w-5" />;
   }
 
   if (archivo.nombre.toLowerCase().endsWith(".csv") || archivo.nombre.toLowerCase().endsWith(".xls") || archivo.nombre.toLowerCase().endsWith(".xlsx")) {
-    return (
-      <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-success-light text-success">
-        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className="h-5 w-5">
-          <rect x="4.5" y="4.5" width="15" height="15" rx="2" stroke="currentColor" strokeWidth="1.6" />
-          <path d="M8 7.5h8M8 11h8M8 14.5h8M11.25 7.5v12" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-        </svg>
-      </span>
-    );
+    return <FileSpreadsheetIcon className="h-5 w-5" />;
   }
 
   if (kind === "document") {
-    return (
-      <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-signal-light text-signal">
-        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className="h-5 w-5">
-          <path d="M7 4.5h7l3 3v12H7z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
-          <path d="M14 4.5v3h3" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
-          <path d="M8.5 12h7M8.5 15h5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-        </svg>
-      </span>
-    );
+    return <FileTextIcon className="h-5 w-5" />;
   }
 
-  return (
-    <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-paper text-graphite">
-      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className="h-5 w-5">
-        <path d="M7 4.5h7l3 3v12H7z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
-        <path d="M14 4.5v3h3" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
-      </svg>
-    </span>
-  );
+  return <FileOutlineGlyph className="h-5 w-5" />;
 }
 
 function formatLabel(folder: Carpeta) {

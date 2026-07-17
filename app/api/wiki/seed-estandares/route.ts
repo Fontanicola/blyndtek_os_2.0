@@ -67,6 +67,9 @@ function buildArticleContent(): Json {
         "Usar filas con divisor fino para listas de selección de una sola entidad por ítem (clientes, proyectos, notas, artículos, carpetas o cualquier selector similar). La interacción debe leerse como lista, no como mosaico de tarjetas."
       ],
       [
+        "Todo icono de UI viene de components/ui/icons.tsx, que reexporta lucide-react con tamaño y grosor estandarizados. No se dibuja un SVG de icono a mano de nuevo."
+      ],
+      [
         "El icono con badge de color solo se permite en MetricaCard y en los tiles de Archivos (ícono o miniatura). En cualquier otro lugar, el icono va solo, sin fondo circular decorativo."
       ],
       [
