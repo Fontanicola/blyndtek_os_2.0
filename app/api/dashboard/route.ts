@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { buildMonthlyFinancialSeries, isCobroVencido } from "@/lib/finanzas";
+import { buildMonthlyFinancialSeries, formatMonthKey, isCobroVencido } from "@/lib/finanzas";
 import { calcularEgresosPeriodo } from "@/lib/finanzas/calcularEgresosPeriodo";
 import { calculateRunwayProjection } from "@/lib/finanzas/runwayProjection";
 import { getCurrentWeekRange, getDashboardPeriodRange, isInRange } from "@/lib/dashboard";
 import { getAdminUser } from "@/lib/require-admin";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { fechaStringAFechaLocal } from "@/lib/utils/fechas";
 import type { Cliente } from "@/types/clientes";
 import type { Cobro } from "@/types/cobros";
 import type { Contrato } from "@/types/contratos";
@@ -113,8 +114,8 @@ function buildWinRateChannel(leads: Lead[], clientes: Cliente[], canal: "outboun
 function calculateMrrAtDate(suscripciones: Suscripcion[], reference: Date) {
   return suscripciones
     .filter((suscripcion) => {
-      const fechaInicioOk = !suscripcion.fecha_inicio || new Date(suscripcion.fecha_inicio) <= reference;
-      const fechaBajaOk = !suscripcion.fecha_baja || new Date(suscripcion.fecha_baja) > reference;
+      const fechaInicioOk = !suscripcion.fecha_inicio || fechaStringAFechaLocal(suscripcion.fecha_inicio) <= reference;
+      const fechaBajaOk = !suscripcion.fecha_baja || fechaStringAFechaLocal(suscripcion.fecha_baja) > reference;
       return suscripcion.estado === "activa" && fechaInicioOk && fechaBajaOk;
     })
     .reduce((total, suscripcion) => total + suscripcion.monto_mensual, 0);
@@ -326,6 +327,20 @@ export async function GET(request: NextRequest) {
     const cobrosPendientes = cobros.filter((cobro) => cobro.estado === "pendiente").reduce((total, cobro) => total + cobro.monto, 0);
     const cobrosVencidos = cobros.filter((cobro) => isCobroVencido(cobro)).reduce((total, cobro) => total + cobro.monto, 0);
     const historicoPl = buildMonthlyFinancialSeries(cobros, egresos, suscripciones, 12);
+    const historicoCobrado6m = buildMonthlyFinancialSeries(cobros, [], [], 6);
+    const ventasPorMes = new Map<string, number>();
+
+    for (const contrato of activeContracts) {
+      const monthKey = formatMonthKey(new Date(getContratoTimestamp(contrato)));
+      ventasPorMes.set(monthKey, (ventasPorMes.get(monthKey) ?? 0) + contrato.valor_total);
+    }
+
+    const historicoVentasVsCobrado = historicoCobrado6m.map((point) => ({
+      mes: point.label,
+      ventas: ventasPorMes.get(point.month) ?? 0,
+      cobrado: point.ingresos
+    }));
+    const totalVendido6m = historicoVentasVsCobrado.reduce((total, point) => total + point.ventas, 0);
 
     const ingresosActual = cobros
       .filter((cobro) => cobro.estado === "cobrado" && cobro.fecha_cobro && isInRange(cobro.fecha_cobro, range.start, range.end))
@@ -349,17 +364,22 @@ export async function GET(request: NextRequest) {
     const entregadosEnPeriodo = proyectos.filter(
       (proyecto) => proyecto.entrega_real && proyecto.entrega_comprometida && isInRange(proyecto.entrega_real, range.start, range.end)
     );
-    const entregadosATiempo = entregadosEnPeriodo.filter((proyecto) => new Date(proyecto.entrega_real!) <= new Date(proyecto.entrega_comprometida!)).length;
+    const entregadosATiempo = entregadosEnPeriodo.filter((proyecto) => {
+      const real = fechaStringAFechaLocal(proyecto.entrega_real!);
+      const comprometida = fechaStringAFechaLocal(proyecto.entrega_comprometida!);
+      return real <= comprometida;
+    }).length;
     const pctEntregadosATiempo = entregadosEnPeriodo.length > 0 ? (entregadosATiempo / entregadosEnPeriodo.length) * 100 : null;
-    const desvioPromedioDias = entregadosEnPeriodo.length > 0
-      ? average(
-          entregadosEnPeriodo.map((proyecto) => {
-            const real = new Date(proyecto.entrega_real!);
-            const comprometida = new Date(proyecto.entrega_comprometida!);
-            return (real.getTime() - comprometida.getTime()) / (1000 * 60 * 60 * 24);
-          })
-        )
-      : null;
+    const desvioPromedioDias =
+      entregadosEnPeriodo.length > 0
+        ? average(
+            entregadosEnPeriodo.map((proyecto) => {
+              const real = fechaStringAFechaLocal(proyecto.entrega_real!);
+              const comprometida = fechaStringAFechaLocal(proyecto.entrega_comprometida!);
+              return (real.getTime() - comprometida.getTime()) / (1000 * 60 * 60 * 24);
+            })
+          )
+        : null;
 
     const projectNameById = new Map(proyectos.map((proyecto) => [proyecto.id, proyecto.nombre]));
     const featuresConTimestamp = features.map((feature) => ({
@@ -432,7 +452,9 @@ export async function GET(request: NextRequest) {
         cobros_vencidos: cobrosVencidos,
         pl_mes_actual: plMesActual,
         pl_mes_anterior: plMesAnterior,
-        historico_pl: historicoPl
+        historico_pl: historicoPl,
+        historico_ventas_vs_cobrado: historicoVentasVsCobrado,
+        total_vendido_6m: totalVendido6m
       },
       entrega: {
         proyectos_activos: proyectosActivos,

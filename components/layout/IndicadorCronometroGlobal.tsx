@@ -1,23 +1,9 @@
 "use client";
 
 import { Button } from "@/components/ui";
+import { ClockIcon } from "@/components/ui/icons";
 import { formatClock } from "@/lib/tiempo";
 import { useCronometro } from "@/lib/hooks/useCronometro";
-
-function ClockIcon() {
-  return (
-    <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" className="h-3.5 w-3.5">
-      <circle cx="10" cy="10" r="7.25" stroke="currentColor" strokeWidth="1.5" />
-      <path
-        d="M10 5.75V10l2.75 1.75"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
 
 export function IndicadorCronometroGlobal() {
   const { sesionActiva, tiempoTranscurrido, pausar } = useCronometro();

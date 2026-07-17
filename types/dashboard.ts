@@ -33,6 +33,12 @@ export type DashboardFinancialPoint = {
   clientes_activos: number;
 };
 
+export type DashboardVentasVsCobradoPoint = {
+  mes: string;
+  ventas: number;
+  cobrado: number;
+};
+
 export type DashboardRecentFeature = {
   id: string;
   nombre: string;
@@ -70,6 +76,8 @@ export type DashboardFinanciero = {
   pl_mes_actual: number;
   pl_mes_anterior: number;
   historico_pl: DashboardFinancialPoint[];
+  historico_ventas_vs_cobrado: DashboardVentasVsCobradoPoint[];
+  total_vendido_6m: number;
 };
 
 export type DashboardEntrega = {

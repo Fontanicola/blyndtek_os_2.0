@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminUser } from "@/lib/require-admin";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { hoyLocalString } from "@/lib/utils/fechas";
 import type { Cobro, UpdateCobroInput } from "@/types/cobros";
 
 type RouteContext = {
@@ -124,7 +125,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     const nextFechaVencimiento = updatableBody.fecha_vencimiento ?? currentCobro.fecha_vencimiento;
     const nextFechaCobro =
       updatableBody.estado === "cobrado"
-        ? updatableBody.fecha_cobro ?? currentCobro.fecha_cobro ?? new Date().toISOString().slice(0, 10)
+        ? updatableBody.fecha_cobro ?? currentCobro.fecha_cobro ?? hoyLocalString()
         : updatableBody.fecha_cobro ?? currentCobro.fecha_cobro;
 
     const nextPayload: Omit<UpdateCobroInput, "nota_historial"> = {

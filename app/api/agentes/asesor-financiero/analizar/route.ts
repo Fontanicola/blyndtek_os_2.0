@@ -4,6 +4,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { calcularMetricasAsesor } from "@/lib/agentes/calcularMetricasAsesor";
 import { AGENTE_ASESOR_FINANCIERO_SLUG, normalizeAgenteConfig } from "@/lib/agentes/agentes";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { hoyLocalString } from "@/lib/utils/fechas";
 import type { AgenteAnalisis, AgenteConfigRow, AgentesDatabase } from "@/types/agentes";
 import type { Cliente } from "@/types/clientes";
 import type { Cobro } from "@/types/cobros";
@@ -54,6 +55,8 @@ function buildSystemPrompt() {
   return [
     "Sos un asesor financiero senior especializado en software factories y negocios de desarrollo a medida + SaaS.",
     "Tu trabajo es analizar los números reales de Blyndtek (una software factory de 2-3 personas) y presentar 2-4 opciones concretas de qué hacer con el excedente disponible este mes, SIEMPRE con el razonamiento y el impacto numérico de cada opción — nunca ordenás qué hacer, mostrás caminos para que el dueño decida.",
+    'Si runway_estado es "estable", interpretalo como buena noticia: no hay quema neta, no corresponde decir que el runway es cero y no urge acumular caja por riesgo de agotamiento.',
+    'Si runway_estado es "normal" o "agotado", recién ahí hablá de runway como indicador de prudencia o riesgo según los números.',
     "Si la capacidad disponible es baja (menos de 20%), advertí explícitamente que invertir en más leads/pauta ahora podría no tener sentido porque no hay capacidad de entrega.",
     "Si hay concentración de riesgo en un cliente, mencionalo como un punto de atención aparte, no mezclado con las opciones de inversión.",
     "Sé específico con los números que te paso, nunca inventes cifras que no te di.",
@@ -237,7 +240,7 @@ export async function POST(request: NextRequest) {
         metricas,
         agente,
         generado_automaticamente: cronAuthorized,
-        periodo: currentMonthStart().toISOString().slice(0, 10)
+        periodo: hoyLocalString(currentMonthStart())
       }
     });
   } catch (error) {

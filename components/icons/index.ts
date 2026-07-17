@@ -1,17 +1,19 @@
-export { OutboundIcon } from "./OutboundIcon";
-export { InboundIcon } from "./InboundIcon";
-export { ClientesIcon } from "./ClientesIcon";
-export { ProyectosIcon } from "./ProyectosIcon";
-export { TareasIcon } from "./TareasIcon";
-export { CalendarioIcon } from "./CalendarioIcon";
-export { FinanzasIcon } from "./FinanzasIcon";
-export { ArchivosIcon } from "./ArchivosIcon";
-export { NotasIcon } from "./NotasIcon";
-export { WikiIcon } from "./WikiIcon";
-export { DashboardIcon } from "./DashboardIcon";
-export { SaasIcon } from "./SaasIcon";
-export { MenuIcon } from "./MenuIcon";
-export { BellIcon } from "./BellIcon";
-export { LogoutIcon } from "./LogoutIcon";
-export { SearchIcon } from "./SearchIcon";
-export { AgentesIcon } from "./AgentesIcon";
+export {
+  AgentesIcon,
+  ArchivosIcon,
+  BellIcon,
+  CalendarioIcon,
+  ClientesIcon,
+  DashboardIcon,
+  FinanzasIcon,
+  InboundIcon,
+  LogoutIcon,
+  MenuIcon,
+  NotasIcon,
+  OutboundIcon,
+  ProyectosIcon,
+  SaasIcon,
+  SearchIcon,
+  TareasIcon,
+  WikiIcon
+} from "@/components/ui/icons";

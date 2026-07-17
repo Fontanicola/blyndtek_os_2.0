@@ -8,6 +8,7 @@ import TaskItem from "@tiptap/extension-task-item";
 import Placeholder from "@tiptap/extension-placeholder";
 import Image from "@tiptap/extension-image";
 import type { Json } from "@/types/supabase";
+import { ListIcon, TareasIcon } from "@/components/ui/icons";
 import { cn } from "@/lib/cn";
 import { createEmptyTipTapContent } from "@/lib/notas";
 
@@ -25,32 +26,6 @@ function BoldIcon() {
 
 function ItalicIcon() {
   return <span className="text-sm italic">I</span>;
-}
-
-function BulletIcon() {
-  return (
-    <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" className="h-4 w-4">
-      <path d="M7 5.5H16M7 10H16M7 14.5H16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-      <circle cx="4" cy="5.5" r="1" fill="currentColor" />
-      <circle cx="4" cy="10" r="1" fill="currentColor" />
-      <circle cx="4" cy="14.5" r="1" fill="currentColor" />
-    </svg>
-  );
-}
-
-function ChecklistIcon() {
-  return (
-    <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" className="h-4 w-4">
-      <path d="M7 5.5H16M7 10H16M7 14.5H16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-      <path
-        d="m3.5 5.5.8.8 1.7-1.8M3.5 10l.8.8 1.7-1.8M3.5 14.5l.8.8 1.7-1.8"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
 }
 
 function HeadingIcon() {
@@ -249,14 +224,14 @@ export function RichTextEditor({
             active={editor?.isActive("bulletList")}
             onClick={() => editor?.chain().focus().toggleBulletList().run()}
           >
-            <BulletIcon />
+            <ListIcon />
           </ToolbarButton>
           <ToolbarButton
             title="Checklist"
             active={editor?.isActive("taskList")}
             onClick={() => editor?.chain().focus().toggleTaskList().run()}
           >
-            <ChecklistIcon />
+            <TareasIcon />
           </ToolbarButton>
           <ToolbarButton
             title="Título"

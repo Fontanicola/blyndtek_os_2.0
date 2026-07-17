@@ -845,6 +845,8 @@ Nota: `usuarios` debe existir antes que `leads`, `proyectos`, `features`, `tarea
 - `egresos.comision_id` uuid nullable para trazar el egreso generado al pagar una comisión y mantener el impacto contable y de runway en caja real.
 - `cobros_historial_cambios` guarda el historial de cambios de monto y fecha de vencimiento de los hitos editados desde la ficha del cliente.
 - `contratos` guarda el plan activo de pago por cliente con valor total, cantidad de cuotas, día de pago, fecha de primera cuota, mantenimiento opcional y el enlace al contrato anterior reemplazado.
+- `contratos.adelanto_pct` numeric para configurar el porcentaje del adelanto del plan.
+- `contratos.fecha_adelanto` date nullable para definir cuándo vence/cobra el adelanto inicial.
 - `cobros.contrato_id` uuid nullable para vincular cada cuota/hito al contrato del que nació.
 - `suscripciones.contrato_id` uuid nullable para vincular la suscripción de mantenimiento al contrato que la originó o la reemplazó.
 - `comisiones` no tiene `proyecto_id`; cualquier referencia de proyecto para reporting debe resolverse vía `cliente_id` / `cotizacion_id` y joins a `proyectos` según contexto.

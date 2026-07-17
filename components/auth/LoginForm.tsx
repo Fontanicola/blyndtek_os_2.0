@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { Badge, Button, Input } from "@/components/ui";
+import { ArrowRightIcon, FingerprintIcon, LoaderIcon } from "@/components/ui/icons";
 import { createClient } from "@/lib/supabase/client";
 import {
   deserializeCredentialRequestOptions,
@@ -11,36 +12,6 @@ import {
 import type { AuthenticationCredential } from "@supabase/auth-js/dist/module/lib/webauthn.dom";
 
 type LoginStatus = "idle" | "loading" | "error";
-
-function FingerprintIcon() {
-  return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 72 64"
-      fill="none"
-      className="h-8 w-9 shrink-0 text-signal"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <g transform="translate(3 0) scale(1.03 1)">
-        <path d="M7 35C7 18 18 7 32 7c15 0 25 11 25 27" />
-        <path d="M10 43c3-5 2-10 3-16 1-10 9-16 19-16 12 0 21 9 21 21 0 4-.2 8-1 12" />
-        <path d="M15 48c4-6 2-13 3-20 1-8 6-13 14-13 10 0 17 7 17 17 0 6-.6 11-1.8 16" />
-        <path d="M21 52c4-7 2-15 3-23 .7-6 3.8-10 8-10 7 0 12 5 12 13 0 7-.8 14-2.5 20" />
-        <path d="M27 55c3-7 2-15 2-23 0-5 1-9 3-9 4 0 7 3 7 9 0 8-1 16-3 23" />
-        <path d="M32 57c1.5-6 2-13 2-20 0-5-.5-8-2-9" />
-        <path d="M11 23c4-8 11-12 21-12" />
-        <path d="M42 13c7 4 11 11 11 20" />
-        <path d="M17 36c0 6-1 11-4 16" />
-        <path d="M23 42c-.5 5-2 10-4 14" />
-        <path d="M47 27c0 3 0 6-.3 9" />
-        <path d="M57 39v3" />
-      </g>
-    </svg>
-  );
-}
 
 export function LoginForm() {
   const supabase = useMemo(() => createClient(), []);
@@ -261,25 +232,9 @@ export function LoginForm() {
                   className="inline-flex h-8 w-8 items-center justify-center rounded-[8px] bg-signal text-white shadow-[0_2px_6px_rgba(31,68,255,0.22)] transition-all duration-fast ease-fast hover:bg-signal/90 active:scale-95 disabled:cursor-wait disabled:opacity-60"
                 >
                   {status === "loading" ? (
-                    <svg aria-hidden="true" viewBox="0 0 20 20" fill="none" className="h-4 w-4 animate-spin">
-                      <circle cx="10" cy="10" r="7" stroke="currentColor" strokeOpacity="0.3" strokeWidth="2" />
-                      <path d="M10 3a7 7 0 0 1 7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                    </svg>
+                    <LoaderIcon className="h-4 w-4 animate-spin" />
                   ) : (
-                    <svg
-                      aria-hidden="true"
-                      viewBox="0 0 20 20"
-                      fill="none"
-                      className="h-4 w-4"
-                      stroke="currentColor"
-                      strokeWidth="1.8"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M3.5 10h10" />
-                      <path d="m10.5 6.5 3.5 3.5-3.5 3.5" />
-                      <path d="M16.5 4.5v11" />
-                    </svg>
+                    <ArrowRightIcon className="h-4 w-4" />
                   )}
                 </button>
               }

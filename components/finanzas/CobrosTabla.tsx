@@ -5,6 +5,7 @@ import { Badge, Button, Card, Input } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { formatCajaLabel } from "@/lib/cajas";
 import { isCobroVencido } from "@/lib/finanzas";
+import { formatearFechaDisplay } from "@/lib/utils/fechas";
 import { formatUSD } from "@/lib/utils/formatters";
 import type { Caja } from "@/types/cajas";
 import type { Cobro, EstadoCobro } from "@/types/cobros";
@@ -51,24 +52,6 @@ function getTipoLabel(tipo: Cobro["tipo"]) {
     return "Brick";
   }
   return "Hito";
-}
-
-function formatFechaCorta(value: string | null | undefined) {
-  if (!value) {
-    return "Sin fecha";
-  }
-
-  const parsed = new Date(value);
-
-  if (Number.isNaN(parsed.getTime())) {
-    return "Sin fecha";
-  }
-
-  return new Intl.DateTimeFormat("es-AR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric"
-  }).format(parsed);
 }
 
 export function CobrosTabla({ cobros, cajas = [], onMarkCobrado, onNew, onEdit }: CobrosTablaProps) {
@@ -164,9 +147,9 @@ export function CobrosTabla({ cobros, cajas = [], onMarkCobrado, onNew, onEdit }
                       {cobro.cliente?.empresa ?? cobro.cliente_id}
                     </td>
                     <td className="px-4 py-3 text-sm text-graphite">{getTipoLabel(cobro.tipo)}</td>
-                    <td className="px-4 py-3 text-sm text-graphite whitespace-nowrap">{formatFechaCorta(cobro.fecha_emision)}</td>
+                    <td className="px-4 py-3 text-sm text-graphite whitespace-nowrap">{formatearFechaDisplay(cobro.fecha_emision)}</td>
                     <td className="px-4 py-3 text-sm font-label text-carbon">{formatUSD(cobro.monto)}</td>
-                    <td className="px-4 py-3 text-sm text-graphite whitespace-nowrap">{formatFechaCorta(cobro.fecha_vencimiento)}</td>
+                    <td className="px-4 py-3 text-sm text-graphite whitespace-nowrap">{formatearFechaDisplay(cobro.fecha_vencimiento)}</td>
                     <td className="px-4 py-3">
                       <div className="flex flex-col gap-2">
                         <Badge variant={getEstadoVariant(cobro.estado)}>{estadoLabels[cobro.estado]}</Badge>

@@ -1,17 +1,18 @@
 import { NextResponse } from "next/server";
 import { getAdminUser } from "@/lib/require-admin";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { fechaStringAFechaLocal, hoyLocalString } from "@/lib/utils/fechas";
 import type { Suscripcion } from "@/types/suscripciones";
 
 export const maxDuration = 30;
 
 function todayISO() {
-  return new Date().toISOString().slice(0, 10);
+  return hoyLocalString();
 }
 
 function addOneMonth(dateString: string) {
-  const date = new Date(dateString);
-  return new Date(date.getFullYear(), date.getMonth() + 1, date.getDate()).toISOString().slice(0, 10);
+  const date = fechaStringAFechaLocal(dateString);
+  return hoyLocalString(new Date(date.getFullYear(), date.getMonth() + 1, date.getDate()));
 }
 
 export async function POST() {

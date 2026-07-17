@@ -3,11 +3,14 @@ import type { CreateContratoInput, CreateContratoResponse } from "@/types/contra
 import type { Cobro } from "@/types/cobros";
 import type { Database } from "@/types/supabase";
 import type { Suscripcion } from "@/types/suscripciones";
+import { fechaStringAFechaLocal, hoyLocalString } from "@/lib/utils/fechas";
 
 type ContratoRow = {
   id: string;
   cliente_id: string;
   valor_total: number;
+  adelanto_pct: number;
+  fecha_adelanto: string | null;
   cantidad_cuotas: number;
   dia_pago: number;
   fecha_primera_cuota: string;
@@ -21,9 +24,13 @@ type ContratoRow = {
 
 type SuscripcionRow = Suscripcion;
 type CobroRow = Cobro;
+type ClienteRow = {
+  id: string;
+  empresa: string;
+};
 
 function toIsoDate(date: Date) {
-  return date.toISOString().slice(0, 10);
+  return hoyLocalString(date);
 }
 
 function normalizeMoney(value: number) {
@@ -31,9 +38,9 @@ function normalizeMoney(value: number) {
 }
 
 function addMonthsWithDay(baseDate: string, monthOffset: number, dayOfMonth: number) {
-  const date = new Date(`${baseDate}T12:00:00.000Z`);
-  date.setUTCMonth(date.getUTCMonth() + monthOffset);
-  date.setUTCDate(dayOfMonth);
+  const date = fechaStringAFechaLocal(baseDate);
+  date.setMonth(date.getMonth() + monthOffset);
+  date.setDate(dayOfMonth);
   return toIsoDate(date);
 }
 
@@ -42,27 +49,17 @@ function buildMantenimientoProximaCobro(fechaBase: string, diaFacturacion: numbe
     return fechaBase;
   }
 
-  const baseDate = new Date(`${fechaBase}T12:00:00.000Z`);
-  const baseDay = baseDate.getUTCDate();
+  const baseDate = fechaStringAFechaLocal(fechaBase);
+  const baseDay = baseDate.getDate();
 
   if (baseDay <= diaFacturacion) {
-    baseDate.setUTCDate(diaFacturacion);
+    baseDate.setDate(diaFacturacion);
     return toIsoDate(baseDate);
   }
 
-  baseDate.setUTCMonth(baseDate.getUTCMonth() + 1);
-  baseDate.setUTCDate(diaFacturacion);
+  baseDate.setMonth(baseDate.getMonth() + 1);
+  baseDate.setDate(diaFacturacion);
   return toIsoDate(baseDate);
-}
-
-function buildCuotaMontoDistribucion(valorTotal: number, cantidadCuotas: number) {
-  const totalCents = Math.round(valorTotal * 100);
-  const baseCents = Math.floor(totalCents / cantidadCuotas);
-  const cuotas = Array.from({ length: cantidadCuotas }, (_value, index) =>
-    index === cantidadCuotas - 1 ? totalCents - baseCents * (cantidadCuotas - 1) : baseCents
-  );
-
-  return cuotas.map((cents) => cents / 100);
 }
 
 async function fetchActiveContrato(supabase: SupabaseClient<Database>, clienteId: string) {
@@ -80,12 +77,38 @@ async function fetchActiveContrato(supabase: SupabaseClient<Database>, clienteId
   return data as ContratoRow;
 }
 
+async function fetchCliente(supabase: SupabaseClient<Database>, clienteId: string) {
+  const { data, error } = await supabase.from("clientes").select("id, empresa").eq("id", clienteId).single();
+
+  if (error || !data) {
+    throw new Error(error?.message ?? "No se pudo cargar el cliente.");
+  }
+
+  return data as ClienteRow;
+}
+
+function buildAdelantoMonto(valorTotal: number, adelantoPct: number) {
+  return normalizeMoney(valorTotal * (adelantoPct / 100));
+}
+
+function buildCuotaMontoDistribucion(valorRestante: number, cantidadCuotas: number) {
+  const totalCents = Math.round(valorRestante * 100);
+  const baseCents = Math.floor(totalCents / cantidadCuotas);
+  const cuotas = Array.from({ length: cantidadCuotas }, (_value, index) =>
+    index === cantidadCuotas - 1 ? totalCents - baseCents * (cantidadCuotas - 1) : baseCents
+  );
+
+  return cuotas.map((cents) => cents / 100);
+}
+
 export async function crearOActualizarContrato(
   supabase: SupabaseClient<Database>,
   clienteId: string,
   input: CreateContratoInput
 ): Promise<CreateContratoResponse> {
   const valorTotal = Number(input.valor_total);
+  const adelantoPct = input.adelanto_pct == null ? 25 : Number(input.adelanto_pct);
+  const fechaAdelanto = input.fecha_adelanto?.trim() || hoyLocalString();
   const cantidadCuotas = Number(input.cantidad_cuotas);
   const diaPago = Number(input.dia_pago);
   const fechaPrimeraCuota = input.fecha_primera_cuota?.trim() ?? "";
@@ -97,6 +120,10 @@ export async function crearOActualizarContrato(
 
   if (Number.isNaN(valorTotal) || valorTotal <= 0) {
     throw new Error("valor_total must be a valid positive number");
+  }
+
+  if (Number.isNaN(adelantoPct) || adelantoPct < 0 || adelantoPct > 100) {
+    throw new Error("adelanto_pct must be between 0 and 100");
   }
 
   if (!Number.isInteger(cantidadCuotas) || cantidadCuotas < 1) {
@@ -132,7 +159,8 @@ export async function crearOActualizarContrato(
   let finalizacionAplicada = false;
 
   try {
-    const currentDate = toIsoDate(new Date());
+    const currentDate = hoyLocalString();
+    const cliente = await fetchCliente(supabase, clienteId);
     const activeContrato = await fetchActiveContrato(supabase, clienteId);
     oldContrato = activeContrato;
 
@@ -153,6 +181,8 @@ export async function crearOActualizarContrato(
     const contratoPayload = {
       cliente_id: clienteId,
       valor_total: normalizeMoney(valorTotal),
+      adelanto_pct: adelantoPct,
+      fecha_adelanto: fechaAdelanto,
       cantidad_cuotas: cantidadCuotas,
       dia_pago: diaPago,
       fecha_primera_cuota: fechaPrimeraCuota,
@@ -177,23 +207,43 @@ export async function crearOActualizarContrato(
 
     newContratoId = (contratoCreado as ContratoRow).id;
 
-    const cuotas = buildCuotaMontoDistribucion(normalizeMoney(valorTotal), cantidadCuotas);
-    const cobrosPayload = cuotas.map((monto, index) => ({
-      cliente_id: clienteId,
-      contrato_id: newContratoId,
-      proyecto_id: null,
-      suscripcion_id: null,
-      cotizacion_id: null,
-      concepto: `Cuota ${index + 1} del contrato`,
-      tipo: "hito" as const,
-      monto: normalizeMoney(monto),
-      fecha_emision: currentDate,
-      fecha_vencimiento: index === 0 ? fechaPrimeraCuota : addMonthsWithDay(fechaPrimeraCuota, index, diaPago),
-      fecha_cobro: null,
-      cuenta_medio: null,
-      tolerancia_dias: 0,
-      estado: "pendiente" as const
-    }));
+    const montoAdelanto = buildAdelantoMonto(normalizeMoney(valorTotal), adelantoPct);
+    const saldoRestante = normalizeMoney(valorTotal - montoAdelanto);
+    const cuotas = buildCuotaMontoDistribucion(saldoRestante, cantidadCuotas);
+    const cobrosPayload = [
+      {
+        cliente_id: clienteId,
+        contrato_id: newContratoId,
+        proyecto_id: null,
+        suscripcion_id: null,
+        cotizacion_id: null,
+        concepto: `Adelanto — ${cliente.empresa}`,
+        tipo: "hito" as const,
+        monto: montoAdelanto,
+        fecha_emision: currentDate,
+        fecha_vencimiento: fechaAdelanto,
+        fecha_cobro: null,
+        cuenta_medio: null,
+        tolerancia_dias: 0,
+        estado: "pendiente" as const
+      },
+      ...cuotas.map((monto, index) => ({
+        cliente_id: clienteId,
+        contrato_id: newContratoId,
+        proyecto_id: null,
+        suscripcion_id: null,
+        cotizacion_id: null,
+        concepto: `Cuota ${index + 1} de ${cantidadCuotas} — ${cliente.empresa}`,
+        tipo: "hito" as const,
+        monto: normalizeMoney(monto),
+        fecha_emision: currentDate,
+        fecha_vencimiento: index === 0 ? fechaPrimeraCuota : addMonthsWithDay(fechaPrimeraCuota, index, diaPago),
+        fecha_cobro: null,
+        cuenta_medio: null,
+        tolerancia_dias: 0,
+        estado: "pendiente" as const
+      }))
+    ];
 
     const { data: cobrosCreados, error: cobrosError } = await supabase.from("cobros").insert(cobrosPayload).select("*");
 

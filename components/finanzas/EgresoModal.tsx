@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Button, EntitySelect, Input, Modal } from "@/components/ui";
 import { getProyectoDisplayLabel } from "@/lib/proyectos/labels";
+import { fechaInputAString, hoyLocalString } from "@/lib/utils/fechas";
 import type { CategoriaEgreso, CreateEgresoInput, Egreso } from "@/types/egresos";
 import type { Proyecto } from "@/types/proyectos";
 import type { Caja } from "@/types/cajas";
@@ -34,10 +35,10 @@ function getInitialState(egreso: Egreso | null | undefined, defaults: Partial<Cr
     concepto: egreso?.concepto ?? defaults?.concepto ?? "",
     categoria: egreso?.categoria ?? defaults?.categoria ?? "otro",
     monto: String(egreso?.monto ?? defaults?.monto ?? ""),
-    fecha: egreso?.fecha ?? defaults?.fecha ?? new Date().toISOString().slice(0, 10),
+    fecha: egreso?.fecha ?? defaults?.fecha ?? hoyLocalString(),
     cuentaMedio: egreso?.cuenta_medio ?? defaults?.cuenta_medio ?? cajas[0]?.slug ?? null,
     pagado: Boolean(egreso?.pagado ?? defaults?.pagado),
-    fechaPago: egreso?.fecha_pago ?? defaults?.fecha_pago ?? new Date().toISOString().slice(0, 10),
+    fechaPago: egreso?.fecha_pago ?? defaults?.fecha_pago ?? hoyLocalString(),
     proyectoId: egreso?.proyecto_id ?? defaults?.proyecto_id ?? "",
     recurrente: Boolean(egreso?.recurrente ?? defaults?.recurrente),
     notas: egreso?.notas ?? defaults?.notas ?? ""
@@ -169,11 +170,11 @@ export function EgresoModal({ isOpen, onClose, onSave, egreso, defaults, proyect
                 concepto: concepto.trim(),
                 categoria,
                 monto: Number(monto),
-                fecha,
+                fecha: fechaInputAString(fecha),
                 recurrente,
                 cuenta_medio: cuentaMedio ?? null,
                 pagado,
-                fecha_pago: pagado ? fechaPago : null,
+                fecha_pago: pagado ? fechaInputAString(fechaPago) : null,
                 proyecto_id: proyectoId.trim() || null,
                 notas: notas.trim() || null
               })

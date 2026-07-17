@@ -10,6 +10,9 @@ import type {
   PublicRoadmapProject
 } from "@/types/roadmap-public";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 type RouteContext = {
   params: {
     token: string;

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { hoyLocalString } from "@/lib/utils/fechas";
 import type { Comision } from "@/types/comisiones";
 
 type RouteContext = {
@@ -10,7 +11,7 @@ type RouteContext = {
 };
 
 function todayIsoDate() {
-  return new Date().toISOString().slice(0, 10);
+  return hoyLocalString();
 }
 
 export async function POST(_request: NextRequest, context: RouteContext) {

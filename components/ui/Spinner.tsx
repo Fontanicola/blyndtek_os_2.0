@@ -1,4 +1,5 @@
 import { cn } from "@/lib/cn";
+import { LoaderIcon } from "@/components/ui/icons";
 import type { SpinnerColor, SpinnerSize } from "@/types/ui";
 
 type SpinnerProps = {
@@ -26,22 +27,9 @@ export function Spinner({
   className
 }: SpinnerProps) {
   return (
-    <svg
+    <LoaderIcon
       className={cn("animate-spinner", sizeClasses[size], colorClasses[color], className)}
-      viewBox="0 0 24 24"
-      fill="none"
       aria-hidden="true"
-    >
-      <circle
-        cx="12"
-        cy="12"
-        r="9"
-        stroke="currentColor"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-        strokeDasharray="42 18"
-        opacity="0.95"
-      />
-    </svg>
+    />
   );
 }

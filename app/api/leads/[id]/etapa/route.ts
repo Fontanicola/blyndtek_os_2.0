@@ -5,6 +5,7 @@ import { crearComisionVenta } from "@/lib/comisiones/crearComisionVenta";
 import { crearOActualizarContrato } from "@/lib/contratos/crearOActualizarContrato";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { crearTareaConAdminClient } from "@/lib/tareas/crearTarea";
+import { hoyLocalString } from "@/lib/utils/fechas";
 import { ensureClienteDesdeLead } from "@/lib/clientes/ensureClienteDesdeLead";
 import type { Database } from "@/types/supabase";
 import {
@@ -43,7 +44,7 @@ function appendNote(existing: string | null, entry: string) {
 }
 
 function touchUpdate(touchpoint: LeadTouchKey | undefined) {
-  const now = new Date().toISOString();
+  const now = hoyLocalString();
 
   if (touchpoint === "llamada") {
     return { llamada_hecho: true, llamada_fecha: now.slice(0, 10) };
@@ -334,7 +335,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
         valor_total: montoVenta,
         cantidad_cuotas: 1,
         dia_pago: diaPago,
-        fecha_primera_cuota: hoy.toISOString().slice(0, 10),
+        fecha_primera_cuota: hoyLocalString(hoy),
         valor_mantenimiento_mensual: mantenimientoMensual > 0 ? mantenimientoMensual : null,
         dia_facturacion_mantenimiento: mantenimientoMensual > 0 ? diaPago : null
       });

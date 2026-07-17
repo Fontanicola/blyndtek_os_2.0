@@ -1,4 +1,5 @@
 import type { DashboardPeriod } from "@/types/dashboard";
+import { fechaStringAFechaLocal } from "@/lib/utils/fechas";
 
 export type PeriodRange = {
   start: Date;
@@ -71,7 +72,7 @@ export function getDashboardPeriodRange(period: DashboardPeriod): PeriodRange {
 }
 
 export function isInRange(date: string, start: Date, end: Date) {
-  const current = new Date(date);
+  const current = fechaStringAFechaLocal(date);
   return current >= start && current < end;
 }
 

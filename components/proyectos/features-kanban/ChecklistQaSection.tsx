@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Button, Input, Modal } from "@/components/ui";
+import { ListIcon, RefreshIcon } from "@/components/ui/icons";
 import { cn } from "@/lib/cn";
 import type { ChecklistQaItem } from "@/types/checklistQa";
 
@@ -18,26 +19,6 @@ type ChecklistQaSectionProps = {
   faseId: string;
   enabled: boolean;
 };
-
-function RefreshIcon() {
-  return (
-    <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" className="h-4 w-4">
-      <path
-        d="M15.5 8.5A6.5 6.5 0 0 0 6.2 5.3L5 4.1V8.2h4.1L7.5 6.7A4.5 4.5 0 1 1 14.5 10h1.5a6.5 6.5 0 0 0-.5-1.5Z"
-        fill="currentColor"
-      />
-    </svg>
-  );
-}
-
-function ChecklistIcon() {
-  return (
-    <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" className="h-4 w-4">
-      <path d="M6.25 5.75h8M6.25 10h8M6.25 14.25h5.25" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-      <path d="M4.75 5.75h.01M4.75 10h.01M4.75 14.25h.01" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
-    </svg>
-  );
-}
 
 export function ChecklistQaSection({ faseId, enabled }: ChecklistQaSectionProps) {
   const [items, setItems] = useState<ChecklistQaItemView[]>([]);
@@ -224,7 +205,7 @@ export function ChecklistQaSection({ faseId, enabled }: ChecklistQaSectionProps)
       <div className="space-y-2">
         {loading ? (
           <Button type="button" variant="ghost" size="sm" loading disabled className="h-9 min-w-[132px] justify-start gap-2 px-3">
-            <ChecklistIcon />
+            <ListIcon />
             Generar QA
           </Button>
         ) : items.length === 0 ? (
@@ -236,7 +217,7 @@ export function ChecklistQaSection({ faseId, enabled }: ChecklistQaSectionProps)
             loading={generating}
             className="h-9 min-w-[132px] justify-start gap-2 px-3"
           >
-            <ChecklistIcon />
+            <ListIcon />
             Generar QA
           </Button>
         ) : (
@@ -245,7 +226,7 @@ export function ChecklistQaSection({ faseId, enabled }: ChecklistQaSectionProps)
             onClick={() => setModalOpen(true)}
             className="group relative flex h-9 min-w-[132px] items-center gap-2 overflow-hidden rounded-pill border border-line-soft bg-white px-3 text-xs font-label text-carbon shadow-soft transition-all duration-fast ease-fast hover:-translate-y-0.5 hover:bg-paper"
           >
-            <ChecklistIcon />
+            <ListIcon />
             <span className="relative z-10">QA · {completed}/{items.length}</span>
             <span
               className={cn(

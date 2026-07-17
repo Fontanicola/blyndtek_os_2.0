@@ -1,5 +1,19 @@
 # Decisions
 
+## 2026-07-17 — Dashboard: ventas como contratos activos
+
+- En el Dashboard, `Ventas` cuenta únicamente contratos con `estado='activo'`, agrupados por su fecha de creación.
+- Motivo: así se evita contar dos veces un contrato que fue redefinido o renegociado y cuyo registro anterior quedó reemplazado.
+- `Cobrado` sigue leyendo la caja efectivamente ingresada por mes, y el comparativo `Ventas vs Cobrado` se usa para distinguir cierre comercial de ingreso real de caja.
+
+## 2026-07-17 — Fechas sin hora: strings end-to-end
+
+- Toda fecha sin hora real (`DATE` en Postgres, no `TIMESTAMPTZ`) se maneja como string plano `"YYYY-MM-DD"` de punta a punta.
+- Un `<input type="date">` entrega ese mismo string y debe viajar así a la API/Supabase, sin pasar por `new Date("YYYY-MM-DD")` ni por `toISOString()` para persistencia.
+- Si hace falta mostrar o comparar una fecha sin hora en UI o lógica de negocio, se construye un `Date` local con `new Date(year, month - 1, day)` o usando el helper central `lib/utils/fechas.ts`.
+- Nunca se debe inferir la fecha por UTC para campos sin hora; hacerlo corre el valor un día antes o después según la zona horaria del usuario.
+- Este criterio se aplicó también a la lógica compartida en Supabase Functions para que el bug no reaparezca en cron jobs o Edge Functions.
+
 ## 2026-06-25 — Inicialización técnica base
 
 - Se eligió Next.js 14 con App Router como base del proyecto.
@@ -453,3 +467,9 @@
 - La IA nunca inventa cifras: `calcularMetricasAsesor.ts` arma el snapshot con números reales y Claude sólo explica opciones, riesgos y caminos posibles sobre esa base.
 - La primera versión del módulo se diseñó para escalar a más agentes futuros sin rehacer la navegación, las rutas ni el almacenamiento del historial.
 - El disparo automático mensual del asesor depende de `agente_config.resumen_automatico_activo`; si está desactivado, el cron puede correr pero el análisis no se genera.
+
+## 2026-07-17 — Adelanto como hito explícito del contrato
+
+- El adelanto no se trata como una cuota más: es el primer hito del plan de pago y se calcula como un porcentaje configurable del valor total.
+- Cuando un contrato se genera o se redefine, el adelanto se crea primero y después se distribuye el saldo restante entre las cuotas posteriores.
+- En una redefinición, la protección de datos financieros reales sigue vigente: si el adelanto ya fue cobrado, nunca se elimina ni se modifica; sólo se reemplazan los hitos pendientes.

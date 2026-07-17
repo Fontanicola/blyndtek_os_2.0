@@ -5,5 +5,6 @@ export { EmbudoLeads } from "./EmbudoLeads";
 export { FeaturesRecientes } from "./FeaturesRecientes";
 export { MetricaGrande } from "./MetricaGrande";
 export { PipelineChart } from "./PipelineChart";
+export { VentasVsCobradoChart } from "./VentasVsCobradoChart";
 export { RunwayProyectado } from "./RunwayProyectado";
 export { WinRateChart } from "./WinRateChart";

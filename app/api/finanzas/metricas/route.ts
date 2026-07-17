@@ -5,6 +5,7 @@ import { calculateRunwayProjection } from "@/lib/finanzas/runwayProjection";
 import { isCobroVencido } from "@/lib/finanzas";
 import { getAdminUser } from "@/lib/require-admin";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { fechaStringAFechaLocal, hoyLocalString } from "@/lib/utils/fechas";
 import type { Cobro } from "@/types/cobros";
 import type { Comision } from "@/types/comisiones";
 import type { ConfigFinanzas, MetricasFinanzas } from "@/types/finanzas";
@@ -44,7 +45,7 @@ export async function GET() {
       return NextResponse.json({ error: errors[0]?.message ?? "No se pudieron calcular las métricas" }, { status: 500 });
     }
 
-    const config = (configRows?.[0] ?? { id: "config_finanzas", caja_inicial: 0, updated_at: new Date().toISOString() }) as ConfigFinanzas;
+    const config = (configRows?.[0] ?? { id: "config_finanzas", caja_inicial: 0, updated_at: hoyLocalString() }) as ConfigFinanzas;
     const cobros = (cobrosRows ?? []) as Cobro[];
     const egresos = (egresosRows ?? []) as Egreso[];
     const suscripciones = (suscripcionesRows ?? []) as Suscripcion[];
@@ -65,7 +66,7 @@ export async function GET() {
 
     const ingresosMes = cobrosCobrados
       .filter((cobro) => {
-        const fecha = new Date(cobro.fecha_cobro ?? cobro.fecha_emision ?? cobro.created_at);
+        const fecha = fechaStringAFechaLocal(cobro.fecha_cobro ?? cobro.fecha_emision ?? cobro.created_at);
         return fecha >= monthStart && fecha < monthEnd;
       })
       .reduce((total, cobro) => total + cobro.monto, 0);

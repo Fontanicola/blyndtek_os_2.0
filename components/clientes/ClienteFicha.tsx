@@ -4,10 +4,12 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Badge, Button, Card, Input, Modal, Toast } from "@/components/ui";
 import { CobroModal, EgresoModal, MetricaCard } from "@/components/finanzas";
-import { DashboardIcon, FinanzasIcon } from "@/components/icons";
+import { ChevronDownIcon, DashboardIcon, FinanzasIcon } from "@/components/ui/icons";
 import { NotasVinculadasSection } from "@/components/notas";
 import { ProyectoCard } from "@/components/proyectos";
+import { isCobroVencido } from "@/lib/finanzas";
 import { formatFecha, formatUSD } from "@/lib/utils/formatters";
+import { formatearFechaDisplay, hoyLocalString } from "@/lib/utils/fechas";
 import { useCajas } from "@/lib/hooks/useCajas";
 import { useFinanzas } from "@/lib/hooks/useFinanzas";
 import { useProyectos } from "@/lib/hooks/useProyectos";
@@ -59,6 +61,8 @@ type ClienteRentabilidadData = {
 
 type ContractFormState = {
   valor_total: string;
+  adelanto_pct: string;
+  fecha_adelanto: string;
   cantidad_cuotas: string;
   dia_pago: string;
   fecha_primera_cuota: string;
@@ -69,6 +73,8 @@ type ContractFormState = {
 
 const emptyContractForm = (): ContractFormState => ({
   valor_total: "",
+  adelanto_pct: "25",
+  fecha_adelanto: hoyLocalString(),
   cantidad_cuotas: "",
   dia_pago: "",
   fecha_primera_cuota: "",
@@ -84,6 +90,8 @@ function contractFormFromData(contrato: Contrato | null): ContractFormState {
 
   return {
     valor_total: String(contrato.valor_total),
+    adelanto_pct: String(contrato.adelanto_pct),
+    fecha_adelanto: contrato.fecha_adelanto ?? hoyLocalString(),
     cantidad_cuotas: String(contrato.cantidad_cuotas),
     dia_pago: String(contrato.dia_pago),
     fecha_primera_cuota: contrato.fecha_primera_cuota,
@@ -122,17 +130,7 @@ function formatFechaCorta(value: string | null | undefined) {
     return "Sin fecha";
   }
 
-  const parsed = new Date(value);
-
-  if (Number.isNaN(parsed.getTime())) {
-    return "Sin fecha";
-  }
-
-  return new Intl.DateTimeFormat("es-AR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric"
-  }).format(parsed);
+  return formatearFechaDisplay(value);
 }
 
 function InlineText({
@@ -331,6 +329,24 @@ export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
     vencido: { cantidad: 0, monto: 0 },
     total: { cantidad: 0, monto: 0 }
   };
+  const contratoCobros = useMemo(
+    () => cobros.filter((cobro) => cobro.contrato_id && cobro.contrato_id === contratoActivo?.id),
+    [cobros, contratoActivo?.id]
+  );
+  const contratoAdelantoCobro = useMemo(
+    () =>
+      contratoCobros.find((cobro) => cobro.concepto.toLowerCase().startsWith("adelanto")) ??
+      contratoCobros[0] ??
+      null,
+    [contratoCobros]
+  );
+  const contratoAdelantoMonto = contratoActivo
+    ? Number((contratoActivo.valor_total * (contratoActivo.adelanto_pct / 100)).toFixed(2))
+    : 0;
+  const contratoSaldoCuotas = contratoActivo ? Math.max(0, contratoActivo.valor_total - contratoAdelantoMonto) : 0;
+  const contratoCuotaBaseMonto =
+    contratoActivo && contratoActivo.cantidad_cuotas > 0 ? contratoSaldoCuotas / contratoActivo.cantidad_cuotas : 0;
+  const contratoAdelantoEstado = contratoAdelantoCobro?.estado === "cobrado" ? "Cobrado" : "Pendiente";
   const contratoPendienteMonto =
     contratoResumen.pendiente.monto + contratoResumen.facturado.monto + contratoResumen.vencido.monto;
   const contratoCuotasPendientes =
@@ -406,15 +422,19 @@ export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
 
         if (activeTab === "contrato") {
           setTabLoading("contrato");
-          const response = await fetch(`/api/clientes/${cliente.id}/contrato`);
-          const payload = (await response.json()) as { data?: ContratoDetalle; error?: string };
+          const [contratoResponse, cobrosData] = await Promise.all([
+            fetch(`/api/clientes/${cliente.id}/contrato`),
+            fetchCobros({ cliente_id: cliente.id })
+          ]);
+          const payload = (await contratoResponse.json()) as { data?: ContratoDetalle; error?: string };
 
-          if (!response.ok || !payload.data) {
+          if (!contratoResponse.ok || !payload.data) {
             throw new Error(payload.error ?? "No se pudo cargar el contrato.");
           }
 
           if (!cancelled) {
             setContratoDetalle(payload.data);
+            setCobros(cobrosData);
             setContratoEditing(false);
             setContratoConfirmOpen(false);
             setContratoForm(contractFormFromData(payload.data.contrato));
@@ -763,6 +783,8 @@ export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
 
   async function handleContractSubmit() {
     const valorTotal = Number(contratoForm.valor_total);
+    const adelantoPct = Number(contratoForm.adelanto_pct);
+    const fechaAdelanto = contratoForm.fecha_adelanto.trim() || hoyLocalString();
     const cantidadCuotas = Number(contratoForm.cantidad_cuotas);
     const diaPago = Number(contratoForm.dia_pago);
     const valorMantenimientoMensual = contratoForm.valor_mantenimiento_mensual.trim()
@@ -775,6 +797,11 @@ export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
 
     if (Number.isNaN(valorTotal) || valorTotal <= 0) {
       setTabError("Ingresá un valor total válido.");
+      return;
+    }
+
+    if (Number.isNaN(adelantoPct) || adelantoPct < 0 || adelantoPct > 100) {
+      setTabError("El adelanto debe estar entre 0 y 100.");
       return;
     }
 
@@ -811,6 +838,8 @@ export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
 
     const payload: CreateContratoInput = {
       valor_total: valorTotal,
+      adelanto_pct: adelantoPct,
+      fecha_adelanto: fechaAdelanto,
       cantidad_cuotas: cantidadCuotas,
       dia_pago: diaPago,
       fecha_primera_cuota: contratoForm.fecha_primera_cuota.trim(),
@@ -858,17 +887,41 @@ export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
     setCobroModalOpen(true);
   }
 
+  async function handleMarkCobro(cobro: Cobro) {
+    try {
+      const updated = await updateCobro(cobro.id, {
+        estado: "cobrado",
+        fecha_cobro: hoyLocalString()
+      });
+
+      setCobros((current) => current.map((item) => (item.id === cobro.id ? (updated as Cobro) : item)));
+      const contratoResponse = await fetch(`/api/clientes/${cliente.id}/contrato`);
+      const contratoPayload = (await contratoResponse.json()) as { data?: ContratoDetalle; error?: string };
+
+      if (contratoResponse.ok && contratoPayload.data) {
+        setContratoDetalle(contratoPayload.data);
+      }
+      setToast({
+        message: "Cobro marcado como cobrado.",
+        type: "success",
+        visible: true
+      });
+    } catch (error) {
+      setTabError(error instanceof Error ? error.message : "No se pudo marcar el cobro como cobrado.");
+    }
+  }
+
   function handleOpenCostoModal() {
     setSelectedEgresoDefaults(
       proyectoActivoParaCosto
         ? {
             proyecto_id: proyectoActivoParaCosto.id,
-            fecha: new Date().toISOString().slice(0, 10),
+            fecha: hoyLocalString(),
             recurrente: false,
             pagado: false
           }
         : {
-            fecha: new Date().toISOString().slice(0, 10),
+            fecha: hoyLocalString(),
             recurrente: false,
             pagado: false
           }
@@ -935,6 +988,14 @@ export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
       await updateCobro(selectedCobro.id, input);
       const detailedCobro = await fetchCobro(selectedCobro.id);
       setCobros((current) => current.map((item) => (item.id === selectedCobro.id ? detailedCobro : item)));
+      if (selectedCobro.contrato_id) {
+        const contratoResponse = await fetch(`/api/clientes/${cliente.id}/contrato`);
+        const contratoPayload = (await contratoResponse.json()) as { data?: ContratoDetalle; error?: string };
+
+        if (contratoResponse.ok && contratoPayload.data) {
+          setContratoDetalle(contratoPayload.data);
+        }
+      }
       setToast({
         message: "Cobro actualizado correctamente.",
         type: "success",
@@ -961,13 +1022,31 @@ export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
         />
 
         <Input
-          label="Cantidad de cuotas"
+          label="Adelanto (%)"
+          type="number"
+          inputMode="numeric"
+          value={contratoForm.adelanto_pct}
+          onChange={(event) => setContratoForm((current) => ({ ...current, adelanto_pct: event.target.value }))}
+          required
+          hint={
+            Number.isNaN(Number(contratoForm.valor_total)) || !contratoForm.valor_total.trim()
+              ? "Ingresá primero el valor total para ver el cálculo."
+              : `= ${formatUSD(
+                  Number(contratoForm.valor_total) > 0 && !Number.isNaN(Number(contratoForm.adelanto_pct))
+                    ? Number((Number(contratoForm.valor_total) * (Number(contratoForm.adelanto_pct) / 100)).toFixed(2))
+                    : 0
+                )} sobre ${formatUSD(Number(contratoForm.valor_total) || 0)} totales`
+          }
+        />
+
+        <Input
+          label="Cantidad de cuotas (después del adelanto)"
           type="number"
           inputMode="numeric"
           value={contratoForm.cantidad_cuotas}
           onChange={(event) => setContratoForm((current) => ({ ...current, cantidad_cuotas: event.target.value }))}
           required
-          hint="Cada cuota se genera como cobro independiente."
+          hint="Cada cuota restante se genera como cobro independiente."
         />
 
         <Input
@@ -985,6 +1064,14 @@ export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
           type="date"
           value={contratoForm.fecha_primera_cuota}
           onChange={(event) => setContratoForm((current) => ({ ...current, fecha_primera_cuota: event.target.value }))}
+          required
+        />
+
+        <Input
+          label="Fecha del adelanto"
+          type="date"
+          value={contratoForm.fecha_adelanto}
+          onChange={(event) => setContratoForm((current) => ({ ...current, fecha_adelanto: event.target.value }))}
           required
         />
 
@@ -1232,14 +1319,21 @@ export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
                   <p className="text-lg font-title text-carbon">{formatUSD(contratoActivo.valor_total)}</p>
                 </Card>
                 <Card padding="md" className="space-y-1">
-                  <p className="text-xs uppercase tracking-[0.08em] text-graphite">Cuotas</p>
-                  <p className="text-lg font-title text-carbon">{contratoActivo.cantidad_cuotas}</p>
+                  <p className="text-xs uppercase tracking-[0.08em] text-graphite">Adelanto</p>
+                  <p className="text-lg font-title text-carbon">
+                    {formatUSD(contratoAdelantoMonto)} ({contratoActivo.adelanto_pct}%)
+                  </p>
+                  <p className="text-xs text-graphite">
+                    {contratoAdelantoEstado} · {formatFechaCorta(contratoActivo.fecha_adelanto)}
+                  </p>
                 </Card>
                 <Card padding="md" className="space-y-1">
-                  <p className="text-xs uppercase tracking-[0.08em] text-graphite">Cobrado</p>
-                  <p className="text-lg font-title text-carbon">{formatUSD(contratoResumen.cobrado.monto)}</p>
+                  <p className="text-xs uppercase tracking-[0.08em] text-graphite">Cuotas</p>
+                  <p className="text-lg font-title text-carbon">
+                    {contratoActivo.cantidad_cuotas} de {formatUSD(contratoCuotaBaseMonto)} cada una
+                  </p>
                   <p className="text-xs text-graphite">
-                    {contratoResumen.cobrado.cantidad} de {contratoActivo.cantidad_cuotas} cuotas
+                    Saldo restante: {formatUSD(Math.max(0, contratoActivo.valor_total - contratoAdelantoMonto))}
                   </p>
                 </Card>
                 <Card padding="md" className="space-y-1">
@@ -1348,9 +1442,16 @@ export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
                   {cobros.map((cobro) => {
                     const historial = cobro.historial ?? [];
                     const isExpanded = expandedCobros[cobro.id] && historial.length > 0;
+                    const isOverdue = cobro.estado === "pendiente" && isCobroVencido(cobro);
 
                     return (
-                      <div key={cobro.id} className="border-b border-line-soft last:border-b-0">
+                      <div
+                        key={cobro.id}
+                        className={[
+                          "border-b border-line-soft last:border-b-0",
+                          isOverdue ? "bg-danger-light/40" : ""
+                        ].join(" ")}
+                      >
                         <div className="grid grid-cols-[minmax(280px,360px)_92px_110px_110px_120px_120px_96px] items-center gap-3 px-4 py-3 text-sm">
                           <span className="truncate font-label text-carbon">{cobro.concepto}</span>
                           <Badge variant="default">{cobro.tipo}</Badge>
@@ -1363,6 +1464,15 @@ export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
                           <span className="text-carbon">{formatUSD(cobro.monto)}</span>
                           <CobroBadge estado={cobro.estado} />
                           <div className="flex items-center justify-end gap-1">
+                            {cobro.estado !== "cobrado" ? (
+                              <button
+                                type="button"
+                                onClick={() => void handleMarkCobro(cobro)}
+                                className="rounded-pill px-3 py-1.5 text-xs font-label text-signal transition-colors duration-fast ease-fast hover:bg-signal-light"
+                              >
+                                Marcar cobrado
+                              </button>
+                            ) : null}
                             <button
                               type="button"
                               onClick={() => void handleOpenCobroHistory(cobro)}
@@ -1370,15 +1480,7 @@ export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
                               aria-label={isExpanded ? "Ocultar historial" : "Ver historial"}
                               title={isExpanded ? "Ocultar historial" : "Ver historial"}
                             >
-                              <svg viewBox="0 0 18 18" fill="none" aria-hidden="true" className={["h-4 w-4 transition-transform duration-fast ease-fast", isExpanded ? "rotate-180" : "rotate-0"].join(" ")}>
-                                <path
-                                  d="M4.5 6.75L9 11.25L13.5 6.75"
-                                  stroke="currentColor"
-                                  strokeWidth="1.75"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                />
-                              </svg>
+                              <ChevronDownIcon className={["h-4 w-4 transition-transform duration-fast ease-fast", isExpanded ? "rotate-180" : "rotate-0"].join(" ")} />
                             </button>
                             {cobro.tipo === "hito" ? (
                               <button
@@ -1748,6 +1850,10 @@ export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
               <strong>{contratoImpacto?.cobradas ?? 0}</strong> cuotas. Eso queda intacto.
             </p>
             <p className="mt-2">
+              Adelanto: <strong>{formatUSD(contratoAdelantoMonto)}</strong> ({contratoActivo?.adelanto_pct ?? 0}%) —{" "}
+              <strong>{contratoAdelantoEstado}</strong>.
+            </p>
+            <p className="mt-2">
               Se van a eliminar <strong>{contratoImpacto?.pendientes ?? 0}</strong> cuotas pendientes por{" "}
               <strong>{formatUSD(contratoImpacto?.montoPendiente ?? 0)}</strong> y se va a generar un nuevo plan de{" "}
               <strong>{contratoImpacto?.nuevasCuotas ?? 0}</strong> cuotas por{" "}
@@ -1780,6 +1886,8 @@ export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
               onClick={() => {
                 void persistContrato({
                   valor_total: Number(contratoForm.valor_total),
+                  adelanto_pct: Number(contratoForm.adelanto_pct),
+                  fecha_adelanto: contratoForm.fecha_adelanto.trim() || hoyLocalString(),
                   cantidad_cuotas: Number(contratoForm.cantidad_cuotas),
                   dia_pago: Number(contratoForm.dia_pago),
                   fecha_primera_cuota: contratoForm.fecha_primera_cuota.trim(),

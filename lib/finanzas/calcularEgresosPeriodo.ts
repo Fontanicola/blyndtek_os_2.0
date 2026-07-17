@@ -1,11 +1,12 @@
 import type { Egreso } from "@/types/egresos";
+import { fechaStringAFechaLocal } from "@/lib/utils/fechas";
 
 function isValidDate(value: string | null | undefined) {
   if (!value) {
     return false;
   }
 
-  const parsed = new Date(value);
+  const parsed = fechaStringAFechaLocal(value);
   return !Number.isNaN(parsed.getTime());
 }
 
@@ -23,7 +24,7 @@ export function calcularEgresosPeriodo(egresos: Egreso[], start: Date, end: Date
       return false;
     }
 
-    const fecha = new Date(egreso.fecha);
+    const fecha = fechaStringAFechaLocal(egreso.fecha);
 
     if (egreso.recurrente) {
       return fecha < end;

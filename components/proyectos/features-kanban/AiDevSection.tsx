@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Button, Card } from "@/components/ui";
+import { CopyIcon, LoaderIcon, LinkIcon, PlayIcon, SparklesIcon } from "@/components/ui/icons";
 import { cn } from "@/lib/cn";
 import type { FaseProyecto } from "@/types/fases-proyecto";
 
@@ -19,68 +20,6 @@ type AiDevSectionProps = {
   githubRepo: string | null;
   onRefresh?: () => Promise<void> | void;
 };
-
-function SpinnerIcon() {
-  return (
-    <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" className="h-4 w-4 animate-spin">
-      <circle cx="10" cy="10" r="7" stroke="currentColor" strokeWidth="1.75" opacity="0.25" />
-      <path d="M17 10a7 7 0 0 0-7-7" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-function LinkIcon() {
-  return (
-    <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" className="h-4 w-4">
-      <path
-        d="M7.5 12.5 12.5 7.5"
-        stroke="currentColor"
-        strokeWidth="1.6"
-        strokeLinecap="round"
-      />
-      <path
-        d="M8.5 5.5H6.25A2.75 2.75 0 0 0 3.5 8.25v3.5A2.75 2.75 0 0 0 6.25 14.5h3.5A2.75 2.75 0 0 0 12.5 11.75V9.5"
-        stroke="currentColor"
-        strokeWidth="1.6"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M11.5 4.5H13.75A2.75 2.75 0 0 1 16.5 7.25v3.5A2.75 2.75 0 0 1 13.75 13.5h-3.5A2.75 2.75 0 0 1 7.5 10.75V8.5"
-        stroke="currentColor"
-        strokeWidth="1.6"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function CopyIcon() {
-  return (
-    <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" className="h-4 w-4">
-      <rect x="6" y="6" width="9" height="9" rx="2" stroke="currentColor" strokeWidth="1.6" />
-      <path d="M5 13.5H4.25A1.25 1.25 0 0 1 3 12.25v-7A1.25 1.25 0 0 1 4.25 4h7A1.25 1.25 0 0 1 12.5 5.25V6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-function SparkIcon() {
-  return (
-    <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" className="h-4 w-4">
-      <path d="M4.5 13.5 8 10l2.25 2.25L15.5 7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M13 7h2.5v2.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-function PlayIcon() {
-  return (
-    <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" className="h-4 w-4">
-      <path d="M7.25 5.75 14.5 10l-7.25 4.25V5.75Z" fill="currentColor" />
-    </svg>
-  );
-}
 
 export function AiDevSection({ fase, githubRepo, onRefresh }: AiDevSectionProps) {
   const [loadingStart, setLoadingStart] = useState(false);
@@ -161,7 +100,7 @@ export function AiDevSection({ fase, githubRepo, onRefresh }: AiDevSectionProps)
 
         {state === "planificando" || state === "codeando" ? (
           <span className="inline-flex items-center gap-2 rounded-pill border border-line-soft bg-white px-3 py-1 text-xs font-label text-carbon shadow-soft">
-            <SpinnerIcon />
+            <LoaderIcon className="h-4 w-4 animate-spin" />
             {state === "planificando" ? "Planificando" : "Codeando"}
           </span>
         ) : state === "pr_abierto" ? null : (
@@ -219,7 +158,7 @@ export function AiDevSection({ fase, githubRepo, onRefresh }: AiDevSectionProps)
                 loading={loadingSql}
                 className="w-full justify-center"
               >
-                <SparkIcon />
+                <SparklesIcon />
                 Ya lo ejecuté
               </Button>
             </div>

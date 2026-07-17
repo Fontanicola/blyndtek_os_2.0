@@ -1,4 +1,5 @@
 import { formatMonthKey, formatMonthLabel, getLastMonths } from "@/lib/finanzas";
+import { fechaStringAFechaLocal } from "@/lib/utils/fechas";
 import type { DashboardPeriod } from "@/types/dashboard";
 import type { Suscripcion } from "@/types/suscripciones";
 
@@ -64,8 +65,8 @@ export function getProductPeriodRange(period: DashboardPeriod): ProductPeriodRan
 }
 
 function isActiveAtDate(suscripcion: Suscripcion, referenceDate: Date) {
-  const fechaInicioOk = !suscripcion.fecha_inicio || new Date(suscripcion.fecha_inicio) <= referenceDate;
-  const fechaBajaOk = !suscripcion.fecha_baja || new Date(suscripcion.fecha_baja) > referenceDate;
+  const fechaInicioOk = !suscripcion.fecha_inicio || fechaStringAFechaLocal(suscripcion.fecha_inicio) <= referenceDate;
+  const fechaBajaOk = !suscripcion.fecha_baja || fechaStringAFechaLocal(suscripcion.fecha_baja) > referenceDate;
   return suscripcion.estado === "activa" && fechaInicioOk && fechaBajaOk;
 }
 
@@ -89,7 +90,11 @@ export function buildProductMonthlyMrrSeries(suscripciones: Suscripcion[], produ
 
   return monthList.map((monthDate) => {
     const monthKey = formatMonthKey(monthDate);
-    const mrr = calculateProductMrrAtDate(suscripciones, productoId, new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0, 23, 59, 59, 999));
+    const mrr = calculateProductMrrAtDate(
+      suscripciones,
+      productoId,
+      new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0, 23, 59, 59, 999)
+    );
 
     return {
       month: monthKey,

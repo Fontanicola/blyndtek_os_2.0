@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { fechaInputAString } from "@/lib/utils/fechas";
 import type { EventoInvitado } from "@/types/eventos";
 
 type RouteContext = {
@@ -21,12 +22,11 @@ function toDateOnly(value: string | null | undefined) {
     return null;
   }
 
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
     return null;
   }
 
-  return `${date.getFullYear()}-${`${date.getMonth() + 1}`.padStart(2, "0")}-${`${date.getDate()}`.padStart(2, "0")}`;
+  return fechaInputAString(value);
 }
 
 export async function PATCH(request: NextRequest, { params }: RouteContext) {
@@ -105,4 +105,3 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
-

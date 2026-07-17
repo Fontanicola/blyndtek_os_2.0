@@ -1,4 +1,5 @@
 import type { CreateLeadInput, EtapaLead, Lead, UpdateLeadInput } from "@/types/leads";
+import { fechaStringAFechaLocal } from "@/lib/utils/fechas";
 
 export const OUTBOUND_ETAPAS: EtapaLead[] = [
   "por_contactar",
@@ -98,7 +99,7 @@ export function isLeadOverdue(lead: Lead): boolean {
       return false;
     }
 
-    return new Date(date) < now;
+    return fechaStringAFechaLocal(date) < now;
   });
 }
 

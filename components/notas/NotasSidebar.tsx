@@ -1,7 +1,7 @@
 "use client";
 
 import { Button, Input } from "@/components/ui";
-import { NotasIcon, SearchIcon } from "@/components/icons";
+import { FolderIcon, NotasIcon, SearchIcon, TrashIcon } from "@/components/ui/icons";
 import { cn } from "@/lib/cn";
 import type { CarpetaNota } from "@/types/notas";
 import type { NotaEtiqueta } from "@/types/notasEtiquetas";
@@ -22,29 +22,6 @@ type NotasSidebarProps = {
   onCreateFolder: () => void;
   onCreateNota: () => void;
 };
-
-function FolderIcon() {
-  return (
-    <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" className="h-4 w-4">
-      <path
-        d="M3.5 6.5A2.5 2.5 0 0 1 6 4h2.25c.66 0 1.28.32 1.66.86l.49.69c.38.54 1 .85 1.66.85H14a2.5 2.5 0 0 1 2.5 2.5v4.6A2.5 2.5 0 0 1 14 16H6A2.5 2.5 0 0 1 3.5 13.5v-7Z"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function TrashIcon() {
-  return (
-    <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" className="h-4 w-4">
-      <path d="M5 6.5h10M8 6.5v-1A1.5 1.5 0 0 1 9.5 4h1A1.5 1.5 0 0 1 12 5.5v1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-      <path d="M7 6.5h6l-.5 9h-5L7 6.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
-      <path d="M8.5 9v3.5M11.5 9v3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-    </svg>
-  );
-}
 
 export function NotasSidebar({
   search,

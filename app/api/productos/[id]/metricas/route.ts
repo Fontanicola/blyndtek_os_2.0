@@ -7,6 +7,7 @@ import {
   getProductCurrentBaseMetrics,
   getProductPeriodRange
 } from "@/lib/productos";
+import { fechaStringAFechaLocal } from "@/lib/utils/fechas";
 import type { DashboardPeriod } from "@/types/dashboard";
 import type { ProductoMetricas } from "@/types/productos";
 import type { Suscripcion } from "@/types/suscripciones";
@@ -61,7 +62,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
         return false;
       }
 
-      const fechaInicio = new Date(suscripcion.fecha_inicio);
+      const fechaInicio = fechaStringAFechaLocal(suscripcion.fecha_inicio);
       return fechaInicio >= range.start && fechaInicio < range.end;
     }).length;
     const bajasPeriodo = subscriptions.filter((suscripcion) => {
@@ -69,7 +70,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
         return false;
       }
 
-      const fechaBaja = new Date(suscripcion.fecha_baja);
+      const fechaBaja = fechaStringAFechaLocal(suscripcion.fecha_baja);
       return fechaBaja >= range.start && fechaBaja < range.end;
     }).length;
     const suscriptoresInicio = countProductActiveAtDate(subscriptions, productId, range.start);

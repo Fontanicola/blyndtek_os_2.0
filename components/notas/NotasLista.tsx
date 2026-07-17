@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui";
+import { PinIcon } from "@/components/ui/icons";
 import { cn } from "@/lib/cn";
 import { getNotaPreview, getNotaEtiquetaColorClasses } from "@/lib/notas";
 import { formatFecha } from "@/lib/utils/formatters";
@@ -16,20 +17,6 @@ type NotasListaProps = {
   onSelectNota: (nota: Nota) => void;
   onNewNota: () => void;
 };
-
-function PinIcon() {
-  return (
-    <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" className="h-3.5 w-3.5">
-      <path
-        d="M11.5 2.75 17.25 8.5l-2.25 1.25-3 3v4l-1.5 1.5-1-1 1.5-1.5v-4l-3-3L5 9.75 11.5 2.75Z"
-        fill="currentColor"
-        stroke="currentColor"
-        strokeWidth="1.2"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
 
 export function NotasLista({
   notas,

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Button, EntitySelect, Input, Modal } from "@/components/ui";
 import { getProyectoDisplayLabel } from "@/lib/proyectos/labels";
+import { fechaInputAString, hoyLocalString } from "@/lib/utils/fechas";
 import type { Cobro, CreateCobroInput } from "@/types/cobros";
 import type { Caja } from "@/types/cajas";
 import type { Cliente } from "@/types/clientes";
@@ -39,8 +40,8 @@ export function CobroModal({
 }: CobroModalProps) {
   const [concepto, setConcepto] = useState(cobro?.concepto ?? "");
   const [monto, setMonto] = useState(String(cobro?.monto ?? ""));
-  const [fechaEmision, setFechaEmision] = useState(cobro?.fecha_emision ?? new Date().toISOString().slice(0, 10));
-  const [fechaVencimiento, setFechaVencimiento] = useState(cobro?.fecha_vencimiento ?? new Date().toISOString().slice(0, 10));
+  const [fechaEmision, setFechaEmision] = useState(cobro?.fecha_emision ?? hoyLocalString());
+  const [fechaVencimiento, setFechaVencimiento] = useState(cobro?.fecha_vencimiento ?? hoyLocalString());
   const [tipo, setTipo] = useState<CreateCobroInput["tipo"]>(cobro?.tipo ?? "hito");
   const [cuentaMedio, setCuentaMedio] = useState<CreateCobroInput["cuenta_medio"]>(cobro?.cuenta_medio ?? cajas[0]?.slug ?? null);
   const [toleranciaDias, setToleranciaDias] = useState(String(cobro?.tolerancia_dias ?? 0));
@@ -53,8 +54,8 @@ export function CobroModal({
   useEffect(() => {
     setConcepto(cobro?.concepto ?? "");
     setMonto(String(cobro?.monto ?? ""));
-    setFechaEmision(cobro?.fecha_emision ?? new Date().toISOString().slice(0, 10));
-    setFechaVencimiento(cobro?.fecha_vencimiento ?? new Date().toISOString().slice(0, 10));
+    setFechaEmision(cobro?.fecha_emision ?? hoyLocalString());
+    setFechaVencimiento(cobro?.fecha_vencimiento ?? hoyLocalString());
     setTipo(cobro?.tipo ?? "hito");
     setCuentaMedio(cobro?.cuenta_medio ?? cajas[0]?.slug ?? null);
     setToleranciaDias(String(cobro?.tolerancia_dias ?? 0));
@@ -195,8 +196,8 @@ export function CobroModal({
                 concepto: concepto.trim(),
                 tipo,
                 monto: Number(monto),
-                fecha_emision: fechaEmision,
-                fecha_vencimiento: fechaVencimiento,
+                fecha_emision: fechaInputAString(fechaEmision),
+                fecha_vencimiento: fechaInputAString(fechaVencimiento),
                 proyecto_id: proyectoId.trim() || null,
                 suscripcion_id: suscripcionId.trim() || null,
                 cotizacion_id: cotizacionId.trim() || null,

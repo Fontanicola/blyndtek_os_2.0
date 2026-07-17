@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { fetchEventoIdsAceptadosUsuario, syncEventoInvitados } from "@/lib/eventos/invitaciones";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { fechaStringAFechaLocal } from "@/lib/utils/fechas";
 import type { CreateEventoInput, Evento, EventoConInvitados, TipoEvento } from "@/types/eventos";
 
 type EventosResponse = {
@@ -21,7 +22,7 @@ function parseDateParam(value: string | null) {
     return null;
   }
 
-  const date = new Date(value);
+  const date = fechaStringAFechaLocal(value);
   if (Number.isNaN(date.getTime())) {
     return null;
   }

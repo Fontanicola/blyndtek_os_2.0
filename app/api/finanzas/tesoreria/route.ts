@@ -1,13 +1,17 @@
 import { NextResponse } from "next/server";
 import { formatMonthKey, formatMonthLabel, getLastMonths } from "@/lib/finanzas";
 import { normalizeCajaSlug } from "@/lib/cajas";
+import { calcularBalanceTotalTesoreria } from "@/lib/finanzas/tesoreria";
 import { getAdminUser } from "@/lib/require-admin";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { fechaStringAFechaLocal } from "@/lib/utils/fechas";
+import type { EstadoCobro } from "@/types/cobros";
 import type { Caja } from "@/types/cajas";
 import type { TesoreriaCajaBalance, TesoreriaFinanzas, TesoreriaHistoricoPoint } from "@/types/finanzas";
 
 type CobroRow = {
   monto: number;
+  estado: EstadoCobro;
   cuenta_medio: string | null;
   fecha_emision: string | null;
   fecha_cobro: string | null;
@@ -15,6 +19,7 @@ type CobroRow = {
 
 type EgresoRow = {
   monto: number;
+  pagado: boolean;
   cuenta_medio: string | null;
   fecha_pago: string | null;
   fecha: string;
@@ -35,7 +40,7 @@ function updateLastMovement(current: string | null, candidate: string | null) {
     return candidate;
   }
 
-  return new Date(candidate).getTime() > new Date(current).getTime() ? candidate : current;
+  return fechaStringAFechaLocal(candidate).getTime() > fechaStringAFechaLocal(current).getTime() ? candidate : current;
 }
 
 function getMonthKey(value: string | null | undefined) {
@@ -43,7 +48,7 @@ function getMonthKey(value: string | null | undefined) {
     return null;
   }
 
-  const date = new Date(value);
+  const date = fechaStringAFechaLocal(value);
   if (Number.isNaN(date.getTime())) {
     return null;
   }
@@ -100,8 +105,8 @@ export async function GET() {
     const supabase = createAdminClient();
     const [cajasResult, cobrosResult, egresosResult, configResult] = await Promise.all([
       supabase.from("cajas").select("id, nombre, slug, color, activa, orden").order("orden", { ascending: true }),
-      supabase.from("cobros").select("monto, cuenta_medio, fecha_emision, fecha_cobro").eq("estado", "cobrado"),
-      supabase.from("egresos").select("monto, cuenta_medio, fecha_pago, fecha").eq("pagado", true),
+      supabase.from("cobros").select("monto, estado, cuenta_medio, fecha_emision, fecha_cobro").eq("estado", "cobrado"),
+      supabase.from("egresos").select("monto, pagado, cuenta_medio, fecha_pago, fecha").eq("pagado", true),
       supabase.from("config_finanzas").select("caja_inicial").order("updated_at", { ascending: false }).limit(1)
     ]);
 
@@ -182,7 +187,11 @@ export async function GET() {
       }));
 
     const cajaInicial = Number(configResult.data?.[0]?.caja_inicial ?? 0);
-    const balanceTotal = cajaInicial + cajasBalance.reduce((sum, caja) => sum + caja.balance, 0);
+    const balanceTotal = calcularBalanceTotalTesoreria({
+      cajaInicial,
+      cobros: (cobrosResult.data ?? []) as CobroRow[],
+      egresos: (egresosResult.data ?? []) as EgresoRow[]
+    });
 
     const payload: TesoreriaFinanzas = {
       caja_inicial: cajaInicial,

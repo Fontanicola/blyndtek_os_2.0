@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminUser } from "@/lib/require-admin";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { fechaInputAString, hoyLocalString } from "@/lib/utils/fechas";
 import type { Cobro } from "@/types/cobros";
 import type { Suscripcion } from "@/types/suscripciones";
 
@@ -23,8 +24,8 @@ export async function POST(_request: NextRequest, context: RouteContext) {
 
     const supabase = createAdminClient();
     const today = new Date();
-    const fechaInicio = today.toISOString().slice(0, 10);
-    const proximaCobro = addOneMonth(today).toISOString().slice(0, 10);
+    const fechaInicio = hoyLocalString(today);
+    const proximaCobro = hoyLocalString(addOneMonth(today));
 
     const { data: suscripcion, error: suscripcionError } = await supabase
       .from("suscripciones")
@@ -45,7 +46,7 @@ export async function POST(_request: NextRequest, context: RouteContext) {
     const { data: updatedSuscripcion, error: updateError } = await supabase
       .from("suscripciones")
       .update({
-        fecha_inicio: fechaInicio,
+        fecha_inicio: fechaInputAString(fechaInicio),
         proxima_cobro: proximaCobro,
         estado: "activa"
       })
@@ -70,8 +71,8 @@ export async function POST(_request: NextRequest, context: RouteContext) {
           concepto: `Mantenimiento ${actual.tipo}`,
           tipo: "mantenimiento",
           monto: actual.monto_mensual,
-          fecha_emision: fechaInicio,
-          fecha_vencimiento: fechaInicio,
+          fecha_emision: fechaInputAString(fechaInicio),
+          fecha_vencimiento: fechaInputAString(fechaInicio),
           cuenta_medio: null,
           tolerancia_dias: 0,
           estado: "pendiente"

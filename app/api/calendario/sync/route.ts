@@ -8,6 +8,7 @@ import {
   getValidGoogleToken,
   googleApiRequest
 } from "@/lib/google-calendar";
+import { fechaStringAFechaLocal } from "@/lib/utils/fechas";
 import type { Evento } from "@/types/eventos";
 
 export const maxDuration = 30;
@@ -29,7 +30,7 @@ function toIsoFromGoogleDate(value: string | undefined, end = false) {
     return new Date(value).toISOString();
   }
 
-  const date = new Date(`${value}T00:00:00`);
+  const date = fechaStringAFechaLocal(value);
   if (end) {
     date.setDate(date.getDate() + 1);
   }

@@ -3,7 +3,8 @@
 import { Badge, Button, Card } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { isCobroVencido } from "@/lib/finanzas";
-import { formatFecha, formatUSD } from "@/lib/utils/formatters";
+import { fechaStringAFechaLocal, formatearFechaDisplay } from "@/lib/utils/fechas";
+import { formatUSD } from "@/lib/utils/formatters";
 import type { Cobro } from "@/types/cobros";
 import type { Cliente } from "@/types/clientes";
 import type { Cotizacion } from "@/types/cotizaciones";
@@ -60,8 +61,14 @@ export function SuscripcionesLista({
     const related = cobros
       .filter((cobro) => cobro.suscripcion_id === suscripcion.id)
       .sort((first, second) => {
-        const diffA = Math.abs(new Date(first.fecha_vencimiento).getTime() - new Date(suscripcion.proxima_cobro ?? first.fecha_vencimiento).getTime());
-        const diffB = Math.abs(new Date(second.fecha_vencimiento).getTime() - new Date(suscripcion.proxima_cobro ?? second.fecha_vencimiento).getTime());
+        const diffA = Math.abs(
+          fechaStringAFechaLocal(first.fecha_vencimiento).getTime() -
+            fechaStringAFechaLocal(suscripcion.proxima_cobro ?? first.fecha_vencimiento).getTime()
+        );
+        const diffB = Math.abs(
+          fechaStringAFechaLocal(second.fecha_vencimiento).getTime() -
+            fechaStringAFechaLocal(suscripcion.proxima_cobro ?? second.fecha_vencimiento).getTime()
+        );
         return diffA - diffB;
       });
 
@@ -78,7 +85,7 @@ export function SuscripcionesLista({
       return false;
     }
 
-    return new Date(suscripcion.proxima_cobro) <= startOfToday;
+    return fechaStringAFechaLocal(suscripcion.proxima_cobro) <= startOfToday;
   }
 
   return (
@@ -112,7 +119,7 @@ export function SuscripcionesLista({
                 (() => {
                   const cycleCobro = getCurrentCycleCobro(suscripcion);
                   const proximaCobro = suscripcion.proxima_cobro;
-                  const overdueWithoutCobro = !cycleCobro && proximaCobro ? new Date(proximaCobro) < startOfToday : false;
+                  const overdueWithoutCobro = !cycleCobro && proximaCobro ? fechaStringAFechaLocal(proximaCobro) < startOfToday : false;
                   const isOverdue = cycleCobro ? cycleCobro.estado === "pendiente" && isCobroVencido(cycleCobro) : overdueWithoutCobro;
                   return isOverdue ? "border border-danger/30 bg-danger-light" : "bg-white";
                 })()
@@ -133,11 +140,11 @@ export function SuscripcionesLista({
             <div className="grid gap-3 text-sm text-graphite">
               <div className="flex items-center justify-between gap-3">
                 <span>Inicio</span>
-                <span>{suscripcion.fecha_inicio ? formatFecha(suscripcion.fecha_inicio) : "Pendiente"}</span>
+                <span>{suscripcion.fecha_inicio ? formatearFechaDisplay(suscripcion.fecha_inicio) : "Pendiente"}</span>
               </div>
               <div className="flex items-center justify-between gap-3">
                 <span>Próximo cobro</span>
-                <span>{suscripcion.proxima_cobro ? formatFecha(suscripcion.proxima_cobro) : "Sin fecha"}</span>
+                <span>{suscripcion.proxima_cobro ? formatearFechaDisplay(suscripcion.proxima_cobro) : "Sin fecha"}</span>
               </div>
             </div>
 

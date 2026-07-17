@@ -1,4 +1,5 @@
 import { Badge } from "@/components/ui";
+import { formatearFechaDisplay } from "@/lib/utils/fechas";
 import type { PublicRoadmapPaymentSummary } from "@/types/roadmap-public";
 
 type ResumenPagosProps = {
@@ -90,7 +91,7 @@ export function ResumenPagos({ pagos }: ResumenPagosProps) {
                 <div className="min-w-0">
                   <p className="truncate text-sm font-label text-carbon">{hito.concepto}</p>
                   <p className="text-xs text-graphite">
-                    Vence: {new Date(hito.fecha_vencimiento).toLocaleDateString("es-AR")}
+                    Vence: {formatearFechaDisplay(hito.fecha_vencimiento)}
                   </p>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">

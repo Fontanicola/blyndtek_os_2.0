@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { Badge, Button, Card } from "@/components/ui";
 import { DashboardIcon, FinanzasIcon } from "@/components/icons";
+import { MarkdownContent } from "@/components/ui/MarkdownContent";
 import { formatUSD } from "@/lib/utils/formatters";
 import { MetricaCard } from "./MetricaCard";
 import type { AgenteAnalisis } from "@/types/agentes";
@@ -22,6 +23,7 @@ type AnalisisDatos = {
   };
   metricas?: {
     margen_mensual_usd?: number;
+    runway_estado?: "normal" | "estable" | "agotado";
     runway_actual_meses?: number | null;
     runway_objetivo_meses?: number;
     excedente_disponible_usd?: number;
@@ -53,14 +55,6 @@ function formatMonthAndTime(dateString: string) {
     dateStyle: "medium",
     timeStyle: "short"
   });
-}
-
-function paragraphs(text: string) {
-  return text
-    .trim()
-    .split(/\n\s*\n/)
-    .map((paragraph) => paragraph.trim())
-    .filter(Boolean);
 }
 
 export function AsesorFinancieroTab({ analisisReciente, showToast }: AsesorFinancieroTabProps) {
@@ -134,8 +128,11 @@ export function AsesorFinancieroTab({ analisisReciente, showToast }: AsesorFinan
   }
 
   const runwayActual = metricas.runway_actual_meses;
+  const runwayEstado = metricas.runway_estado ?? "normal";
   const runwayObjetivo = metricas.runway_objetivo_meses ?? datos.config?.runway_objetivo_meses ?? 0;
   const capacidadDisponible = metricas.capacidad_disponible_pct ?? 0;
+  const runwayDisplay =
+    runwayEstado === "estable" ? "Estable" : runwayActual == null ? "N/D" : `${runwayActual.toFixed(1)} meses`;
 
   return (
     <div className="flex flex-col gap-6">
@@ -158,11 +155,7 @@ export function AsesorFinancieroTab({ analisisReciente, showToast }: AsesorFinan
         </div>
 
         <div className="space-y-4 rounded-card border border-line bg-paper/40 p-5">
-          {paragraphs(analysis.analisis_texto).map((paragraph) => (
-            <p key={paragraph} className="text-sm leading-7 text-carbon">
-              {paragraph}
-            </p>
-          ))}
+          <MarkdownContent content={analysis.analisis_texto} />
         </div>
 
         {metricas.concentracion_riesgo ? (
@@ -191,10 +184,16 @@ export function AsesorFinancieroTab({ analisisReciente, showToast }: AsesorFinan
         />
         <MetricaCard
           label="Runway actual"
-          value={runwayActual == null ? "N/D" : `${runwayActual.toFixed(1)} meses`}
+          value={runwayDisplay}
           icono={<DashboardIcon />}
-          colorIcono={runwayActual != null && runwayActual > runwayObjetivo ? "success" : "warning"}
-          description={runwayObjetivo ? `Objetivo: ${runwayObjetivo.toFixed(0)} meses` : undefined}
+          colorIcono={runwayEstado === "estable" ? "success" : runwayActual != null && runwayActual > runwayObjetivo ? "success" : "warning"}
+          description={
+            runwayEstado === "estable"
+              ? "Sin quema neta"
+              : runwayObjetivo
+                ? `Objetivo: ${runwayObjetivo.toFixed(0)} meses`
+                : undefined
+          }
         />
         <MetricaCard
           label="Capacidad disponible"

@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui";
+import { ClockIcon, PauseIcon, PlayIcon } from "@/components/ui/icons";
 import { formatClock } from "@/lib/tiempo";
 import type { FaseProyecto } from "@/types/fases-proyecto";
 import type { ProyectoTiempoResponse } from "@/types/sesionesTiempo";
@@ -14,37 +15,6 @@ type CronometroFaseProps = {
   onIniciar: (faseId: string) => Promise<void> | void;
   onPausar: (sesionId: string, nota?: string) => Promise<void> | void;
 };
-
-function ClockIcon() {
-  return (
-    <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" className="h-4 w-4">
-      <circle cx="10" cy="10" r="7.25" stroke="currentColor" strokeWidth="1.5" />
-      <path
-        d="M10 5.75V10l2.75 1.75"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function PlayIcon() {
-  return (
-    <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" className="h-4 w-4">
-      <path d="M7.25 5.75 14.5 10l-7.25 4.25V5.75Z" fill="currentColor" />
-    </svg>
-  );
-}
-
-function PauseIcon() {
-  return (
-    <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" className="h-4 w-4">
-      <path d="M6.25 5.75h2.25v8.5H6.25v-8.5Zm5.25 0h2.25v8.5h-2.25v-8.5Z" fill="currentColor" />
-    </svg>
-  );
-}
 
 export function CronometroFase({
   fase,

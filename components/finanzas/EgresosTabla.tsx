@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Badge, Button, Card } from "@/components/ui";
 import { formatCajaLabel } from "@/lib/cajas";
 import { formatFecha, formatUSD } from "@/lib/utils/formatters";
+import { fechaStringAFechaLocal } from "@/lib/utils/fechas";
 import { cn } from "@/lib/cn";
 import type { Caja } from "@/types/cajas";
 import type { CategoriaEgreso, Egreso } from "@/types/egresos";
@@ -41,7 +42,7 @@ function isEgresoVencido(egreso: Egreso) {
     return false;
   }
 
-  const fecha = new Date(egreso.fecha);
+  const fecha = fechaStringAFechaLocal(egreso.fecha);
   return !Number.isNaN(fecha.getTime()) && fecha < startOfToday();
 }
 

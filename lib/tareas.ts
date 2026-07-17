@@ -1,4 +1,5 @@
 import type { EstadoTarea, PrioridadTarea, Tarea } from "@/types/tareas";
+import { fechaStringAFechaLocal } from "@/lib/utils/fechas";
 
 export const TAREA_ESTADO_LABELS: Record<EstadoTarea, string> = {
   nueva: "Nueva",
@@ -19,7 +20,7 @@ export const TAREA_PRIORIDAD_OPTIONS = Object.keys(TAREA_PRIORIDAD_LABELS) as Pr
 export function sortTareas(tareas: Tarea[]) {
   return [...tareas].sort((first, second) => {
     if (first.fecha_limite && second.fecha_limite) {
-      const dateDiff = new Date(first.fecha_limite).getTime() - new Date(second.fecha_limite).getTime();
+      const dateDiff = fechaStringAFechaLocal(first.fecha_limite).getTime() - fechaStringAFechaLocal(second.fecha_limite).getTime();
       if (dateDiff !== 0) {
         return dateDiff;
       }
@@ -45,7 +46,7 @@ export function isTareaVencida(tarea: Pick<Tarea, "fecha_limite" | "estado">) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const dueDate = new Date(tarea.fecha_limite);
+  const dueDate = fechaStringAFechaLocal(tarea.fecha_limite);
   dueDate.setHours(0, 0, 0, 0);
 
   return dueDate.getTime() < today.getTime();

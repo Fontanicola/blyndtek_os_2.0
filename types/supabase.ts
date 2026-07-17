@@ -166,6 +166,8 @@ export type Database = {
           id: string;
           cliente_id: string;
           valor_total: number;
+          adelanto_pct: number;
+          fecha_adelanto: string | null;
           cantidad_cuotas: number;
           dia_pago: number;
           fecha_primera_cuota: string;
@@ -180,6 +182,8 @@ export type Database = {
           id?: string;
           cliente_id: string;
           valor_total: number;
+          adelanto_pct?: number;
+          fecha_adelanto?: string | null;
           cantidad_cuotas: number;
           dia_pago: number;
           fecha_primera_cuota: string;
@@ -194,6 +198,8 @@ export type Database = {
           id?: string;
           cliente_id?: string;
           valor_total?: number;
+          adelanto_pct?: number;
+          fecha_adelanto?: string | null;
           cantidad_cuotas?: number;
           dia_pago?: number;
           fecha_primera_cuota?: string;

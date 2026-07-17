@@ -1,5 +1,6 @@
 import { addMonths, formatMonthKey, getLastMonths, startOfMonth, type RunwayPoint } from "@/lib/finanzas";
 import { calcularEgresosPeriodo } from "@/lib/finanzas/calcularEgresosPeriodo";
+import { fechaStringAFechaLocal } from "@/lib/utils/fechas";
 import type { Cobro } from "@/types/cobros";
 import type { Egreso } from "@/types/egresos";
 import type { Suscripcion } from "@/types/suscripciones";
@@ -27,8 +28,8 @@ function sum(values: number[]) {
 function calculateActiveMrr(suscripciones: Suscripcion[], referenceDate: Date) {
   return suscripciones
     .filter((suscripcion) => {
-      const fechaInicioOk = !suscripcion.fecha_inicio || new Date(suscripcion.fecha_inicio) <= referenceDate;
-      const fechaBajaOk = !suscripcion.fecha_baja || new Date(suscripcion.fecha_baja) > referenceDate;
+      const fechaInicioOk = !suscripcion.fecha_inicio || fechaStringAFechaLocal(suscripcion.fecha_inicio) <= referenceDate;
+      const fechaBajaOk = !suscripcion.fecha_baja || fechaStringAFechaLocal(suscripcion.fecha_baja) > referenceDate;
       return suscripcion.estado === "activa" && fechaInicioOk && fechaBajaOk;
     })
     .reduce((total, suscripcion) => total + suscripcion.monto_mensual, 0);
@@ -63,7 +64,7 @@ function isValidDate(value: string | null | undefined) {
     return false;
   }
 
-  const parsed = new Date(value);
+  const parsed = fechaStringAFechaLocal(value);
   return !Number.isNaN(parsed.getTime());
 }
 
@@ -94,7 +95,7 @@ function buildPendingIncomeSchedule(
       continue;
     }
 
-    const monthKey = formatMonthKey(startOfMonth(new Date(cobro.fecha_vencimiento)));
+    const monthKey = formatMonthKey(startOfMonth(fechaStringAFechaLocal(cobro.fecha_vencimiento)));
     if (!cobrosFutureMonths.has(monthKey)) {
       continue;
     }
@@ -112,7 +113,7 @@ function buildPendingIncomeSchedule(
       continue;
     }
 
-    const startMonth = startOfMonth(new Date(suscripcion.fecha_inicio ?? ""));
+    const startMonth = startOfMonth(fechaStringAFechaLocal(suscripcion.fecha_inicio ?? ""));
 
     for (const monthDate of futureMonths) {
       if (monthDate < startMonth) {

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/Button";
+import { FilterIcon } from "@/components/ui/icons";
 import { cn } from "@/lib/cn";
 
 type FilterPopoverProps = {
@@ -9,19 +10,6 @@ type FilterPopoverProps = {
   activeCount?: number;
   className?: string;
 };
-
-function FilterIcon() {
-  return (
-    <svg viewBox="0 0 18 18" fill="none" aria-hidden="true" className="h-[18px] w-[18px]">
-      <path
-        d="M3.75 4.5H14.25L10.5 9V13.25L7.5 14.75V9L3.75 4.5Z"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
 
 export function FilterPopover({ children, activeCount = 0, className }: FilterPopoverProps) {
   const rootRef = useRef<HTMLDivElement | null>(null);

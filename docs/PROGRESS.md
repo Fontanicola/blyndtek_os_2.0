@@ -8,6 +8,96 @@ Fecha de inicio: 2026-06-25
 
 Estado general actual: Fase 0 completa. Cimientos técnicos listos: documentación fundacional, setup del repo, design system, shell de app y sistema de autenticación base. Las fases 1, 2 y 3 del roadmap original quedaron completadas.
 
+## Actualización 2026-07-17
+
+- Se corrigió el roadmap público para que refleje al instante cambios de fases/features hechos desde `/proyectos`.
+- Causa exacta encontrada: el route handler `app/api/roadmap/[token]/route.ts` estaba quedando en una versión estática/caché de servidor para `GET`, por lo que servía datos viejos aunque el browser hiciera hard refresh.
+- Fix aplicado:
+  - `export const dynamic = "force-dynamic";`
+  - `export const revalidate = 0;`
+- Verificación funcional local:
+  - Se cambió temporalmente una feature real de `QA producción` en `Funes Exclusivos` de `pendiente` a `lista`.
+  - La respuesta de `/api/roadmap/funes-exclusivos-80tm` reflejó de inmediato el cambio en el conteo de la fase (`0/5` → `1/5`) sin esperar cache.
+  - Luego se revirtió la feature a su estado original para no dejar datos alterados.
+- Verificación local completa:
+  - `npm run lint` pasó sin errores.
+  - `npm run build` pasó sin errores.
+
+## Actualización 2026-07-17
+
+- Se corrigieron 3 bugs aislados del Asesor Financiero:
+  - `caja_actual_usd` ahora usa la misma lógica real que Tesorería (`balance_total`) mediante el helper compartido `lib/finanzas/tesoreria.ts`, en lugar de un cálculo propio.
+  - `runway_estado` ahora viaja explícitamente al análisis: cuando el negocio está en estado `estable`, el asesor ya no lo muestra como `0 meses`; la UI lo presenta como `Estable` y el prompt de Claude lo trata como buena noticia, no como riesgo.
+  - `analisis_texto` ahora se renderiza como Markdown real en `/finanzas → Asesor` y en `/agentes`, por lo que headings, negrita y separadores dejan de verse como texto crudo.
+- Verificación local completa:
+  - `npm run lint` pasó sin errores.
+  - `npm run build` pasó sin errores.
+- Validación funcional:
+  - El valor de `Caja actual` quedó alineado con el `balance_total` real de Tesorería al reutilizar la misma función de cálculo compartida (`9980.51` en la corrida de validación).
+  - El runway real quedó correctamente identificado como `estable`, por lo que el asesor ya no lo interpreta como `0 meses`.
+
+## Actualización 2026-07-17
+
+- Se agregó al Dashboard financiero el comparativo mensual de `Ventas vs Cobrado` para los últimos 6 meses, usando barras sólidas y tooltip que sigue el mouse.
+- La API de Dashboard ahora expone `historico_ventas_vs_cobrado` y `total_vendido_6m`, calculando `Ventas` solo a partir de contratos activos agrupados por fecha de creación para no duplicar contratos redefinidos.
+- En la fila financiera se sumó la card `Vendido (6 meses)` y el gráfico nuevo quedó ubicado debajo del P&L para comparar ventas cerradas versus caja efectivamente cobrada.
+- Verificación local completa: `npm run lint` y `npm run build` pasaron sin errores.
+
+## Actualización 2026-07-17
+
+- Se corrigió un bug sistémico de zona horaria que hacía que cualquier fecha sin hora se guardara un día antes en Argentina.
+- La causa raíz era el patrón clásico `new Date("YYYY-MM-DD")` y/o `toISOString().slice(0, 10)` aplicado a campos `DATE` (sin hora), lo que interpretaba la fecha como UTC y la corría hacia atrás al persistirla o formatearla.
+- Se centralizó el tratamiento de fechas en `lib/utils/fechas.ts` y se reemplazaron los usos peligrosos por parseo/formateo local.
+- Archivos corregidos o alineados con el helper:
+  - `lib/utils/fechas.ts`
+  - `lib/utils/formatters.ts`
+  - `components/finanzas/CobroModal.tsx`
+  - `components/finanzas/EgresoModal.tsx`
+  - `components/finanzas/FinanzasClient.tsx`
+  - `components/finanzas/SuscripcionesLista.tsx`
+  - `components/finanzas/CobrosTabla.tsx`
+  - `components/finanzas/EgresosTabla.tsx`
+  - `components/clientes/ClienteFicha.tsx`
+  - `components/roadmap/ResumenPagos.tsx`
+  - `components/proyectos/ProyectoCard.tsx`
+  - `components/outbound/LeadModal.tsx`
+  - `components/tareas/TareaModal.tsx`
+  - `components/inbound/InboundFicha.tsx`
+  - `components/agentes/AgentesClient.tsx`
+  - `components/perfil/PerfilClient.tsx`
+  - `components/finanzas/AsesorFinancieroTab.tsx`
+  - `components/finanzas/ComisionesTabla.tsx`
+  - `components/calendario/EventoModal.tsx`
+  - `components/calendario/EventoChip.tsx`
+  - `app/api/calendario/route.ts`
+  - `app/api/calendario/sync/route.ts`
+  - `app/api/eventos/route.ts`
+  - `app/api/eventos-invitados/[id]/route.ts`
+  - `app/api/leads/[id]/etapa/route.ts`
+  - `app/api/suscripciones/[id]/activar/route.ts`
+  - `app/api/finanzas/generar-cobros-mensuales/route.ts`
+  - `app/api/finanzas/metricas/route.ts`
+  - `app/api/finanzas/tesoreria/route.ts`
+  - `app/api/finanzas/runway/route.ts`
+  - `app/api/clientes/[id]/rentabilidad/route.ts`
+  - `app/api/cobros/[id]/route.ts`
+  - `app/api/comisiones/[id]/marcar-pagada/route.ts`
+  - `app/api/dashboard/route.ts`
+  - `app/api/productos/[id]/metricas/route.ts`
+  - `app/api/agentes/asesor-financiero/analizar/route.ts`
+  - `app/api/mi-panel/metricas/route.ts`
+  - `lib/finanzas.ts`
+  - `lib/finanzas/calcularEgresosPeriodo.ts`
+  - `lib/finanzas/runwayProjection.ts`
+  - `lib/dashboard.ts`
+  - `lib/leads.ts`
+  - `lib/tareas.ts`
+  - `lib/productos.ts`
+  - `lib/contratos/crearOActualizarContrato.ts`
+  - `lib/agentes/calcularMetricasAsesor.ts`
+  - `supabase/functions/_shared/supabase.ts`
+- Verificación local completa: `npm run lint` y `npm run build` pasaron sin errores luego del reemplazo.
+
 ## Actualización 2026-07-14
 
 - Se agregó soporte de passkeys experimentales de Supabase como método adicional de acceso, sin reemplazar contraseña.
@@ -1722,4 +1812,11 @@ $ find . -maxdepth 3 \( -name 'middleware.*' -o -name 'proxy.*' \) -not -path '.
 - El módulo Cotizador quedó retirado de la UI/API activa: se eliminaron sus rutas y componentes, y la navegación dejó de exponer `/cotizador`; la tabla `cotizaciones` conserva su historial para consulta y trazabilidad.
 - `app/api/dashboard/route.ts` pasó a calcular `ticket_promedio` desde contratos activos por cliente, para no depender de cotizaciones como fuente activa.
 - `Finanzas` ahora recibe las cotizaciones desde el servidor para alimentar los selectores de cobro/suscripción sin depender de endpoints de cotizaciones ya deprecados.
+- Verificación local ejecutada: `npm run lint` y `npm run build` pasan correctamente.
+
+## 2026-07-17 — Adelanto explícito en contratos y cobros sincronizados
+
+- `lib/contratos/crearOActualizarContrato.ts` ahora genera el `Adelanto` como primer hito del contrato, calculado como un porcentaje configurable del valor total, y luego distribuye el saldo restante en cuotas.
+- `ClienteFicha` suma el campo `Adelanto (%)` y la `Fecha del adelanto` en el tab `Contrato`, y muestra el adelanto separado del resto de las cuotas en el resumen del contrato activo.
+- La tab `Cobros` del cliente ahora permite marcar un hito como cobrado con un click, resalta en rojo los pendientes vencidos y refresca el resumen del contrato al editar o cobrar un hito.
 - Verificación local ejecutada: `npm run lint` y `npm run build` pasan correctamente.

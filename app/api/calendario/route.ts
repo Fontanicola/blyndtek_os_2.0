@@ -9,6 +9,7 @@ import {
   endOfDay,
   sortCalendarItems
 } from "@/lib/calendario";
+import { fechaStringAFechaLocal, hoyLocalString } from "@/lib/utils/fechas";
 import type { CalendarItem } from "@/types/calendario";
 import type { Evento } from "@/types/eventos";
 import type { Lead } from "@/types/leads";
@@ -23,7 +24,7 @@ function parseDateParam(value: string | null, fallback: Date) {
     return fallback;
   }
 
-  const parsed = new Date(value);
+  const parsed = fechaStringAFechaLocal(value);
 
   if (Number.isNaN(parsed.getTime())) {
     return fallback;
@@ -48,7 +49,7 @@ function toDateOnly(date: Date) {
 }
 
 function buildTaskItem(tarea: Tarea): CalendarItem {
-  const date = new Date(`${tarea.fecha_limite ?? new Date().toISOString().slice(0, 10)}T09:00:00`);
+  const date = new Date(`${tarea.fecha_limite ?? hoyLocalString()}T09:00:00`);
   return {
     id: `tarea:${tarea.id}`,
     titulo: tarea.titulo,

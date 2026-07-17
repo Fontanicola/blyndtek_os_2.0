@@ -1,5 +1,6 @@
 import type { Hito } from "@/types/cotizaciones";
 import type { FaseRoadmap } from "@/types/roadmap";
+import { esFechaSoloDia, formatearFechaDisplay, fechaStringAFechaLocal } from "@/lib/utils/fechas";
 
 export function formatUSD(amount: number): string {
   const formatter = new Intl.NumberFormat("en-US", {
@@ -15,7 +16,11 @@ export function formatFecha(fecha: string | null | undefined): string {
     return "Sin fecha";
   }
 
-  const parsed = new Date(fecha);
+  if (esFechaSoloDia(fecha)) {
+    return formatearFechaDisplay(fecha);
+  }
+
+  const parsed = fechaStringAFechaLocal(fecha);
 
   if (Number.isNaN(parsed.getTime())) {
     return "Sin fecha";

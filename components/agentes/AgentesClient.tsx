@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Badge, Button, Card, Input, Spinner, Toast } from "@/components/ui";
-import { AgentesIcon } from "@/components/icons";
+import { BotIcon, ChevronDownIcon } from "@/components/ui/icons";
+import { MarkdownContent } from "@/components/ui/MarkdownContent";
 import { formatUSD } from "@/lib/utils/formatters";
 import type { Agente, AgenteAnalisis, AgenteConfig } from "@/types/agentes";
 
@@ -144,7 +145,7 @@ export function AgentesClient({ agentes }: AgentesClientProps) {
                 <div className="min-w-0 space-y-1">
                   <div className="flex items-center gap-2">
                     <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-pill bg-paper text-signal">
-                      <AgentesIcon />
+                      <BotIcon className="h-4 w-4" />
                     </span>
                     <p className="truncate font-title text-base text-carbon">{agente.nombre}</p>
                   </div>
@@ -162,20 +163,9 @@ export function AgentesClient({ agentes }: AgentesClientProps) {
                     aria-label={isExpanded ? "Ocultar descripción" : "Ver descripción"}
                     title={isExpanded ? "Ocultar descripción" : "Ver descripción"}
                   >
-                    <svg
-                      viewBox="0 0 18 18"
-                      fill="none"
-                      aria-hidden="true"
+                    <ChevronDownIcon
                       className={["h-4 w-4 transition-transform duration-fast ease-fast", isExpanded ? "rotate-180" : "rotate-0"].join(" ")}
-                    >
-                      <path
-                        d="M4.5 6.75L9 11.25L13.5 6.75"
-                        stroke="currentColor"
-                        strokeWidth="1.75"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
+                    />
                   </button>
                 </div>
               </div>
@@ -308,7 +298,7 @@ export function AgentesClient({ agentes }: AgentesClientProps) {
                         </summary>
 
                         <div className="mt-4 space-y-3 border-t border-line pt-4">
-                          <p className="whitespace-pre-line text-sm leading-6 text-carbon">{analisis.analisis_texto}</p>
+                          <MarkdownContent content={analisis.analisis_texto} className="space-y-3" />
                           <div className="grid gap-3 sm:grid-cols-2">
                             <div className="rounded-component bg-paper px-3 py-2 text-sm text-graphite">
                               Runway objetivo: {datos.config?.runway_objetivo_meses ?? 0} meses

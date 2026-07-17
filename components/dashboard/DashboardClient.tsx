@@ -3,6 +3,7 @@
 import { useMemo, type ReactNode } from "react";
 import { Card } from "@/components/ui";
 import { MetricaCard, PLChart } from "@/components/finanzas";
+import { VentasVsCobradoChart } from "./VentasVsCobradoChart";
 import {
   BellIcon,
   CalendarioIcon,
@@ -226,6 +227,12 @@ export function DashboardClient() {
             : fin.pl_mes_actual > fin.pl_mes_anterior
               ? "up"
               : "down"
+      },
+      {
+        label: "Vendido (6 meses)",
+        value: formatUSD(fin.total_vendido_6m),
+        icono: <FinanzasIcon />,
+        colorIcono: "success"
       }
     ];
   }, [dashboard]);
@@ -332,7 +339,7 @@ export function DashboardClient() {
         <div className="space-y-10">
           <section>
             <div className="space-y-4">
-              <div className="grid gap-4 lg:grid-cols-5">
+              <div className="grid gap-4 lg:grid-cols-3 xl:grid-cols-6">
                 {financialCards.map((metric) => (
                   <MetricaCard
                     key={metric.label}
@@ -348,6 +355,7 @@ export function DashboardClient() {
               </div>
 
               <PLChart data={dashboard.financiero.historico_pl} />
+              <VentasVsCobradoChart data={dashboard.financiero.historico_ventas_vs_cobrado} />
             </div>
           </section>
 

@@ -1,4 +1,6 @@
 import { calculateRunwayProjection } from "@/lib/finanzas/runwayProjection";
+import { calcularBalanceTotalTesoreria } from "@/lib/finanzas/tesoreria";
+import { fechaStringAFechaLocal } from "@/lib/utils/fechas";
 import type { Cobro } from "@/types/cobros";
 import type { Cliente } from "@/types/clientes";
 import type { Egreso } from "@/types/egresos";
@@ -38,6 +40,7 @@ export type ConcentracionRiesgo = {
 
 export type MetricasAsesorFinanciero = {
   margen_mensual_usd: number;
+  runway_estado: "normal" | "estable" | "agotado";
   runway_actual_meses: number | null;
   runway_objetivo_meses: number;
   excedente_disponible_usd: number;
@@ -71,14 +74,17 @@ export function calcularMetricasAsesor({
   referenceDate = new Date()
 }: CalcularMetricasAsesorInput): MetricasAsesorFinanciero {
   const runwayProjection = calculateRunwayProjection(cajaInicial, cobros, egresos, suscripciones, referenceDate);
-  const cajaActual = cajaInicial;
+  const cajaActual = calcularBalanceTotalTesoreria({ cajaInicial, cobros, egresos });
   const costoMensual = runwayProjection.recurringExpenses + runwayProjection.nonRecurringAverage;
   const margenMensual = runwayProjection.mrr - costoMensual;
   const burnMensual = Math.max(runwayProjection.monthlyBurn, 0);
+  const runwayEstado = runwayProjection.runwayStatus;
   const excedenteDisponible =
-    runwayProjection.runwayMonths != null && runwayProjection.runwayMonths > runwayObjetivoMeses
-      ? Math.max(0, cajaActual - burnMensual * runwayObjetivoMeses)
-      : 0;
+    runwayEstado === "estable"
+      ? Math.max(0, cajaActual - costoMensual * runwayObjetivoMeses)
+      : runwayProjection.runwayMonths != null && runwayProjection.runwayMonths >= runwayObjetivoMeses
+        ? Math.max(0, cajaActual - burnMensual * runwayObjetivoMeses)
+        : 0;
 
   const proyectosActivos = proyectos.filter((proyecto) => proyecto.estado !== "entregado" && proyecto.estado !== "pausado").length;
   const capacidadDisponiblePct =
@@ -102,8 +108,8 @@ export function calcularMetricasAsesor({
       continue;
     }
 
-    const fechaInicioOk = !suscripcion.fecha_inicio || new Date(suscripcion.fecha_inicio) <= referenceDate;
-    const fechaBajaOk = !suscripcion.fecha_baja || new Date(suscripcion.fecha_baja) > referenceDate;
+    const fechaInicioOk = !suscripcion.fecha_inicio || fechaStringAFechaLocal(suscripcion.fecha_inicio) <= referenceDate;
+    const fechaBajaOk = !suscripcion.fecha_baja || fechaStringAFechaLocal(suscripcion.fecha_baja) > referenceDate;
 
     if (!fechaInicioOk || !fechaBajaOk) {
       continue;
@@ -136,7 +142,8 @@ export function calcularMetricasAsesor({
 
   return {
     margen_mensual_usd: margenMensual,
-    runway_actual_meses: runwayProjection.runwayMonths,
+    runway_estado: runwayEstado,
+    runway_actual_meses: runwayEstado === "estable" ? null : runwayProjection.runwayMonths,
     runway_objetivo_meses: runwayObjetivoMeses,
     excedente_disponible_usd: excedenteDisponible,
     proyectos_activos: proyectosActivos,

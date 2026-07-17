@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { Button, Card, Modal } from "@/components/ui";
-import { MenuIcon } from "@/components/icons";
+import { LinkIcon, MenuIcon, PinIcon, UsersIcon } from "@/components/ui/icons";
 import { RichTextEditor } from "@/components/shared/RichTextEditor";
 import { cn } from "@/lib/cn";
 import {
@@ -57,67 +57,6 @@ type NotaEditorProps = {
   onUpdateNotaCompartidas?: (notaId: string, usuarioIds: string[]) => Promise<void>;
   imageUploadUrl?: string;
 };
-
-function PinIcon({ filled = false }: { filled?: boolean }) {
-  return (
-    <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" className="h-4 w-4">
-      <path
-        d="M11.5 2.75 17.25 8.5l-2.25 1.25-3 3v4l-1.5 1.5-1-1 1.5-1.5v-4l-3-3L5 9.75 11.5 2.75Z"
-        fill={filled ? "currentColor" : "none"}
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function LinkIcon() {
-  return (
-    <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" className="h-3.5 w-3.5">
-      <path
-        d="M8 10.5a2.5 2.5 0 0 1 0-3.5l1.5-1.5a2.5 2.5 0 0 1 3.5 3.5L12.25 10"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M12 9.5a2.5 2.5 0 0 1 0 3.5l-1.5 1.5a2.5 2.5 0 1 1-3.5-3.5L7.75 10"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function PeopleIcon() {
-  return (
-    <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" className="h-4 w-4">
-      <path
-        d="M6.25 8.75a2.25 2.25 0 1 0 0-4.5 2.25 2.25 0 0 0 0 4.5ZM13.75 8.25a1.75 1.75 0 1 0 0-3.5 1.75 1.75 0 0 0 0 3.5Z"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M2.75 15.25c0-2.1 1.7-3.75 3.75-3.75s3.75 1.65 3.75 3.75"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-      <path
-        d="M10.75 15.25c.15-1.8 1.6-3.25 3.4-3.25 1.5 0 2.8.95 3.3 2.3"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
 
 function StatusDot({ saving }: { saving: boolean }) {
   return (

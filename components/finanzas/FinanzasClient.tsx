@@ -7,6 +7,7 @@ import { BellIcon, DashboardIcon, FinanzasIcon } from "@/components/icons";
 import { useCajas } from "@/lib/hooks/useCajas";
 import { useClientes } from "@/lib/hooks/useClientes";
 import { buildMonthlyFinancialSeries } from "@/lib/finanzas";
+import { fechaInputAString, fechaStringAFechaLocal, hoyLocalString } from "@/lib/utils/fechas";
 import { formatUSD } from "@/lib/utils/formatters";
 import { useProyectos } from "@/lib/hooks/useProyectos";
 import { useFinanzas } from "@/lib/hooks/useFinanzas";
@@ -83,8 +84,8 @@ function getTrendDirection(current: number, previous: number | null | undefined)
 }
 
 function addOneMonth(dateString: string) {
-  const date = new Date(dateString);
-  return new Date(date.getFullYear(), date.getMonth() + 1, date.getDate()).toISOString().slice(0, 10);
+  const date = fechaStringAFechaLocal(dateString);
+  return hoyLocalString(new Date(date.getFullYear(), date.getMonth() + 1, date.getDate()));
 }
 
 export function FinanzasClient({ cotizaciones, asesorFinancieroAnalisis }: FinanzasClientProps) {
@@ -212,7 +213,7 @@ export function FinanzasClient({ cotizaciones, asesorFinancieroAnalisis }: Finan
 
   async function handleMarkCobrado(cobro: Cobro) {
     try {
-      await updateCobro(cobro.id, { estado: "cobrado", fecha_cobro: new Date().toISOString().slice(0, 10) });
+      await updateCobro(cobro.id, { estado: "cobrado", fecha_cobro: hoyLocalString() });
       showToast("Cobro marcado como cobrado.", "success");
       void refreshAll();
     } catch (mutationError) {
@@ -224,7 +225,7 @@ export function FinanzasClient({ cotizaciones, asesorFinancieroAnalisis }: Finan
     try {
       await updateEgreso(egreso.id, {
         pagado: !egreso.pagado,
-        fecha_pago: !egreso.pagado ? new Date().toISOString().slice(0, 10) : null
+        fecha_pago: !egreso.pagado ? hoyLocalString() : null
       });
       showToast(egreso.pagado ? "Egreso marcado como pendiente." : "Egreso marcado como pagado.", "success");
       void refreshAll();
@@ -235,7 +236,7 @@ export function FinanzasClient({ cotizaciones, asesorFinancieroAnalisis }: Finan
 
   async function handleMarkSuscripcionCobrado(suscripcion: Suscripcion, cobro: Cobro | null) {
     try {
-      const fechaCobro = new Date().toISOString().slice(0, 10);
+      const fechaCobro = hoyLocalString();
 
       if (cobro) {
         await updateCobro(cobro.id, {
@@ -252,9 +253,9 @@ export function FinanzasClient({ cotizaciones, asesorFinancieroAnalisis }: Finan
           concepto: `Cobro de ${suscripcion.tipo}`,
           tipo: suscripcion.tipo === "brick" ? "brick" : "mantenimiento",
           monto: suscripcion.monto_mensual,
-          fecha_emision: fechaCobro,
-          fecha_vencimiento: suscripcion.proxima_cobro ?? fechaCobro,
-          fecha_cobro: fechaCobro,
+          fecha_emision: fechaInputAString(fechaCobro),
+          fecha_vencimiento: suscripcion.proxima_cobro ?? fechaInputAString(fechaCobro),
+          fecha_cobro: fechaInputAString(fechaCobro),
           cuenta_medio: null,
           tolerancia_dias: 0,
           estado: "cobrado"

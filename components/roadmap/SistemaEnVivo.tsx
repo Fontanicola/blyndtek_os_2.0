@@ -1,20 +1,7 @@
 type SistemaEnVivoProps = {
   urlSistema: string;
 };
-
-function ArrowUpRightIcon() {
-  return (
-    <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" className="h-5 w-5">
-      <path
-        d="M6 13.5 13.5 6m0 0H8.75m4.75 0v4.75"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
+import { ArrowUpRightIcon } from "@/components/ui/icons";
 
 function extractDomain(url: string) {
   try {

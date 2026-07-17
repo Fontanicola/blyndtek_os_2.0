@@ -1,5 +1,6 @@
 import { formatUSD } from "@/lib/utils/formatters";
 import { calcularEgresosPeriodo } from "@/lib/finanzas/calcularEgresosPeriodo";
+import { fechaStringAFechaLocal } from "@/lib/utils/fechas";
 import type { Cobro } from "@/types/cobros";
 import type { Egreso } from "@/types/egresos";
 import type { Suscripcion } from "@/types/suscripciones";
@@ -100,8 +101,8 @@ function countActiveClientsAtDate(suscripciones: Suscripcion[], referenceDate: D
   const activeClients = new Set(
     suscripciones
       .filter((suscripcion) => {
-        const fechaInicioOk = !suscripcion.fecha_inicio || new Date(suscripcion.fecha_inicio) <= referenceDate;
-        const fechaBajaOk = !suscripcion.fecha_baja || new Date(suscripcion.fecha_baja) > referenceDate;
+        const fechaInicioOk = !suscripcion.fecha_inicio || fechaStringAFechaLocal(suscripcion.fecha_inicio) <= referenceDate;
+        const fechaBajaOk = !suscripcion.fecha_baja || fechaStringAFechaLocal(suscripcion.fecha_baja) > referenceDate;
         return suscripcion.estado === "activa" && fechaInicioOk && fechaBajaOk;
       })
       .map((suscripcion) => suscripcion.cliente_id)
@@ -124,7 +125,7 @@ export function buildMonthlyFinancialSeries(
     const ingresos = cobros
       .filter((cobro) => cobro.estado === "cobrado")
       .filter((cobro) => {
-        const date = new Date(getCobroAccountingDate(cobro));
+        const date = fechaStringAFechaLocal(getCobroAccountingDate(cobro));
         return formatMonthKey(date) === monthKey;
       })
       .reduce((total, cobro) => total + cobro.monto, 0);

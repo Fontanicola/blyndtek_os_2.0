@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { ChevronDownIcon, SearchIcon } from "@/components/ui/icons";
 import { cn } from "@/lib/cn";
 import type { ReactNode } from "react";
 
@@ -23,41 +24,6 @@ export type EntitySelectProps = {
   className?: string;
   helperText?: ReactNode;
 };
-
-function ChevronIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.6"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-      className="h-4 w-4"
-    >
-      <path d="m6 9 6 6 6-6" />
-    </svg>
-  );
-}
-
-function SearchIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.6"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-      className="h-4 w-4"
-    >
-      <circle cx="11" cy="11" r="7" />
-      <path d="m20 20-3.5-3.5" />
-    </svg>
-  );
-}
 
 export function EntitySelect({
   label,
@@ -151,7 +117,7 @@ export function EntitySelect({
       >
         <span className={cn("min-w-0 flex-1 truncate", !selectedOption && "text-graphite")}>{displayValue}</span>
         <span className="shrink-0 text-graphite">
-          <ChevronIcon />
+          <ChevronDownIcon />
         </span>
       </button>
 
@@ -162,7 +128,7 @@ export function EntitySelect({
           <div className="border-b border-line-soft p-3">
             <div className="relative">
               <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-graphite">
-                <SearchIcon />
+          <SearchIcon />
               </span>
               <input
                 ref={searchRef}

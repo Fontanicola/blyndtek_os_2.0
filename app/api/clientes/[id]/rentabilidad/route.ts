@@ -8,6 +8,7 @@ import {
 } from "@/lib/finanzas";
 import { calcularEgresosPeriodo } from "@/lib/finanzas/calcularEgresosPeriodo";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { fechaStringAFechaLocal } from "@/lib/utils/fechas";
 import type { Egreso } from "@/types/egresos";
 import type { Suscripcion } from "@/types/suscripciones";
 
@@ -68,7 +69,7 @@ function isValidDate(value: string | null | undefined) {
     return false;
   }
 
-  const parsed = new Date(value);
+  const parsed = fechaStringAFechaLocal(value);
   return !Number.isNaN(parsed.getTime());
 }
 
@@ -149,8 +150,8 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
           return false;
         }
 
-        const fechaInicioOk = !suscripcion.fecha_inicio || new Date(suscripcion.fecha_inicio) <= today;
-        const fechaBajaOk = !suscripcion.fecha_baja || new Date(suscripcion.fecha_baja) > today;
+        const fechaInicioOk = !suscripcion.fecha_inicio || fechaStringAFechaLocal(suscripcion.fecha_inicio) <= today;
+        const fechaBajaOk = !suscripcion.fecha_baja || fechaStringAFechaLocal(suscripcion.fecha_baja) > today;
         return fechaInicioOk && fechaBajaOk;
       })
       .reduce((total, suscripcion) => total + suscripcion.monto_mensual, 0);
@@ -158,7 +159,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
     const ingresoCobradoPeriodo = cobros
       .filter((cobro) => isValidDate(cobro.fecha_cobro ?? cobro.fecha_emision))
       .filter((cobro) => {
-        const fecha = new Date(cobro.fecha_cobro ?? cobro.fecha_emision);
+        const fecha = fechaStringAFechaLocal(cobro.fecha_cobro ?? cobro.fecha_emision);
         return isWithinRange(fecha, periodStart, periodEnd);
       })
       .reduce((total, cobro) => total + cobro.monto, 0);
@@ -174,7 +175,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
       const ingresos = cobros
         .filter((cobro) => isValidDate(cobro.fecha_cobro ?? cobro.fecha_emision))
         .filter((cobro) => {
-          const fecha = new Date(cobro.fecha_cobro ?? cobro.fecha_emision);
+          const fecha = fechaStringAFechaLocal(cobro.fecha_cobro ?? cobro.fecha_emision);
           return isWithinRange(fecha, monthStart, monthEnd);
         })
         .reduce((total, cobro) => total + cobro.monto, 0);

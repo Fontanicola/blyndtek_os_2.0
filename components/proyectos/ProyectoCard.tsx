@@ -2,6 +2,7 @@
 
 import { Badge } from "@/components/ui";
 import { PROYECTO_ESTADO_LABELS } from "@/lib/proyectos";
+import { fechaStringAFechaLocal } from "@/lib/utils/fechas";
 import type { Proyecto } from "@/types/proyectos";
 
 type ProyectoCardProps = {
@@ -32,7 +33,7 @@ function formatShortDate(value: string | null | undefined) {
     return "Sin fecha";
   }
 
-  const date = new Date(value);
+  const date = fechaStringAFechaLocal(value);
 
   if (Number.isNaN(date.getTime())) {
     return "Sin fecha";
