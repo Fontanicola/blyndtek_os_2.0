@@ -1428,8 +1428,8 @@ export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
 
               <div className="overflow-hidden rounded-card border border-line-soft">
                 <div className="overflow-x-auto">
-                  <div className="min-w-[920px]">
-                    <div className="grid grid-cols-[minmax(280px,360px)_92px_110px_110px_120px_120px_96px] gap-3 border-b border-line-soft bg-paper px-4 py-3 text-xs font-label uppercase tracking-[0.08em] text-graphite">
+                  <div className="min-w-[1080px]">
+                    <div className="grid grid-cols-[minmax(280px,1.7fr)_92px_170px_170px_130px_140px_190px] gap-3 border-b border-line-soft bg-paper px-4 py-3 text-xs font-label uppercase tracking-[0.08em] text-graphite">
                       <span>Concepto</span>
                       <span>Tipo</span>
                       <span>Emisión</span>
@@ -1452,7 +1452,7 @@ export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
                           isOverdue ? "bg-danger-light/40" : ""
                         ].join(" ")}
                       >
-                        <div className="grid grid-cols-[minmax(280px,360px)_92px_110px_110px_120px_120px_96px] items-center gap-3 px-4 py-3 text-sm">
+                        <div className="grid grid-cols-[minmax(280px,1.7fr)_92px_170px_170px_130px_140px_190px] items-center gap-3 px-4 py-3 text-sm">
                           <span className="truncate font-label text-carbon">{cobro.concepto}</span>
                           <Badge variant="default">{cobro.tipo}</Badge>
                           <span className="whitespace-nowrap text-graphite" title={formatFecha(cobro.fecha_emision)}>
@@ -1463,12 +1463,12 @@ export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
                           </span>
                           <span className="text-carbon">{formatUSD(cobro.monto)}</span>
                           <CobroBadge estado={cobro.estado} />
-                          <div className="flex items-center justify-end gap-1">
+                          <div className="flex items-center justify-end gap-1 whitespace-nowrap">
                             {cobro.estado !== "cobrado" ? (
                               <button
                                 type="button"
                                 onClick={() => void handleMarkCobro(cobro)}
-                                className="rounded-pill px-3 py-1.5 text-xs font-label text-signal transition-colors duration-fast ease-fast hover:bg-signal-light"
+                                className="rounded-pill px-3 py-1.5 text-xs font-label text-signal transition-colors duration-fast ease-fast hover:bg-signal-light whitespace-nowrap"
                               >
                                 Marcar cobrado
                               </button>
@@ -1486,7 +1486,7 @@ export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
                               <button
                                 type="button"
                                 onClick={() => handleEditCobro(cobro)}
-                                className="rounded-pill px-3 py-1.5 text-xs font-label text-signal transition-colors duration-fast ease-fast hover:bg-signal-light"
+                                className="rounded-pill px-3 py-1.5 text-xs font-label text-signal transition-colors duration-fast ease-fast hover:bg-signal-light whitespace-nowrap"
                               >
                                 Editar
                               </button>
