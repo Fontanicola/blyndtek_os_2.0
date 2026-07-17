@@ -700,6 +700,7 @@
 | slug | text | No | identificador estable del agente |
 | nombre | text | No | nombre visible en UI |
 | descripcion | text | Sí | descripción resumida |
+| tipo | text/enum (`analista|generador|ejecutor|vigilante`) | No | clasificación usada por el AI Hub |
 | activo | bool | No | habilita / oculta el agente |
 | color | text | No | variante visual del agente |
 | created_at | timestamptz | No |  |
@@ -735,6 +736,9 @@
 | tipo | text/enum (`automatico|bajo_demanda`) | No | origen del análisis |
 | datos_calculados | jsonb | No | snapshot de métricas determinísticas |
 | analisis_texto | text | No | síntesis redactada por Claude |
+| tokens_entrada | integer | Sí | tokens consumidos por Claude en la entrada |
+| tokens_salida | integer | Sí | tokens generados por Claude en la salida |
+| costo_estimado_usd | numeric | Sí | costo estimado con precio de Sonnet |
 | generado_por | uuid | Sí | FK → `usuarios` cuando fue manual |
 | created_at | timestamptz | No |  |
 

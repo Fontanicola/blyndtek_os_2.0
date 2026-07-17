@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { AgentesClient, type AgenteConDetalle } from "@/components/agentes/AgentesClient";
 import { getCurrentUser, getDefaultRouteForRole } from "@/lib/auth";
+import { fetchAgentesCostoTotal, fetchAgentesFeed } from "@/lib/agentes/hub";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { normalizeAgenteConfig } from "@/lib/agentes/agentes";
 import type { Agente, AgenteAnalisis, AgenteConfigRow, AgentesDatabase } from "@/types/agentes";
@@ -38,6 +39,10 @@ export default async function AgentesPage() {
   const agentes = (agentesData ?? []) as Agente[];
   const configs = (configData ?? []) as AgenteConfigRow[];
   const analisis = (analisisData ?? []) as AgenteAnalisis[];
+  const [feed, costoActualMes] = await Promise.all([
+    fetchAgentesFeed(supabase, 100),
+    fetchAgentesCostoTotal(supabase, "month")
+  ]);
 
   const configsByAgentId = new Map<string, AgenteConfigRow[]>();
   for (const row of configs) {
@@ -59,5 +64,5 @@ export default async function AgentesPage() {
     analyses: analysesByAgentId.get(agente.id) ?? []
   }));
 
-  return <AgentesClient agentes={agentesConDetalle} />;
+  return <AgentesClient agentes={agentesConDetalle} feed={feed} costoActualMes={costoActualMes} />;
 }

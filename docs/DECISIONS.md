@@ -480,6 +480,13 @@
 - Los SVG dibujados a mano quedan prohibidos para íconos de interfaz; sólo se conservan las excepciones ya definidas: logos de marca, gráficos de datos y los fondos circulares de `MetricaCard` y tiles de Archivos.
 - Esta decisión evita que cada módulo vuelva a inventar su propio trazo, grosor o variante visual para representar el mismo concepto.
 
+## 2026-07-17 — AI Hub unificado por tipo de agente
+
+- `/agentes` pasa a ser la vista unificada de todo lo que hace la IA en Blyndtek OS: análisis, generación de checklists y AI Dev aparecen juntos en un solo hub.
+- Los agentes se registran en la tabla `agentes` con su `tipo` correspondiente (`analista`, `generador`, `ejecutor`, `vigilante`) para agruparlos automáticamente en la UI y en el feed.
+- El costo de IA del hub se consolida desde los registros reales de `agente_analisis` y `ai_dev_ejecuciones`; no se inventan costos ni se mantienen contadores paralelos.
+- Antes de sumar un agente nuevo, primero se crea o actualiza su fila en `agentes` con el tipo correcto para que aparezca en el hub sin lógica ad-hoc adicional.
+
 ## 2026-07-17 — Helper de fechas seguro para valores opcionales
 
 - `lib/utils/fechas.ts` debe tratar `null` y `undefined` de forma segura en toda función pública: fechas ausentes nunca pueden terminar en un `.split()` o en una construcción de `Date` que asuma presencia.

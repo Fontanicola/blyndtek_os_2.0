@@ -1,11 +1,14 @@
 import type { Json, Database } from "@/types/supabase";
 import type { Usuario } from "@/types/auth";
 
+export type AgenteTipo = "analista" | "generador" | "ejecutor" | "vigilante";
+
 export type Agente = {
   id: string;
   slug: string;
   nombre: string;
   descripcion: string | null;
+  tipo: AgenteTipo;
   activo: boolean;
   color: string;
   created_at: string;
@@ -35,6 +38,9 @@ export type AgenteAnalisis = {
   tipo: AgenteAnalisisTipo;
   datos_calculados: Json;
   analisis_texto: string;
+  tokens_entrada: number | null;
+  tokens_salida: number | null;
+  costo_estimado_usd: number | null;
   generado_por: string | null;
   created_at: string;
 };
@@ -51,6 +57,7 @@ export type AgentesDatabase = Database & {
         Insert: Omit<Agente, "id" | "created_at"> & {
           id?: string;
           descripcion?: string | null;
+          tipo?: AgenteTipo;
           activo?: boolean;
           color?: string;
           created_at?: string;
@@ -71,6 +78,9 @@ export type AgentesDatabase = Database & {
         Row: AgenteAnalisis;
         Insert: Omit<AgenteAnalisis, "id" | "created_at"> & {
           id?: string;
+          tokens_entrada?: number | null;
+          tokens_salida?: number | null;
+          costo_estimado_usd?: number | null;
           created_at?: string;
         };
         Update: Partial<AgenteAnalisis>;

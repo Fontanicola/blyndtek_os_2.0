@@ -133,6 +133,14 @@ Estado general actual: Fase 0 completa. Cimientos técnicos listos: documentaci�
 - Ahora la ficha consume `useCajas()`, filtra `cajasActivas` y se las pasa a `EgresoModal`, por lo que el selector muestra las mismas opciones que el flujo general.
 - Verificación local completa: `npm run lint` y `npm run build` pasaron sin errores.
 
+## Actualización 2026-07-17
+
+- `/agentes` quedó reorganizado como AI Hub real: los 3 agentes existentes se agrupan por tipo (`analista`, `generador`, `ejecutor`) y se ocultan secciones vacías.
+- Se agregaron `app/api/agentes/feed/route.ts` y `app/api/agentes/costo-total/route.ts` para unificar actividad y costo de IA entre el Asesor Financiero, Checklist QA y AI Dev.
+- `app/api/agentes/asesor-financiero/analizar/route.ts` ahora persiste `tokens_entrada`, `tokens_salida` y `costo_estimado_usd`, de modo que el costo mensual del hub incluye el análisis real del asesor además de AI Dev.
+- La UI del hub ahora muestra métricas de costo y acciones semanales, detalle configurable para Asesor Financiero, paneles de solo lectura para los otros agentes y un timeline unificado de actividad reciente.
+- Verificación local completa: `npm run lint` y `npm run build` pasaron sin errores.
+
 ## Fase 0 — Cimientos
 
 ### ✅ 0.1 — Documentación fundacional

@@ -25,6 +25,10 @@ type AnthropicResponse = {
         type: string;
       }
   >;
+  usage?: {
+    input_tokens?: number;
+    output_tokens?: number;
+  };
   error?: {
     message?: string;
   };
@@ -213,6 +217,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Claude no devolvió contenido textual." }, { status: 500 });
     }
 
+    const tokensEntrada = anthropicPayload.usage?.input_tokens ?? null;
+    const tokensSalida = anthropicPayload.usage?.output_tokens ?? null;
+    const costoEstimadoUsd =
+      tokensEntrada !== null || tokensSalida !== null
+        ? Number((((tokensEntrada ?? 0) / 1_000_000) * 3 + ((tokensSalida ?? 0) / 1_000_000) * 15).toFixed(6))
+        : null;
+
     const tipo: AgenteAnalisis["tipo"] = cronAuthorized ? "automatico" : "bajo_demanda";
     const { data: insertado, error: insertError } = await supabase
       .from("agente_analisis")
@@ -225,6 +236,9 @@ export async function POST(request: NextRequest) {
           metricas
         },
         analisis_texto: analisisTexto,
+        tokens_entrada: tokensEntrada,
+        tokens_salida: tokensSalida,
+        costo_estimado_usd: costoEstimadoUsd,
         generado_por: currentUser?.id ?? null
       })
       .select("*")
