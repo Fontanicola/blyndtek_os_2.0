@@ -711,7 +711,7 @@
 
 **FKs:** `agente_id` → `agentes.id`
 
-**Uso:** configuración persistente por agente, editable desde `/agentes`.
+**Uso:** configuración persistente por agente, editable desde `/ai-hub/agentes`.
 
 | Campo | Tipo | Nullable | Notas |
 | --- | --- | --- | --- |

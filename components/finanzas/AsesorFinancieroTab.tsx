@@ -112,7 +112,7 @@ export function AsesorFinancieroTab({ analisisReciente, showToast }: AsesorFinan
             <Button variant="primary" onClick={() => void handleAnalizarAhora()} loading={loading}>
               Analizar ahora
             </Button>
-            <Link href="/agentes" className="text-sm text-graphite transition-colors duration-fast ease-fast hover:text-carbon">
+            <Link href="/ai-hub/agentes" className="text-sm text-graphite transition-colors duration-fast ease-fast hover:text-carbon">
               Ver historial completo
             </Link>
           </div>
@@ -169,7 +169,7 @@ export function AsesorFinancieroTab({ analisisReciente, showToast }: AsesorFinan
           <Button variant="primary" loading={loading} onClick={() => void handleAnalizarAhora()}>
             Analizar ahora
           </Button>
-          <Link href="/agentes" className="text-sm text-graphite transition-colors duration-fast ease-fast hover:text-carbon">
+          <Link href="/ai-hub/agentes" className="text-sm text-graphite transition-colors duration-fast ease-fast hover:text-carbon">
             Ver historial completo
           </Link>
         </div>

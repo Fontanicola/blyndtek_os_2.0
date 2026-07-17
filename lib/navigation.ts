@@ -1,18 +1,20 @@
 import { createElement } from "react";
 import {
+  BellIcon,
+  BotIcon,
   CalendarioIcon,
   ClientesIcon,
   DashboardIcon,
   ArchivosIcon,
   FinanzasIcon,
-  SaasIcon,
   OutboundIcon,
-  AgentesIcon,
+  SparklesIcon,
+  SaasIcon,
   NotasIcon,
   WikiIcon,
   ProyectosIcon,
   TareasIcon
-} from "@/components/icons";
+} from "@/components/ui/icons";
 import type { NavItem } from "@/types/navigation";
 
 export const navigationItems: NavItem[] = [
@@ -33,7 +35,7 @@ export const navigationItems: NavItem[] = [
   {
     label: "Leads",
     href: "/leads",
-    icon: createElement(OutboundIcon),
+    icon: createElement(BotIcon),
     roles: ["admin", "comercial"],
     section: "comercial"
   },
@@ -108,11 +110,33 @@ export const navigationItems: NavItem[] = [
     section: "control"
   },
   {
-    label: "Agentes",
-    href: "/agentes",
-    icon: createElement(AgentesIcon),
+    label: "AI Hub",
+    icon: createElement(BotIcon),
     roles: ["admin"],
-    section: "control"
+    section: "control",
+    children: [
+      {
+        label: "Centro IA",
+        href: "/ai-hub",
+        icon: createElement(SparklesIcon),
+        roles: ["admin"],
+        section: "control"
+      },
+      {
+        label: "Agentes",
+        href: "/ai-hub/agentes",
+        icon: createElement(BotIcon),
+        roles: ["admin"],
+        section: "control"
+      },
+      {
+        label: "Actividad",
+        href: "/ai-hub/actividad",
+        icon: createElement(BellIcon),
+        roles: ["admin"],
+        section: "control"
+      }
+    ]
   }
 ];
 
@@ -127,5 +151,22 @@ export function getPageLabel(pathname: string) {
     return "Perfil";
   }
 
-  return navigationItems.find((item) => item.href === pathname)?.label ?? "Blyndtek OS";
+  function findLabel(items: NavItem[]): string | null {
+    for (const item of items) {
+      if (item.href === pathname) {
+        return item.label;
+      }
+
+      if (item.children) {
+        const childLabel = findLabel(item.children);
+        if (childLabel) {
+          return childLabel;
+        }
+      }
+    }
+
+    return null;
+  }
+
+  return findLabel(navigationItems) ?? "Blyndtek OS";
 }

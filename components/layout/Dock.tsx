@@ -18,7 +18,7 @@ function isActivePath(pathname: string, href: string) {
 export function Dock({ usuario }: DockProps) {
   const pathname = usePathname() ?? "/";
   const visibleItems = useMemo(
-    () => (usuario ? navigationItems.filter((item) => item.roles.includes(usuario.rol)) : []),
+    () => (usuario ? navigationItems.filter((item) => item.roles.includes(usuario.rol) && Boolean(item.href)) : []),
     [usuario]
   );
 
@@ -27,12 +27,17 @@ export function Dock({ usuario }: DockProps) {
       <div className="pointer-events-auto max-w-[calc(100vw-1rem)] overflow-x-auto">
         <nav className="flex items-end gap-1 rounded-[24px] border border-white/10 bg-carbon px-3 py-2 shadow-modal backdrop-blur-sm">
           {visibleItems.map((item) => {
-            const active = isActivePath(pathname, item.href);
+            const href = item.href;
+            if (!href) {
+              return null;
+            }
+
+            const active = isActivePath(pathname, href);
 
             return (
               <Link
-                key={item.href}
-                href={item.href}
+                key={href}
+                href={href}
                 className="group relative flex h-11 w-11 flex-none items-center justify-center rounded-[16px] outline-none transition-transform duration-fast ease-fast hover:scale-110 focus:scale-110"
                 aria-label={item.label}
                 title={item.label}

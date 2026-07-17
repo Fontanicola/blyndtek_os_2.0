@@ -15,7 +15,7 @@ function parseLimit(value: string | null) {
     return 30;
   }
 
-  return Math.max(1, Math.min(100, Math.trunc(parsed)));
+  return Math.max(1, Math.min(500, Math.trunc(parsed)));
 }
 
 export async function GET(request: Request) {

@@ -28,7 +28,7 @@ Estado general actual: Fase 0 completa. Cimientos técnicos listos: documentaci�
 - Se corrigieron 3 bugs aislados del Asesor Financiero:
   - `caja_actual_usd` ahora usa la misma lógica real que Tesorería (`balance_total`) mediante el helper compartido `lib/finanzas/tesoreria.ts`, en lugar de un cálculo propio.
   - `runway_estado` ahora viaja explícitamente al análisis: cuando el negocio está en estado `estable`, el asesor ya no lo muestra como `0 meses`; la UI lo presenta como `Estable` y el prompt de Claude lo trata como buena noticia, no como riesgo.
-  - `analisis_texto` ahora se renderiza como Markdown real en `/finanzas → Asesor` y en `/agentes`, por lo que headings, negrita y separadores dejan de verse como texto crudo.
+  - `analisis_texto` ahora se renderiza como Markdown real en `/finanzas → Asesor` y en `/ai-hub/agentes`, por lo que headings, negrita y separadores dejan de verse como texto crudo.
 - Verificación local completa:
   - `npm run lint` pasó sin errores.
   - `npm run build` pasó sin errores.
@@ -119,7 +119,7 @@ Estado general actual: Fase 0 completa. Cimientos técnicos listos: documentaci�
 
 ## Actualización 2026-07-15
 
-- Se agregó la sección admin-only `Agentes` en la navegación y se creó la vista `/agentes` para configurar agentes escalables, por ahora con `Asesor Financiero` como primer caso.
+- Se agregó la sección admin-only `Agentes` en la navegación y se reestructuró como AI Hub con las subsecciones `/ai-hub`, `/ai-hub/agentes` y `/ai-hub/actividad`, manteniendo `Asesor Financiero` como primer caso.
 - `lib/agentes/calcularMetricasAsesor.ts` calcula la base determinística real del asesor con runway, margen, excedente, capacidad, pipeline y concentración de riesgo; la IA solo sintetiza ese snapshot, no inventa números.
 - Se creó `app/api/agentes/asesor-financiero/analizar/route.ts` para generar y persistir análisis con Claude (`claude-sonnet-4-6`), y se agregó la tab `Asesor` dentro de Finanzas para mostrar el análisis reciente y dispararlo bajo demanda.
 - La automatización mensual quedó montada con el mismo patrón recurrente ya usado en el repo: `pg_cron` / `net.http_post` hacia la route de análisis, condicionado por `agente_config.resumen_automatico_activo`.
@@ -135,7 +135,7 @@ Estado general actual: Fase 0 completa. Cimientos técnicos listos: documentaci�
 
 ## Actualización 2026-07-17
 
-- `/agentes` quedó reorganizado como AI Hub real: los 3 agentes existentes se agrupan por tipo (`analista`, `generador`, `ejecutor`) y se ocultan secciones vacías.
+- `AI Hub` quedó reorganizado con sus 3 subsecciones reales: `Centro IA`, `Agentes` y `Actividad`; además, los 3 agentes existentes se distinguen por badge de tipo en una sola grilla y el feed unificado concentra la actividad de Asesor Financiero, Checklist QA y AI Dev.
 - Se agregaron `app/api/agentes/feed/route.ts` y `app/api/agentes/costo-total/route.ts` para unificar actividad y costo de IA entre el Asesor Financiero, Checklist QA y AI Dev.
 - `app/api/agentes/asesor-financiero/analizar/route.ts` ahora persiste `tokens_entrada`, `tokens_salida` y `costo_estimado_usd`, de modo que el costo mensual del hub incluye el análisis real del asesor además de AI Dev.
 - La UI del hub ahora muestra métricas de costo y acciones semanales, detalle configurable para Asesor Financiero, paneles de solo lectura para los otros agentes y un timeline unificado de actividad reciente.

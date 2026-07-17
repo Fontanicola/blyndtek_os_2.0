@@ -1,15 +1,15 @@
 import { redirect } from "next/navigation";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { AgentesClient, type AgenteConDetalle } from "@/components/agentes/AgentesClient";
+import { AiHubAgentesClient, type AiHubAgenteConDetalle } from "@/components/ai-hub/AiHubAgentesClient";
 import { getCurrentUser, getDefaultRouteForRole } from "@/lib/auth";
-import { fetchAgentesCostoTotal, fetchAgentesFeed } from "@/lib/agentes/hub";
+import { fetchAgentesFeed } from "@/lib/agentes/hub";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { normalizeAgenteConfig } from "@/lib/agentes/agentes";
 import type { Agente, AgenteAnalisis, AgenteConfigRow, AgentesDatabase } from "@/types/agentes";
 
 export const dynamic = "force-dynamic";
 
-export default async function AgentesPage() {
+export default async function AiHubAgentesPage() {
   const usuario = await getCurrentUser();
 
   if (!usuario) {
@@ -26,9 +26,9 @@ export default async function AgentesPage() {
     { data: configData, error: configError },
     { data: analisisData, error: analisisError }
   ] = await Promise.all([
-    supabase.from("agentes").select("*").eq("activo", true).order("created_at", { ascending: true }),
+    supabase.from("agentes").select("*").order("created_at", { ascending: true }),
     supabase.from("agente_config").select("*"),
-    supabase.from("agente_analisis").select("*").order("created_at", { ascending: false }).limit(20)
+    supabase.from("agente_analisis").select("*").order("created_at", { ascending: false }).limit(50)
   ]);
 
   const errors = [agentesError, configError, analisisError].filter(Boolean);
@@ -38,11 +38,8 @@ export default async function AgentesPage() {
 
   const agentes = (agentesData ?? []) as Agente[];
   const configs = (configData ?? []) as AgenteConfigRow[];
-  const analisis = (analisisData ?? []) as AgenteAnalisis[];
-  const [feed, costoActualMes] = await Promise.all([
-    fetchAgentesFeed(supabase, 100),
-    fetchAgentesCostoTotal(supabase, "month")
-  ]);
+  const analyses = (analisisData ?? []) as AgenteAnalisis[];
+  const feed = await fetchAgentesFeed(supabase, 500);
 
   const configsByAgentId = new Map<string, AgenteConfigRow[]>();
   for (const row of configs) {
@@ -52,17 +49,17 @@ export default async function AgentesPage() {
   }
 
   const analysesByAgentId = new Map<string, AgenteAnalisis[]>();
-  for (const row of analisis) {
+  for (const row of analyses) {
     const current = analysesByAgentId.get(row.agente_id) ?? [];
     current.push(row);
     analysesByAgentId.set(row.agente_id, current);
   }
 
-  const agentesConDetalle: AgenteConDetalle[] = agentes.map((agente) => ({
+  const agentesConDetalle: AiHubAgenteConDetalle[] = agentes.map((agente) => ({
     ...agente,
     config: normalizeAgenteConfig(configsByAgentId.get(agente.id) ?? []),
     analyses: analysesByAgentId.get(agente.id) ?? []
   }));
 
-  return <AgentesClient agentes={agentesConDetalle} feed={feed} costoActualMes={costoActualMes} />;
+  return <AiHubAgentesClient agentes={agentesConDetalle} feed={feed} />;
 }

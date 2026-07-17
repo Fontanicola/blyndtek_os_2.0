@@ -1,6 +1,6 @@
 "use client";
 
-import { BellIcon, MenuIcon } from "@/components/icons";
+import { BellIcon, MenuIcon } from "@/components/ui/icons";
 import { UserAvatar } from "@/components/ui";
 import { getPageLabel } from "@/lib/navigation";
 import type { Usuario } from "@/types/auth";

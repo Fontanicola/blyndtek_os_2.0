@@ -482,7 +482,7 @@
 
 ## 2026-07-17 — AI Hub unificado por tipo de agente
 
-- `/agentes` pasa a ser la vista unificada de todo lo que hace la IA en Blyndtek OS: análisis, generación de checklists y AI Dev aparecen juntos en un solo hub.
+- `/ai-hub` pasa a ser la vista unificada de todo lo que hace la IA en Blyndtek OS: análisis, generación de checklists y AI Dev aparecen juntos en un solo hub.
 - Los agentes se registran en la tabla `agentes` con su `tipo` correspondiente (`analista`, `generador`, `ejecutor`, `vigilante`) para agruparlos automáticamente en la UI y en el feed.
 - El costo de IA del hub se consolida desde los registros reales de `agente_analisis` y `ai_dev_ejecuciones`; no se inventan costos ni se mantienen contadores paralelos.
 - Antes de sumar un agente nuevo, primero se crea o actualiza su fila en `agentes` con el tipo correcto para que aparezca en el hub sin lógica ad-hoc adicional.

@@ -26,6 +26,25 @@ export type AgentesHubCostoTotal = {
   desglose: AgentesHubCostoItem[];
 };
 
+export type AgentesHubCostoHistoricoSerie = {
+  slug: string;
+  label: string;
+  color: string;
+};
+
+export type AgentesHubCostoHistoricoPoint = {
+  mes: string;
+  mes_key: string;
+  total_usd: number;
+  [key: string]: number | string;
+};
+
+export type AgentesHubCostoHistorico = {
+  series: AgentesHubCostoHistoricoSerie[];
+  data: AgentesHubCostoHistoricoPoint[];
+  total_usd: number;
+};
+
 type AgenteRow = Pick<Agente, "id" | "slug" | "nombre" | "tipo">;
 
 type ChecklistQaRow = {
@@ -56,6 +75,34 @@ type AgentAnalysisRow = Pick<AgenteAnalisis, "id" | "agente_id" | "analisis_text
 
 function monthKey(date = new Date()) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function parseMonthKey(value: string) {
+  const [yearValue, monthValue] = value.split("-");
+  const year = Number(yearValue);
+  const month = Number(monthValue);
+  return new Date(year, month - 1, 1);
+}
+
+function getHistoricalMonthKeys(months = 6, referenceDate = new Date()) {
+  const current = new Date(referenceDate.getFullYear(), referenceDate.getMonth(), 1);
+  const keys: string[] = [];
+
+  for (let offset = months - 1; offset >= 0; offset -= 1) {
+    const monthDate = new Date(current.getFullYear(), current.getMonth() - offset, 1);
+    keys.push(monthKey(monthDate));
+  }
+
+  return keys;
+}
+
+function formatHistoricalMonthLabel(monthKeyValue: string) {
+  return new Intl.DateTimeFormat("es-AR", { month: "short", year: "numeric" }).format(parseMonthKey(monthKeyValue));
+}
+
+function getSerieColor(index: number) {
+  const colors = ["#1F44FF", "#38A169", "#D97706", "#E11D48", "#6B7280"];
+  return colors[index % colors.length] ?? "#1F44FF";
 }
 
 function startOfPeriod(period: AgentesHubPeriod, referenceDate = new Date()) {
@@ -158,7 +205,7 @@ function buildAgenteFeedFromAiDev(rows: AiDevExecutionRow[]): AgentesHubFeedItem
 }
 
 export async function fetchAgentesFeed(supabase: SupabaseClient<AgentesDatabase>, limit = 30) {
-  const fetchLimit = Math.max(10, Math.min(limit * 3, 100));
+  const fetchLimit = Math.max(10, Math.min(limit * 3, 500));
 
   const [{ data: analysesData, error: analysesError }, { data: checklistData, error: checklistError }, { data: aiDevData, error: aiDevError }] =
     await Promise.all([
@@ -298,6 +345,124 @@ export async function fetchAgentesCostoTotal(
   const total_usd = Number(desglose.reduce((total, item) => total + item.costo_usd, 0).toFixed(6));
 
   return { total_usd, desglose };
+}
+
+type HistoricalCostRow = {
+  costo_estimado_usd: number | null;
+  created_at?: string;
+  iniciado_at?: string;
+  agentes?: {
+    slug?: string | null;
+    nombre?: string | null;
+    tipo?: AgenteTipo | null;
+  } | null;
+};
+
+export async function fetchAgentesCostoHistorico(
+  supabase: SupabaseClient<AgentesDatabase>,
+  months = 6,
+  referenceDate = new Date()
+): Promise<AgentesHubCostoHistorico> {
+  const monthKeys = getHistoricalMonthKeys(months, referenceDate);
+  const periodStart = new Date(parseMonthKey(monthKeys[0] ?? monthKey(referenceDate)).getTime());
+  const periodStartIso = periodStart.toISOString();
+
+  const [analysesResult, aiDevResult] = await Promise.all([
+    supabase
+      .from("agente_analisis")
+      .select(
+        `
+          costo_estimado_usd,
+          created_at,
+          agentes (
+            slug,
+            nombre,
+            tipo
+          )
+        `
+      )
+      .gte("created_at", periodStartIso),
+    supabase
+      .from("ai_dev_ejecuciones")
+      .select(
+        `
+          costo_estimado_usd,
+          iniciado_at
+        `
+      )
+      .gte("iniciado_at", periodStartIso)
+  ]);
+
+  const errors = [analysesResult.error, aiDevResult.error].filter(Boolean);
+  if (errors.length > 0) {
+    throw new Error(errors[0]?.message ?? "No se pudo cargar el histórico de costos.");
+  }
+
+  const rows = [
+    ...((analysesResult.data ?? []) as HistoricalCostRow[]),
+    ...((aiDevResult.data ?? []) as HistoricalCostRow[])
+  ];
+
+  const seriesMetaMap = new Map<string, AgentesHubCostoHistoricoSerie>();
+  const seriesByMonth = new Map<string, AgentesHubCostoHistoricoPoint>();
+
+  for (const monthKeyValue of monthKeys) {
+    seriesByMonth.set(monthKeyValue, { mes_key: monthKeyValue, mes: formatHistoricalMonthLabel(monthKeyValue), total_usd: 0 });
+  }
+
+  for (const row of rows) {
+    const costo = Number(row.costo_estimado_usd ?? 0);
+    if (costo <= 0) {
+      continue;
+    }
+
+    const dateValue = row.created_at ?? row.iniciado_at;
+    if (!dateValue) {
+      continue;
+    }
+
+    const monthValue = monthKey(new Date(dateValue));
+    const current = seriesByMonth.get(monthValue);
+    if (!current) {
+      continue;
+    }
+
+    const slug = row.agentes?.slug ?? "ai-dev";
+    const label = row.agentes?.nombre ?? (slug === "ai-dev" ? "Constructor de Fases (AI Dev)" : "Asesor Financiero");
+    const serie = seriesMetaMap.get(slug);
+
+    if (!serie) {
+      seriesMetaMap.set(slug, {
+        slug,
+        label,
+        color: getSerieColor(seriesMetaMap.size)
+      });
+    }
+
+    const currentValue = Number(current[slug] ?? 0);
+    current[slug] = Number((currentValue + costo).toFixed(6));
+    current.total_usd = Number((current.total_usd + costo).toFixed(6));
+  }
+
+  const series = Array.from(seriesMetaMap.values());
+  const data = monthKeys.map((monthValue) => {
+    const base = seriesByMonth.get(monthValue) ?? { mes_key: monthValue, mes: formatHistoricalMonthLabel(monthValue), total_usd: 0 };
+    const point: AgentesHubCostoHistoricoPoint = {
+      ...base
+    } as AgentesHubCostoHistoricoPoint;
+
+    for (const serie of series) {
+      point[serie.slug] = Number(point[serie.slug] ?? 0);
+    }
+
+    return point;
+  });
+
+  const total_usd = Number(
+    data.reduce((total, point) => total + Number(point.total_usd ?? 0), 0).toFixed(6)
+  );
+
+  return { series, data, total_usd };
 }
 
 export function getAgentesTipoSectionLabel(tipo: AgenteTipo) {
