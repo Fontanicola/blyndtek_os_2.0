@@ -1826,3 +1826,10 @@ $ find . -maxdepth 3 \( -name 'middleware.*' -o -name 'proxy.*' \) -not -path '.
 - Se centralizó el sistema de íconos en `components/ui/icons.tsx` con `lucide-react` y un grosor uniforme para toda la UI.
 - Se reemplazaron los SVG dibujados a mano en módulos de Archivos, Clientes, Login, Notas, Agentes, Proyectos, Finanzas, Dashboard, Perfil, Tareas, Calendario, Roadmap, Saas y componentes compartidos por el registro centralizado.
 - Aproximadamente 20 archivos quedaron tocados por esta limpieza; las excepciones respetadas fueron logo de marca, gráficos de datos y los fondos circulares permitidos en `MetricaCard` y tiles de Archivos.
+
+## 2026-07-17 — Helper de fechas blindado contra valores nulos
+
+- Se confirmó la causa del error en `/finanzas -> Cobros`: la base tiene `12` cobros con `fecha_vencimiento` nula, y el helper central `lib/utils/fechas.ts` hacía `split("-")` sin chequear `null`/`undefined`.
+- `lib/utils/fechas.ts` ahora es null-safe en `fechaInputAString`, `stringAFechaLocal`, `fechaStringAFechaLocal` y `formatearFechaDisplay`, devolviendo `null` o `"Sin fecha"` cuando corresponde.
+- Se reforzaron los consumidores que podían chocar con fechas opcionales: `lib/finanzas/calcularEgresosPeriodo.ts`, `lib/finanzas/runwayProjection.ts`, `app/api/finanzas/tesoreria/route.ts`, `app/api/clientes/[id]/rentabilidad/route.ts`, `app/api/productos/[id]/metricas/route.ts`, `lib/productos.ts` y `components/finanzas/SuscripcionesLista.tsx`.
+- Verificación local ejecutada: `npm run lint` y `npm run build` pasan correctamente.

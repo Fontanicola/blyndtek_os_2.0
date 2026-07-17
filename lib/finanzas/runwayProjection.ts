@@ -28,8 +28,10 @@ function sum(values: number[]) {
 function calculateActiveMrr(suscripciones: Suscripcion[], referenceDate: Date) {
   return suscripciones
     .filter((suscripcion) => {
-      const fechaInicioOk = !suscripcion.fecha_inicio || fechaStringAFechaLocal(suscripcion.fecha_inicio) <= referenceDate;
-      const fechaBajaOk = !suscripcion.fecha_baja || fechaStringAFechaLocal(suscripcion.fecha_baja) > referenceDate;
+      const fechaInicio = fechaStringAFechaLocal(suscripcion.fecha_inicio);
+      const fechaBaja = fechaStringAFechaLocal(suscripcion.fecha_baja);
+      const fechaInicioOk = !suscripcion.fecha_inicio || (fechaInicio != null && !Number.isNaN(fechaInicio.getTime()) && fechaInicio <= referenceDate);
+      const fechaBajaOk = !suscripcion.fecha_baja || (fechaBaja != null && !Number.isNaN(fechaBaja.getTime()) && fechaBaja > referenceDate);
       return suscripcion.estado === "activa" && fechaInicioOk && fechaBajaOk;
     })
     .reduce((total, suscripcion) => total + suscripcion.monto_mensual, 0);
@@ -65,7 +67,7 @@ function isValidDate(value: string | null | undefined) {
   }
 
   const parsed = fechaStringAFechaLocal(value);
-  return !Number.isNaN(parsed.getTime());
+  return parsed != null && !Number.isNaN(parsed.getTime());
 }
 
 function getFutureProjectionMonths(referenceDate: Date, months: number) {
@@ -113,7 +115,13 @@ function buildPendingIncomeSchedule(
       continue;
     }
 
-    const startMonth = startOfMonth(fechaStringAFechaLocal(suscripcion.fecha_inicio ?? ""));
+    const fechaInicio = fechaStringAFechaLocal(suscripcion.fecha_inicio);
+    if (!fechaInicio || Number.isNaN(fechaInicio.getTime())) {
+      suscripcionesSinFechaUsd += suscripcion.monto_mensual;
+      continue;
+    }
+
+    const startMonth = startOfMonth(fechaInicio);
 
     for (const monthDate of futureMonths) {
       if (monthDate < startMonth) {

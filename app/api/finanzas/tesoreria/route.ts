@@ -40,7 +40,14 @@ function updateLastMovement(current: string | null, candidate: string | null) {
     return candidate;
   }
 
-  return fechaStringAFechaLocal(candidate).getTime() > fechaStringAFechaLocal(current).getTime() ? candidate : current;
+  const candidateDate = fechaStringAFechaLocal(candidate);
+  const currentDate = fechaStringAFechaLocal(current);
+
+  if (!candidateDate || !currentDate || Number.isNaN(candidateDate.getTime()) || Number.isNaN(currentDate.getTime())) {
+    return candidate ?? current;
+  }
+
+  return candidateDate.getTime() > currentDate.getTime() ? candidate : current;
 }
 
 function getMonthKey(value: string | null | undefined) {
@@ -49,7 +56,7 @@ function getMonthKey(value: string | null | undefined) {
   }
 
   const date = fechaStringAFechaLocal(value);
-  if (Number.isNaN(date.getTime())) {
+  if (!date || Number.isNaN(date.getTime())) {
     return null;
   }
 

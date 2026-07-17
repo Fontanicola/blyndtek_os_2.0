@@ -479,3 +479,9 @@
 - Todos los íconos de UI del sistema se centralizan en `components/ui/icons.tsx`, que reexporta `lucide-react` con tamaño y `strokeWidth` estandarizados.
 - Los SVG dibujados a mano quedan prohibidos para íconos de interfaz; sólo se conservan las excepciones ya definidas: logos de marca, gráficos de datos y los fondos circulares de `MetricaCard` y tiles de Archivos.
 - Esta decisión evita que cada módulo vuelva a inventar su propio trazo, grosor o variante visual para representar el mismo concepto.
+
+## 2026-07-17 — Helper de fechas seguro para valores opcionales
+
+- `lib/utils/fechas.ts` debe tratar `null` y `undefined` de forma segura en toda función pública: fechas ausentes nunca pueden terminar en un `.split()` o en una construcción de `Date` que asuma presencia.
+- Muchas columnas de fecha del sistema son opcionales por diseño (`fecha_vencimiento`, `fecha_cobro`, `fecha_inicio`, `fecha_baja`, `fecha_limite`), así que el helper central debe devolver `null` o `"Sin fecha"` en vez de romper el render o el cálculo.
+- Cualquier nuevo consumidor del helper debe seguir esa misma regla y contemplar el caso vacío explícitamente en la UI, aunque el dato normalmente venga cargado.

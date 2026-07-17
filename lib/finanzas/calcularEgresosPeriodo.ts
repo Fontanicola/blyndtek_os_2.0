@@ -7,7 +7,7 @@ function isValidDate(value: string | null | undefined) {
   }
 
   const parsed = fechaStringAFechaLocal(value);
-  return !Number.isNaN(parsed.getTime());
+  return parsed != null && !Number.isNaN(parsed.getTime());
 }
 
 export function calcularEgresosPeriodo(egresos: Egreso[], start: Date, end: Date, clienteId?: string) {

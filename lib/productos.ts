@@ -65,8 +65,10 @@ export function getProductPeriodRange(period: DashboardPeriod): ProductPeriodRan
 }
 
 function isActiveAtDate(suscripcion: Suscripcion, referenceDate: Date) {
-  const fechaInicioOk = !suscripcion.fecha_inicio || fechaStringAFechaLocal(suscripcion.fecha_inicio) <= referenceDate;
-  const fechaBajaOk = !suscripcion.fecha_baja || fechaStringAFechaLocal(suscripcion.fecha_baja) > referenceDate;
+  const fechaInicio = fechaStringAFechaLocal(suscripcion.fecha_inicio);
+  const fechaBaja = fechaStringAFechaLocal(suscripcion.fecha_baja);
+  const fechaInicioOk = !suscripcion.fecha_inicio || (fechaInicio != null && !Number.isNaN(fechaInicio.getTime()) && fechaInicio <= referenceDate);
+  const fechaBajaOk = !suscripcion.fecha_baja || (fechaBaja != null && !Number.isNaN(fechaBaja.getTime()) && fechaBaja > referenceDate);
   return suscripcion.estado === "activa" && fechaInicioOk && fechaBajaOk;
 }
 

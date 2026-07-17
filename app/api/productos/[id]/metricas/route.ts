@@ -63,7 +63,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
       }
 
       const fechaInicio = fechaStringAFechaLocal(suscripcion.fecha_inicio);
-      return fechaInicio >= range.start && fechaInicio < range.end;
+      return fechaInicio != null && !Number.isNaN(fechaInicio.getTime()) && fechaInicio >= range.start && fechaInicio < range.end;
     }).length;
     const bajasPeriodo = subscriptions.filter((suscripcion) => {
       if (suscripcion.estado !== "baja" || !suscripcion.fecha_baja) {
@@ -71,7 +71,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
       }
 
       const fechaBaja = fechaStringAFechaLocal(suscripcion.fecha_baja);
-      return fechaBaja >= range.start && fechaBaja < range.end;
+      return fechaBaja != null && !Number.isNaN(fechaBaja.getTime()) && fechaBaja >= range.start && fechaBaja < range.end;
     }).length;
     const suscriptoresInicio = countProductActiveAtDate(subscriptions, productId, range.start);
 

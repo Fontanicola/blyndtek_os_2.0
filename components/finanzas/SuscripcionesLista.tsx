@@ -10,6 +10,15 @@ import type { Cliente } from "@/types/clientes";
 import type { Cotizacion } from "@/types/cotizaciones";
 import type { Suscripcion } from "@/types/suscripciones";
 
+function getDateOrNull(value: string | null | undefined) {
+  if (!value) {
+    return null;
+  }
+
+  const parsed = fechaStringAFechaLocal(value);
+  return parsed && !Number.isNaN(parsed.getTime()) ? parsed : null;
+}
+
 type SuscripcionesListaProps = {
   suscripciones: Suscripcion[];
   clientes: Array<Pick<Cliente, "id" | "empresa">>;
@@ -61,14 +70,17 @@ export function SuscripcionesLista({
     const related = cobros
       .filter((cobro) => cobro.suscripcion_id === suscripcion.id)
       .sort((first, second) => {
-        const diffA = Math.abs(
-          fechaStringAFechaLocal(first.fecha_vencimiento).getTime() -
-            fechaStringAFechaLocal(suscripcion.proxima_cobro ?? first.fecha_vencimiento).getTime()
-        );
-        const diffB = Math.abs(
-          fechaStringAFechaLocal(second.fecha_vencimiento).getTime() -
-            fechaStringAFechaLocal(suscripcion.proxima_cobro ?? second.fecha_vencimiento).getTime()
-        );
+        const firstDate = getDateOrNull(first.fecha_vencimiento);
+        const secondDate = getDateOrNull(second.fecha_vencimiento);
+        const targetFirst = getDateOrNull(suscripcion.proxima_cobro ?? first.fecha_vencimiento);
+        const targetSecond = getDateOrNull(suscripcion.proxima_cobro ?? second.fecha_vencimiento);
+
+        if (!firstDate || !secondDate || !targetFirst || !targetSecond) {
+          return 0;
+        }
+
+        const diffA = Math.abs(firstDate.getTime() - targetFirst.getTime());
+        const diffB = Math.abs(secondDate.getTime() - targetSecond.getTime());
         return diffA - diffB;
       });
 
@@ -85,7 +97,8 @@ export function SuscripcionesLista({
       return false;
     }
 
-    return fechaStringAFechaLocal(suscripcion.proxima_cobro) <= startOfToday;
+    const proximaCobro = getDateOrNull(suscripcion.proxima_cobro);
+    return proximaCobro != null && proximaCobro <= startOfToday;
   }
 
   return (
@@ -119,7 +132,8 @@ export function SuscripcionesLista({
                 (() => {
                   const cycleCobro = getCurrentCycleCobro(suscripcion);
                   const proximaCobro = suscripcion.proxima_cobro;
-                  const overdueWithoutCobro = !cycleCobro && proximaCobro ? fechaStringAFechaLocal(proximaCobro) < startOfToday : false;
+                  const proximaCobroDate = getDateOrNull(proximaCobro);
+                  const overdueWithoutCobro = !cycleCobro && proximaCobroDate ? proximaCobroDate < startOfToday : false;
                   const isOverdue = cycleCobro ? cycleCobro.estado === "pendiente" && isCobroVencido(cycleCobro) : overdueWithoutCobro;
                   return isOverdue ? "border border-danger/30 bg-danger-light" : "bg-white";
                 })()

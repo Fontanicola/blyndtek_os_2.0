@@ -70,7 +70,7 @@ function isValidDate(value: string | null | undefined) {
   }
 
   const parsed = fechaStringAFechaLocal(value);
-  return !Number.isNaN(parsed.getTime());
+  return parsed != null && !Number.isNaN(parsed.getTime());
 }
 
 function isWithinRange(date: Date, start: Date, end: Date) {
@@ -150,8 +150,10 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
           return false;
         }
 
-        const fechaInicioOk = !suscripcion.fecha_inicio || fechaStringAFechaLocal(suscripcion.fecha_inicio) <= today;
-        const fechaBajaOk = !suscripcion.fecha_baja || fechaStringAFechaLocal(suscripcion.fecha_baja) > today;
+        const fechaInicio = fechaStringAFechaLocal(suscripcion.fecha_inicio);
+        const fechaBaja = fechaStringAFechaLocal(suscripcion.fecha_baja);
+        const fechaInicioOk = !suscripcion.fecha_inicio || (fechaInicio != null && !Number.isNaN(fechaInicio.getTime()) && fechaInicio <= today);
+        const fechaBajaOk = !suscripcion.fecha_baja || (fechaBaja != null && !Number.isNaN(fechaBaja.getTime()) && fechaBaja > today);
         return fechaInicioOk && fechaBajaOk;
       })
       .reduce((total, suscripcion) => total + suscripcion.monto_mensual, 0);
@@ -160,7 +162,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
       .filter((cobro) => isValidDate(cobro.fecha_cobro ?? cobro.fecha_emision))
       .filter((cobro) => {
         const fecha = fechaStringAFechaLocal(cobro.fecha_cobro ?? cobro.fecha_emision);
-        return isWithinRange(fecha, periodStart, periodEnd);
+        return fecha != null && !Number.isNaN(fecha.getTime()) && isWithinRange(fecha, periodStart, periodEnd);
       })
       .reduce((total, cobro) => total + cobro.monto, 0);
 
@@ -176,7 +178,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
         .filter((cobro) => isValidDate(cobro.fecha_cobro ?? cobro.fecha_emision))
         .filter((cobro) => {
           const fecha = fechaStringAFechaLocal(cobro.fecha_cobro ?? cobro.fecha_emision);
-          return isWithinRange(fecha, monthStart, monthEnd);
+          return fecha != null && !Number.isNaN(fecha.getTime()) && isWithinRange(fecha, monthStart, monthEnd);
         })
         .reduce((total, cobro) => total + cobro.monto, 0);
       const costos = calcularEgresosPeriodo(egresos, monthStart, monthEnd, params.id).reduce(
