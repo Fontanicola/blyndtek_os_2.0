@@ -492,3 +492,9 @@
 - `lib/utils/fechas.ts` debe tratar `null` y `undefined` de forma segura en toda función pública: fechas ausentes nunca pueden terminar en un `.split()` o en una construcción de `Date` que asuma presencia.
 - Muchas columnas de fecha del sistema son opcionales por diseño (`fecha_vencimiento`, `fecha_cobro`, `fecha_inicio`, `fecha_baja`, `fecha_limite`), así que el helper central debe devolver `null` o `"Sin fecha"` en vez de romper el render o el cálculo.
 - Cualquier nuevo consumidor del helper debe seguir esa misma regla y contemplar el caso vacío explícitamente en la UI, aunque el dato normalmente venga cargado.
+
+## 2026-07-18 — La tabla mensual manda en Runway Lab
+
+- `Runway Lab` deja de apoyarse sólo en el gráfico como lectura principal: la tabla mensual `Proyección mes a mes` es ahora la pieza central para entender el escenario.
+- El gráfico se mantiene como resumen visual complementario arriba de la tabla, útil para detectar tendencias rápido sin reemplazar el detalle numérico.
+- Las hipótesis siguen editándose y activándose en memoria hasta aprobarse, pero la lectura final para decidir pasa por la tabla mes a mes con costos expandibles y alerta visual de caja negativa.

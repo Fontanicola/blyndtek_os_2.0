@@ -1841,3 +1841,11 @@ $ find . -maxdepth 3 \( -name 'middleware.*' -o -name 'proxy.*' \) -not -path '.
 - `lib/utils/fechas.ts` ahora es null-safe en `fechaInputAString`, `stringAFechaLocal`, `fechaStringAFechaLocal` y `formatearFechaDisplay`, devolviendo `null` o `"Sin fecha"` cuando corresponde.
 - Se reforzaron los consumidores que podían chocar con fechas opcionales: `lib/finanzas/calcularEgresosPeriodo.ts`, `lib/finanzas/runwayProjection.ts`, `app/api/finanzas/tesoreria/route.ts`, `app/api/clientes/[id]/rentabilidad/route.ts`, `app/api/productos/[id]/metricas/route.ts`, `lib/productos.ts` y `components/finanzas/SuscripcionesLista.tsx`.
 - Verificación local ejecutada: `npm run lint` y `npm run build` pasan correctamente.
+
+## 2026-07-18 — Runway Lab con tabla mensual central
+
+- `app/api/finanzas/runway/route.ts` ahora expone por mes el desglose completo de la proyección: ingresos, costos fijos, costos de hipótesis, margen y caja actual / caja con escenario.
+- `components/finanzas/RunwayLab.tsx` reorganizó el layout para que la tabla mensual sea la pieza central: sigue el switch de pendientes, conserva la fila de KPIs y el gráfico como resumen visual, y mueve el constructor / lista de hipótesis a una sección separada más abajo.
+- Cada mes ahora puede expandir sus costos para ver el detalle de costos fijos y el itemizado de hipótesis activas, con alerta visual si la caja del escenario cae bajo cero.
+- La tabla recalcula en vivo al activar o desactivar hipótesis, sin llamadas extra al backend hasta aprobar los cambios.
+- Verificación local ejecutada: `npm run lint` y `npm run build` pasan correctamente.

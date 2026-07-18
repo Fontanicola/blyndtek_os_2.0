@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useId, useMemo, useRef, useState } from "react";
 import type { TooltipContentProps } from "recharts/types/component/Tooltip";
 import {
   Area,
@@ -12,16 +12,12 @@ import {
   XAxis,
   YAxis
 } from "recharts";
-import { DashboardIcon, FinanzasIcon } from "@/components/icons";
 import { Badge, Button, Card, Modal } from "@/components/ui";
+import { ChevronDownIcon, DashboardIcon, FinanzasIcon } from "@/components/ui/icons";
 import { cn } from "@/lib/cn";
-import {
-  addMonths,
-  formatMonthKey,
-  startOfMonth,
-  type RunwayPoint
-} from "@/lib/finanzas";
+import { addMonths, formatMonthKey, startOfMonth, type RunwayPoint } from "@/lib/finanzas";
 import { calculateRunwayProjection } from "@/lib/finanzas/runwayProjection";
+import type { RunwayProjectionMonth } from "@/lib/finanzas/runwayProjection";
 import { buildRunwayScenarioSeries } from "@/lib/finanzas/runwayProjection";
 import { formatUSD } from "@/lib/utils/formatters";
 import type { Cobro } from "@/types/cobros";
@@ -197,6 +193,8 @@ type ChartDatum = {
   escenario: number | null;
 };
 
+type TableRow = RunwayProjectionMonth;
+
 export function RunwayLab({
   cajaActual,
   cobros,
@@ -216,6 +214,7 @@ export function RunwayLab({
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [expandedMonthKey, setExpandedMonthKey] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [includePendientes, setIncludePendientes] = useState(false);
 
@@ -246,6 +245,41 @@ export function RunwayLab({
       })),
     [currentSeries, scenarioSeries]
   );
+
+  const monthlyRows: TableRow[] = useMemo(() => {
+    let accumulatedScenarioCosts = 0;
+
+    return actualProjection.monthly_breakdown.map((month) => {
+      const hypothesesForMonth = activeHypotheses.filter((hypothesis) => hypothesis.meses.includes(month.month));
+      const detalles = hypothesesForMonth.map((hypothesis) => ({
+        nombre: hypothesis.nombre,
+        monto: hypothesis.monto
+      }));
+      const costosHipotesis = detalles.reduce((total, item) => total + item.monto, 0);
+      accumulatedScenarioCosts += costosHipotesis;
+      const costosTotales = month.costos_fijos + costosHipotesis;
+      const margenUsd = month.ingresos - costosTotales;
+      const margenPct = month.ingresos === 0 ? 0 : Number(((margenUsd / month.ingresos) * 100).toFixed(2));
+
+      return {
+        ...month,
+        costos_hipotesis: costosHipotesis,
+        costos_hipotesis_detalle: detalles,
+        costos_totales: costosTotales,
+        margen_usd: margenUsd,
+        margen_pct: margenPct,
+        caja_con_escenario_usd: month.caja_actual_usd - accumulatedScenarioCosts
+      };
+    });
+  }, [actualProjection.monthly_breakdown, activeHypotheses]);
+
+  const hasActiveHypotheses = activeHypotheses.length > 0;
+
+  useEffect(() => {
+    if (expandedMonthKey && !monthlyRows.some((row) => row.month === expandedMonthKey)) {
+      setExpandedMonthKey(null);
+    }
+  }, [expandedMonthKey, monthlyRows]);
 
   const currentRunwayMonths = actualProjection.runwayMonths;
   const scenarioRunwayMonths = useMemo(() => {
@@ -621,7 +655,12 @@ export function RunwayLab({
                   strokeWidth={2.2}
                   strokeDasharray="7 6"
                   dot={false}
-                  activeDot={{ r: 4, fill: "#FFFFFF", stroke: scenarioTone === "success" ? "#38A169" : scenarioTone === "danger" ? "#E53E3E" : "#D97706", strokeWidth: 2.5 }}
+                  activeDot={{
+                    r: 4,
+                    fill: "#FFFFFF",
+                    stroke: scenarioTone === "success" ? "#38A169" : scenarioTone === "danger" ? "#E53E3E" : "#D97706",
+                    strokeWidth: 2.5
+                  }}
                 />
               ) : null}
             </ComposedChart>
@@ -629,203 +668,336 @@ export function RunwayLab({
         </div>
       </Card>
 
-      <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
-        <Card padding="md" className="space-y-4">
-          <div>
-            <h3 className="text-base font-title text-carbon">Agregar hipótesis</h3>
-            <p className="text-sm text-graphite">Seleccioná meses específicos para simular costos antes de aprobarlos.</p>
+      <Card padding="md" className="space-y-4 bg-white">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="space-y-1">
+            <h3 className="text-base font-title text-carbon">Proyección mes a mes</h3>
+            <p className="text-sm text-graphite">
+              La tabla es la pieza central: revisá ingresos, costos, margen y caja de cada mes antes de aprobar cambios.
+            </p>
           </div>
+          <Badge variant="ghost">12 meses</Badge>
+        </div>
 
-          <div className="space-y-4">
-            <div>
-              <p className="mb-2 text-xs font-label uppercase tracking-[0.08em] text-graphite">Meses a afectar</p>
-              <div className="flex flex-wrap gap-2">
-                {monthOptions.map((option) => {
-                  const isSelected = selectedMonths.includes(option.value);
+        <div className="overflow-hidden rounded-card border border-line-soft">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-line-soft">
+              <thead className="bg-paper">
+                <tr className="text-left text-xs font-label uppercase tracking-[0.08em] text-graphite">
+                  <th className="px-4 py-4">Mes</th>
+                  <th className="px-4 py-4">Ingresos</th>
+                  <th className="px-4 py-4">Costos</th>
+                  <th className="px-4 py-4">Margen</th>
+                  <th className="px-4 py-4">{hasActiveHypotheses ? "Caja (actual)" : "Caja proyectada"}</th>
+                  {hasActiveHypotheses ? <th className="px-4 py-4">Caja (con escenario)</th> : null}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-line-soft bg-white">
+                {monthlyRows.map((month) => {
+                  const isExpanded = expandedMonthKey === month.month;
+                  const rowDanger = month.caja_con_escenario_usd < 0;
+
                   return (
-                    <button
-                      key={option.value}
-                      type="button"
-                      onClick={() => handleToggleMonth(option.value)}
-                      className={cn(
-                        "rounded-pill border px-3 py-2 text-xs font-label transition-colors duration-fast ease-fast",
-                        isSelected
-                          ? "border-signal/30 bg-signal-light text-signal"
-                          : "border-[#D8DBE3] bg-paper text-graphite hover:bg-paper/80"
-                      )}
-                    >
-                      {option.label}
-                    </button>
+                    <Fragment key={month.month}>
+                      <tr className={cn("align-top transition-colors duration-fast ease-fast", rowDanger && "bg-danger-light/60")}>
+                        <td className="px-4 py-4">
+                          <p className="text-sm font-label text-carbon">{month.label}</p>
+                        </td>
+                        <td className="px-4 py-4 text-sm text-carbon">{formatUSD(month.ingresos)}</td>
+                        <td className="px-4 py-4">
+                          <button
+                            type="button"
+                            onClick={() => setExpandedMonthKey((current) => (current === month.month ? null : month.month))}
+                            className="inline-flex items-center gap-2 text-left text-sm font-label text-carbon transition-colors duration-fast ease-fast hover:text-signal"
+                            aria-expanded={isExpanded}
+                            aria-label={`Ver detalle de costos de ${month.label}`}
+                          >
+                            <span>{formatUSD(month.costos_totales)}</span>
+                            <ChevronDownIcon
+                              className={cn("h-4 w-4 transition-transform duration-fast ease-fast", isExpanded && "rotate-180")}
+                            />
+                          </button>
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className={cn("text-sm font-label", month.margen_usd >= 0 ? "text-success" : "text-danger")}>
+                            {formatUSD(month.margen_usd)}
+                          </div>
+                          <div className={cn("text-xs", month.margen_usd >= 0 ? "text-success" : "text-danger")}>
+                            {month.margen_pct.toFixed(1)}%
+                          </div>
+                        </td>
+                        <td className="px-4 py-4 text-sm text-carbon">{formatUSD(month.caja_actual_usd)}</td>
+                        {hasActiveHypotheses ? (
+                          <td className="px-4 py-4 text-sm font-label text-carbon">{formatUSD(month.caja_con_escenario_usd)}</td>
+                        ) : null}
+                      </tr>
+
+                      {isExpanded ? (
+                        <tr className={cn(rowDanger && "bg-danger-light/30")}>
+                          <td className="px-4 pb-4 pt-0" colSpan={hasActiveHypotheses ? 6 : 5}>
+                            <div className="grid gap-4 rounded-component border border-line-soft bg-paper/50 p-4 md:grid-cols-2">
+                              <div className="space-y-3">
+                                <div>
+                                  <p className="text-xs font-label uppercase tracking-[0.08em] text-graphite">Costos fijos</p>
+                                  <p className="text-sm text-graphite">Base del mes sin hipótesis activas.</p>
+                                </div>
+
+                                <div className="space-y-2 rounded-component bg-white p-3">
+                                  <div className="flex items-center justify-between gap-3 text-sm text-carbon">
+                                    <span>Egresos recurrentes</span>
+                                    <span>{formatUSD(actualProjection.recurringExpenses)}</span>
+                                  </div>
+                                  <div className="flex items-center justify-between gap-3 text-sm text-carbon">
+                                    <span>Promedio no recurrentes</span>
+                                    <span>{formatUSD(actualProjection.nonRecurringAverage)}</span>
+                                  </div>
+                                  <div className="flex items-center justify-between gap-3 border-t border-line-soft pt-2 text-sm font-label text-carbon">
+                                    <span>Total fijos</span>
+                                    <span>{formatUSD(month.costos_fijos)}</span>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="space-y-3">
+                                <div>
+                                  <p className="text-xs font-label uppercase tracking-[0.08em] text-graphite">Hipótesis aplicadas</p>
+                                  <p className="text-sm text-graphite">Lo que empuja el escenario de este mes.</p>
+                                </div>
+
+                                {month.costos_hipotesis_detalle.length > 0 ? (
+                                  <div className="space-y-2 rounded-component bg-white p-3">
+                                    {month.costos_hipotesis_detalle.map((detail) => (
+                                      <div key={`${month.month}-${detail.nombre}`} className="flex items-center justify-between gap-3 text-sm text-carbon">
+                                        <span className="truncate">{detail.nombre}</span>
+                                        <span>{formatUSD(detail.monto)}</span>
+                                      </div>
+                                    ))}
+                                    <div className="flex items-center justify-between gap-3 border-t border-line-soft pt-2 text-sm font-label text-carbon">
+                                      <span>Total hipótesis</span>
+                                      <span>{formatUSD(month.costos_hipotesis)}</span>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="rounded-component border border-dashed border-line-soft bg-white px-3 py-4 text-sm text-graphite">
+                                    Sin hipótesis activas para este mes.
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      ) : null}
+                    </Fragment>
                   );
                 })}
-              </div>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </Card>
+
+      <div className="space-y-4">
+        <div className="space-y-1">
+          <h3 className="text-base font-title text-carbon">Agregar costos hipotéticos</h3>
+          <p className="text-sm text-graphite">
+            Simulá gastos futuros (contratar a alguien, invertir en pauta, sumar una herramienta) y mirá el impacto mes a mes arriba, antes de comprometerte de verdad.
+          </p>
+        </div>
+
+        <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
+          <Card padding="md" className="space-y-4">
+            <div>
+              <h4 className="text-base font-title text-carbon">Nueva hipótesis</h4>
+              <p className="text-sm text-graphite">Seleccioná meses específicos para simular costos antes de aprobarlos.</p>
             </div>
 
-            <div className="space-y-3">
-              <input
-                value={nombre}
-                onChange={(event) => setNombre(event.target.value)}
-                placeholder="Nombre del costo"
-                className="w-full rounded-component border border-line bg-white px-3 py-2 text-sm text-carbon focus:border-signal focus:outline-none focus:ring-2 focus:ring-signal/20"
-              />
+            <div className="space-y-4">
+              <div>
+                <p className="mb-2 text-xs font-label uppercase tracking-[0.08em] text-graphite">Meses a afectar</p>
+                <div className="flex flex-wrap gap-2">
+                  {monthOptions.map((option) => {
+                    const isSelected = selectedMonths.includes(option.value);
+                    return (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => handleToggleMonth(option.value)}
+                        className={cn(
+                          "rounded-pill border px-3 py-2 text-xs font-label transition-colors duration-fast ease-fast",
+                          isSelected
+                            ? "border-signal/30 bg-signal-light text-signal"
+                            : "border-[#D8DBE3] bg-paper text-graphite hover:bg-paper/80"
+                        )}
+                      >
+                        {option.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
 
-              <div className="grid gap-3 md:grid-cols-2">
+              <div className="space-y-3">
                 <input
-                  value={monto}
-                  onChange={(event) => setMonto(event.target.value)}
-                  type="number"
-                  min={0}
-                  placeholder="Monto mensual"
+                  value={nombre}
+                  onChange={(event) => setNombre(event.target.value)}
+                  placeholder="Nombre del costo"
                   className="w-full rounded-component border border-line bg-white px-3 py-2 text-sm text-carbon focus:border-signal focus:outline-none focus:ring-2 focus:ring-signal/20"
                 />
 
-                <select
-                  value={categoria}
-                  onChange={(event) => setCategoria(event.target.value as CategoriaEgreso)}
-                  className="w-full rounded-component border border-line bg-white px-3 py-2 text-sm text-carbon focus:border-signal focus:outline-none focus:ring-2 focus:ring-signal/20"
-                >
-                  {categoriaOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
+                <div className="grid gap-3 md:grid-cols-2">
+                  <input
+                    value={monto}
+                    onChange={(event) => setMonto(event.target.value)}
+                    type="number"
+                    min={0}
+                    placeholder="Monto mensual"
+                    className="w-full rounded-component border border-line bg-white px-3 py-2 text-sm text-carbon focus:border-signal focus:outline-none focus:ring-2 focus:ring-signal/20"
+                  />
+
+                  <select
+                    value={categoria}
+                    onChange={(event) => setCategoria(event.target.value as CategoriaEgreso)}
+                    className="w-full rounded-component border border-line bg-white px-3 py-2 text-sm text-carbon focus:border-signal focus:outline-none focus:ring-2 focus:ring-signal/20"
+                  >
+                    {categoriaOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
+
+              <Button
+                variant="primary"
+                className="w-full"
+                onClick={handleAddOrUpdate}
+                disabled={!nombre.trim() || !monto || selectedMonths.length === 0}
+              >
+                {editingId ? "Guardar cambios" : "+ Agregar al escenario"}
+              </Button>
+
+              {editingId ? (
+                <div className="flex items-center justify-between rounded-component bg-paper px-3 py-2 text-xs text-graphite">
+                  <span>Editando hipótesis existente.</span>
+                  <button type="button" className="font-label text-signal hover:underline" onClick={resetDraft}>
+                    Cancelar
+                  </button>
+                </div>
+              ) : null}
+            </div>
+          </Card>
+
+          <Card padding="md" className="space-y-4">
+            <div>
+              <h4 className="text-base font-title text-carbon">Hipótesis activas</h4>
+              <p className="text-sm text-graphite">Activá o desactivá cada hipótesis para ver cómo cambia tu runway al instante.</p>
             </div>
 
-            <Button
-              variant="primary"
-              className="w-full"
-              onClick={handleAddOrUpdate}
-              disabled={!nombre.trim() || !monto || selectedMonths.length === 0}
-            >
-              {editingId ? "Guardar cambios" : "+ Agregar al escenario"}
-            </Button>
-
-            {editingId ? (
-              <div className="flex items-center justify-between rounded-component bg-paper px-3 py-2 text-xs text-graphite">
-                <span>Editando hipótesis existente.</span>
-                <button
-                  type="button"
-                  className="font-label text-signal hover:underline"
-                  onClick={resetDraft}
-                >
-                  Cancelar
-                </button>
+            {hypotheses.length === 0 ? (
+              <div className="rounded-card border border-dashed border-line-soft bg-paper/40 px-4 py-10 text-center">
+                <p className="text-sm text-graphite">Agregá tu primera hipótesis para empezar a simular.</p>
               </div>
-            ) : null}
-          </div>
-        </Card>
+            ) : (
+              <div className="space-y-3">
+                {hypotheses.map((hypothesis) => (
+                  <div
+                    key={hypothesis.id}
+                    ref={(node) => {
+                      if (openMenuId === hypothesis.id) {
+                        menuRootRef.current = node;
+                      }
+                    }}
+                    className={cn(
+                      "rounded-card border border-line-soft bg-white p-4 shadow-soft transition-opacity duration-fast ease-fast",
+                      !hypothesis.activa && "opacity-50"
+                    )}
+                  >
+                    <div className="flex items-start gap-3">
+                      <label className="mt-1 inline-flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={hypothesis.activa}
+                          onChange={() => toggleHypothesis(hypothesis.id)}
+                          className="h-4 w-4 rounded border-line text-signal focus:ring-signal"
+                        />
+                      </label>
 
-        <Card padding="md" className="space-y-4">
-          <div>
-            <h3 className="text-base font-title text-carbon">Hipótesis del escenario</h3>
-            <p className="text-sm text-graphite">Activá o desactivá cada hipótesis para ver cómo cambia tu runway al instante.</p>
-          </div>
-
-          {hypotheses.length === 0 ? (
-            <div className="rounded-card border border-dashed border-line-soft bg-paper/40 px-4 py-10 text-center">
-              <p className="text-sm text-graphite">Agregá tu primera hipótesis para empezar a simular.</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {hypotheses.map((hypothesis) => (
-                <div
-                  key={hypothesis.id}
-                  ref={(node) => {
-                    if (openMenuId === hypothesis.id) {
-                      menuRootRef.current = node;
-                    }
-                  }}
-                  className={cn(
-                    "rounded-card border border-line-soft bg-white p-4 shadow-soft transition-opacity duration-fast ease-fast",
-                    !hypothesis.activa && "opacity-50"
-                  )}
-                >
-                  <div className="flex items-start gap-3">
-                    <label className="mt-1 inline-flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={hypothesis.activa}
-                        onChange={() => toggleHypothesis(hypothesis.id)}
-                        className="h-4 w-4 rounded border-line text-signal focus:ring-signal"
-                      />
-                    </label>
-
-                    <div className="min-w-0 flex-1 space-y-2">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <p className="truncate text-sm font-label text-carbon">{hypothesis.nombre}</p>
-                            <Badge variant="ghost">{categoriaOptions.find((option) => option.value === hypothesis.categoria)?.label}</Badge>
-                          </div>
-                          <p className="text-sm text-graphite">{formatUSD(hypothesis.monto)} / mes</p>
-                        </div>
-
-                        <div className="relative">
-                          <button
-                            type="button"
-                            aria-label="Opciones"
-                            onClick={() => setOpenMenuId((current) => (current === hypothesis.id ? null : hypothesis.id))}
-                            className="flex h-8 w-8 items-center justify-center rounded-component text-graphite transition-colors duration-fast ease-fast hover:bg-paper hover:text-carbon"
-                          >
-                            ⋮
-                          </button>
-
-                          {openMenuId === hypothesis.id ? (
-                            <div className="absolute right-0 top-full z-10 mt-2 w-40 rounded-card border border-line-soft bg-white p-2 shadow-modal">
-                              <button
-                                type="button"
-                                className="w-full rounded-component px-3 py-2 text-left text-sm text-carbon transition-colors duration-fast ease-fast hover:bg-paper"
-                                onClick={() => {
-                                  populateDraft(hypothesis);
-                                  setOpenMenuId(null);
-                                }}
-                              >
-                                Editar
-                              </button>
-                              <button
-                                type="button"
-                                className="w-full rounded-component px-3 py-2 text-left text-sm text-danger transition-colors duration-fast ease-fast hover:bg-danger-light"
-                                onClick={() => {
-                                  setOpenMenuId(null);
-                                  deleteHypothesis(hypothesis.id);
-                                }}
-                              >
-                                Eliminar
-                              </button>
+                      <div className="min-w-0 flex-1 space-y-2">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <p className="truncate text-sm font-label text-carbon">{hypothesis.nombre}</p>
+                              <Badge variant="ghost">{categoriaOptions.find((option) => option.value === hypothesis.categoria)?.label}</Badge>
                             </div>
-                          ) : null}
+                            <p className="text-sm text-graphite">{formatUSD(hypothesis.monto)} / mes</p>
+                          </div>
+
+                          <div className="relative">
+                            <button
+                              type="button"
+                              aria-label="Opciones"
+                              onClick={() => setOpenMenuId((current) => (current === hypothesis.id ? null : hypothesis.id))}
+                              className="flex h-8 w-8 items-center justify-center rounded-component text-graphite transition-colors duration-fast ease-fast hover:bg-paper hover:text-carbon"
+                            >
+                              ⋮
+                            </button>
+
+                            {openMenuId === hypothesis.id ? (
+                              <div className="absolute right-0 top-full z-10 mt-2 w-40 rounded-card border border-line-soft bg-white p-2 shadow-modal">
+                                <button
+                                  type="button"
+                                  className="w-full rounded-component px-3 py-2 text-left text-sm text-carbon transition-colors duration-fast ease-fast hover:bg-paper"
+                                  onClick={() => {
+                                    populateDraft(hypothesis);
+                                    setOpenMenuId(null);
+                                  }}
+                                >
+                                  Editar
+                                </button>
+                                <button
+                                  type="button"
+                                  className="w-full rounded-component px-3 py-2 text-left text-sm text-danger transition-colors duration-fast ease-fast hover:bg-danger-light"
+                                  onClick={() => {
+                                    setOpenMenuId(null);
+                                    deleteHypothesis(hypothesis.id);
+                                  }}
+                                >
+                                  Eliminar
+                                </button>
+                              </div>
+                            ) : null}
+                          </div>
                         </div>
-                      </div>
 
-                      <div className="flex flex-wrap gap-2">
-                        {hypothesis.meses.map((month) => (
-                          <span key={`${hypothesis.id}-${month}`} className="rounded-pill bg-paper px-2.5 py-1 text-xs font-label text-graphite">
-                            {formatMonthChip(month)}
-                          </span>
-                        ))}
-                      </div>
+                        <div className="flex flex-wrap gap-2">
+                          {hypothesis.meses.map((month) => (
+                            <span key={`${hypothesis.id}-${month}`} className="rounded-pill bg-paper px-2.5 py-1 text-xs font-label text-graphite">
+                              {formatMonthChip(month)}
+                            </span>
+                          ))}
+                        </div>
 
-                      <p className={cn("text-xs font-label", hypothesis.activa ? "text-carbon" : "text-graphite")}>
-                        Impacto individual: {impactById[hypothesis.id] ?? "Sin cambios"}
-                      </p>
+                        <p className={cn("text-xs font-label", hypothesis.activa ? "text-carbon" : "text-graphite")}>
+                          Impacto individual: {impactById[hypothesis.id] ?? "Sin cambios"}
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
+                ))}
+              </div>
+            )}
 
-          <div className="flex justify-end gap-3 pt-2">
-            <Button variant="ghost" onClick={handleDiscardAll}>
-              Descartar todo
-            </Button>
-            <Button variant="primary" onClick={() => setConfirmOpen(true)} disabled={activeHypotheses.length === 0}>
-              Aprobar cambios
-            </Button>
-          </div>
-        </Card>
+            <div className="flex justify-end gap-3 pt-2">
+              <Button variant="ghost" onClick={handleDiscardAll}>
+                Descartar todo
+              </Button>
+              <Button variant="primary" onClick={() => setConfirmOpen(true)} disabled={activeHypotheses.length === 0}>
+                Aprobar cambios
+              </Button>
+            </div>
+          </Card>
+        </div>
       </div>
 
       <Modal isOpen={confirmOpen} onClose={() => setConfirmOpen(false)} title="Aprobar cambios" size="lg">

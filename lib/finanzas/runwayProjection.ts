@@ -1,4 +1,4 @@
-import { addMonths, formatMonthKey, getLastMonths, startOfMonth, type RunwayPoint } from "@/lib/finanzas";
+import { addMonths, formatMonthKey, formatMonthLabel, getLastMonths, startOfMonth, type RunwayPoint } from "@/lib/finanzas";
 import { calcularEgresosPeriodo } from "@/lib/finanzas/calcularEgresosPeriodo";
 import { fechaStringAFechaLocal } from "@/lib/utils/fechas";
 import type { Cobro } from "@/types/cobros";
@@ -13,8 +13,26 @@ export type RunwayProjection = {
   runwayMonths: number | null;
   runwayStatus: "normal" | "estable" | "agotado";
   series: RunwayPoint[];
+  monthly_breakdown: RunwayProjectionMonth[];
   cobros_sin_fecha_usd: number;
   suscripciones_sin_fecha_usd: number;
+};
+
+export type RunwayProjectionMonthHypothesisDetail = {
+  nombre: string;
+  monto: number;
+};
+
+export type RunwayProjectionMonth = RunwayPoint & {
+  ingresos: number;
+  costos_fijos: number;
+  costos_hipotesis: number;
+  costos_hipotesis_detalle: RunwayProjectionMonthHypothesisDetail[];
+  costos_totales: number;
+  margen_usd: number;
+  margen_pct: number;
+  caja_actual_usd: number;
+  caja_con_escenario_usd: number;
 };
 
 export type RunwayProjectionOptions = {
@@ -173,6 +191,38 @@ function buildSeries(
   return series;
 }
 
+function buildMonthlyBreakdown(
+  currentSeries: RunwayPoint[],
+  mrr: number,
+  recurringExpenses: number,
+  nonRecurringAverage: number,
+  pendingSchedule: Map<string, number>,
+  incluirPendientes: boolean,
+  referenceDate: Date
+): RunwayProjectionMonth[] {
+  return currentSeries.slice(1).map((point, index) => {
+    const pendingIncome = incluirPendientes ? pendingSchedule.get(point.month) ?? 0 : 0;
+    const ingresos = mrr + pendingIncome;
+    const costosFijos = recurringExpenses + nonRecurringAverage;
+    const costosTotales = costosFijos;
+    const margenUsd = ingresos - costosTotales;
+
+    return {
+      ...point,
+      label: formatMonthLabel(addMonths(startOfMonth(referenceDate), index + 1)),
+      ingresos,
+      costos_fijos: costosFijos,
+      costos_hipotesis: 0,
+      costos_hipotesis_detalle: [],
+      costos_totales: costosTotales,
+      margen_usd: margenUsd,
+      margen_pct: ingresos === 0 ? 0 : Number(((margenUsd / ingresos) * 100).toFixed(2)),
+      caja_actual_usd: point.caja,
+      caja_con_escenario_usd: point.caja
+    };
+  });
+}
+
 export function calculateRunwayProjection(
   cajaActual: number,
   cobros: Cobro[],
@@ -195,6 +245,15 @@ export function calculateRunwayProjection(
     referenceDate,
     incluirPendientes ? pendingSchedule.schedule : new Map()
   );
+  const monthly_breakdown = buildMonthlyBreakdown(
+    series,
+    mrr,
+    recurringExpenses,
+    nonRecurringAverage,
+    pendingSchedule.schedule,
+    incluirPendientes,
+    referenceDate
+  );
   const runwayMonths = series.findIndex((point) => point.caja <= 0);
   const runwayStatus = monthlyBurn <= 0 ? "estable" : cajaActual <= 0 ? "agotado" : "normal";
 
@@ -206,6 +265,7 @@ export function calculateRunwayProjection(
     runwayMonths: runwayMonths === -1 ? null : runwayMonths,
     runwayStatus,
     series,
+    monthly_breakdown,
     cobros_sin_fecha_usd: pendingSchedule.cobrosSinFechaUsd,
     suscripciones_sin_fecha_usd: pendingSchedule.suscripcionesSinFechaUsd
   };
