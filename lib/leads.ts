@@ -1,4 +1,10 @@
-import type { CreateLeadInput, EtapaLead, Lead, UpdateLeadInput } from "@/types/leads";
+import type {
+  CanalOrigenLead,
+  CreateLeadInput,
+  EtapaLead,
+  Lead,
+  UpdateLeadInput
+} from "@/types/leads";
 import { fechaStringAFechaLocal } from "@/lib/utils/fechas";
 
 export const OUTBOUND_ETAPAS: EtapaLead[] = [
@@ -21,6 +27,25 @@ export const ETAPA_LABELS: Record<EtapaLead, string> = {
   descartado: "Descartado"
 };
 
+export const CANAL_ORIGEN_OPTIONS: Array<{ value: CanalOrigenLead; label: string }> = [
+  { value: "organico", label: "Orgánico" },
+  { value: "referido", label: "Referido" },
+  { value: "meta_ads", label: "Meta Ads" },
+  { value: "google_ads", label: "Google Ads" },
+  { value: "evento", label: "Evento" },
+  { value: "outbound_frio", label: "Outbound en frío" },
+  { value: "otro", label: "Otro" }
+];
+
+export const CANAL_ORIGEN_LABELS: Record<CanalOrigenLead, string> =
+  CANAL_ORIGEN_OPTIONS.reduce(
+    (acc, option) => ({
+      ...acc,
+      [option.value]: option.label
+    }),
+    {} as Record<CanalOrigenLead, string>
+  );
+
 export type LeadFilters = {
   etapa?: EtapaLead;
   responsable_id?: string;
@@ -31,6 +56,8 @@ export type LeadFilters = {
 export function createLeadDraft(etapa: EtapaLead = "por_contactar"): CreateLeadInput {
   return {
     canal: "outbound",
+    canal_origen: "organico",
+    campana_origen: null,
     empresa: "",
     rubro: null,
     ubicacion: null,
@@ -59,6 +86,30 @@ export function createLeadDraft(etapa: EtapaLead = "por_contactar"): CreateLeadI
     monto_negociado_mensual: null,
     motivo_descarte: null,
     notas: null
+  };
+}
+
+export function isCanalOrigenLead(value: unknown): value is CanalOrigenLead {
+  return CANAL_ORIGEN_OPTIONS.some((option) => option.value === value);
+}
+
+export function shouldShowCampanaOrigen(canal: CanalOrigenLead | null | undefined) {
+  return canal !== "organico" && canal !== "outbound_frio";
+}
+
+export function normalizeLeadOrigen(input: {
+  canal_origen?: unknown;
+  campana_origen?: string | null;
+}) {
+  const canalOrigen = isCanalOrigenLead(input.canal_origen)
+    ? input.canal_origen
+    : "organico";
+
+  return {
+    canal_origen: canalOrigen,
+    campana_origen: shouldShowCampanaOrigen(canalOrigen)
+      ? sanitizeTextValue(input.campana_origen ?? "")
+      : null
   };
 }
 

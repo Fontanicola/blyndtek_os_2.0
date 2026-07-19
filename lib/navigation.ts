@@ -2,10 +2,12 @@ import { createElement } from "react";
 import {
   BellIcon,
   BotIcon,
+  BarChartIcon,
   CalendarioIcon,
   ClientesIcon,
   DashboardIcon,
   ArchivosIcon,
+  FileTextIcon,
   FinanzasIcon,
   OutboundIcon,
   SparklesIcon,
@@ -44,6 +46,20 @@ export const navigationItems: NavItem[] = [
     href: "/clientes",
     icon: createElement(ClientesIcon),
     roles: ["admin", "comercial"],
+    section: "comercial"
+  },
+  {
+    label: "Marketing",
+    href: "/marketing",
+    icon: createElement(BarChartIcon),
+    roles: ["admin"],
+    section: "comercial"
+  },
+  {
+    label: "Contenido",
+    href: "/contenido",
+    icon: createElement(FileTextIcon),
+    roles: ["admin"],
     section: "comercial"
   },
   {

@@ -1876,3 +1876,26 @@ $ find . -maxdepth 3 \( -name 'middleware.*' -o -name 'proxy.*' \) -not -path '.
 - Se recalculó el avance de `HA Control de Obra` después de cargar por SQL directo la fase `Chequeo general / QA de producción`.
 - Resultado: `avance_pct` pasó de `100%` a `75%`; las fases existentes quedaron en `100%` y la nueva fase QA quedó en `0%` (`0/25` features en `lista`).
 - Se ejecutó el backfill de tareas para features sin tarea vinculada: se crearon `25` tareas en total, las `25` correspondientes a la nueva fase QA de producción.
+
+## 2026-07-19 — Runway Lab: barras positivas y KPIs claros
+
+- `components/finanzas/RunwayChart.tsx` dejó de representar costos como valores negativos: ingresos y costos ahora son barras positivas agrupadas por mes, ambas creciendo desde 0, con eje de flujo mensual de dominio positivo.
+- La fila de KPIs de `RunwayLab` se mantuvo arriba del gráfico y ahora muestra mejor contexto: `Runway actual` indica `Estable` con cuánto genera por mes cuando no hay quema, `Runway con escenario` distingue si no hay hipótesis activas, y `Diferencia` agrega indicador de mejora/empeora.
+- Verificación local ejecutada: `npm run build` y `npm run lint` pasan correctamente.
+
+## 2026-07-19 — Marketing: atribución de origen comercial
+
+- El formulario de leads ahora captura `canal_origen` y `campana_origen`, con default `organico` y campo de campaña sólo para canales donde aporta contexto operativo.
+- Se agregó `/api/marketing/atribucion`, admin-only, agrupando por canal/campaña y cruzando `leads -> clientes -> contratos activos -> comisiones pagadas` para medir leads, conversiones, ingreso real y costo comercial.
+- Se creó `/marketing` como sección admin-only en COMERCIAL con la tab funcional `Atribución`, selector de período y tabla ordenada por ingreso generado.
+- La card del kanban de leads muestra el origen como badge compacto para auditar rápidamente la fuente de cada oportunidad.
+- Verificación local ejecutada: `npm run build` y `npm run lint` pasan correctamente.
+
+## 2026-07-19 — Content Studio manual para Blyndtek
+
+- Se agregó `Contenido` a la navegación admin-only dentro de COMERCIAL.
+- Se creó `/contenido` con tabs internas `Identidad` y `Piezas`: identidad de marca con autosave, gestión de pilares, grilla de piezas por estado y modal de edición.
+- Se implementaron los endpoints admin-only para `marcas_contenido`, `pilares_contenido` y `piezas_contenido`, siempre filtrados a la marca `Blyndtek` (`slug='blyndtek'`).
+- Las piezas permiten carga manual de imagen al bucket `archivos-blyndtek` bajo `contenido/{pieza_id}.{ext}`, caption, hashtags como chips, pilar y estado del flujo.
+- Se creó `types/contenido.ts` y `lib/hooks/useContenido.ts` como capa cliente única para Content Studio.
+- Verificación local ejecutada: `npm run lint` y `npm run build` pasan correctamente.

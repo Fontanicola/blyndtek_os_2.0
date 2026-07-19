@@ -989,6 +989,16 @@ export type Database = {
         Row: {
           id: string;
           canal: "outbound" | "inbound";
+          canal_origen:
+            | "organico"
+            | "referido"
+            | "meta_ads"
+            | "google_ads"
+            | "evento"
+            | "outbound_frio"
+            | "otro"
+            | null;
+          campana_origen: string | null;
           empresa: string;
           rubro: string | null;
           ubicacion: string | null;
@@ -1031,6 +1041,16 @@ export type Database = {
         Insert: {
           id?: string;
           canal: "outbound" | "inbound";
+          canal_origen?:
+            | "organico"
+            | "referido"
+            | "meta_ads"
+            | "google_ads"
+            | "evento"
+            | "outbound_frio"
+            | "otro"
+            | null;
+          campana_origen?: string | null;
           empresa: string;
           rubro?: string | null;
           ubicacion?: string | null;
@@ -1073,6 +1093,16 @@ export type Database = {
         Update: {
           id?: string;
           canal?: "outbound" | "inbound";
+          canal_origen?:
+            | "organico"
+            | "referido"
+            | "meta_ads"
+            | "google_ads"
+            | "evento"
+            | "outbound_frio"
+            | "otro"
+            | null;
+          campana_origen?: string | null;
           empresa?: string;
           rubro?: string | null;
           ubicacion?: string | null;

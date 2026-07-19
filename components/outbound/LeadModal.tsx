@@ -5,9 +5,13 @@ import { Button, Input, Modal } from "@/components/ui";
 import {
   ETAPA_LABELS,
   OUTBOUND_ETAPAS,
+  CANAL_ORIGEN_LABELS,
+  CANAL_ORIGEN_OPTIONS,
   createLeadDraft,
+  normalizeLeadOrigen,
   sanitizeNumberValue,
-  sanitizeTextValue
+  sanitizeTextValue,
+  shouldShowCampanaOrigen
 } from "@/lib/leads";
 import { LeadNegociacionesSection } from "@/components/leads/LeadNegociacionesSection";
 import { cn } from "@/lib/cn";
@@ -28,6 +32,8 @@ function toDraft(lead: Lead | null): CreateLeadInput {
 
   return {
     canal: lead.canal,
+    canal_origen: lead.canal_origen ?? "organico",
+    campana_origen: lead.campana_origen,
     empresa: lead.empresa,
     rubro: lead.rubro,
     ubicacion: lead.ubicacion,
@@ -94,6 +100,7 @@ export function LeadModal({ lead, isOpen, onClose, onSave, onDelete }: LeadModal
     try {
       await onSave({
         ...form,
+        ...normalizeLeadOrigen(form),
         empresa: form.empresa.trim()
       });
       onClose();
@@ -154,6 +161,41 @@ export function LeadModal({ lead, isOpen, onClose, onSave, onDelete }: LeadModal
             value={form.web ?? ""}
             onChange={(event) => setField("web", sanitizeTextValue(event.target.value))}
           />
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="space-y-1">
+            <label className="block text-sm font-label text-carbon">Canal de origen</label>
+            <select
+              value={form.canal_origen ?? "organico"}
+              onChange={(event) => {
+                const nextCanal = event.target.value as CreateLeadInput["canal_origen"];
+                setForm((current) => ({
+                  ...current,
+                  canal_origen: nextCanal,
+                  campana_origen: shouldShowCampanaOrigen(nextCanal) ? current.campana_origen : null
+                }));
+              }}
+              className={fieldClassName}
+            >
+              {CANAL_ORIGEN_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {CANAL_ORIGEN_LABELS[option.value]}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {shouldShowCampanaOrigen(form.canal_origen) ? (
+            <Input
+              label="Campaña / detalle"
+              placeholder="ej: Meta — Concesionarias Rosario Julio"
+              value={form.campana_origen ?? ""}
+              onChange={(event) =>
+                setField("campana_origen", sanitizeTextValue(event.target.value))
+              }
+            />
+          ) : null}
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">

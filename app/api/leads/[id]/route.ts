@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
+import { normalizeLeadOrigen } from "@/lib/leads";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Lead, UpdateLeadInput } from "@/types/leads";
 
@@ -61,7 +62,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
     const supabase = createAdminClient();
     const { data: existingLead, error: existingLeadError } = await supabase
       .from("leads")
-      .select("id, vendedor_id")
+      .select("id, vendedor_id, canal_origen")
       .eq("id", params.id)
       .single();
 
@@ -78,9 +79,21 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
       return NextResponse.json({ error: "No autorizado." }, { status: 403 });
     }
 
+    const payload: UpdateLeadInput = { ...body };
+
+    if ("canal_origen" in body || "campana_origen" in body) {
+      Object.assign(
+        payload,
+        normalizeLeadOrigen({
+          canal_origen: body.canal_origen ?? existingLead.canal_origen ?? "organico",
+          campana_origen: body.campana_origen ?? null
+        })
+      );
+    }
+
     const { data, error } = await supabase
       .from("leads")
-      .update(body)
+      .update(payload)
       .eq("id", params.id)
       .select("*")
       .single();

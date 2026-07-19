@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Badge, Card, UserAvatar } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { formatFecha, formatUSD } from "@/lib/utils/formatters";
-import { isLeadOverdue } from "@/lib/leads";
+import { CANAL_ORIGEN_LABELS, isLeadOverdue } from "@/lib/leads";
 import type { Usuario } from "@/types/auth";
 import type { Lead } from "@/types/leads";
 import { LeadNegociacionesSection } from "@/components/leads/LeadNegociacionesSection";
@@ -222,6 +222,11 @@ export function LeadCard({
             <Badge variant={lead.canal === "outbound" ? "signal" : "warning"} className="text-[10px]">
               {lead.canal === "outbound" ? "Outbound" : "Inbound"}
             </Badge>
+            {lead.canal_origen ? (
+              <Badge variant="ghost" className="text-[10px]">
+                {CANAL_ORIGEN_LABELS[lead.canal_origen]}
+              </Badge>
+            ) : null}
           </div>
         </div>
 

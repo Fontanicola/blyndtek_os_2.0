@@ -1,5 +1,12 @@
 # Decisions
 
+## 2026-07-19 — Content Studio manual-first para Blyndtek
+
+- Content Studio arranca con `Blyndtek` como única marca operativa, resuelta por `slug='blyndtek'` y sin selector de marca en la UI.
+- La gestión es 100% manual en esta etapa: identidad editable, pilares, piezas, caption, hashtags, imagen subida por admin y estados del flujo.
+- La generación con Higgsfield y la sincronización real con Instagram/Meta quedan para una capa futura, cuando existan esas cuentas externas conectadas.
+- El esquema ya queda preparado para esa evolución (`meta_ig_business_id`, `meta_page_id`, `meta_post_id`, `prompt_higgsfield`, `generado_con_ia`), sin requerir cambios de estructura cuando se conecten.
+
 ## 2026-07-17 — Dashboard: ventas como contratos activos
 
 - En el Dashboard, `Ventas` cuenta únicamente contratos con `estado='activo'`, agrupados por su fecha de creación.
@@ -506,3 +513,9 @@
 - El gráfico combina barras sólidas de flujo mensual (`ingresos` hacia arriba, `costos` hacia abajo) con líneas de caja acumulada (`actual` y `escenario`) para responder de un vistazo cuántos meses alcanza la caja.
 - El detalle numérico que antes vivía en la tabla se concentra en el tooltip del gráfico: ingresos, costos fijos, costos de hipótesis itemizados, margen y caja acumulada.
 - Si la caja acumulada cae bajo cero, el gráfico debe marcar el primer mes de agotamiento; si no ocurre dentro de los 12 meses, no se muestra alerta.
+
+## 2026-07-19 — Atribución comercial desde origen del lead
+
+- La atribución conecta `leads.canal_origen` y `leads.campana_origen` con ingreso real de contratos activos y costo real de comisiones pagadas.
+- El retorno de marketing no se calcula con valores estimados aislados: sigue la cadena real `lead -> cliente -> contrato -> comisión`.
+- Esta base queda preparada para una futura integración con Meta Ads; cuando exista sincronización, `campana_origen` podrá poblarse automáticamente con el nombre real de campaña sin cambiar el esquema.

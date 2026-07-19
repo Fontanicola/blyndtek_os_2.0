@@ -1,4 +1,12 @@
 export type CanalLead = "outbound" | "inbound";
+export type CanalOrigenLead =
+  | "organico"
+  | "referido"
+  | "meta_ads"
+  | "google_ads"
+  | "evento"
+  | "outbound_frio"
+  | "otro";
 export type EtapaLead =
   | "por_contactar"
   | "contactado"
@@ -12,6 +20,8 @@ export type NivelConfianza = "alto" | "medio" | "bajo";
 export type Lead = {
   id: string;
   canal: CanalLead;
+  canal_origen: CanalOrigenLead | null;
+  campana_origen: string | null;
   vendedor_nombre?: string | null;
   comision_estimada_usd?: number | null;
   comision_estimada_pct?: number | null;

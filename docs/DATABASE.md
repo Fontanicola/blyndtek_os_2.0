@@ -5,6 +5,70 @@
 - Nomenclatura en `snake_case`
 - Tipos y campos transcritos exactamente desde la especificación
 
+## Tabla: marcas_contenido
+
+**PK:** `id`
+
+**Uso actual:** Content Studio manual para la marca única `Blyndtek` (`slug='blyndtek'`).
+
+| Campo | Tipo | Nullable | Notas |
+| --- | --- | --- | --- |
+| id | uuid | No | PK, default `gen_random_uuid()` |
+| nombre | text | No | Nombre visible de la marca |
+| slug | text | No | En esta etapa se usa `blyndtek` hardcodeado |
+| tono_voz | text | Sí | Identidad editorial editable |
+| publico_objetivo | text | Sí | Público objetivo de la marca |
+| paleta_colores | text | Sí | Criterios visuales/paleta |
+| que_mostrar | text | Sí | Lineamientos de contenido permitido/deseado |
+| que_evitar | text | Sí | Lineamientos de contenido a evitar |
+| meta_ig_business_id | text | Sí | Preparado para futura integración Instagram |
+| meta_page_id | text | Sí | Preparado para futura integración Meta |
+| color | text | No | Default `signal` |
+| created_at | timestamptz | No | Default `now()` |
+
+## Tabla: pilares_contenido
+
+**PK:** `id`
+
+**FKs:** `marca_id` → `marcas_contenido.id`
+
+| Campo | Tipo | Nullable | Notas |
+| --- | --- | --- | --- |
+| id | uuid | No | PK, default `gen_random_uuid()` |
+| marca_id | uuid | No | FK a la marca, filtrado siempre a Blyndtek desde la app |
+| nombre | text | No | Nombre del pilar |
+| descripcion | text | Sí | Descripción breve |
+| color | text | No | Color semántico del chip, default `signal` |
+| created_at | timestamptz | No | Default `now()` |
+
+## Tabla: piezas_contenido
+
+**PK:** `id`
+
+**FKs:** `marca_id` → `marcas_contenido.id`; `pilar_id` → `pilares_contenido.id`; `creativo_referencia_id` → `archivos.id`; `creado_por` → `usuarios.id`
+
+| Campo | Tipo | Nullable | Notas |
+| --- | --- | --- | --- |
+| id | uuid | No | PK, default `gen_random_uuid()` |
+| marca_id | uuid | No | FK a la marca Blyndtek |
+| pilar_id | uuid | Sí | FK al pilar de contenido |
+| titulo | text | No | Default `Sin título` |
+| storage_path | text | Sí | Imagen manual subida a Storage (`archivos-blyndtek/contenido/...`) |
+| caption | text | Sí | Texto de publicación |
+| hashtags | text[] | No | Chips editables de hashtags |
+| plataforma | text | No | Default `instagram_feed` |
+| estado | text | No | Flujo: `idea`, `en_diseno`, `lista`, `programada`, `publicada`, `fallida` |
+| fecha_programada | timestamptz | Sí | Fecha/hora de programación manual |
+| publicado_at | timestamptz | Sí | Fecha/hora de publicación futura |
+| meta_post_id | text | Sí | Preparado para futura sync con Meta |
+| meta_error | text | Sí | Error de publicación futura |
+| generado_con_ia | boolean | No | Default `false`; preparado para Higgsfield |
+| prompt_higgsfield | text | Sí | Prompt futuro de generación visual |
+| creativo_referencia_id | uuid | Sí | FK opcional a archivo de referencia |
+| creado_por | uuid | Sí | Usuario admin que creó la pieza |
+| updated_at | timestamptz | No | Default `now()` |
+| created_at | timestamptz | No | Default `now()` |
+
 ## Tabla: leads
 
 **PK:** `id`
@@ -17,6 +81,8 @@
 | --- | --- | --- | --- |
 | id | uuid | No | PK |
 | canal | enum (`outbound|inbound`) | No especificado |  |
+| canal_origen | enum (`organico|referido|meta_ads|google_ads|evento|outbound_frio|otro`) | Sí | Origen comercial atribuible del lead; default lógico de app: `organico` |
+| campana_origen | text | Sí | Campaña o detalle libre asociado al origen, cuando aplica |
 | empresa | text | No especificado |  |
 | rubro | text | No especificado |  |
 | ubicacion | text | No especificado |  |

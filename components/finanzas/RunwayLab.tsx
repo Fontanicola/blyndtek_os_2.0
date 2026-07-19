@@ -88,6 +88,26 @@ function formatRunwayLabel(runwayMeses: number | null, quemaNeta: number | null)
   return `${runwayMeses.toFixed(1)} ${runwayMeses === 1 ? "mes" : "meses"}`;
 }
 
+function formatRunwayDescription(runwayMeses: number | null, quemaNeta: number | null, activeHypothesesCount = 1) {
+  if (activeHypothesesCount === 0) {
+    return "Sin escenario activo";
+  }
+
+  if (quemaNeta == null) {
+    return "Sin datos de flujo mensual";
+  }
+
+  if (quemaNeta <= 0) {
+    return `Generás ${formatUSD(Math.abs(quemaNeta))}/mes`;
+  }
+
+  if (runwayMeses === 0) {
+    return `Necesitás caja: quemás ${formatUSD(quemaNeta)}/mes`;
+  }
+
+  return `Quemás ${formatUSD(quemaNeta)}/mes`;
+}
+
 function formatScenarioLabel(
   currentLabel: string,
   currentRunwayMonths: number | null,
@@ -136,6 +156,24 @@ function formatRunwayDifference(current: number | null, next: number | null) {
   return delta > 0 ? `+${formatted}` : `-${formatted}`;
 }
 
+function formatRunwayDifferenceValue(current: number | null, next: number | null, activeHypothesesCount: number) {
+  if (activeHypothesesCount === 0) {
+    return "Sin cambios";
+  }
+
+  const label = formatRunwayDifference(current, next);
+
+  if (label === "Sin cambios") {
+    return label;
+  }
+
+  if (label.startsWith("+") || label === "Gana estabilidad") {
+    return `↑ ${label}`;
+  }
+
+  return `↓ ${label}`;
+}
+
 function getScenarioTone(current: number | null, next: number | null) {
   if (current == null && next == null) {
     return "signal";
@@ -165,7 +203,6 @@ function getScenarioTone(current: number | null, next: number | null) {
 }
 
 type RunwayChartRow = RunwayProjectionMonth & {
-  costos_negativos: number;
   caja_cero: number;
   agotamiento_actual: number | null;
   agotamiento_escenario: number | null;
@@ -231,7 +268,6 @@ export function RunwayLab({
         margen_pct: margenPct,
         caja_con_escenario_usd: accumulatedScenarioCash,
         caja_acumulada_escenario: accumulatedScenarioCash,
-        costos_negativos: -costosTotales,
         caja_cero: 0,
         agotamiento_actual: actualProjection.mes_agotamiento_actual === month.label ? month.caja_acumulada_actual : null,
         agotamiento_escenario: null
@@ -253,6 +289,14 @@ export function RunwayLab({
   const scenarioTone = getScenarioTone(currentRunwayMonths, scenarioRunwayMonths);
   const currentLabel = formatRunwayLabel(currentRunwayMonths, actualProjection.monthlyBurn);
   const scenarioLabel = formatScenarioLabel(currentLabel, currentRunwayMonths, scenarioRunwayMonths, activeHypotheses.length);
+  const scenarioMonthlyBurn = useMemo(() => {
+    const firstScenarioMonth = monthlyRows[0];
+    if (!firstScenarioMonth) {
+      return actualProjection.monthlyBurn;
+    }
+
+    return firstScenarioMonth.costos_totales - firstScenarioMonth.ingresos;
+  }, [actualProjection.monthlyBurn, monthlyRows]);
   const scenarioExhaustionMonth = useMemo(
     () =>
       hasActiveHypotheses
@@ -285,6 +329,10 @@ export function RunwayLab({
 
     return formatRunwayDifference(currentRunwayMonths, scenarioRunwayMonths);
   }, [activeHypotheses.length, currentRunwayMonths, scenarioRunwayMonths]);
+  const differenceValue = useMemo(
+    () => formatRunwayDifferenceValue(currentRunwayMonths, scenarioRunwayMonths, activeHypotheses.length),
+    [activeHypotheses.length, currentRunwayMonths, scenarioRunwayMonths]
+  );
 
   const differenceMonths = useMemo(() => {
     if (activeHypotheses.length === 0 || currentRunwayMonths == null || scenarioRunwayMonths == null) {
@@ -478,6 +526,7 @@ export function RunwayLab({
                 : "warning"
           }
           status={currentStatus}
+          description={formatRunwayDescription(currentRunwayMonths, actualProjection.monthlyBurn)}
         />
         <MetricaCard
           label="Runway con escenario"
@@ -496,15 +545,21 @@ export function RunwayLab({
                       : "warning") as BadgeVariant
                 }
           }
+          description={formatRunwayDescription(
+            scenarioRunwayMonths,
+            scenarioMonthlyBurn,
+            activeHypotheses.length
+          )}
         />
         <MetricaCard
           label="Diferencia"
-          value={differenceLabel}
+          value={differenceValue}
           icono={<FinanzasIcon />}
           colorIcono={
             activeHypotheses.length === 0 ? "graphite" : differenceMonths != null && differenceMonths >= 0 ? "success" : "danger"
           }
           status={activeHypotheses.length === 0 ? { label: "Sin cambios", variant: "ghost" } : undefined}
+          description={activeHypotheses.length === 0 ? "Activá una hipótesis para comparar" : differenceLabel}
         />
       </div>
 

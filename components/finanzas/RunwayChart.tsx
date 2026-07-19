@@ -18,7 +18,6 @@ import { formatUSD } from "@/lib/utils/formatters";
 import type { RunwayProjectionMonth } from "@/lib/finanzas/runwayProjection";
 
 type RunwayChartDatum = RunwayProjectionMonth & {
-  costos_negativos: number;
   caja_cero: number;
   agotamiento_actual: number | null;
   agotamiento_escenario: number | null;
@@ -35,7 +34,6 @@ type ChartRenderDatum = {
   margen_pct: number;
   caja_acumulada_actual: number;
   caja_acumulada_escenario: number;
-  costos_negativos: number;
   caja_cero: number;
   agotamiento_actual: number | null;
   agotamiento_escenario: number | null;
@@ -100,7 +98,6 @@ function toChartRenderDatum(row: RunwayChartDatum): ChartRenderDatum {
     margen_pct: row.margen_pct,
     caja_acumulada_actual: row.caja_acumulada_actual,
     caja_acumulada_escenario: row.caja_acumulada_escenario,
-    costos_negativos: row.costos_negativos,
     caja_cero: row.caja_cero,
     agotamiento_actual: row.agotamiento_actual,
     agotamiento_escenario: row.agotamiento_escenario,
@@ -188,6 +185,7 @@ export function RunwayChart({
               yAxisId="flow"
               tick={{ fontSize: 11, fill: GRAPHITE }}
               tickFormatter={formatMoneyTick}
+              domain={[0, "dataMax"]}
               axisLine={false}
               tickLine={false}
             />
@@ -261,7 +259,7 @@ export function RunwayChart({
               }}
             />
             <Bar yAxisId="flow" dataKey="ingresos" name="Ingresos" fill={SUCCESS} radius={[4, 4, 0, 0]} barSize={15} />
-            <Bar yAxisId="flow" dataKey="costos_negativos" name="Costos" fill={DANGER} radius={[0, 0, 4, 4]} barSize={15} />
+            <Bar yAxisId="flow" dataKey="costos_totales" name="Costos" fill={DANGER} radius={[4, 4, 0, 0]} barSize={15} />
             <Line
               yAxisId="cash"
               dataKey="caja_cero"

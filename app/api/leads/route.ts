@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { calcularComision } from "@/lib/comisiones/calcular";
+import { normalizeLeadOrigen } from "@/lib/leads";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { CanalLead, CreateLeadInput, EtapaLead, Lead, NivelConfianza } from "@/types/leads";
 import type { ConfigComisiones } from "@/types/comisiones";
@@ -149,9 +150,11 @@ export async function POST(request: NextRequest) {
     }
 
     const supabase = createAdminClient();
+    const origen = normalizeLeadOrigen(body);
     const payload: CreateLeadInput = {
       ...body,
       canal,
+      ...origen,
       vendedor_id: currentUser.rol === "comercial" ? currentUser.id : body.vendedor_id ?? null
     };
 
