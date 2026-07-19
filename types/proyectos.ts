@@ -23,6 +23,7 @@ export type Proyecto = {
   valor_total: number | null;
   notas_arquitectura: string | null;
   url_sistema: string | null;
+  imagen_sistema_storage_path: string | null;
   credenciales_cliente: PublicRoadmapCredentials | null;
   roadmap_pin: string | null;
   roadmap_token: string;
@@ -45,6 +46,7 @@ export type CreateProyectoInput = {
   valor_total?: number | null;
   notas_arquitectura?: string | null;
   url_sistema?: string | null;
+  imagen_sistema_storage_path?: string | null;
   credenciales_cliente?: PublicRoadmapCredentials | null;
   roadmap_pin?: string | null;
   roadmap_publico_activo?: boolean;

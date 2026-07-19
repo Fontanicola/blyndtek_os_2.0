@@ -8,6 +8,13 @@ Fecha de inicio: 2026-06-25
 
 Estado general actual: Fase 0 completa. Cimientos técnicos listos: documentación fundacional, setup del repo, design system, shell de app y sistema de autenticación base. Las fases 1, 2 y 3 del roadmap original quedaron completadas.
 
+## Actualización 2026-07-19
+
+- Se implementó la carga manual de imagen de preview para la card “Sistema en vivo” del roadmap público.
+- El admin puede subir, cambiar o quitar la imagen desde el tab `Roadmap` de la ficha del proyecto; la imagen se guarda en Storage (`archivos-blyndtek`) bajo `roadmap-sistema/{proyecto_id}.{ext}` y se persiste en `proyectos.imagen_sistema_storage_path`.
+- Se agregó el endpoint público `/api/roadmap/[token]/imagen-sistema`, sin sesión requerida, que sirve la imagen con service role para que funcione en incógnito igual que el roadmap.
+- El payload público de `/api/roadmap/[token]` ahora incluye `imagen_sistema_storage_path`; si existe, `SistemaEnVivo` muestra un banner 16:9, y si no existe conserva el fallback de dominio + link.
+
 ## Actualización 2026-07-17
 
 - Se corrigió el roadmap público para que refleje al instante cambios de fases/features hechos desde `/proyectos`.

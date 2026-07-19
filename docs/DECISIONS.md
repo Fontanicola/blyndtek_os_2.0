@@ -298,7 +298,8 @@
 ## 2026-07-10 — Roadmap público: sin auto-preview del sistema
 
 - Se descartó el auto-preview visual del sistema en vivo porque los sistemas con autenticación no exponen un `og:image` público confiable.
-- El roadmap público se queda con el fallback final de dominio + link directo, que es estable, simple y no depende de capturas externas ni de rutas públicas especiales.
+- La preview visual se retomó como carga manual del admin desde la ficha del proyecto, guardada en Storage y servida por un endpoint público del roadmap.
+- El fallback de dominio + link directo se mantiene para proyectos sin imagen cargada; no se reintroduce captura automática ni lectura de `og:image` para sistemas con login.
 
 ## 2026-07-10 — Tiempo trabajado por fase
 

@@ -73,7 +73,14 @@ export default async function RoadmapPage({ params }: RoadmapPageProps) {
       <div className="mx-auto max-w-3xl space-y-6">
         <RoadmapHeader roadmap={roadmap} />
         <ResumenPagos pagos={roadmap.pagos} />
-        {roadmap.url_sistema ? <SistemaEnVivo urlSistema={roadmap.url_sistema} /> : null}
+        {roadmap.url_sistema ? (
+          <SistemaEnVivo
+            urlSistema={roadmap.url_sistema}
+            imagenPreviewUrl={
+              roadmap.imagen_sistema_storage_path ? `/api/roadmap/${params.slug}/imagen-sistema` : null
+            }
+          />
+        ) : null}
         <RoadmapTimeline fases={roadmap.fases} />
         <RoadmapFooter ultimaActualizacion={roadmap.ultima_actualizacion} />
       </div>

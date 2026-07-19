@@ -48,6 +48,7 @@ export type PublicRoadmapProject = {
   fases: PublicRoadmapPhase[];
   ultima_actualizacion: string | null;
   url_sistema: string | null;
+  imagen_sistema_storage_path: string | null;
   tiene_pin: boolean;
   pagos: PublicRoadmapPaymentSummary;
 };

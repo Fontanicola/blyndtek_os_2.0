@@ -29,6 +29,7 @@ type ProjectRecord = {
   entrega_comprometida: string | null;
   created_at: string;
   url_sistema: string | null;
+  imagen_sistema_storage_path: string | null;
   roadmap_pin: string | null;
 };
 
@@ -156,7 +157,8 @@ function sumMonto(items: Array<{ monto: number }>) {
 }
 
 async function findProjectByToken(supabase: ReturnType<typeof createAdminClient>, token: string) {
-  const select = "id, cliente_id, nombre, estado, avance_pct, fecha_inicio, entrega_comprometida, created_at, url_sistema, roadmap_pin";
+  const select =
+    "id, cliente_id, nombre, estado, avance_pct, fecha_inicio, entrega_comprometida, created_at, url_sistema, imagen_sistema_storage_path, roadmap_pin";
 
   const bySlug = await supabase
     .from("proyectos")
@@ -299,6 +301,7 @@ export async function GET(_request: NextRequest, { params }: RouteContext) {
       fases: buildPhasesFromRecords(phaseResult.data ?? [], featureResult.data ?? []),
       ultima_actualizacion: ultimaActualizacion,
       url_sistema: project.url_sistema,
+      imagen_sistema_storage_path: project.imagen_sistema_storage_path,
       tiene_pin: Boolean(project.roadmap_pin?.trim()),
       pagos: {
         total_contrato: paymentSummary.total_contrato,

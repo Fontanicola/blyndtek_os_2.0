@@ -130,6 +130,7 @@
 | roadmap_token | text | No especificado | único, generado al crear |
 | roadmap_slug | text | Sí | único, generado al crear a partir del cliente |
 | url_sistema | text | Sí | URL pública o staging del sistema del cliente |
+| imagen_sistema_storage_path | text | Sí | path en Storage para preview manual del sistema en vivo |
 | credenciales_cliente | jsonb | Sí | usuario, contraseña y notas; se revelan solo con PIN |
 | roadmap_pin | text | Sí | PIN de acceso de 4-6 dígitos para credenciales del roadmap |
 | roadmap_publico_activo | bool | No especificado |  |

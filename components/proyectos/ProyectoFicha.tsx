@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import Image from "next/image";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Badge, Button, Card, EntityMultiSelect, EntitySelect, Input } from "@/components/ui";
 import { NotasVinculadasSection } from "@/components/notas";
 import { useCronometro } from "@/lib/hooks/useCronometro";
@@ -210,6 +211,9 @@ export function ProyectoFicha({
   const [editingCuenta, setEditingCuenta] = useState<CuentaServicio | null>(null);
   const [roadmapOrigin, setRoadmapOrigin] = useState("");
   const [roadmapConfigOpen, setRoadmapConfigOpen] = useState(true);
+  const imagenSistemaInputRef = useRef<HTMLInputElement | null>(null);
+  const [imagenSistemaUploading, setImagenSistemaUploading] = useState(false);
+  const [imagenSistemaError, setImagenSistemaError] = useState<string | null>(null);
   const [tiempoProyecto, setTiempoProyecto] = useState<ProyectoTiempoResponse | null>(null);
   const [tiempoProyectoLoading, setTiempoProyectoLoading] = useState(false);
   const [roadmapConfigDraft, setRoadmapConfigDraft] = useState<RoadmapConfigDraft>({
@@ -295,6 +299,7 @@ export function ProyectoFicha({
 
   const roadmapPath = proyecto.roadmap_slug ?? proyecto.roadmap_token;
   const roadmapUrl = useMemo(() => `${roadmapOrigin}/roadmap/${roadmapPath}`, [roadmapOrigin, roadmapPath]);
+  const imagenSistemaPreviewUrl = roadmapPath ? `/api/roadmap/${roadmapPath}/imagen-sistema` : null;
 
   const fasesOrdenadas = useMemo(
     () => [...fases].sort((first, second) => first.orden - second.orden || first.nombre.localeCompare(second.nombre)),
@@ -412,6 +417,61 @@ export function ProyectoFicha({
         notas: roadmapConfigDraft.credenciales_cliente.notas.trim() || null
       }
     });
+  }
+
+  async function uploadImagenSistema(file: File | null) {
+    if (!file) {
+      return;
+    }
+
+    setImagenSistemaUploading(true);
+    setImagenSistemaError(null);
+
+    try {
+      const formData = new FormData();
+      formData.append("imagen", file);
+
+      const response = await fetch(`/api/proyectos/${proyecto.id}/imagen-sistema`, {
+        method: "POST",
+        body: formData
+      });
+      const payload = (await response.json()) as { data?: Proyecto; error?: string };
+
+      if (!response.ok || !payload.data) {
+        throw new Error(payload.error ?? "No se pudo subir la imagen.");
+      }
+
+      await onProyectoUpdated(payload.data);
+    } catch (error) {
+      setImagenSistemaError(error instanceof Error ? error.message : "No se pudo subir la imagen.");
+    } finally {
+      setImagenSistemaUploading(false);
+      if (imagenSistemaInputRef.current) {
+        imagenSistemaInputRef.current.value = "";
+      }
+    }
+  }
+
+  async function deleteImagenSistema() {
+    setImagenSistemaUploading(true);
+    setImagenSistemaError(null);
+
+    try {
+      const response = await fetch(`/api/proyectos/${proyecto.id}/imagen-sistema`, {
+        method: "DELETE"
+      });
+      const payload = (await response.json()) as { data?: Proyecto; error?: string };
+
+      if (!response.ok || !payload.data) {
+        throw new Error(payload.error ?? "No se pudo quitar la imagen.");
+      }
+
+      await onProyectoUpdated(payload.data);
+    } catch (error) {
+      setImagenSistemaError(error instanceof Error ? error.message : "No se pudo quitar la imagen.");
+    } finally {
+      setImagenSistemaUploading(false);
+    }
   }
 
   async function saveGitHubRepo() {
@@ -848,6 +908,67 @@ export function ProyectoFicha({
                     }
                     placeholder="1234"
                   />
+                </div>
+
+                <div className="space-y-3 rounded-card border border-line-soft bg-white p-4">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="space-y-1">
+                      <p className="text-xs font-label uppercase tracking-[0.08em] text-graphite">
+                        Imagen de preview del sistema
+                      </p>
+                      <p className="text-sm text-graphite">
+                        Se muestra como banner en la card “Sistema en vivo” del roadmap público.
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        variant={proyecto.imagen_sistema_storage_path ? "secondary" : "primary"}
+                        size="sm"
+                        loading={imagenSistemaUploading}
+                        onClick={() => imagenSistemaInputRef.current?.click()}
+                      >
+                        {proyecto.imagen_sistema_storage_path ? "Cambiar" : "Subir imagen"}
+                      </Button>
+                      {proyecto.imagen_sistema_storage_path ? (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          disabled={imagenSistemaUploading}
+                          onClick={() => void deleteImagenSistema()}
+                        >
+                          Quitar
+                        </Button>
+                      ) : null}
+                    </div>
+                  </div>
+
+                  <input
+                    ref={imagenSistemaInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(event) => void uploadImagenSistema(event.target.files?.[0] ?? null)}
+                  />
+
+                  {proyecto.imagen_sistema_storage_path && imagenSistemaPreviewUrl ? (
+                    <div className="relative aspect-video w-full overflow-hidden rounded-component border border-line-soft bg-paper sm:max-w-md">
+                      <Image
+                        key={proyecto.imagen_sistema_storage_path}
+                        src={imagenSistemaPreviewUrl}
+                        alt="Preview del sistema"
+                        fill
+                        unoptimized
+                        sizes="(max-width: 640px) 100vw, 448px"
+                        className="object-cover"
+                      />
+                    </div>
+                  ) : (
+                    <div className="rounded-component border border-dashed border-line bg-paper px-4 py-5 text-sm text-graphite">
+                      Todavía no hay imagen cargada.
+                    </div>
+                  )}
+
+                  {imagenSistemaError ? <p className="text-sm text-danger">{imagenSistemaError}</p> : null}
                 </div>
 
                 <div className="space-y-3 rounded-card bg-paper p-4">

@@ -1202,6 +1202,7 @@ export type Database = {
           valor_total: number | null;
           notas_arquitectura: string | null;
           url_sistema: string | null;
+          imagen_sistema_storage_path: string | null;
           credenciales_cliente: Json | null;
           roadmap_pin: string | null;
           roadmap_token: string;
@@ -1231,6 +1232,7 @@ export type Database = {
           valor_total?: number | null;
           notas_arquitectura?: string | null;
           url_sistema?: string | null;
+          imagen_sistema_storage_path?: string | null;
           credenciales_cliente?: Json | null;
           roadmap_pin?: string | null;
           roadmap_token: string;
@@ -1260,6 +1262,7 @@ export type Database = {
           valor_total?: number | null;
           notas_arquitectura?: string | null;
           url_sistema?: string | null;
+          imagen_sistema_storage_path?: string | null;
           credenciales_cliente?: Json | null;
           roadmap_pin?: string | null;
           roadmap_token?: string;
