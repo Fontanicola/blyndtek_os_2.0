@@ -14,6 +14,8 @@ export type RunwayProjection = {
   runwayStatus: "normal" | "estable" | "agotado";
   series: RunwayPoint[];
   monthly_breakdown: RunwayProjectionMonth[];
+  mes_agotamiento_actual: string | null;
+  mes_agotamiento_escenario: string | null;
   cobros_sin_fecha_usd: number;
   suscripciones_sin_fecha_usd: number;
 };
@@ -33,6 +35,8 @@ export type RunwayProjectionMonth = RunwayPoint & {
   margen_pct: number;
   caja_actual_usd: number;
   caja_con_escenario_usd: number;
+  caja_acumulada_actual: number;
+  caja_acumulada_escenario: number;
 };
 
 export type RunwayProjectionOptions = {
@@ -218,9 +222,18 @@ function buildMonthlyBreakdown(
       margen_usd: margenUsd,
       margen_pct: ingresos === 0 ? 0 : Number(((margenUsd / ingresos) * 100).toFixed(2)),
       caja_actual_usd: point.caja,
-      caja_con_escenario_usd: point.caja
+      caja_con_escenario_usd: point.caja,
+      caja_acumulada_actual: point.caja,
+      caja_acumulada_escenario: point.caja
     };
   });
+}
+
+function getFirstNegativeMonth(
+  months: RunwayProjectionMonth[],
+  key: "caja_acumulada_actual" | "caja_acumulada_escenario"
+) {
+  return months.find((month) => month[key] < 0)?.label ?? null;
 }
 
 export function calculateRunwayProjection(
@@ -266,6 +279,8 @@ export function calculateRunwayProjection(
     runwayStatus,
     series,
     monthly_breakdown,
+    mes_agotamiento_actual: getFirstNegativeMonth(monthly_breakdown, "caja_acumulada_actual"),
+    mes_agotamiento_escenario: getFirstNegativeMonth(monthly_breakdown, "caja_acumulada_escenario"),
     cobros_sin_fecha_usd: pendingSchedule.cobrosSinFechaUsd,
     suscripciones_sin_fecha_usd: pendingSchedule.suscripcionesSinFechaUsd
   };

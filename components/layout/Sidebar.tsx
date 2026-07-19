@@ -305,13 +305,7 @@ export function Sidebar({
 
             return (
               <div key={section.key}>
-                {!collapsed ? (
-                  topLevelItems.length > 0 || index > 0 ? (
-                    <div className="px-5 pb-2 pt-5 text-xs font-label uppercase tracking-widest text-graphite">{section.label}</div>
-                  ) : (
-                    <div className="pt-3" />
-                  )
-                ) : null}
+                {!collapsed ? <div className={topLevelItems.length > 0 || index > 0 ? "pt-3" : "pt-1"} /> : null}
 
                 <div className="space-y-1">
                   {sectionItems.map((item) => (

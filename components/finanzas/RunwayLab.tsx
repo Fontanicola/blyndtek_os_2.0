@@ -1,19 +1,8 @@
 "use client";
 
-import { Fragment, useEffect, useId, useMemo, useRef, useState } from "react";
-import type { TooltipContentProps } from "recharts/types/component/Tooltip";
-import {
-  Area,
-  CartesianGrid,
-  ComposedChart,
-  Line,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis
-} from "recharts";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Badge, Button, Card, Modal } from "@/components/ui";
-import { ChevronDownIcon, DashboardIcon, FinanzasIcon } from "@/components/ui/icons";
+import { DashboardIcon, FinanzasIcon } from "@/components/ui/icons";
 import { cn } from "@/lib/cn";
 import { addMonths, formatMonthKey, startOfMonth, type RunwayPoint } from "@/lib/finanzas";
 import { calculateRunwayProjection } from "@/lib/finanzas/runwayProjection";
@@ -25,6 +14,7 @@ import type { CategoriaEgreso, Egreso } from "@/types/egresos";
 import type { Suscripcion } from "@/types/suscripciones";
 import type { BadgeVariant } from "@/types/ui";
 import { MetricaCard } from "./MetricaCard";
+import { RunwayChart } from "./RunwayChart";
 
 export type RunwayHypothesis = {
   id: string;
@@ -119,18 +109,6 @@ function formatScenarioLabel(
   return `${scenarioRunwayMonths.toFixed(1)} ${scenarioRunwayMonths === 1 ? "mes" : "meses"}`;
 }
 
-function formatMoneyTick(value: number) {
-  const absolute = Math.abs(value);
-  const sign = value < 0 ? "-" : "";
-
-  if (absolute >= 1000) {
-    const compact = absolute / 1000;
-    return `${sign}$${compact.toFixed(compact >= 100 ? 0 : 1)}k`;
-  }
-
-  return `${sign}$${Math.round(absolute).toLocaleString("en-US")}`;
-}
-
 function formatRunwayDifference(current: number | null, next: number | null) {
   if (current == null && next == null) {
     return "Sin cambios";
@@ -186,14 +164,12 @@ function getScenarioTone(current: number | null, next: number | null) {
   return "warning";
 }
 
-type ChartDatum = {
-  month: string;
-  label: string;
-  actual: number;
-  escenario: number | null;
+type RunwayChartRow = RunwayProjectionMonth & {
+  costos_negativos: number;
+  caja_cero: number;
+  agotamiento_actual: number | null;
+  agotamiento_escenario: number | null;
 };
-
-type TableRow = RunwayProjectionMonth;
 
 export function RunwayLab({
   cajaActual,
@@ -203,8 +179,6 @@ export function RunwayLab({
   loading = false,
   onApprove
 }: RunwayLabProps) {
-  const chartId = useId().replace(/:/g, "");
-  const actualGradient = `runway-lab-actual-${chartId}`;
   const [hypotheses, setHypotheses] = useState<RunwayHypothesis[]>([]);
   const [nombre, setNombre] = useState("");
   const [monto, setMonto] = useState("");
@@ -214,7 +188,6 @@ export function RunwayLab({
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
-  const [expandedMonthKey, setExpandedMonthKey] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [includePendientes, setIncludePendientes] = useState(false);
 
@@ -226,7 +199,6 @@ export function RunwayLab({
     [cajaActual, cobros, egresos, suscripciones, includePendientes]
   );
   const activeHypotheses = useMemo(() => hypotheses.filter((hypothesis) => hypothesis.activa), [hypotheses]);
-  const currentSeries = useMemo(() => actualProjection.series, [actualProjection.series]);
   const scenarioSeries = useMemo(
     () =>
       activeHypotheses.length > 0
@@ -235,19 +207,8 @@ export function RunwayLab({
     [activeHypotheses, actualProjection.series]
   );
 
-  const chartData: ChartDatum[] = useMemo(
-    () =>
-      currentSeries.map((point, index) => ({
-        month: point.month,
-        label: point.label,
-        actual: point.caja,
-        escenario: scenarioSeries?.[index]?.caja ?? null
-      })),
-    [currentSeries, scenarioSeries]
-  );
-
-  const monthlyRows: TableRow[] = useMemo(() => {
-    let accumulatedScenarioCosts = 0;
+  const monthlyRows: RunwayChartRow[] = useMemo(() => {
+    let accumulatedScenarioCash = cajaActual;
 
     return actualProjection.monthly_breakdown.map((month) => {
       const hypothesesForMonth = activeHypotheses.filter((hypothesis) => hypothesis.meses.includes(month.month));
@@ -256,10 +217,10 @@ export function RunwayLab({
         monto: hypothesis.monto
       }));
       const costosHipotesis = detalles.reduce((total, item) => total + item.monto, 0);
-      accumulatedScenarioCosts += costosHipotesis;
       const costosTotales = month.costos_fijos + costosHipotesis;
       const margenUsd = month.ingresos - costosTotales;
       const margenPct = month.ingresos === 0 ? 0 : Number(((margenUsd / month.ingresos) * 100).toFixed(2));
+      accumulatedScenarioCash += margenUsd;
 
       return {
         ...month,
@@ -268,18 +229,17 @@ export function RunwayLab({
         costos_totales: costosTotales,
         margen_usd: margenUsd,
         margen_pct: margenPct,
-        caja_con_escenario_usd: month.caja_actual_usd - accumulatedScenarioCosts
+        caja_con_escenario_usd: accumulatedScenarioCash,
+        caja_acumulada_escenario: accumulatedScenarioCash,
+        costos_negativos: -costosTotales,
+        caja_cero: 0,
+        agotamiento_actual: actualProjection.mes_agotamiento_actual === month.label ? month.caja_acumulada_actual : null,
+        agotamiento_escenario: null
       };
     });
-  }, [actualProjection.monthly_breakdown, activeHypotheses]);
+  }, [actualProjection.monthly_breakdown, actualProjection.mes_agotamiento_actual, activeHypotheses, cajaActual]);
 
   const hasActiveHypotheses = activeHypotheses.length > 0;
-
-  useEffect(() => {
-    if (expandedMonthKey && !monthlyRows.some((row) => row.month === expandedMonthKey)) {
-      setExpandedMonthKey(null);
-    }
-  }, [expandedMonthKey, monthlyRows]);
 
   const currentRunwayMonths = actualProjection.runwayMonths;
   const scenarioRunwayMonths = useMemo(() => {
@@ -291,9 +251,24 @@ export function RunwayLab({
   }, [currentRunwayMonths, scenarioSeries]);
 
   const scenarioTone = getScenarioTone(currentRunwayMonths, scenarioRunwayMonths);
-  const scenarioTextClass = scenarioTone === "success" ? "text-success" : scenarioTone === "danger" ? "text-danger" : "text-warning";
   const currentLabel = formatRunwayLabel(currentRunwayMonths, actualProjection.monthlyBurn);
   const scenarioLabel = formatScenarioLabel(currentLabel, currentRunwayMonths, scenarioRunwayMonths, activeHypotheses.length);
+  const scenarioExhaustionMonth = useMemo(
+    () =>
+      hasActiveHypotheses
+        ? monthlyRows.find((month) => month.caja_acumulada_escenario < 0)?.label ?? null
+        : actualProjection.mes_agotamiento_escenario,
+    [actualProjection.mes_agotamiento_escenario, hasActiveHypotheses, monthlyRows]
+  );
+  const chartRows = useMemo(
+    () =>
+      monthlyRows.map((month) => ({
+        ...month,
+        agotamiento_escenario:
+          hasActiveHypotheses && scenarioExhaustionMonth === month.label ? month.caja_acumulada_escenario : null
+      })),
+    [hasActiveHypotheses, monthlyRows, scenarioExhaustionMonth]
+  );
   const currentStatus =
     actualProjection.monthlyBurn <= 0
       ? { label: "Estable", variant: "success" as const }
@@ -575,226 +550,12 @@ export function RunwayLab({
         ) : null}
       </Card>
 
-      <Card padding="md" className="space-y-5 overflow-hidden bg-white">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <h3 className="text-base font-title text-carbon">Proyección comparativa</h3>
-            <p className="text-sm text-graphite">La línea sólida es el runway actual y la punteada refleja el escenario activo.</p>
-          </div>
-          <div className="flex flex-wrap items-center gap-3 text-xs text-graphite">
-            <span className="inline-flex items-center gap-2">
-              <span className="h-2.5 w-2.5 rounded-full bg-signal" />
-              Actual
-            </span>
-            {activeHypotheses.length > 0 ? (
-              <span className="inline-flex items-center gap-2">
-                <span className="h-2.5 w-2.5 rounded-full bg-warning" />
-                Escenario
-              </span>
-            ) : null}
-          </div>
-        </div>
-
-        <div className="h-[380px] w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart data={chartData} margin={{ top: 20, right: 28, bottom: 12, left: 4 }}>
-              <defs>
-                <linearGradient id={actualGradient} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#1F44FF" stopOpacity="0.28" />
-                  <stop offset="68%" stopColor="#1F44FF" stopOpacity="0.06" />
-                  <stop offset="100%" stopColor="#1F44FF" stopOpacity="0" />
-                </linearGradient>
-              </defs>
-              <CartesianGrid stroke="#E8ECF3" strokeDasharray="2 10" vertical={false} />
-              <XAxis dataKey="label" tick={{ fontSize: 11, fill: "#5A6373" }} axisLine={false} tickLine={false} />
-              <YAxis
-                tick={{ fontSize: 11, fill: "#5A6373" }}
-                axisLine={false}
-                tickLine={false}
-                tickFormatter={(value: number | string) => formatMoneyTick(Number(value))}
-                domain={[(dataMin: number) => Math.min(0, Math.floor(dataMin * 1.1)), (dataMax: number) => Math.max(1, Math.ceil(dataMax * 1.1))]}
-              />
-              <Tooltip
-                content={({ active, payload, label }: TooltipContentProps<number, string>) => {
-                  if (!active || !payload?.length) {
-                    return null;
-                  }
-
-                  const actual = payload.find((entry) => entry.dataKey === "actual")?.value;
-                  const scenario = payload.find((entry) => entry.dataKey === "escenario")?.value;
-
-                  return (
-                    <div className="rounded-card border border-white/80 bg-white/95 p-3 text-sm shadow-modal backdrop-blur">
-                      <p className="mb-2 font-label text-carbon">{label}</p>
-                      <p className="text-xs text-signal">Actual: {formatUSD(Number(actual ?? 0))}</p>
-                      {activeHypotheses.length > 0 && scenario != null ? (
-                        <p className={cn("text-xs", scenarioTextClass)}>
-                          Escenario: {formatUSD(Number(scenario))}
-                        </p>
-                      ) : null}
-                    </div>
-                  );
-                }}
-              />
-              <Area
-                dataKey="actual"
-                name="Runway actual"
-                type="monotone"
-                stroke="#1F44FF"
-                strokeWidth={2.8}
-                fill={`url(#${actualGradient})`}
-                dot={false}
-                activeDot={{ r: 4, fill: "#FFFFFF", stroke: "#1F44FF", strokeWidth: 2.5 }}
-              />
-              {activeHypotheses.length > 0 ? (
-                <Line
-                  type="monotone"
-                  dataKey="escenario"
-                  name="Con escenario"
-                  stroke={scenarioTone === "success" ? "#38A169" : scenarioTone === "danger" ? "#E53E3E" : "#D97706"}
-                  strokeWidth={2.2}
-                  strokeDasharray="7 6"
-                  dot={false}
-                  activeDot={{
-                    r: 4,
-                    fill: "#FFFFFF",
-                    stroke: scenarioTone === "success" ? "#38A169" : scenarioTone === "danger" ? "#E53E3E" : "#D97706",
-                    strokeWidth: 2.5
-                  }}
-                />
-              ) : null}
-            </ComposedChart>
-          </ResponsiveContainer>
-        </div>
-      </Card>
-
-      <Card padding="md" className="space-y-4 bg-white">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="space-y-1">
-            <h3 className="text-base font-title text-carbon">Proyección mes a mes</h3>
-            <p className="text-sm text-graphite">
-              La tabla es la pieza central: revisá ingresos, costos, margen y caja de cada mes antes de aprobar cambios.
-            </p>
-          </div>
-          <Badge variant="ghost">12 meses</Badge>
-        </div>
-
-        <div className="overflow-hidden rounded-card border border-line-soft">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-line-soft">
-              <thead className="bg-paper">
-                <tr className="text-left text-xs font-label uppercase tracking-[0.08em] text-graphite">
-                  <th className="px-4 py-4">Mes</th>
-                  <th className="px-4 py-4">Ingresos</th>
-                  <th className="px-4 py-4">Costos</th>
-                  <th className="px-4 py-4">Margen</th>
-                  <th className="px-4 py-4">{hasActiveHypotheses ? "Caja (actual)" : "Caja proyectada"}</th>
-                  {hasActiveHypotheses ? <th className="px-4 py-4">Caja (con escenario)</th> : null}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-line-soft bg-white">
-                {monthlyRows.map((month) => {
-                  const isExpanded = expandedMonthKey === month.month;
-                  const rowDanger = month.caja_con_escenario_usd < 0;
-
-                  return (
-                    <Fragment key={month.month}>
-                      <tr className={cn("align-top transition-colors duration-fast ease-fast", rowDanger && "bg-danger-light/60")}>
-                        <td className="px-4 py-4">
-                          <p className="text-sm font-label text-carbon">{month.label}</p>
-                        </td>
-                        <td className="px-4 py-4 text-sm text-carbon">{formatUSD(month.ingresos)}</td>
-                        <td className="px-4 py-4">
-                          <button
-                            type="button"
-                            onClick={() => setExpandedMonthKey((current) => (current === month.month ? null : month.month))}
-                            className="inline-flex items-center gap-2 text-left text-sm font-label text-carbon transition-colors duration-fast ease-fast hover:text-signal"
-                            aria-expanded={isExpanded}
-                            aria-label={`Ver detalle de costos de ${month.label}`}
-                          >
-                            <span>{formatUSD(month.costos_totales)}</span>
-                            <ChevronDownIcon
-                              className={cn("h-4 w-4 transition-transform duration-fast ease-fast", isExpanded && "rotate-180")}
-                            />
-                          </button>
-                        </td>
-                        <td className="px-4 py-4">
-                          <div className={cn("text-sm font-label", month.margen_usd >= 0 ? "text-success" : "text-danger")}>
-                            {formatUSD(month.margen_usd)}
-                          </div>
-                          <div className={cn("text-xs", month.margen_usd >= 0 ? "text-success" : "text-danger")}>
-                            {month.margen_pct.toFixed(1)}%
-                          </div>
-                        </td>
-                        <td className="px-4 py-4 text-sm text-carbon">{formatUSD(month.caja_actual_usd)}</td>
-                        {hasActiveHypotheses ? (
-                          <td className="px-4 py-4 text-sm font-label text-carbon">{formatUSD(month.caja_con_escenario_usd)}</td>
-                        ) : null}
-                      </tr>
-
-                      {isExpanded ? (
-                        <tr className={cn(rowDanger && "bg-danger-light/30")}>
-                          <td className="px-4 pb-4 pt-0" colSpan={hasActiveHypotheses ? 6 : 5}>
-                            <div className="grid gap-4 rounded-component border border-line-soft bg-paper/50 p-4 md:grid-cols-2">
-                              <div className="space-y-3">
-                                <div>
-                                  <p className="text-xs font-label uppercase tracking-[0.08em] text-graphite">Costos fijos</p>
-                                  <p className="text-sm text-graphite">Base del mes sin hipótesis activas.</p>
-                                </div>
-
-                                <div className="space-y-2 rounded-component bg-white p-3">
-                                  <div className="flex items-center justify-between gap-3 text-sm text-carbon">
-                                    <span>Egresos recurrentes</span>
-                                    <span>{formatUSD(actualProjection.recurringExpenses)}</span>
-                                  </div>
-                                  <div className="flex items-center justify-between gap-3 text-sm text-carbon">
-                                    <span>Promedio no recurrentes</span>
-                                    <span>{formatUSD(actualProjection.nonRecurringAverage)}</span>
-                                  </div>
-                                  <div className="flex items-center justify-between gap-3 border-t border-line-soft pt-2 text-sm font-label text-carbon">
-                                    <span>Total fijos</span>
-                                    <span>{formatUSD(month.costos_fijos)}</span>
-                                  </div>
-                                </div>
-                              </div>
-
-                              <div className="space-y-3">
-                                <div>
-                                  <p className="text-xs font-label uppercase tracking-[0.08em] text-graphite">Hipótesis aplicadas</p>
-                                  <p className="text-sm text-graphite">Lo que empuja el escenario de este mes.</p>
-                                </div>
-
-                                {month.costos_hipotesis_detalle.length > 0 ? (
-                                  <div className="space-y-2 rounded-component bg-white p-3">
-                                    {month.costos_hipotesis_detalle.map((detail) => (
-                                      <div key={`${month.month}-${detail.nombre}`} className="flex items-center justify-between gap-3 text-sm text-carbon">
-                                        <span className="truncate">{detail.nombre}</span>
-                                        <span>{formatUSD(detail.monto)}</span>
-                                      </div>
-                                    ))}
-                                    <div className="flex items-center justify-between gap-3 border-t border-line-soft pt-2 text-sm font-label text-carbon">
-                                      <span>Total hipótesis</span>
-                                      <span>{formatUSD(month.costos_hipotesis)}</span>
-                                    </div>
-                                  </div>
-                                ) : (
-                                  <div className="rounded-component border border-dashed border-line-soft bg-white px-3 py-4 text-sm text-graphite">
-                                    Sin hipótesis activas para este mes.
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </td>
-                        </tr>
-                      ) : null}
-                    </Fragment>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </Card>
+      <RunwayChart
+        data={chartRows}
+        hasScenario={hasActiveHypotheses}
+        mesAgotamientoActual={actualProjection.mes_agotamiento_actual}
+        mesAgotamientoEscenario={scenarioExhaustionMonth}
+      />
 
       <div className="space-y-4">
         <div className="space-y-1">

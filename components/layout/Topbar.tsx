@@ -1,43 +1,28 @@
 "use client";
 
-import { BellIcon, MenuIcon } from "@/components/ui/icons";
-import { UserAvatar } from "@/components/ui";
+import { MenuIcon } from "@/components/ui/icons";
 import { getPageLabel } from "@/lib/navigation";
-import type { Usuario } from "@/types/auth";
 
 type TopbarProps = {
-  usuario: Usuario | null;
   onMenuToggle: () => void;
   currentPath: string;
 };
 
-export function Topbar({ usuario, onMenuToggle, currentPath }: TopbarProps) {
+export function Topbar({ onMenuToggle, currentPath }: TopbarProps) {
   const pageLabel = getPageLabel(currentPath);
 
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-line-soft bg-white px-6 shadow-soft">
+    <header className="sticky top-0 z-30 flex h-8 items-center border-b border-line-soft bg-white px-6 shadow-soft">
       <div className="flex items-center gap-3">
         <button
           type="button"
           onClick={onMenuToggle}
           aria-label="Abrir navegación"
-          className="inline-flex h-9 w-9 items-center justify-center rounded-component text-carbon transition-colors duration-fast ease-fast hover:bg-paper md:hidden"
+          className="inline-flex h-7 w-7 items-center justify-center rounded-component text-carbon transition-colors duration-fast ease-fast hover:bg-paper md:hidden"
         >
           <MenuIcon />
         </button>
         <span className="hidden text-base font-title text-carbon md:block">{pageLabel}</span>
-      </div>
-
-      <div className="flex items-center gap-4">
-        <button
-          type="button"
-          aria-label="Notificaciones"
-          className="inline-flex h-9 w-9 items-center justify-center rounded-component text-graphite transition-colors duration-fast ease-fast hover:bg-paper hover:text-carbon"
-        >
-          <BellIcon />
-        </button>
-        <div className="h-5 w-px bg-line-soft" />
-        <UserAvatar name={usuario?.nombre ?? null} fotoUrl={usuario?.foto_url ?? null} size="sm" />
       </div>
     </header>
   );

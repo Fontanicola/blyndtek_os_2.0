@@ -1849,3 +1849,23 @@ $ find . -maxdepth 3 \( -name 'middleware.*' -o -name 'proxy.*' \) -not -path '.
 - Cada mes ahora puede expandir sus costos para ver el detalle de costos fijos y el itemizado de hipótesis activas, con alerta visual si la caja del escenario cae bajo cero.
 - La tabla recalcula en vivo al activar o desactivar hipótesis, sin llamadas extra al backend hasta aprobar los cambios.
 - Verificación local ejecutada: `npm run lint` y `npm run build` pasan correctamente.
+
+## 2026-07-19 — Topbar reducido
+
+- `components/layout/Topbar.tsx` quedó reducido a una barra más baja, con sólo el nombre de la sección y el botón mobile de navegación.
+- Se eliminó la campanita y el avatar del lado derecho del Topbar para evitar duplicación visual y recuperar altura útil en todos los módulos.
+- Se confirmó que el footer del Sidebar mantiene el acceso a `Configuración de perfil` y `Cerrar sesión`, por lo que no se pierde funcionalidad al limpiar el header.
+
+## 2026-07-19 — Runway Lab con gráfico híbrido
+
+- `lib/finanzas/runwayProjection.ts` ahora expone `caja_acumulada_actual`, `caja_acumulada_escenario`, `mes_agotamiento_actual` y `mes_agotamiento_escenario` para que la proyección responda explícitamente cuándo se agota la caja.
+- `components/finanzas/RunwayChart.tsx` se reescribió como gráfico híbrido: barras sólidas de ingresos/costos mensuales y líneas de caja acumulada actual/escenario, con referencia en cero y marcador de agotamiento.
+- `components/finanzas/RunwayLab.tsx` eliminó la tabla mensual expandible; el detalle de ingresos, costos fijos, hipótesis, margen y caja acumulada vive ahora en el tooltip del gráfico central.
+- Las hipótesis activas siguen recalculándose en memoria: el gráfico, KPIs y línea de escenario se actualizan al activar/desactivar sin llamadas extra al backend.
+- Verificación local ejecutada: `npm run lint` y `npm run build` pasan correctamente.
+
+## 2026-07-19 — Recalculo de avance y backfill de QA en HA Control de Obra
+
+- Se recalculó el avance de `HA Control de Obra` después de cargar por SQL directo la fase `Chequeo general / QA de producción`.
+- Resultado: `avance_pct` pasó de `100%` a `75%`; las fases existentes quedaron en `100%` y la nueva fase QA quedó en `0%` (`0/25` features en `lista`).
+- Se ejecutó el backfill de tareas para features sin tarea vinculada: se crearon `25` tareas en total, las `25` correspondientes a la nueva fase QA de producción.

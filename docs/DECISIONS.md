@@ -498,3 +498,10 @@
 - `Runway Lab` deja de apoyarse sólo en el gráfico como lectura principal: la tabla mensual `Proyección mes a mes` es ahora la pieza central para entender el escenario.
 - El gráfico se mantiene como resumen visual complementario arriba de la tabla, útil para detectar tendencias rápido sin reemplazar el detalle numérico.
 - Las hipótesis siguen editándose y activándose en memoria hasta aprobarse, pero la lectura final para decidir pasa por la tabla mes a mes con costos expandibles y alerta visual de caja negativa.
+
+## 2026-07-19 — Runway Lab con gráfico híbrido único
+
+- La decisión anterior de tabla mensual queda reemplazada: `Runway Lab` usa un único gráfico híbrido como pieza central.
+- El gráfico combina barras sólidas de flujo mensual (`ingresos` hacia arriba, `costos` hacia abajo) con líneas de caja acumulada (`actual` y `escenario`) para responder de un vistazo cuántos meses alcanza la caja.
+- El detalle numérico que antes vivía en la tabla se concentra en el tooltip del gráfico: ingresos, costos fijos, costos de hipótesis itemizados, margen y caja acumulada.
+- Si la caja acumulada cae bajo cero, el gráfico debe marcar el primer mes de agotamiento; si no ocurre dentro de los 12 meses, no se muestra alerta.
