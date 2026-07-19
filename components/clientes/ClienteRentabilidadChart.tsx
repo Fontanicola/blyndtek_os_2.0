@@ -12,6 +12,7 @@ import {
   YAxis
 } from "recharts";
 import { Card } from "@/components/ui";
+import { chartTheme, formatCompactCurrencyTick } from "@/lib/charts/chartTheme";
 import { formatUSD } from "@/lib/utils/formatters";
 
 export type ClienteRentabilidadPoint = {
@@ -24,22 +25,6 @@ export type ClienteRentabilidadPoint = {
 type ClienteRentabilidadChartProps = {
   data: ClienteRentabilidadPoint[];
 };
-
-const SIGNAL = "#1F44FF";
-const DANGER = "#E53E3E";
-const SUCCESS = "#38A169";
-const GRAPHITE = "#5A6373";
-
-function formatMoneyTick(value: number) {
-  const absolute = Math.abs(value);
-  const sign = value < 0 ? "-" : "";
-
-  if (absolute >= 1000) {
-    return `${sign}$${(absolute / 1000).toFixed(absolute >= 100000 ? 0 : 1)}k`;
-  }
-
-  return `${sign}$${absolute.toLocaleString("en-US")}`;
-}
 
 export function ClienteRentabilidadChart({ data }: ClienteRentabilidadChartProps) {
   const maxAbsValue = useMemo(
@@ -57,9 +42,9 @@ export function ClienteRentabilidadChart({ data }: ClienteRentabilidadChartProps
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {[
-              { label: "Ingresos", color: SIGNAL },
-              { label: "Costos", color: DANGER },
-              { label: "Margen", color: SUCCESS }
+              { label: "Ingresos", color: chartTheme.colors.signal },
+              { label: "Costos", color: chartTheme.colors.danger },
+              { label: "Margen", color: chartTheme.colors.success }
             ].map((item) => (
               <span
                 key={item.label}
@@ -75,13 +60,23 @@ export function ClienteRentabilidadChart({ data }: ClienteRentabilidadChartProps
         <div className="w-full">
           <ResponsiveContainer width="100%" height={360}>
             <ComposedChart data={data} margin={{ top: 20, right: 20, left: 10, bottom: 10 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#EAECF0" vertical={false} />
-              <XAxis dataKey="mes" tick={{ fontSize: 12, fill: GRAPHITE }} axisLine={false} tickLine={false} interval={0} />
+              <CartesianGrid
+                strokeDasharray={chartTheme.grid.strokeDasharray}
+                stroke={chartTheme.grid.stroke}
+                vertical={chartTheme.grid.vertical}
+              />
+              <XAxis
+                dataKey="mes"
+                tick={chartTheme.axis.tick}
+                axisLine={chartTheme.axis.axisLine}
+                tickLine={chartTheme.axis.tickLine}
+                interval={0}
+              />
               <YAxis
-                tickFormatter={(value: number | string) => formatMoneyTick(Number(value))}
-                tick={{ fontSize: 11, fill: GRAPHITE }}
-                axisLine={false}
-                tickLine={false}
+                tickFormatter={formatCompactCurrencyTick}
+                tick={chartTheme.axis.tick}
+                axisLine={chartTheme.axis.axisLine}
+                tickLine={chartTheme.axis.tickLine}
                 domain={[Math.min(0, -maxAbsValue * 1.15), Math.max(0, maxAbsValue * 1.15)]}
               />
               <Tooltip
@@ -101,16 +96,16 @@ export function ClienteRentabilidadChart({ data }: ClienteRentabilidadChartProps
                   }
 
                   return (
-                    <div className="rounded-card border border-white/80 bg-white/95 p-4 text-sm shadow-modal backdrop-blur">
+                    <div className={chartTheme.tooltip.className}>
                       <p className="mb-2 font-label text-carbon">{label}</p>
                       <div className="space-y-1.5">
-                        <p className="text-xs" style={{ color: SIGNAL }}>
+                        <p className="text-xs" style={{ color: chartTheme.colors.signal }}>
                           Ingresos: {formatUSD(point.ingresos)}
                         </p>
-                        <p className="text-xs" style={{ color: DANGER }}>
+                        <p className="text-xs" style={{ color: chartTheme.colors.danger }}>
                           Costos: {formatUSD(point.costos)}
                         </p>
-                        <p className="text-xs" style={{ color: SUCCESS }}>
+                        <p className="text-xs" style={{ color: chartTheme.colors.success }}>
                           Margen: {formatUSD(point.margen)}
                         </p>
                       </div>
@@ -118,16 +113,28 @@ export function ClienteRentabilidadChart({ data }: ClienteRentabilidadChartProps
                   );
                 }}
               />
-              <Bar dataKey="ingresos" name="Ingresos" fill={SIGNAL} radius={[6, 6, 0, 0]} barSize={16} />
-              <Bar dataKey="costos" name="Costos" fill={DANGER} radius={[6, 6, 0, 0]} barSize={16} />
+              <Bar
+                dataKey="ingresos"
+                name="Ingresos"
+                fill={chartTheme.colors.signal}
+                radius={chartTheme.bar.radius}
+                barSize={chartTheme.bar.barSize}
+              />
+              <Bar
+                dataKey="costos"
+                name="Costos"
+                fill={chartTheme.colors.danger}
+                radius={chartTheme.bar.radius}
+                barSize={chartTheme.bar.barSize}
+              />
               <Line
                 type="monotone"
                 dataKey="margen"
                 name="Margen"
-                stroke={SUCCESS}
+                stroke={chartTheme.colors.success}
                 strokeWidth={2.5}
-                dot={{ r: 3.5, fill: "#FFFFFF", stroke: SUCCESS, strokeWidth: 2 }}
-                activeDot={{ r: 5, fill: "#FFFFFF", stroke: SUCCESS, strokeWidth: 2.5 }}
+                dot={{ r: 3.5, fill: "#FFFFFF", stroke: chartTheme.colors.success, strokeWidth: 2 }}
+                activeDot={{ r: 5, fill: "#FFFFFF", stroke: chartTheme.colors.success, strokeWidth: 2.5 }}
               />
             </ComposedChart>
           </ResponsiveContainer>

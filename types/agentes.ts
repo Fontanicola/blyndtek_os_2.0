@@ -14,7 +14,12 @@ export type Agente = {
   created_at: string;
 };
 
-export type AgenteConfigKey = "runway_objetivo_meses" | "resumen_automatico_activo" | "frecuencia_resumen";
+export type AgenteConfigKey =
+  | "runway_objetivo_meses"
+  | "resumen_automatico_activo"
+  | "frecuencia_resumen"
+  | "generacion_automatica_activa"
+  | "dia_generacion";
 
 export type AgenteConfigRow = {
   id: string;
@@ -28,6 +33,24 @@ export type AgenteConfig = {
   runway_objetivo_meses: number;
   resumen_automatico_activo: boolean;
   frecuencia_resumen: string;
+  generacion_automatica_activa: boolean;
+  dia_generacion: string;
+};
+
+export type GeneracionAutomaticaAgente = {
+  id: string;
+  plan_semanal_id: string | null;
+  estado: "en_curso" | "completado" | "fallido";
+  piezas_generadas: number;
+  error_detalle: string | null;
+  iniciado_at: string;
+  finalizado_at: string | null;
+};
+
+export type PiezaContenidoCostoAgente = {
+  id: string;
+  costo_generacion_usd: number | null;
+  created_at: string;
 };
 
 export type AgenteAnalisisTipo = "automatico" | "bajo_demanda";
@@ -84,6 +107,18 @@ export type AgentesDatabase = Database & {
           created_at?: string;
         };
         Update: Partial<AgenteAnalisis>;
+        Relationships: [];
+      };
+      generaciones_automaticas: {
+        Row: GeneracionAutomaticaAgente;
+        Insert: Partial<GeneracionAutomaticaAgente> & Pick<GeneracionAutomaticaAgente, "estado">;
+        Update: Partial<GeneracionAutomaticaAgente>;
+        Relationships: [];
+      };
+      piezas_contenido: {
+        Row: PiezaContenidoCostoAgente;
+        Insert: Partial<PiezaContenidoCostoAgente>;
+        Update: Partial<PiezaContenidoCostoAgente>;
         Relationships: [];
       };
     };

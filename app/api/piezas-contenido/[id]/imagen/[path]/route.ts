@@ -29,13 +29,24 @@ export async function GET(_request: Request, { params }: RouteContext) {
 
     const { data: pieza } = await supabase
       .from("piezas_contenido")
-      .select("id, storage_path")
+      .select("id, storage_path, fondo_storage_path, imagenes_generadas")
       .eq("id", params.id)
       .eq("marca_id", marca.id)
-      .eq("storage_path", storagePath)
       .maybeSingle();
 
-    if (!pieza) {
+    const piezaActual = pieza as {
+      id: string;
+      storage_path: string | null;
+      fondo_storage_path: string | null;
+      imagenes_generadas: string[] | null;
+    } | null;
+    const allowedPaths = new Set([
+      piezaActual?.storage_path,
+      piezaActual?.fondo_storage_path,
+      ...(Array.isArray(piezaActual?.imagenes_generadas) ? piezaActual.imagenes_generadas : [])
+    ].filter((path): path is string => Boolean(path)));
+
+    if (!piezaActual || !allowedPaths.has(storagePath)) {
       return NextResponse.json({ error: "Imagen not found" }, { status: 404 });
     }
 

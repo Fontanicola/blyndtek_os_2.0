@@ -6,13 +6,17 @@ export const AGENTE_ASESOR_FINANCIERO_SLUG = "asesor-financiero";
 export const DEFAULT_AGENTE_CONFIG: AgenteConfig = {
   runway_objetivo_meses: 6,
   resumen_automatico_activo: false,
-  frecuencia_resumen: "mensual"
+  frecuencia_resumen: "mensual",
+  generacion_automatica_activa: true,
+  dia_generacion: "lunes"
 };
 
 const CONFIG_KEY_ORDER: AgenteConfigKey[] = [
   "runway_objetivo_meses",
   "resumen_automatico_activo",
-  "frecuencia_resumen"
+  "frecuencia_resumen",
+  "generacion_automatica_activa",
+  "dia_generacion"
 ];
 
 export function normalizeAgenteConfig(rows: AgenteConfigRow[] | null | undefined): AgenteConfig {
@@ -49,6 +53,25 @@ export function normalizeAgenteConfig(rows: AgenteConfigRow[] | null | undefined
         typeof row.valor === "string" && row.valor.trim().length > 0
           ? row.valor
           : DEFAULT_AGENTE_CONFIG.frecuencia_resumen;
+      continue;
+    }
+
+    if (key === "generacion_automatica_activa") {
+      if (typeof row.valor === "boolean") {
+        config.generacion_automatica_activa = row.valor;
+      } else if (typeof row.valor === "string") {
+        config.generacion_automatica_activa = row.valor === "true";
+      } else if (typeof row.valor === "number") {
+        config.generacion_automatica_activa = row.valor !== 0;
+      }
+      continue;
+    }
+
+    if (key === "dia_generacion") {
+      config.dia_generacion =
+        typeof row.valor === "string" && row.valor.trim().length > 0
+          ? row.valor
+          : DEFAULT_AGENTE_CONFIG.dia_generacion;
     }
   }
 
@@ -68,6 +91,14 @@ export function buildAgenteConfigEntries(input: Partial<AgenteConfig>): Array<{ 
 
   if (typeof input.frecuencia_resumen === "string" && input.frecuencia_resumen.trim().length > 0) {
     entries.push({ clave: "frecuencia_resumen", valor: input.frecuencia_resumen.trim() });
+  }
+
+  if (typeof input.generacion_automatica_activa === "boolean") {
+    entries.push({ clave: "generacion_automatica_activa", valor: input.generacion_automatica_activa });
+  }
+
+  if (typeof input.dia_generacion === "string" && input.dia_generacion.trim().length > 0) {
+    entries.push({ clave: "dia_generacion", valor: input.dia_generacion.trim() });
   }
 
   return entries;

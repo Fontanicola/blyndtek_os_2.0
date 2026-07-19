@@ -1,10 +1,25 @@
 # Decisions
 
+## 2026-07-19 — Plan semanal de contenido conectado
+
+- El contenido de Blyndtek se genera semanalmente como un plan narrativamente conectado, no como piezas sueltas aisladas.
+- Cada plan se basa en una noticia real investigada por Claude con `web_search_20250305`; la noticia queda trazada en `planes_semanales.noticia_url`.
+- Las piezas de feed quedan en estado `idea` con slides/copy serializados en `piezas_contenido.guion`, listas para una etapa visual posterior; reel e historias quedan como guiones listos en estado `lista`.
+- El contenido público nunca nombra ni da visibilidad a competidores directos o indirectos de Blyndtek, aunque la noticia real que inspira el plan los involucre; el nombre/link real de esa fuente queda sólo en `planes_semanales.noticia_fuente` y `planes_semanales.noticia_url` para verificación interna.
+
+## 2026-07-19 — Higgsfield con SDK oficial y prompt generado por Claude
+
+- La generación visual de Content Studio usa el SDK oficial `@higgsfield/client` con credenciales en formato `Key ID:Secret`, no headers `Bearer` manuales.
+- El modelo activo se toma del catálogo real habilitado por la cuenta: `/higgsfield-ai/soul/v2/standard`; no se usa el endpoint `flux-pro/kontext/max/text-to-image` porque esta cuenta respondió `model_not_found` para ese modelo.
+- El prompt enviado a Higgsfield no es fijo: Claude lo genera cruzando la identidad de marca de Blyndtek, el contexto de la pieza y una imagen de referencia opcional.
+- Si la referencia visual viene de Archivos, el backend lee el archivo desde Storage con service role y lo envía a Claude como imagen base64; no expone URLs protegidas ni duplica Storage.
+- La pieza guarda `prompt_higgsfield`, `higgsfield_job_id`, `higgsfield_estado`, `storage_path` y `generado_con_ia` para dejar trazabilidad completa de la generación.
+
 ## 2026-07-19 — Content Studio manual-first para Blyndtek
 
 - Content Studio arranca con `Blyndtek` como única marca operativa, resuelta por `slug='blyndtek'` y sin selector de marca en la UI.
 - La gestión es 100% manual en esta etapa: identidad editable, pilares, piezas, caption, hashtags, imagen subida por admin y estados del flujo.
-- La generación con Higgsfield y la sincronización real con Instagram/Meta quedan para una capa futura, cuando existan esas cuentas externas conectadas.
+- La sincronización real con Instagram/Meta queda para una capa futura, cuando existan esas cuentas externas conectadas.
 - El esquema ya queda preparado para esa evolución (`meta_ig_business_id`, `meta_page_id`, `meta_post_id`, `prompt_higgsfield`, `generado_con_ia`), sin requerir cambios de estructura cuando se conecten.
 
 ## 2026-07-17 — Dashboard: ventas como contratos activos
@@ -519,3 +534,49 @@
 - La atribución conecta `leads.canal_origen` y `leads.campana_origen` con ingreso real de contratos activos y costo real de comisiones pagadas.
 - El retorno de marketing no se calcula con valores estimados aislados: sigue la cadena real `lead -> cliente -> contrato -> comisión`.
 - Esta base queda preparada para una futura integración con Meta Ads; cuando exista sincronización, `campana_origen` podrá poblarse automáticamente con el nombre real de campaña sin cambiar el esquema.
+
+## 2026-07-19 — Superficies planas y tema centralizado de gráficos
+
+- El sistema visual adopta radios más técnicos: `rounded-component=6px`, `rounded-card=8px` y `rounded-pill=100px`.
+- Las superficies normales se definen por borde fino (`border-line-soft`) y no por sombra. Las sombras `soft/card` quedan casi imperceptibles; `shadow-modal` se reserva para elevación real como modales, dropdowns, toasts y overlays.
+- Se evita el patrón de card dentro de card: una región de pantalla debe tener como máximo un nivel de superficie principal, salvo unidades KPI explícitas como `MetricaCard`.
+- `lib/charts/chartTheme.ts` es la fuente única para cualquier gráfico nuevo o existente: colores, grid, ejes, barras y tooltip deben salir de ese archivo para mantener coherencia visual entre Finanzas, Dashboard, SaaS, Mi Panel, Clientes y AI Hub.
+- La grilla estándar de gráficos usa sólo líneas horizontales sutiles; no se reintroducen grids verticales ni tooltips custom aislados salvo una justificación analítica concreta.
+
+## 2026-07-19 — Piezas de feed textual renderizadas con ImageResponse
+
+- Las piezas de feed del Plan Semanal que contienen texto real (`noticia`, `caso de uso`, `dato rápido`) se renderizan con `ImageResponse`/Satori sobre un template propio de Blyndtek, no con generadores de imágenes de IA.
+- Motivo: los modelos de imagen no garantizan texto legible ni fiel cuando tienen que dibujar letras; el contenido público necesita usar exactamente el texto real guardado en `piezas_contenido.guion`.
+- Cada slide se genera como PNG en formato 4:5 y se guarda en `piezas_contenido.imagenes_generadas` como array ordenado de storage paths; `storage_path` queda apuntando al primer slide para previews.
+- La plantilla vive en `lib/contenido/plantillaSlide.tsx`, usa estilos inline compatibles con Satori y carga Inter como ArrayBuffer para pasarlo explícitamente a `ImageResponse`.
+- Higgsfield queda reservado para creatividades visuales donde el texto no sea parte crítica del asset final; nunca se usa para carruseles informativos con texto real que debe leerse perfecto.
+
+## 2026-07-19 — Higgsfield sólo genera fondos, el texto siempre lo renderiza código
+
+- El flujo de generación de piezas de feed queda dividido internamente pero se expone como un solo botón: Higgsfield genera únicamente un fondo atmosférico abstracto y `ImageResponse` renderiza encima el texto real del `guion`.
+- Los prompts enviados a Higgsfield tienen prohibido pedir texto, letras, números, dashboards, pantallas, tablas, íconos con etiqueta, datos o cualquier elemento informativo; el fondo debe ser visual, no semántico.
+- Si Higgsfield falla o no hay fondo, la plantilla usa el degradé de marca como fallback para que el render textual no dependa de un proveedor externo.
+- La UI prioriza resultado sobre proceso: el usuario ve un botón `Generar`, loading simple e imágenes finales; `prompt_fondo` y `guion` quedan ocultos en `Ver detalle técnico` sólo para debugging.
+- La actividad de generación se registra en `agente_analisis` bajo el agente `generador-contenido`, para que aparezca en el AI Hub y su costo se consolide junto al resto de agentes.
+
+## 2026-07-19 — Carruseles con roles editoriales por slide
+
+- Las piezas de carrusel no usan una plantilla repetida slide por slide: el renderizador elige entre 4 layouts según rol (`portada`, `contenido`, `dato/cita`, `cierre`).
+- La variedad visual debe venir de composición y jerarquía, no de cambiar identidad: misma paleta, misma Inter, mismo logo real y mismo tono de marca en todos los slides.
+- La portada puede ser más audaz y editorial; los slides de contenido priorizan legibilidad con bloques angostos y numeración tipográfica sutil; el cierre deja más aire y destaca el mensaje final.
+- Esta regla evita que las piezas parezcan un template genérico de frases motivacionales y fija el estándar de calidad para cualquier nuevo formato visual del Content Studio.
+
+## 2026-07-19 — Content Studio semanal automático con gate humano
+
+- El ciclo semanal de Content Studio es automático de punta a punta: investigación de noticia real, redacción del plan, generación de fondo, renderizado visual y registro de actividad se ejecutan sin clicks intermedios.
+- El único punto de control humano queda al final: aprobar, regenerar o reemplazar una imagen puntual antes de publicar.
+- Las piezas de feed generadas automáticamente quedan en `en_diseno`, que ahora significa “generado automáticamente, esperando revisión”. Reel e historias pasan a `lista` porque son guiones/textos ejecutables manualmente.
+- El cron usa el mecanismo real del proyecto (`pg_cron` + `net.http_post`) y llama al endpoint con service role; por eso los endpoints encadenados aceptan service role sin relajar el acceso admin normal desde la UI.
+- La publicación a Instagram sigue siendo manual hasta que Meta esté conectada con permisos de publicación; cuando exista esa integración, la acción `Aprobar` podrá extenderse a publicar sin cambiar la arquitectura del flujo.
+
+## 2026-07-19 — Generador de Contenido como agente completo del AI Hub
+
+- El Generador de Contenido queda integrado al AI Hub con el mismo estándar que el resto de agentes: aparece en el feed unificado, suma al costo consolidado de IA y tiene configuración propia.
+- La fuente canónica para eventos de planes semanales es `generaciones_automaticas`; `agente_analisis` se conserva para eventos de generación visual puntual y trazabilidad técnica.
+- La pausa/reanudación del agente vive en `agente_config.generacion_automatica_activa`; el cron debe respetarla siempre y registrar una ejecución pausada en vez de fallar silenciosamente o no dejar rastro.
+- `dia_generacion` queda editable como configuración preparada, aunque el cron actual siga fijo en lunes por `pg_cron`; esto evita cambios de esquema cuando el día pase a controlarse desde UI.

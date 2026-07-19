@@ -3,26 +3,13 @@
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import type { TooltipContentProps } from "recharts/types/component/Tooltip";
 import { Card } from "@/components/ui";
+import { chartTheme, formatCompactCurrencyTick } from "@/lib/charts/chartTheme";
 import { formatUSD } from "@/lib/utils/formatters";
 import type { DashboardVentasVsCobradoPoint } from "@/types/dashboard";
 
 type VentasVsCobradoChartProps = {
   data: DashboardVentasVsCobradoPoint[];
 };
-
-const SIGNAL = "#1F44FF";
-const SUCCESS = "#38A169";
-const GRAPHITE = "#5A6373";
-
-function formatMoneyTick(value: number | string) {
-  const numericValue = Number(value);
-
-  if (Math.abs(numericValue) >= 1000) {
-    return `$${(numericValue / 1000).toFixed(numericValue >= 100000 ? 0 : 1)}k`;
-  }
-
-  return `$${Math.round(numericValue).toLocaleString("en-US")}`;
-}
 
 export function VentasVsCobradoChart({ data }: VentasVsCobradoChartProps) {
   const hasData = data.some((point) => point.ventas > 0 || point.cobrado > 0);
@@ -46,13 +33,22 @@ export function VentasVsCobradoChart({ data }: VentasVsCobradoChartProps) {
           <div className="h-[320px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={data} margin={{ top: 16, right: 20, bottom: 8, left: 8 }} barCategoryGap="30%">
-                <CartesianGrid stroke="#E8ECF3" strokeDasharray="2 10" vertical={false} />
-                <XAxis dataKey="mes" tick={{ fill: GRAPHITE, fontSize: 11 }} axisLine={false} tickLine={false} />
+                <CartesianGrid
+                  stroke={chartTheme.grid.stroke}
+                  strokeDasharray={chartTheme.grid.strokeDasharray}
+                  vertical={chartTheme.grid.vertical}
+                />
+                <XAxis
+                  dataKey="mes"
+                  tick={chartTheme.axis.tick}
+                  axisLine={chartTheme.axis.axisLine}
+                  tickLine={chartTheme.axis.tickLine}
+                />
                 <YAxis
-                  tick={{ fill: GRAPHITE, fontSize: 11 }}
-                  axisLine={false}
-                  tickLine={false}
-                  tickFormatter={formatMoneyTick}
+                  tick={chartTheme.axis.tick}
+                  axisLine={chartTheme.axis.axisLine}
+                  tickLine={chartTheme.axis.tickLine}
+                  tickFormatter={formatCompactCurrencyTick}
                 />
                 <Tooltip
                   content={({ active, payload, label }: TooltipContentProps<number, string>) => {
@@ -66,13 +62,13 @@ export function VentasVsCobradoChart({ data }: VentasVsCobradoChartProps) {
                     }
 
                     return (
-                      <div className="rounded-card border border-white/80 bg-white/95 p-3 text-sm shadow-modal backdrop-blur">
+                      <div className={chartTheme.tooltip.className}>
                         <p className="mb-2 font-label text-carbon">{label}</p>
                         <div className="space-y-1.5">
-                          <p className="text-xs" style={{ color: SIGNAL }}>
+                          <p className="text-xs" style={{ color: chartTheme.colors.signal }}>
                             Ventas: {formatUSD(point.ventas)}
                           </p>
-                          <p className="text-xs" style={{ color: SUCCESS }}>
+                          <p className="text-xs" style={{ color: chartTheme.colors.success }}>
                             Cobrado: {formatUSD(point.cobrado)}
                           </p>
                         </div>
@@ -80,8 +76,20 @@ export function VentasVsCobradoChart({ data }: VentasVsCobradoChartProps) {
                     );
                   }}
                 />
-                <Bar dataKey="ventas" name="Ventas" fill={SIGNAL} radius={[8, 8, 2, 2]} barSize={18} />
-                <Bar dataKey="cobrado" name="Cobrado" fill={SUCCESS} radius={[8, 8, 2, 2]} barSize={18} />
+                <Bar
+                  dataKey="ventas"
+                  name="Ventas"
+                  fill={chartTheme.colors.signal}
+                  radius={chartTheme.bar.radius}
+                  barSize={chartTheme.bar.barSize}
+                />
+                <Bar
+                  dataKey="cobrado"
+                  name="Cobrado"
+                  fill={chartTheme.colors.success}
+                  radius={chartTheme.bar.radius}
+                  barSize={chartTheme.bar.barSize}
+                />
               </BarChart>
             </ResponsiveContainer>
           </div>

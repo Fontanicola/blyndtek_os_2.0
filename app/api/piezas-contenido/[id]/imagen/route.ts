@@ -33,6 +33,9 @@ export async function POST(request: Request, { params }: RouteContext) {
 
     const formData = await request.formData();
     const file = formData.get("file") ?? formData.get("imagen");
+    const slideIndexRaw = formData.get("slide_index");
+    const slideIndex =
+      typeof slideIndexRaw === "string" && slideIndexRaw.trim() !== "" ? Number.parseInt(slideIndexRaw, 10) : null;
 
     if (!(file instanceof File)) {
       return NextResponse.json({ error: "No se recibió una imagen válida." }, { status: 400 });
@@ -55,19 +58,32 @@ export async function POST(request: Request, { params }: RouteContext) {
 
     const { data: pieza } = await supabase
       .from("piezas_contenido")
-      .select("id, marca_id, storage_path")
+      .select("id, marca_id, storage_path, imagenes_generadas")
       .eq("id", params.id)
       .eq("marca_id", marca.id)
       .maybeSingle();
 
-    const piezaActual = pieza as { id: string; marca_id: string; storage_path: string | null } | null;
+    const piezaActual = pieza as {
+      id: string;
+      marca_id: string;
+      storage_path: string | null;
+      imagenes_generadas: string[] | null;
+    } | null;
 
     if (!piezaActual) {
       return NextResponse.json({ error: "Pieza not found" }, { status: 404 });
     }
 
     const extension = normalizeExtension(file.name, file.type);
-    const storagePath = `contenido/${params.id}.${extension}`;
+    const generatedImages = Array.isArray(piezaActual.imagenes_generadas) ? [...piezaActual.imagenes_generadas] : [];
+    const replacingSlide = slideIndex !== null && Number.isInteger(slideIndex);
+    if (replacingSlide && (slideIndex < 0 || slideIndex >= generatedImages.length)) {
+      return NextResponse.json({ error: "slide_index está fuera de rango." }, { status: 400 });
+    }
+
+    const storagePath = replacingSlide
+      ? `contenido/${params.id}-slide-${slideIndex + 1}-manual.${extension}`
+      : `contenido/${params.id}.${extension}`;
     const bytes = new Uint8Array(await file.arrayBuffer());
 
     const { error: uploadError } = await supabase.storage.from(CONTENT_BUCKET).upload(storagePath, bytes, {
@@ -79,13 +95,28 @@ export async function POST(request: Request, { params }: RouteContext) {
       return NextResponse.json({ error: uploadError.message }, { status: 500 });
     }
 
-    if (piezaActual.storage_path && piezaActual.storage_path !== storagePath) {
+    if (replacingSlide && slideIndex !== null) {
+      const oldSlidePath = generatedImages[slideIndex];
+      generatedImages[slideIndex] = storagePath;
+
+      if (oldSlidePath && oldSlidePath !== storagePath) {
+        await supabase.storage.from(CONTENT_BUCKET).remove([oldSlidePath]);
+      }
+    } else if (piezaActual.storage_path && piezaActual.storage_path !== storagePath) {
       await supabase.storage.from(CONTENT_BUCKET).remove([piezaActual.storage_path]);
     }
 
+    const updatePayload = replacingSlide
+      ? {
+          imagenes_generadas: generatedImages,
+          storage_path: slideIndex === 0 ? storagePath : piezaActual.storage_path,
+          updated_at: new Date().toISOString()
+        }
+      : { storage_path: storagePath, updated_at: new Date().toISOString() };
+
     const { data, error } = await supabase
       .from("piezas_contenido")
-      .update({ storage_path: storagePath, updated_at: new Date().toISOString() } as never)
+      .update(updatePayload as never)
       .eq("id", params.id)
       .select("*, pilar:pilares_contenido(*)")
       .single();

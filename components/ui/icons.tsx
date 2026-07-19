@@ -31,6 +31,7 @@ import {
   FolderOpen,
   Grid2x2,
   Image,
+  Layers,
   LayoutDashboard,
   LayoutGrid,
   Link2,
@@ -103,6 +104,7 @@ export const FolderIcon = createIcon(Folder);
 export const FolderOpenIcon = createIcon(FolderOpen);
 export const GridIcon = createIcon(Grid2x2);
 export const ImageIcon = createIcon(Image);
+export const LayersIcon = createIcon(Layers);
 export const DashboardIcon = createIcon(LayoutDashboard);
 export const ProyectosIcon = createIcon(LayoutGrid);
 export const LinkIcon = createIcon(Link2);

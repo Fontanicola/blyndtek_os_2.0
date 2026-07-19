@@ -51,11 +51,15 @@
 | --- | --- | --- | --- |
 | id | uuid | No | PK, default `gen_random_uuid()` |
 | marca_id | uuid | No | FK a la marca Blyndtek |
+| plan_semanal_id | uuid | Sí | FK a `planes_semanales.id`, usado para agrupar piezas generadas por una misma semana |
 | pilar_id | uuid | Sí | FK al pilar de contenido |
 | titulo | text | No | Default `Sin título` |
 | storage_path | text | Sí | Imagen manual subida a Storage (`archivos-blyndtek/contenido/...`) |
+| fondo_storage_path | text | Sí | Fondo atmosférico generado por Higgsfield, sin texto ni UI falsa |
+| imagenes_generadas | jsonb | Sí | Array ordenado de storage paths generado por ImageResponse, uno por slide |
 | caption | text | Sí | Texto de publicación |
 | hashtags | text[] | No | Chips editables de hashtags |
+| guion | jsonb | Sí | Texto estructurado del plan: slides de feed, guion de reel o ideas de historias |
 | plataforma | text | No | Default `instagram_feed` |
 | estado | text | No | Flujo: `idea`, `en_diseno`, `lista`, `programada`, `publicada`, `fallida` |
 | fecha_programada | timestamptz | Sí | Fecha/hora de programación manual |
@@ -63,11 +67,51 @@
 | meta_post_id | text | Sí | Preparado para futura sync con Meta |
 | meta_error | text | Sí | Error de publicación futura |
 | generado_con_ia | boolean | No | Default `false`; preparado para Higgsfield |
-| prompt_higgsfield | text | Sí | Prompt futuro de generación visual |
+| prompt_higgsfield | text | Sí | Prompt final enviado a Higgsfield |
+| prompt_fondo | text | Sí | Prompt específico usado para generar únicamente el fondo atmosférico |
+| higgsfield_job_id | text | Sí | ID de request/job devuelto por Higgsfield |
+| higgsfield_estado | text | Sí | Estado de generación: `procesando`, `completado`, `fallido` |
+| tokens_entrada | integer | Sí | Tokens de entrada consumidos por Claude al generar el prompt de fondo |
+| tokens_salida | integer | Sí | Tokens de salida generados por Claude al generar el prompt de fondo |
+| costo_generacion_usd | numeric | Sí | Costo estimado de la generación textual del prompt de fondo |
 | creativo_referencia_id | uuid | Sí | FK opcional a archivo de referencia |
 | creado_por | uuid | Sí | Usuario admin que creó la pieza |
 | updated_at | timestamptz | No | Default `now()` |
 | created_at | timestamptz | No | Default `now()` |
+
+## Tabla: planes_semanales
+
+**PK:** `id`
+
+**FKs:** `marca_id` → `marcas_contenido.id`
+
+**Uso actual:** generación semanal conectada de contenido para Blyndtek, basada en una noticia real investigada con Claude web search.
+
+| Campo | Tipo | Nullable | Notas |
+| --- | --- | --- | --- |
+| id | uuid | No | PK, default `gen_random_uuid()` |
+| marca_id | uuid | No | FK a la marca Blyndtek |
+| semana_inicio | date | No | Lunes/inicio lógico de la semana del plan |
+| tema_general | text | No | Hilo narrativo central de la semana |
+| noticia_fuente | text | No | Resumen de la noticia real usada como disparador |
+| noticia_url | text | No | URL verificable de la fuente |
+| created_at | timestamptz | No | Default `now()` |
+
+## Tabla: generaciones_automaticas
+
+**PK:** `id`
+
+**Uso actual:** trazabilidad de ejecuciones automáticas de Content Studio. Cada lunes, el job semanal genera un plan, renderiza las piezas de feed y deja el resultado esperando revisión humana.
+
+| Campo | Tipo | Nullable | Notas |
+| --- | --- | --- | --- |
+| id | uuid | No | PK, default `gen_random_uuid()` |
+| plan_semanal_id | uuid | Sí | FK a `planes_semanales.id`; vincula la ejecución automática con el plan creado |
+| estado | text | No | `en_curso`, `completado` o `fallido` |
+| piezas_generadas | integer | No | Cantidad de piezas de feed generadas visualmente durante la ejecución |
+| error_detalle | text | Sí | Mensaje real de error o errores parciales, si existieron |
+| iniciado_at | timestamptz | No | Momento de inicio de la ejecución |
+| finalizado_at | timestamptz | Sí | Momento de cierre de la ejecución |
 
 ## Tabla: leads
 

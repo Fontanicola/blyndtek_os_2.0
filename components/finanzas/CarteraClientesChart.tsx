@@ -2,16 +2,13 @@
 
 import { useMemo, useRef, useState, type MouseEvent } from "react";
 import { Card } from "@/components/ui";
+import { chartTheme } from "@/lib/charts/chartTheme";
 import { formatUSD } from "@/lib/utils/formatters";
 import type { CarteraClienteItem } from "@/types/finanzas";
 
 type CarteraClientesChartProps = {
   data: CarteraClienteItem[];
 };
-
-const HEX_SUCCESS = "#38A169";
-const HEX_WARNING = "#D97706";
-const TRACK = "#F0F2F7";
 
 function formatMoneyTick(value: number) {
   return `$${value.toLocaleString("en-US")}`;
@@ -97,7 +94,7 @@ export function CarteraClientesChart({ data }: CarteraClientesChartProps) {
                   >
                     <div className="truncate text-sm font-label text-carbon">{item.empresa}</div>
 
-                    <div className="relative h-3 overflow-hidden rounded-pill" style={{ backgroundColor: TRACK }}>
+                    <div className="relative h-3 overflow-hidden rounded-pill" style={{ backgroundColor: chartTheme.colors.paper }}>
                       <div
                         className="absolute inset-y-0 left-0 overflow-hidden rounded-pill"
                         style={{ width: `${totalWidth}%` }}
@@ -107,14 +104,14 @@ export function CarteraClientesChart({ data }: CarteraClientesChartProps) {
                             className="h-full"
                             style={{
                               width: `${totalWidth > 0 ? (cobradoWidth / totalWidth) * 100 : 0}%`,
-                              backgroundColor: HEX_SUCCESS
+                              backgroundColor: chartTheme.colors.success
                             }}
                           />
                           <div
                             className="h-full"
                             style={{
                               width: `${totalWidth > 0 ? (pendienteWidth / totalWidth) * 100 : 0}%`,
-                              backgroundColor: HEX_WARNING
+                              backgroundColor: chartTheme.colors.warning
                             }}
                           />
                         </div>
@@ -128,7 +125,7 @@ export function CarteraClientesChart({ data }: CarteraClientesChartProps) {
 
             {activeItem ? (
               <div
-                className="pointer-events-none absolute z-10 w-64 rounded-card border border-[#EAECF0] bg-white p-3 text-sm shadow-modal"
+                className={`pointer-events-none absolute z-10 w-64 ${chartTheme.tooltip.className}`}
                 style={{ left: `${tooltipPosition.x}px`, top: `${tooltipPosition.y}px` }}
               >
                 <p className="mb-1 font-label text-carbon">{activeItem.empresa}</p>
@@ -143,11 +140,11 @@ export function CarteraClientesChart({ data }: CarteraClientesChartProps) {
 
           <div className="flex flex-wrap items-center gap-4 text-xs text-graphite">
             <span className="inline-flex items-center gap-2">
-              <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: HEX_SUCCESS }} />
+              <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: chartTheme.colors.success }} />
               Cobrado
             </span>
             <span className="inline-flex items-center gap-2">
-              <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: HEX_WARNING }} />
+              <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: chartTheme.colors.warning }} />
               Pendiente
             </span>
           </div>

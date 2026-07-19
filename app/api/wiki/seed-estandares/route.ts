@@ -23,8 +23,10 @@ function buildArticleContent(): Json {
         "Paleta acotada: 4-5 colores núcleo por proyecto (primario, fondo, texto, variantes semánticas de éxito/error/alerta). Nunca colores inventados sobre la marcha."
       ],
       ["Tipografía: máximo 3 pesos (400 cuerpo, 500 labels, 600 títulos). Cero bold pesado, cero itálica decorativa."],
-      ["Radios consistentes en toda la app: uno para componentes, uno para cards, uno para pills/badges."],
-      ["Sombras de una sola capa, sutiles. Cero sombras apiladas o de color."],
+      ["Radios consistentes en toda la app: componentes 6px, cards 8px y pills/badges 100px."],
+      [
+        "Las superficies se definen por borde fino (`border-line-soft`) antes que por sombra. La sombra queda casi imperceptible en cards normales y `shadow-modal` se reserva para elevación real: modales, dropdowns, toasts y overlays."
+      ],
       ["Animaciones con propósito: 150-250ms, misma curva de easing en todo el proyecto."],
       [
         "Cero gradientes decorativos en navegación/formularios. Excepción: gráficos de datos sí pueden usar degradé, porque ahí comunica información."
@@ -45,6 +47,8 @@ function buildArticleContent(): Json {
     ]),
     tiptapHeading("Estándares de datos/gráficos", 3),
     tiptapBulletList([
+      ["Todo gráfico nuevo usa `lib/charts/chartTheme.ts` como fuente única de colores, grid, ejes, barras y tooltip."],
+      ["La grilla de gráficos usa sólo líneas horizontales sutiles; no se reintroducen grids verticales salvo necesidad analítica explícita."],
       ["Todo gráfico de serie de tiempo lleva tooltip que sigue al mouse con el dato exacto."],
       ["Ejes con valores formateados en moneda/unidad real."],
       ['Prohibido mostrar $0 o 0% cuando en realidad es "sin datos"; son cosas distintas.'],
@@ -62,6 +66,9 @@ function buildArticleContent(): Json {
     tiptapBulletList([
       [
         "Usar Card para paneles de detalle, métricas, modales, resúmenes o contenido que necesite respiración propia. No usar Card para listas homogéneas de selección."
+      ],
+      [
+        "Máximo un nivel de Card por región de pantalla. El contenido interno se separa con espaciado, jerarquía tipográfica o divisores finos; no con card dentro de card, salvo unidades KPI explícitas como MetricaCard."
       ],
       [
         "Usar filas con divisor fino para listas de selección de una sola entidad por ítem (clientes, proyectos, notas, artículos, carpetas o cualquier selector similar). La interacción debe leerse como lista, no como mosaico de tarjetas."

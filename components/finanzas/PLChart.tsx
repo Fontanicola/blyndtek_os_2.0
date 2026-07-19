@@ -1,9 +1,10 @@
 "use client";
 
-import { useId, useMemo } from "react";
+import { useMemo } from "react";
 import { Area, Bar, CartesianGrid, ComposedChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import type { TooltipContentProps } from "recharts/types/component/Tooltip";
 import { Card } from "@/components/ui";
+import { chartTheme, formatCompactCurrencyTick } from "@/lib/charts/chartTheme";
 import { formatUSD } from "@/lib/utils/formatters";
 import type { MonthlyFinancialPoint } from "@/lib/finanzas";
 
@@ -11,29 +12,7 @@ type PLChartProps = {
   data: MonthlyFinancialPoint[];
 };
 
-const SIGNAL = "#1F44FF";
-const DANGER = "#E53E3E";
-const SUCCESS = "#38A169";
-const GRAPHITE = "#5A6373";
-const CLIENTS = "#CBD3E1";
-
-function formatMoneyTick(value: number) {
-  const absolute = Math.abs(value);
-  const sign = value < 0 ? "-" : "";
-
-  if (absolute >= 1000) {
-    return `${sign}$${(absolute / 1000).toFixed(absolute >= 100000 ? 0 : 1)}k`;
-  }
-
-  return `${sign}$${absolute.toLocaleString("en-US")}`;
-}
-
 export function PLChart({ data }: PLChartProps) {
-  const chartId = useId().replace(/:/g, "");
-  const ingresosGradient = `pl-ingresos-${chartId}`;
-  const egresosGradient = `pl-egresos-${chartId}`;
-  const margenGradient = `pl-margen-${chartId}`;
-
   const averageMargin = useMemo(() => {
     const totalIngresos = data.reduce((total, point) => total + point.ingresos, 0);
     const totalEgresos = data.reduce((total, point) => total + point.egresos, 0);
@@ -58,10 +37,10 @@ export function PLChart({ data }: PLChartProps) {
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {[
-              { label: "Ingresos", color: SIGNAL },
-              { label: "Egresos", color: DANGER },
-              { label: "Margen", color: SUCCESS },
-              { label: "Clientes", color: GRAPHITE }
+              { label: "Ingresos", color: chartTheme.colors.signal },
+              { label: "Egresos", color: chartTheme.colors.danger },
+              { label: "Margen", color: chartTheme.colors.success },
+              { label: "Clientes", color: chartTheme.colors.graphite }
             ].map((item) => (
               <span
                 key={item.label}
@@ -77,46 +56,33 @@ export function PLChart({ data }: PLChartProps) {
         <div className="w-full">
           <ResponsiveContainer width="100%" height={420}>
             <ComposedChart data={data} margin={{ top: 24, right: 28, left: 14, bottom: 14 }}>
-              <defs>
-                <linearGradient id={ingresosGradient} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={SIGNAL} stopOpacity="0.24" />
-                  <stop offset="65%" stopColor={SIGNAL} stopOpacity="0.07" />
-                  <stop offset="100%" stopColor={SIGNAL} stopOpacity="0" />
-                </linearGradient>
-                <linearGradient id={egresosGradient} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={DANGER} stopOpacity="0.18" />
-                  <stop offset="65%" stopColor={DANGER} stopOpacity="0.05" />
-                  <stop offset="100%" stopColor={DANGER} stopOpacity="0" />
-                </linearGradient>
-                <linearGradient id={margenGradient} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={SUCCESS} stopOpacity="0.2" />
-                  <stop offset="65%" stopColor={SUCCESS} stopOpacity="0.05" />
-                  <stop offset="100%" stopColor={SUCCESS} stopOpacity="0" />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="2 10" stroke="#E8ECF3" vertical={false} />
+              <CartesianGrid
+                strokeDasharray={chartTheme.grid.strokeDasharray}
+                stroke={chartTheme.grid.stroke}
+                vertical={chartTheme.grid.vertical}
+              />
               <XAxis
                 dataKey="label"
-                tick={{ fontSize: 12, fill: GRAPHITE }}
-                axisLine={false}
-                tickLine={false}
+                tick={chartTheme.axis.tick}
+                axisLine={chartTheme.axis.axisLine}
+                tickLine={chartTheme.axis.tickLine}
                 interval={0}
               />
               <YAxis
                 yAxisId="left"
-                tickFormatter={(value: number | string) => formatMoneyTick(Number(value))}
-                tick={{ fontSize: 11, fill: GRAPHITE }}
-                axisLine={false}
-                tickLine={false}
+                tickFormatter={formatCompactCurrencyTick}
+                tick={chartTheme.axis.tick}
+                axisLine={chartTheme.axis.axisLine}
+                tickLine={chartTheme.axis.tickLine}
                 domain={[0, (dataMax: number) => Math.ceil(dataMax * 1.15)]}
               />
               <YAxis
                 yAxisId="right"
                 orientation="right"
                 allowDecimals={false}
-                tick={{ fontSize: 11, fill: GRAPHITE }}
-                axisLine={false}
-                tickLine={false}
+                tick={chartTheme.axis.tick}
+                axisLine={chartTheme.axis.axisLine}
+                tickLine={chartTheme.axis.tickLine}
                 domain={[0, (dataMax: number) => Math.max(dataMax * 2.5, 5)]}
               />
               <Tooltip
@@ -128,19 +94,19 @@ export function PLChart({ data }: PLChartProps) {
                   }
 
                   return (
-                    <div className="rounded-card border border-white/80 bg-white/95 p-4 text-sm shadow-modal backdrop-blur">
+                    <div className={chartTheme.tooltip.className}>
                       <p className="mb-2 font-label text-carbon">{label}</p>
                       <div className="space-y-1.5">
-                        <p className="text-xs" style={{ color: SIGNAL }}>
+                        <p className="text-xs" style={{ color: chartTheme.colors.signal }}>
                           Ingresos: {formatUSD(point.ingresos)}
                         </p>
-                        <p className="text-xs" style={{ color: DANGER }}>
+                        <p className="text-xs" style={{ color: chartTheme.colors.danger }}>
                           Egresos: {formatUSD(point.egresos)}
                         </p>
-                        <p className="text-xs" style={{ color: SUCCESS }}>
+                        <p className="text-xs" style={{ color: chartTheme.colors.success }}>
                           Margen: {formatUSD(point.margen)}
                         </p>
-                        <p className="text-xs" style={{ color: GRAPHITE }}>
+                        <p className="text-xs" style={{ color: chartTheme.colors.graphite }}>
                           Clientes activos: {point.clientes_activos.toLocaleString("en-US")}
                         </p>
                       </div>
@@ -152,41 +118,44 @@ export function PLChart({ data }: PLChartProps) {
                 yAxisId="right"
                 dataKey="clientes_activos"
                 name="Clientes activos"
-                fill={CLIENTS}
-                radius={[6, 6, 0, 0]}
+                fill={chartTheme.colors.muted}
+                radius={chartTheme.bar.radius}
                 barSize={10}
               />
               <Area
                 yAxisId="left"
                 dataKey="ingresos"
                 name="Ingresos"
-                stroke={SIGNAL}
+                stroke={chartTheme.colors.signal}
                 strokeWidth={2.8}
-                fill={`url(#${ingresosGradient})`}
+                fill={chartTheme.colors.signal}
+                fillOpacity={0.08}
                 dot={false}
-                activeDot={{ r: 4, fill: "#FFFFFF", stroke: SIGNAL, strokeWidth: 2.5 }}
+                activeDot={{ r: 4, fill: "#FFFFFF", stroke: chartTheme.colors.signal, strokeWidth: 2.5 }}
                 type="monotone"
               />
               <Area
                 yAxisId="left"
                 dataKey="margen"
                 name="Margen"
-                stroke={SUCCESS}
+                stroke={chartTheme.colors.success}
                 strokeWidth={2.4}
-                fill={`url(#${margenGradient})`}
+                fill={chartTheme.colors.success}
+                fillOpacity={0.06}
                 dot={false}
-                activeDot={{ r: 4, fill: "#FFFFFF", stroke: SUCCESS, strokeWidth: 2.5 }}
+                activeDot={{ r: 4, fill: "#FFFFFF", stroke: chartTheme.colors.success, strokeWidth: 2.5 }}
                 type="monotone"
               />
               <Area
                 yAxisId="left"
                 dataKey="egresos"
                 name="Egresos"
-                stroke={DANGER}
+                stroke={chartTheme.colors.danger}
                 strokeWidth={2.4}
-                fill={`url(#${egresosGradient})`}
+                fill={chartTheme.colors.danger}
+                fillOpacity={0.05}
                 dot={false}
-                activeDot={{ r: 4, fill: "#FFFFFF", stroke: DANGER, strokeWidth: 2.5 }}
+                activeDot={{ r: 4, fill: "#FFFFFF", stroke: chartTheme.colors.danger, strokeWidth: 2.5 }}
                 type="monotone"
               />
             </ComposedChart>

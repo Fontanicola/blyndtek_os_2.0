@@ -1,6 +1,6 @@
 "use client";
 
-import type { MarcaContenido, PiezaContenido, PiezaContenidoEstado, PilarContenido } from "@/types/contenido";
+import type { MarcaContenido, PiezaContenido, PiezaContenidoEstado, PilarContenido, PlanSemanal } from "@/types/contenido";
 
 type ApiResponse<T> = {
   data?: T;
@@ -20,6 +20,43 @@ async function parseResponse<T>(response: Response): Promise<T> {
 export type PiezasContenidoFiltros = {
   estado?: PiezaContenidoEstado | "todas";
   pilar_id?: string | null;
+};
+
+export type ImagenReferenciaContenido = {
+  id: string;
+  label: string;
+  sublabel: string;
+  url: string;
+};
+
+export type GenerarImagenPiezaResult = {
+  prompt_fondo: string;
+  fondo_storage_path: string;
+  fondo_url: string;
+  tokens_entrada: number | null;
+  tokens_salida: number | null;
+  costo_generacion_usd: number | null;
+  pieza: PiezaContenido;
+};
+
+export type RenderizarPiezaResult = {
+  imagenes_generadas: string[];
+  pieza: PiezaContenido;
+};
+
+export type GenerarCompletoPiezaResult = RenderizarPiezaResult & {
+  prompt_fondo: string | null;
+  fondo_storage_path: string | null;
+  actividad_id: string | null;
+};
+
+export type PlanSemanalContenido = {
+  plan: PlanSemanal;
+  piezas: PiezaContenido[];
+};
+
+export type GenerarPlanSemanalResult = PlanSemanalContenido & {
+  contenido_generado: unknown;
 };
 
 export async function fetchMarcaBlyndtek() {
@@ -100,15 +137,67 @@ export async function deletePieza(id: string) {
   return parseResponse<{ deleted: boolean }>(response);
 }
 
-export async function subirImagenPieza(id: string, file: File) {
+export async function subirImagenPieza(id: string, file: File, slideIndex?: number | null) {
   const formData = new FormData();
   formData.append("file", file);
+  if (typeof slideIndex === "number") {
+    formData.append("slide_index", String(slideIndex));
+  }
 
   const response = await fetch(`/api/piezas-contenido/${id}/imagen`, {
     method: "POST",
     body: formData
   });
   return parseResponse<PiezaContenido>(response);
+}
+
+export async function fetchImagenesReferenciaContenido() {
+  const response = await fetch("/api/piezas-contenido/referencias");
+  return parseResponse<ImagenReferenciaContenido[]>(response);
+}
+
+export async function generarImagenPieza(id: string, payload: { imagen_referencia_url?: string | null } = {}) {
+  const response = await fetch(`/api/piezas-contenido/${id}/generar-imagen`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+  return parseResponse<GenerarImagenPiezaResult>(response);
+}
+
+export async function generarCompletoPieza(id: string) {
+  const response = await fetch(`/api/piezas-contenido/${id}/generar-completo`, {
+    method: "POST"
+  });
+  return parseResponse<GenerarCompletoPiezaResult>(response);
+}
+
+export async function renderizarPieza(id: string) {
+  const response = await fetch(`/api/piezas-contenido/${id}/renderizar`, {
+    method: "POST"
+  });
+  return parseResponse<RenderizarPiezaResult>(response);
+}
+
+export async function fetchPlanSemanal(semanaInicio: string) {
+  const params = new URLSearchParams({ semana_inicio: semanaInicio });
+  const response = await fetch(`/api/planes-semanales?${params.toString()}`);
+  const payload = (await response.json()) as ApiResponse<PlanSemanalContenido | null>;
+
+  if (!response.ok) {
+    throw new Error(payload.error ?? "No se pudo cargar el plan semanal.");
+  }
+
+  return payload.data ?? null;
+}
+
+export async function generarPlanSemanal(payload: { semana_inicio: string }) {
+  const response = await fetch("/api/planes-semanales/generar", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+  return parseResponse<GenerarPlanSemanalResult>(response);
 }
 
 export function useContenido() {
@@ -123,6 +212,12 @@ export function useContenido() {
     createPieza,
     updatePieza,
     deletePieza,
-    subirImagenPieza
+    subirImagenPieza,
+    fetchImagenesReferenciaContenido,
+    generarImagenPieza,
+    generarCompletoPieza,
+    renderizarPieza,
+    fetchPlanSemanal,
+    generarPlanSemanal
   };
 }

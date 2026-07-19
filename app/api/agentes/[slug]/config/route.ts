@@ -31,6 +31,14 @@ function parseConfigBody(body: unknown): Partial<AgenteConfig> {
     config.frecuencia_resumen = payload.frecuencia_resumen;
   }
 
+  if (typeof payload.generacion_automatica_activa === "boolean") {
+    config.generacion_automatica_activa = payload.generacion_automatica_activa;
+  }
+
+  if (typeof payload.dia_generacion === "string") {
+    config.dia_generacion = payload.dia_generacion;
+  }
+
   return config;
 }
 

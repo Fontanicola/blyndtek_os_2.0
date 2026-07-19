@@ -22,6 +22,29 @@ export type PilarContenido = {
   created_at: string;
 };
 
+export type JsonValue = string | number | boolean | null | { [key: string]: JsonValue | undefined } | JsonValue[];
+
+export type PlanSemanal = {
+  id: string;
+  marca_id: string;
+  semana_inicio: string;
+  tema_general: string;
+  noticia_fuente: string;
+  noticia_url: string;
+  estado?: string;
+  created_at: string;
+};
+
+export type GeneracionAutomatica = {
+  id: string;
+  plan_semanal_id: string | null;
+  estado: "en_curso" | "completado" | "fallido";
+  piezas_generadas: number;
+  error_detalle: string | null;
+  iniciado_at: string;
+  finalizado_at: string | null;
+};
+
 export type PiezaContenidoEstado =
   | "idea"
   | "en_diseno"
@@ -33,11 +56,15 @@ export type PiezaContenidoEstado =
 export type PiezaContenido = {
   id: string;
   marca_id: string;
+  plan_semanal_id: string | null;
   pilar_id: string | null;
   titulo: string;
   storage_path: string | null;
+  fondo_storage_path: string | null;
+  imagenes_generadas: string[] | null;
   caption: string | null;
   hashtags: string[];
+  guion: JsonValue | null;
   plataforma: string;
   estado: PiezaContenidoEstado;
   fecha_programada: string | null;
@@ -46,6 +73,12 @@ export type PiezaContenido = {
   meta_error: string | null;
   generado_con_ia: boolean;
   prompt_higgsfield: string | null;
+  prompt_fondo: string | null;
+  higgsfield_job_id: string | null;
+  higgsfield_estado: "procesando" | "completado" | "fallido" | null;
+  tokens_entrada: number | null;
+  tokens_salida: number | null;
+  costo_generacion_usd: number | null;
   creativo_referencia_id: string | null;
   creado_por: string | null;
   updated_at: string;
@@ -61,6 +94,11 @@ export type ContenidoDatabase = {
         Insert: Partial<MarcaContenido> & Pick<MarcaContenido, "nombre" | "slug">;
         Update: Partial<MarcaContenido>;
       };
+      planes_semanales: {
+        Row: PlanSemanal;
+        Insert: Partial<PlanSemanal> & Pick<PlanSemanal, "marca_id" | "semana_inicio" | "tema_general" | "noticia_fuente" | "noticia_url">;
+        Update: Partial<PlanSemanal>;
+      };
       pilares_contenido: {
         Row: PilarContenido;
         Insert: Partial<PilarContenido> & Pick<PilarContenido, "marca_id" | "nombre">;
@@ -70,6 +108,11 @@ export type ContenidoDatabase = {
         Row: PiezaContenido;
         Insert: Partial<PiezaContenido> & Pick<PiezaContenido, "marca_id">;
         Update: Partial<PiezaContenido>;
+      };
+      generaciones_automaticas: {
+        Row: GeneracionAutomatica;
+        Insert: Partial<GeneracionAutomatica> & Pick<GeneracionAutomatica, "estado">;
+        Update: Partial<GeneracionAutomatica>;
       };
     };
     Views: Record<string, never>;

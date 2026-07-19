@@ -11,7 +11,7 @@ type RouteContext = {
   };
 };
 
-const EDITABLE_ESTADOS = new Set<PiezaContenidoEstado>(["idea", "en_diseno", "lista", "programada"]);
+const EDITABLE_ESTADOS = new Set<PiezaContenidoEstado>(["idea", "en_diseno", "lista", "programada", "publicada"]);
 
 async function assertBlyndtekPieza(supabase: SupabaseClient<ContenidoDatabase>, id: string) {
   const marca = await getBlyndtekContentBrand(supabase);
@@ -78,6 +78,9 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     }
     if ("estado" in body && body.estado && EDITABLE_ESTADOS.has(body.estado)) {
       updatePayload.estado = body.estado;
+      if (body.estado === "publicada") {
+        updatePayload.publicado_at = new Date().toISOString();
+      }
     }
     if ("fecha_programada" in body) updatePayload.fecha_programada = body.fecha_programada || null;
     updatePayload.updated_at = new Date().toISOString();

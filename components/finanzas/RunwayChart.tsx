@@ -14,6 +14,7 @@ import {
 import type { TooltipContentProps } from "recharts/types/component/Tooltip";
 import { Card } from "@/components/ui";
 import { AlertTriangleIcon } from "@/components/ui/icons";
+import { chartTheme, formatCompactCurrencyTick } from "@/lib/charts/chartTheme";
 import { formatUSD } from "@/lib/utils/formatters";
 import type { RunwayProjectionMonth } from "@/lib/finanzas/runwayProjection";
 
@@ -49,33 +50,15 @@ type RunwayChartProps = {
   mesAgotamientoEscenario: string | null;
 };
 
-const SIGNAL = "#1F44FF";
-const SUCCESS = "#38A169";
-const DANGER = "#E53E3E";
-const WARNING = "#D97706";
-const GRAPHITE = "#5A6373";
-
-function formatMoneyTick(value: string | number) {
-  const numericValue = Number(value);
-  const absolute = Math.abs(numericValue);
-  const sign = numericValue < 0 ? "-" : "";
-
-  if (absolute >= 1000) {
-    const compact = absolute / 1000;
-    const digits = compact >= 100 ? 0 : 1;
-    return `${sign}$${compact.toFixed(digits)}k`;
-  }
-
-  return `${sign}$${Math.round(absolute).toLocaleString("en-US")}`;
-}
-
 function getScenarioStroke(data: ChartRenderDatum[]) {
   const lastPoint = data[data.length - 1];
   if (!lastPoint) {
-    return WARNING;
+    return chartTheme.colors.warning;
   }
 
-  return lastPoint.caja_acumulada_escenario >= lastPoint.caja_acumulada_actual ? SUCCESS : DANGER;
+  return lastPoint.caja_acumulada_escenario >= lastPoint.caja_acumulada_actual
+    ? chartTheme.colors.success
+    : chartTheme.colors.danger;
 }
 
 function getExhaustionPoint(data: ChartRenderDatum[], monthLabel: string | null, key: "caja_acumulada_actual" | "caja_acumulada_escenario") {
@@ -179,23 +162,32 @@ export function RunwayChart({
       <div className="h-[430px] w-full">
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={chartData} margin={{ top: 28, right: 28, bottom: 12, left: 4 }}>
-            <CartesianGrid stroke="#E8ECF3" strokeDasharray="2 10" vertical={false} />
-            <XAxis dataKey="label" tick={{ fontSize: 11, fill: GRAPHITE }} axisLine={false} tickLine={false} />
+            <CartesianGrid
+              stroke={chartTheme.grid.stroke}
+              strokeDasharray={chartTheme.grid.strokeDasharray}
+              vertical={chartTheme.grid.vertical}
+            />
+            <XAxis
+              dataKey="label"
+              tick={chartTheme.axis.tick}
+              axisLine={chartTheme.axis.axisLine}
+              tickLine={chartTheme.axis.tickLine}
+            />
             <YAxis
               yAxisId="flow"
-              tick={{ fontSize: 11, fill: GRAPHITE }}
-              tickFormatter={formatMoneyTick}
+              tick={chartTheme.axis.tick}
+              tickFormatter={formatCompactCurrencyTick}
               domain={[0, "dataMax"]}
-              axisLine={false}
-              tickLine={false}
+              axisLine={chartTheme.axis.axisLine}
+              tickLine={chartTheme.axis.tickLine}
             />
             <YAxis
               yAxisId="cash"
               orientation="right"
-              tick={{ fontSize: 11, fill: GRAPHITE }}
-              tickFormatter={formatMoneyTick}
-              axisLine={false}
-              tickLine={false}
+              tick={chartTheme.axis.tick}
+              tickFormatter={formatCompactCurrencyTick}
+              axisLine={chartTheme.axis.axisLine}
+              tickLine={chartTheme.axis.tickLine}
             />
             <Tooltip
               cursor={{ fill: "rgba(31, 68, 255, 0.04)" }}
@@ -212,7 +204,7 @@ export function RunwayChart({
                 const hypothesisDetails = parseHypothesisDetails(row.detalles_hipotesis_json);
 
                 return (
-                  <div className="min-w-[250px] rounded-card border border-white/80 bg-white/95 p-3 text-sm shadow-modal backdrop-blur">
+                  <div className={`min-w-[250px] ${chartTheme.tooltip.className}`}>
                     <p className="mb-3 font-label text-carbon">{label}</p>
                     <div className="space-y-1.5 text-xs">
                       <div className="flex items-center justify-between gap-4 text-success">
@@ -258,29 +250,43 @@ export function RunwayChart({
                 );
               }}
             />
-            <Bar yAxisId="flow" dataKey="ingresos" name="Ingresos" fill={SUCCESS} radius={[4, 4, 0, 0]} barSize={15} />
-            <Bar yAxisId="flow" dataKey="costos_totales" name="Costos" fill={DANGER} radius={[4, 4, 0, 0]} barSize={15} />
+            <Bar
+              yAxisId="flow"
+              dataKey="ingresos"
+              name="Ingresos"
+              fill={chartTheme.colors.success}
+              radius={chartTheme.bar.radius}
+              barSize={chartTheme.bar.barSize}
+            />
+            <Bar
+              yAxisId="flow"
+              dataKey="costos_totales"
+              name="Costos"
+              fill={chartTheme.colors.danger}
+              radius={chartTheme.bar.radius}
+              barSize={chartTheme.bar.barSize}
+            />
             <Line
               yAxisId="cash"
               dataKey="caja_cero"
               name="Sin caja"
-              stroke={GRAPHITE}
+              stroke={chartTheme.colors.graphite}
               strokeOpacity={0.45}
               strokeWidth={1}
               strokeDasharray="4 6"
               dot={false}
               activeDot={false}
               type="linear"
-  isAnimationActive={false}
+              isAnimationActive={false}
             />
             <Line
               yAxisId="cash"
               dataKey="caja_acumulada_actual"
               name="Caja actual"
-              stroke={SIGNAL}
+              stroke={chartTheme.colors.signal}
               strokeWidth={2}
-              dot={{ r: 3.5, fill: "#FFFFFF", stroke: SIGNAL, strokeWidth: 1.5 }}
-              activeDot={{ r: 5, fill: "#FFFFFF", stroke: SIGNAL, strokeWidth: 2 }}
+              dot={{ r: 3.5, fill: "#FFFFFF", stroke: chartTheme.colors.signal, strokeWidth: 1.5 }}
+              activeDot={{ r: 5, fill: "#FFFFFF", stroke: chartTheme.colors.signal, strokeWidth: 2 }}
               type="monotone"
             />
             {hasScenario ? (
@@ -302,8 +308,8 @@ export function RunwayChart({
               name={actualExhaustion ? `Caja se agota: ${actualExhaustion.label}` : "Agotamiento actual"}
               stroke="transparent"
               strokeWidth={0}
-              dot={{ r: 5, fill: DANGER, stroke: "#FFFFFF", strokeWidth: 2 }}
-              label={{ dataKey: "agotamiento_label_actual", position: "top", fill: DANGER, fontSize: 11 }}
+              dot={{ r: 5, fill: chartTheme.colors.danger, stroke: "#FFFFFF", strokeWidth: 2 }}
+              label={{ dataKey: "agotamiento_label_actual", position: "top", fill: chartTheme.colors.danger, fontSize: 11 }}
               activeDot={false}
               type="linear"
               isAnimationActive={false}

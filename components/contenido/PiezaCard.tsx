@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { ImageIcon, MoreVerticalIcon } from "@/components/ui/icons";
+import { ImageIcon, LayersIcon, MoreVerticalIcon } from "@/components/ui/icons";
 import { cn } from "@/lib/cn";
 import type { PiezaContenido } from "@/types/contenido";
 import { getPilarDotClass, PIEZA_ESTADO_BADGES, PIEZA_ESTADO_LABELS } from "@/components/contenido/contenidoStyles";
@@ -15,6 +15,34 @@ type PiezaCardProps = {
   onDelete: (pieza: PiezaContenido) => void;
 };
 
+type PiezaTipoVisual = {
+  label: string;
+  className: string;
+};
+
+function asRecord(value: unknown): Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
+}
+
+function getPiezaTipoVisual(pieza: PiezaContenido): PiezaTipoVisual {
+  if (pieza.plataforma === "instagram_reel") {
+    return { label: "Reel", className: "bg-signal-light text-signal" };
+  }
+
+  if (pieza.plataforma === "instagram_story") {
+    return { label: "Historia", className: "bg-warning-light text-warning" };
+  }
+
+  const guion = asRecord(pieza.guion);
+  const slides = Array.isArray(guion.slides) ? guion.slides : [];
+
+  if (pieza.plataforma === "instagram_feed" && slides.length > 1) {
+    return { label: "Carrusel", className: "bg-success-light text-success" };
+  }
+
+  return { label: "Post", className: "bg-paper text-graphite" };
+}
+
 export function getPiezaImageUrl(pieza: Pick<PiezaContenido, "id" | "storage_path">) {
   if (!pieza.storage_path) {
     return null;
@@ -23,9 +51,15 @@ export function getPiezaImageUrl(pieza: Pick<PiezaContenido, "id" | "storage_pat
   return `/api/piezas-contenido/${pieza.id}/imagen/${encodeURIComponent(pieza.storage_path)}`;
 }
 
+export function getPiezaImagePathUrl(piezaId: string, storagePath: string) {
+  return `/api/piezas-contenido/${piezaId}/imagen/${encodeURIComponent(storagePath)}`;
+}
+
 export function PiezaCard({ pieza, onEdit, onDelete }: PiezaCardProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const imageUrl = getPiezaImageUrl(pieza);
+  const generatedImages = Array.isArray(pieza.imagenes_generadas) ? pieza.imagenes_generadas : [];
+  const tipoVisual = getPiezaTipoVisual(pieza);
 
   return (
     <Card className="group overflow-hidden border border-line-soft" padding="none">
@@ -38,6 +72,22 @@ export function PiezaCard({ pieza, onEdit, onDelete }: PiezaCardProps) {
             <ImageIcon size={34} />
           </div>
         )}
+
+        {generatedImages.length > 1 ? (
+          <div className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-pill border border-line-soft bg-white/90 px-2.5 py-1 text-xs font-label text-carbon shadow-subtle">
+            <LayersIcon size={14} />
+            1/{generatedImages.length}
+          </div>
+        ) : null}
+
+        <div
+          className={cn(
+            "absolute right-14 top-3 inline-flex h-6 items-center justify-center rounded-pill px-2.5 text-xs font-label leading-none shadow-subtle",
+            tipoVisual.className
+          )}
+        >
+          {tipoVisual.label}
+        </div>
 
         <div className="absolute right-3 top-3">
           <div className="relative">

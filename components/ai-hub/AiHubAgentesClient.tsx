@@ -108,7 +108,9 @@ export function AiHubAgentesClient({ agentes, feed }: AiHubAgentesClientProps) {
   const [form, setForm] = useState<AgenteConfig>({
     runway_objetivo_meses: 6,
     resumen_automatico_activo: false,
-    frecuencia_resumen: "mensual"
+    frecuencia_resumen: "mensual",
+    generacion_automatica_activa: true,
+    dia_generacion: "lunes"
   });
 
   const selectedAgent = useMemo(
@@ -209,7 +211,7 @@ export function AiHubAgentesClient({ agentes, feed }: AiHubAgentesClientProps) {
   }
 
   async function handleSaveConfig() {
-    if (!selectedAgent || selectedAgent.slug !== "asesor-financiero") {
+    if (!selectedAgent || !["asesor-financiero", "generador-contenido"].includes(selectedAgent.slug)) {
       return;
     }
 
@@ -276,7 +278,7 @@ export function AiHubAgentesClient({ agentes, feed }: AiHubAgentesClientProps) {
                   onClick={() => setSelectedSlug(agente.slug)}
                   className={[
                     "cursor-pointer border transition-shadow",
-                    isSelected ? "border-signal/30 bg-signal-light shadow-modal" : "border-line/40 shadow-soft hover:border-signal/20"
+                    isSelected ? "border-signal/30 bg-signal-light shadow-soft" : "border-line/40 shadow-soft hover:border-signal/20"
                   ].join(" ")}
                 >
                   <div className="space-y-4">
@@ -469,6 +471,112 @@ export function AiHubAgentesClient({ agentes, feed }: AiHubAgentesClientProps) {
                             </div>
                             <div className="mt-3 rounded-component bg-paper p-3">
                               <MarkdownContent content={analisis.analisis_texto} />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : selectedAgent.slug === "generador-contenido" ? (
+                <div className="space-y-5">
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <span className="text-sm font-label text-carbon">Generación automática semanal activa</span>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setForm((current) => ({
+                            ...current,
+                            generacion_automatica_activa: !current.generacion_automatica_activa
+                          }))
+                        }
+                        className={`flex h-12 w-full items-center justify-between rounded-component border px-4 text-sm transition-colors duration-fast ease-fast ${
+                          form.generacion_automatica_activa
+                            ? "border-success bg-success-light text-success"
+                            : "border-line bg-white text-graphite"
+                        }`}
+                      >
+                        <span>{form.generacion_automatica_activa ? "Activa" : "Pausada"}</span>
+                        <span
+                          className={`flex h-6 w-11 items-center rounded-full px-1 transition-colors duration-fast ease-fast ${
+                            form.generacion_automatica_activa ? "bg-success" : "bg-line"
+                          }`}
+                        >
+                          <span
+                            className={`h-4 w-4 rounded-full bg-white shadow-sm transition-transform duration-fast ease-fast ${
+                              form.generacion_automatica_activa ? "translate-x-5" : "translate-x-0"
+                            }`}
+                          />
+                        </span>
+                      </button>
+                    </div>
+
+                    <label className="space-y-2">
+                      <span className="text-sm font-label text-carbon">Día de generación</span>
+                      <select
+                        value={form.dia_generacion}
+                        onChange={(event) =>
+                          setForm((current) => ({
+                            ...current,
+                            dia_generacion: event.target.value
+                          }))
+                        }
+                        className="h-12 w-full rounded-component border border-line bg-white px-4 text-sm text-carbon outline-none transition-colors duration-fast ease-fast focus:border-signal focus:ring-2 focus:ring-signal/20"
+                      >
+                        <option value="lunes">Lunes</option>
+                        <option value="martes">Martes</option>
+                        <option value="miercoles">Miércoles</option>
+                        <option value="jueves">Jueves</option>
+                        <option value="viernes">Viernes</option>
+                      </select>
+                    </label>
+                  </div>
+
+                  <div className="rounded-card border border-line-soft bg-paper/40 p-4">
+                    <p className="text-sm leading-6 text-graphite">
+                      El cron real sigue fijo los lunes por la mañana. Este campo queda guardado para poder volverlo configurable sin tocar
+                      esquema ni rediseñar el panel cuando decidamos mover el día desde UI.
+                    </p>
+                  </div>
+
+                  <div className="flex justify-end">
+                    <Button variant="primary" onClick={() => void handleSaveConfig()} loading={savingConfig}>
+                      Guardar configuración
+                    </Button>
+                  </div>
+
+                  <div className="space-y-3 rounded-card border border-line-soft bg-paper/40 p-4">
+                    <div className="flex items-center justify-between gap-2">
+                      <div>
+                        <h4 className="font-title text-lg text-carbon">Planes recientes</h4>
+                        <p className="text-sm text-graphite">Últimas ejecuciones automáticas y generaciones visuales del agente.</p>
+                      </div>
+                      <Badge variant="ghost">{selectedRecentActivity.length}</Badge>
+                    </div>
+
+                    {selectedRecentActivity.length === 0 ? (
+                      <div className="rounded-component border border-dashed border-line bg-white p-4 text-sm text-graphite">
+                        No hay actividad registrada todavía.
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {selectedRecentActivity.slice(0, 6).map((item) => (
+                          <div key={item.id} className="rounded-component border border-line-soft bg-white p-4">
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="flex min-w-0 items-start gap-3">
+                                <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-pill bg-paper text-signal">
+                                  {feedIcon(item.tipo)}
+                                </span>
+                                <div className="min-w-0">
+                                  <p className="text-sm font-label text-carbon">{item.resumen}</p>
+                                  <p className="mt-1 text-xs text-graphite">
+                                    {formatAgentesRelativeTime(item.fecha)} · {formatDateTime(item.fecha)}
+                                  </p>
+                                </div>
+                              </div>
+
+                              {item.costo_usd != null ? <Badge variant="ghost">{formatUSD(item.costo_usd)}</Badge> : null}
                             </div>
                           </div>
                         ))}

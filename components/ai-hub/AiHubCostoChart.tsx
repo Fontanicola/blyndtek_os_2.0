@@ -3,6 +3,7 @@
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import type { TooltipContentProps } from "recharts/types/component/Tooltip";
 import { Card } from "@/components/ui";
+import { chartTheme, formatCompactCurrencyTick } from "@/lib/charts/chartTheme";
 import { formatUSD } from "@/lib/utils/formatters";
 import type { AgentesHubCostoHistoricoPoint, AgentesHubCostoHistoricoSerie } from "@/lib/agentes/hub";
 
@@ -10,16 +11,6 @@ type AiHubCostoChartProps = {
   data: AgentesHubCostoHistoricoPoint[];
   series: AgentesHubCostoHistoricoSerie[];
 };
-
-function formatMoneyTick(value: number | string) {
-  const numericValue = Number(value);
-
-  if (Math.abs(numericValue) >= 1000) {
-    return `$${(numericValue / 1000).toFixed(numericValue >= 100000 ? 0 : 1)}k`;
-  }
-
-  return `$${Math.round(numericValue).toLocaleString("en-US")}`;
-}
 
 export function AiHubCostoChart({ data, series }: AiHubCostoChartProps) {
   const hasData = data.some((point) => point.total_usd > 0);
@@ -43,9 +34,23 @@ export function AiHubCostoChart({ data, series }: AiHubCostoChartProps) {
           <div className="h-[320px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={data} margin={{ top: 16, right: 20, bottom: 8, left: 8 }} barCategoryGap="28%">
-                <CartesianGrid stroke="#E8ECF3" strokeDasharray="2 10" vertical={false} />
-                <XAxis dataKey="mes" tick={{ fill: "#5A6373", fontSize: 11 }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fill: "#5A6373", fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={formatMoneyTick} />
+                <CartesianGrid
+                  stroke={chartTheme.grid.stroke}
+                  strokeDasharray={chartTheme.grid.strokeDasharray}
+                  vertical={chartTheme.grid.vertical}
+                />
+                <XAxis
+                  dataKey="mes"
+                  tick={chartTheme.axis.tick}
+                  axisLine={chartTheme.axis.axisLine}
+                  tickLine={chartTheme.axis.tickLine}
+                />
+                <YAxis
+                  tick={chartTheme.axis.tick}
+                  axisLine={chartTheme.axis.axisLine}
+                  tickLine={chartTheme.axis.tickLine}
+                  tickFormatter={formatCompactCurrencyTick}
+                />
                 <Tooltip
                   content={({ active, payload, label }: TooltipContentProps<number, string>) => {
                     if (!active || !payload?.length) {
@@ -58,7 +63,7 @@ export function AiHubCostoChart({ data, series }: AiHubCostoChartProps) {
                     }
 
                     return (
-                      <div className="rounded-card border border-white/80 bg-white/95 p-3 text-sm shadow-modal backdrop-blur">
+                      <div className={chartTheme.tooltip.className}>
                         <p className="mb-2 font-label text-carbon">{label}</p>
                         <div className="space-y-1.5">
                           {series.map((serie) => {
@@ -75,7 +80,14 @@ export function AiHubCostoChart({ data, series }: AiHubCostoChartProps) {
                   }}
                 />
                 {series.map((serie) => (
-                  <Bar key={serie.slug} dataKey={serie.slug} name={serie.label} fill={serie.color} radius={[8, 8, 2, 2]} barSize={16} />
+                  <Bar
+                    key={serie.slug}
+                    dataKey={serie.slug}
+                    name={serie.label}
+                    fill={serie.color}
+                    radius={chartTheme.bar.radius}
+                    barSize={chartTheme.bar.barSize}
+                  />
                 ))}
               </BarChart>
             </ResponsiveContainer>

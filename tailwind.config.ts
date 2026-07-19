@@ -61,13 +61,13 @@ const config: Config = {
         title: "600"
       },
       borderRadius: {
-        component: "10px",
-        card: "14px",
+        component: "6px",
+        card: "8px",
         pill: "100px"
       },
       boxShadow: {
-        soft: "0 1px 3px rgba(11,14,20,0.08), 0 1px 2px rgba(11,14,20,0.04)",
-        card: "0 4px 12px rgba(11,14,20,0.08)",
+        soft: "0 1px 2px rgba(11,14,20,0.03)",
+        card: "0 1px 2px rgba(11,14,20,0.03)",
         modal: "0 8px 32px rgba(11,14,20,0.12)"
       },
       transitionDuration: {

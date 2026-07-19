@@ -11,6 +11,7 @@ import {
   YAxis
 } from "recharts";
 import { Card } from "@/components/ui";
+import { chartTheme } from "@/lib/charts/chartTheme";
 import type { DashboardWinRateChannel } from "@/types/dashboard";
 import type { TooltipContentProps } from "recharts/types/component/Tooltip";
 
@@ -18,9 +19,6 @@ type WinRateChartProps = {
   outbound: DashboardWinRateChannel;
   inbound: DashboardWinRateChannel;
 };
-
-const HEX_SIGNAL = "#1F44FF";
-const HEX_SUCCESS = "#38A169";
 
 function formatPercent(value: number | string) {
   return `${Number(value).toFixed(1)}%`;
@@ -66,17 +64,21 @@ export function WinRateChart({ outbound, inbound }: WinRateChartProps) {
           <div className="h-[280px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={data} margin={{ top: 12, right: 20, bottom: 8, left: 0 }} barCategoryGap="32%">
-                <CartesianGrid stroke="#E8ECF3" strokeDasharray="2 10" vertical={false} />
+                <CartesianGrid
+                  stroke={chartTheme.grid.stroke}
+                  strokeDasharray={chartTheme.grid.strokeDasharray}
+                  vertical={chartTheme.grid.vertical}
+                />
                 <XAxis
                   dataKey="canal"
-                  tick={{ fontSize: 11, fill: "#5A6373" }}
-                  axisLine={false}
-                  tickLine={false}
+                  tick={chartTheme.axis.tick}
+                  axisLine={chartTheme.axis.axisLine}
+                  tickLine={chartTheme.axis.tickLine}
                 />
                 <YAxis
-                  tick={{ fontSize: 11, fill: "#5A6373" }}
-                  axisLine={false}
-                  tickLine={false}
+                  tick={chartTheme.axis.tick}
+                  axisLine={chartTheme.axis.axisLine}
+                  tickLine={chartTheme.axis.tickLine}
                   domain={[0, 100]}
                   tickFormatter={formatPercent}
                 />
@@ -92,7 +94,7 @@ export function WinRateChart({ outbound, inbound }: WinRateChartProps) {
                     }
 
                     return (
-                      <div className="rounded-card border border-white/80 bg-white/95 p-3 text-sm shadow-modal backdrop-blur">
+                      <div className={chartTheme.tooltip.className}>
                         <p className="mb-1 font-label text-carbon">{d.canal}</p>
                         <p className="text-xs text-signal">Conversión: {formatPercent(d.porcentaje)}</p>
                         <p className="text-xs text-graphite">
@@ -105,8 +107,8 @@ export function WinRateChart({ outbound, inbound }: WinRateChartProps) {
                 <Bar
                   dataKey="porcentaje"
                   name="Conversión"
-                  radius={[8, 8, 2, 2]}
-                  barSize={22}
+                  radius={chartTheme.bar.radius}
+                  barSize={chartTheme.bar.barSize}
                   shape={(props: {
                     x?: number;
                     y?: number;
@@ -119,9 +121,9 @@ export function WinRateChart({ outbound, inbound }: WinRateChartProps) {
                       y={props.y ?? 0}
                       width={props.width ?? 0}
                       height={props.height ?? 0}
-                      rx={8}
-                      ry={8}
-                      fill={props.payload?.canal === "Outbound" ? HEX_SIGNAL : HEX_SUCCESS}
+                      rx={4}
+                      ry={4}
+                      fill={props.payload?.canal === "Outbound" ? chartTheme.colors.signal : chartTheme.colors.success}
                     />
                   )}
                 />

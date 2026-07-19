@@ -1,9 +1,10 @@
 "use client";
 
-import { useId, useMemo } from "react";
+import { useMemo } from "react";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import type { TooltipContentProps } from "recharts/types/component/Tooltip";
 import { Card } from "@/components/ui";
+import { chartTheme, formatCompactCurrencyTick } from "@/lib/charts/chartTheme";
 import { formatUSD } from "@/lib/utils/formatters";
 import type { ProductoHistoricoMRRPoint } from "@/types/productos";
 
@@ -11,21 +12,6 @@ type MRRChartProps = {
   data: ProductoHistoricoMRRPoint[];
   loading?: boolean;
 };
-
-const HEX_SIGNAL = "#1F44FF";
-
-function formatMoneyTick(value: string | number) {
-  const numericValue = Number(value);
-  const absolute = Math.abs(numericValue);
-  const sign = numericValue < 0 ? "-" : "";
-
-  if (absolute >= 1000) {
-    const compact = absolute / 1000;
-    return `${sign}$${compact.toFixed(compact >= 100 ? 0 : 1)}k`;
-  }
-
-  return `${sign}$${Math.round(absolute).toLocaleString("en-US")}`;
-}
 
 function ChartSkeleton() {
   return (
@@ -40,8 +26,6 @@ function ChartSkeleton() {
 }
 
 export function MRRChart({ data, loading = false }: MRRChartProps) {
-  const chartId = useId().replace(/:/g, "");
-  const mrrGradient = `mrr-area-${chartId}`;
   const hasData = data.some((point) => point.mrr > 0);
 
   const chartData = useMemo(
@@ -75,27 +59,24 @@ export function MRRChart({ data, loading = false }: MRRChartProps) {
         <div className="h-[320px]">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={chartData} margin={{ top: 16, right: 24, bottom: 8, left: 8 }}>
-              <defs>
-                <linearGradient id={mrrGradient} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={HEX_SIGNAL} stopOpacity="0.28" />
-                  <stop offset="68%" stopColor={HEX_SIGNAL} stopOpacity="0.06" />
-                  <stop offset="100%" stopColor={HEX_SIGNAL} stopOpacity="0" />
-                </linearGradient>
-              </defs>
-              <CartesianGrid stroke="#E8ECF3" strokeDasharray="2 10" vertical={false} />
+              <CartesianGrid
+                stroke={chartTheme.grid.stroke}
+                strokeDasharray={chartTheme.grid.strokeDasharray}
+                vertical={chartTheme.grid.vertical}
+              />
               <XAxis
                 dataKey="label"
-                tick={{ fontSize: 11, fill: "#5A6373" }}
-                axisLine={false}
-                tickLine={false}
+                tick={chartTheme.axis.tick}
+                axisLine={chartTheme.axis.axisLine}
+                tickLine={chartTheme.axis.tickLine}
                 interval="preserveStartEnd"
               />
               <YAxis
-                tick={{ fontSize: 11, fill: "#5A6373" }}
-                axisLine={false}
-                tickLine={false}
+                tick={chartTheme.axis.tick}
+                axisLine={chartTheme.axis.axisLine}
+                tickLine={chartTheme.axis.tickLine}
                 domain={[0, (dataMax: number) => Math.max(Math.ceil(dataMax * 1.1), 1)]}
-                tickFormatter={formatMoneyTick}
+                tickFormatter={formatCompactCurrencyTick}
               />
               <Tooltip
                 content={({ active, payload, label }: TooltipContentProps<number, string>) => {
@@ -109,7 +90,7 @@ export function MRRChart({ data, loading = false }: MRRChartProps) {
                   }
 
                   return (
-                    <div className="rounded-card border border-white/80 bg-white/95 p-3 text-sm shadow-modal backdrop-blur">
+                    <div className={chartTheme.tooltip.className}>
                       <p className="mb-1 font-label text-carbon">{label}</p>
                       <p className="text-xs text-signal">MRR: {formatUSD(d.mrr)}</p>
                     </div>
@@ -120,11 +101,12 @@ export function MRRChart({ data, loading = false }: MRRChartProps) {
                 dataKey="mrr"
                 name="MRR"
                 type="monotone"
-                stroke={HEX_SIGNAL}
+                stroke={chartTheme.colors.signal}
                 strokeWidth={2.8}
-                fill={`url(#${mrrGradient})`}
+                fill={chartTheme.colors.signal}
+                fillOpacity={0.08}
                 dot={false}
-                activeDot={{ r: 4, fill: "#FFFFFF", stroke: HEX_SIGNAL, strokeWidth: 2.5 }}
+                activeDot={{ r: 4, fill: "#FFFFFF", stroke: chartTheme.colors.signal, strokeWidth: 2.5 }}
               />
             </AreaChart>
           </ResponsiveContainer>

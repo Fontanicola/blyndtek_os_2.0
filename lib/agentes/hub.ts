@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { AGENTE_ASESOR_FINANCIERO_SLUG } from "@/lib/agentes/agentes";
+import type { Json } from "@/types/supabase";
 import type { Agente, AgenteAnalisis, AgenteTipo, AgentesDatabase } from "@/types/agentes";
 
 export type AgentesHubPeriod = "month" | "quarter" | "year";
@@ -70,7 +71,22 @@ type AiDevExecutionRow = {
 };
 
 type AgentAnalysisRow = Pick<AgenteAnalisis, "id" | "agente_id" | "analisis_texto" | "costo_estimado_usd" | "created_at"> & {
+  datos_calculados?: Json | null;
   agentes?: Pick<AgenteRow, "slug" | "nombre" | "tipo"> | null;
+};
+
+type GeneracionAutomaticaRow = {
+  id: string;
+  estado: "en_curso" | "completado" | "fallido";
+  piezas_generadas: number | null;
+  error_detalle: string | null;
+  iniciado_at: string;
+  finalizado_at: string | null;
+};
+
+type ContentGenerationCostRow = {
+  costo_generacion_usd: number | null;
+  created_at: string;
 };
 
 function monthKey(date = new Date()) {
@@ -143,17 +159,24 @@ function humanizeAiDevStatus(status: AiDevExecutionRow["estado"], prUrl: string 
 }
 
 function buildAgenteFeedFromAnalisis(rows: AgentAnalysisRow[]): AgentesHubFeedItem[] {
-  return rows.map((row) => ({
-    id: `analisis-${row.id}`,
-    agente: row.agentes?.nombre ?? "Asesor Financiero",
-    agente_slug: row.agentes?.slug ?? AGENTE_ASESOR_FINANCIERO_SLUG,
-    tipo: row.agentes?.tipo ?? "analista",
-    resumen: normalizePreview(row.analisis_texto),
-    fecha: row.created_at,
-    costo_usd: row.costo_estimado_usd ?? null,
-    pr_url: null,
-    items_generados: null
-  }));
+  return rows
+    .filter((row) => {
+      const datos = typeof row.datos_calculados === "object" && row.datos_calculados !== null && !Array.isArray(row.datos_calculados)
+        ? row.datos_calculados
+        : {};
+      return !(row.agentes?.slug === "generador-contenido" && datos.tipo_generacion === "content_studio_semanal");
+    })
+    .map((row) => ({
+      id: `analisis-${row.id}`,
+      agente: row.agentes?.nombre ?? "Asesor Financiero",
+      agente_slug: row.agentes?.slug ?? AGENTE_ASESOR_FINANCIERO_SLUG,
+      tipo: row.agentes?.tipo ?? "analista",
+      resumen: normalizePreview(row.analisis_texto),
+      fecha: row.created_at,
+      costo_usd: row.costo_estimado_usd ?? null,
+      pr_url: null,
+      items_generados: null
+    }));
 }
 
 function buildAgenteFeedFromChecklist(rows: ChecklistQaRow[]): AgentesHubFeedItem[] {
@@ -204,10 +227,42 @@ function buildAgenteFeedFromAiDev(rows: AiDevExecutionRow[]): AgentesHubFeedItem
   }));
 }
 
+function buildAgenteFeedFromContentGenerations(rows: GeneracionAutomaticaRow[]): AgentesHubFeedItem[] {
+  return rows.map((row) => {
+    const pieces = Number(row.piezas_generadas ?? 0);
+    const wasPaused = row.estado === "completado" && pieces === 0 && Boolean(row.error_detalle?.toLowerCase().includes("pausado"));
+    const resumen =
+      row.estado === "fallido"
+        ? `Falló: ${normalizePreview(row.error_detalle ?? "No se pudo generar el plan semanal.", 120)}`
+        : wasPaused
+          ? "Pausado — no se generó plan semanal"
+          : row.estado === "en_curso"
+            ? "Plan semanal en generación"
+            : `Plan semanal generado — ${pieces} ${pieces === 1 ? "pieza" : "piezas"}`;
+
+    return {
+      id: `generacion-contenido-${row.id}`,
+      agente: "Generador de Contenido",
+      agente_slug: "generador-contenido",
+      tipo: "generador" as const,
+      resumen,
+      fecha: row.iniciado_at,
+      costo_usd: null,
+      pr_url: null,
+      items_generados: pieces
+    };
+  });
+}
+
 export async function fetchAgentesFeed(supabase: SupabaseClient<AgentesDatabase>, limit = 30) {
   const fetchLimit = Math.max(10, Math.min(limit * 3, 500));
 
-  const [{ data: analysesData, error: analysesError }, { data: checklistData, error: checklistError }, { data: aiDevData, error: aiDevError }] =
+  const [
+    { data: analysesData, error: analysesError },
+    { data: checklistData, error: checklistError },
+    { data: aiDevData, error: aiDevError },
+    { data: contentGenerationsData, error: contentGenerationsError }
+  ] =
     await Promise.all([
       supabase
         .from("agente_analisis")
@@ -216,6 +271,7 @@ export async function fetchAgentesFeed(supabase: SupabaseClient<AgentesDatabase>
             id,
             agente_id,
             analisis_texto,
+            datos_calculados,
             costo_estimado_usd,
             created_at,
             agentes (
@@ -259,10 +315,24 @@ export async function fetchAgentesFeed(supabase: SupabaseClient<AgentesDatabase>
           `
         )
         .order("iniciado_at", { ascending: false })
+        .limit(fetchLimit),
+      supabase
+        .from("generaciones_automaticas")
+        .select(
+          `
+            id,
+            estado,
+            piezas_generadas,
+            error_detalle,
+            iniciado_at,
+            finalizado_at
+          `
+        )
+        .order("iniciado_at", { ascending: false })
         .limit(fetchLimit)
     ]);
 
-  const errors = [analysesError, checklistError, aiDevError].filter(Boolean);
+  const errors = [analysesError, checklistError, aiDevError, contentGenerationsError].filter(Boolean);
   if (errors.length > 0) {
     throw new Error(errors[0]?.message ?? "No se pudo cargar la actividad de los agentes.");
   }
@@ -270,8 +340,9 @@ export async function fetchAgentesFeed(supabase: SupabaseClient<AgentesDatabase>
   const analyses = buildAgenteFeedFromAnalisis((analysesData ?? []) as AgentAnalysisRow[]);
   const checklists = buildAgenteFeedFromChecklist((checklistData ?? []) as ChecklistQaRow[]);
   const aiDev = buildAgenteFeedFromAiDev((aiDevData ?? []) as AiDevExecutionRow[]);
+  const contentGenerations = buildAgenteFeedFromContentGenerations((contentGenerationsData ?? []) as GeneracionAutomaticaRow[]);
 
-  return [...analyses, ...checklists, ...aiDev]
+  return [...analyses, ...checklists, ...aiDev, ...contentGenerations]
     .sort((left, right) => new Date(right.fecha).getTime() - new Date(left.fecha).getTime())
     .slice(0, limit);
 }
@@ -286,7 +357,8 @@ export async function fetchAgentesCostoTotal(
 
   const [
     { data: analysesData, error: analysesError },
-    { data: aiDevData, error: aiDevError }
+    { data: aiDevData, error: aiDevError },
+    { data: contentData, error: contentError }
   ] = await Promise.all([
     supabase
       .from("agente_analisis")
@@ -309,9 +381,19 @@ export async function fetchAgentesCostoTotal(
         `
       )
       .gte("iniciado_at", periodStartIso)
+      ,
+    supabase
+      .from("piezas_contenido")
+      .select(
+        `
+          costo_generacion_usd,
+          created_at
+        `
+      )
+      .gte("created_at", periodStartIso)
   ]);
 
-  const errors = [analysesError, aiDevError].filter(Boolean);
+  const errors = [analysesError, aiDevError, contentError].filter(Boolean);
   if (errors.length > 0) {
     throw new Error(errors[0]?.message ?? "No se pudo calcular el costo de IA.");
   }
@@ -337,6 +419,15 @@ export async function fetchAgentesCostoTotal(
     breakdown.set("Constructor de Fases (AI Dev)", (breakdown.get("Constructor de Fases (AI Dev)") ?? 0) + costo);
   }
 
+  for (const row of (contentData ?? []) as ContentGenerationCostRow[]) {
+    const costo = Number(row.costo_generacion_usd ?? 0);
+    if (costo <= 0) {
+      continue;
+    }
+
+    breakdown.set("Generador de Contenido", (breakdown.get("Generador de Contenido") ?? 0) + costo);
+  }
+
   const desglose = Array.from(breakdown.entries()).map(([agente, costo_usd]) => ({
     agente,
     costo_usd: Number(costo_usd.toFixed(6))
@@ -349,8 +440,11 @@ export async function fetchAgentesCostoTotal(
 
 type HistoricalCostRow = {
   costo_estimado_usd: number | null;
+  costo_generacion_usd?: number | null;
   created_at?: string;
   iniciado_at?: string;
+  agente_slug?: string;
+  agente_nombre?: string;
   agentes?: {
     slug?: string | null;
     nombre?: string | null;
@@ -367,7 +461,7 @@ export async function fetchAgentesCostoHistorico(
   const periodStart = new Date(parseMonthKey(monthKeys[0] ?? monthKey(referenceDate)).getTime());
   const periodStartIso = periodStart.toISOString();
 
-  const [analysesResult, aiDevResult] = await Promise.all([
+  const [analysesResult, aiDevResult, contentResult] = await Promise.all([
     supabase
       .from("agente_analisis")
       .select(
@@ -391,16 +485,34 @@ export async function fetchAgentesCostoHistorico(
         `
       )
       .gte("iniciado_at", periodStartIso)
+      ,
+    supabase
+      .from("piezas_contenido")
+      .select(
+        `
+          costo_generacion_usd,
+          created_at
+        `
+      )
+      .gte("created_at", periodStartIso)
   ]);
 
-  const errors = [analysesResult.error, aiDevResult.error].filter(Boolean);
+  const errors = [analysesResult.error, aiDevResult.error, contentResult.error].filter(Boolean);
   if (errors.length > 0) {
     throw new Error(errors[0]?.message ?? "No se pudo cargar el histórico de costos.");
   }
 
-  const rows = [
+  const rows: HistoricalCostRow[] = [
     ...((analysesResult.data ?? []) as HistoricalCostRow[]),
-    ...((aiDevResult.data ?? []) as HistoricalCostRow[])
+    ...((aiDevResult.data ?? []) as HistoricalCostRow[]),
+    ...((contentResult.data ?? []) as ContentGenerationCostRow[]).map((row) => ({
+      costo_estimado_usd: null,
+      costo_generacion_usd: row.costo_generacion_usd,
+      created_at: row.created_at,
+      iniciado_at: undefined,
+      agente_slug: "generador-contenido",
+      agente_nombre: "Generador de Contenido"
+    }) satisfies HistoricalCostRow)
   ];
 
   const seriesMetaMap = new Map<string, AgentesHubCostoHistoricoSerie>();
@@ -411,7 +523,7 @@ export async function fetchAgentesCostoHistorico(
   }
 
   for (const row of rows) {
-    const costo = Number(row.costo_estimado_usd ?? 0);
+    const costo = Number(row.costo_estimado_usd ?? row.costo_generacion_usd ?? 0);
     if (costo <= 0) {
       continue;
     }
@@ -427,8 +539,8 @@ export async function fetchAgentesCostoHistorico(
       continue;
     }
 
-    const slug = row.agentes?.slug ?? "ai-dev";
-    const label = row.agentes?.nombre ?? (slug === "ai-dev" ? "Constructor de Fases (AI Dev)" : "Asesor Financiero");
+    const slug = row.agente_slug ?? row.agentes?.slug ?? "ai-dev";
+    const label = row.agente_nombre ?? row.agentes?.nombre ?? (slug === "ai-dev" ? "Constructor de Fases (AI Dev)" : "Asesor Financiero");
     const serie = seriesMetaMap.get(slug);
 
     if (!serie) {

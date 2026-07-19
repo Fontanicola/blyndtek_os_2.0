@@ -1,6 +1,5 @@
 "use client";
 
-import { useId } from "react";
 import {
   Area,
   ComposedChart,
@@ -11,6 +10,7 @@ import {
   YAxis
 } from "recharts";
 import { Card } from "@/components/ui";
+import { chartTheme, formatCompactCurrencyTick } from "@/lib/charts/chartTheme";
 import { formatUSD } from "@/lib/utils/formatters";
 import type { DashboardRunwayPoint } from "@/types/dashboard";
 import type { TooltipContentProps } from "recharts/types/component/Tooltip";
@@ -19,20 +19,7 @@ type RunwayProyectadoProps = {
   data: DashboardRunwayPoint[];
 };
 
-function formatMoneyTick(value: string | number) {
-  const numericValue = Number(value);
-
-  if (Math.abs(numericValue) >= 1000) {
-    return `$${(numericValue / 1000).toFixed(1)}k`;
-  }
-
-  return `$${Math.round(numericValue).toLocaleString("en-US")}`;
-}
-
 export function RunwayProyectado({ data }: RunwayProyectadoProps) {
-  const chartId = useId().replace(/:/g, "");
-  const gradientId = `dashboard-runway-${chartId}`;
-
   return (
     <Card padding="md" className="space-y-5 overflow-hidden bg-white">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -46,16 +33,23 @@ export function RunwayProyectado({ data }: RunwayProyectadoProps) {
       <div className="h-[320px]">
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={data} margin={{ top: 16, right: 18, bottom: 8, left: 8 }}>
-            <defs>
-              <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#1F44FF" stopOpacity="0.28" />
-                <stop offset="68%" stopColor="#1F44FF" stopOpacity="0.06" />
-                <stop offset="100%" stopColor="#1F44FF" stopOpacity="0" />
-              </linearGradient>
-            </defs>
-            <CartesianGrid stroke="#E8ECF3" strokeDasharray="2 10" vertical={false} />
-            <XAxis dataKey="label" tick={{ fill: "#5A6373", fontSize: 11 }} axisLine={false} tickLine={false} />
-            <YAxis tick={{ fill: "#5A6373", fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={formatMoneyTick} />
+            <CartesianGrid
+              stroke={chartTheme.grid.stroke}
+              strokeDasharray={chartTheme.grid.strokeDasharray}
+              vertical={chartTheme.grid.vertical}
+            />
+            <XAxis
+              dataKey="label"
+              tick={chartTheme.axis.tick}
+              axisLine={chartTheme.axis.axisLine}
+              tickLine={chartTheme.axis.tickLine}
+            />
+            <YAxis
+              tick={chartTheme.axis.tick}
+              axisLine={chartTheme.axis.axisLine}
+              tickLine={chartTheme.axis.tickLine}
+              tickFormatter={formatCompactCurrencyTick}
+            />
             <Tooltip
               content={({ active, payload, label }: TooltipContentProps<number, string>) => {
                 if (!active || !payload?.length) {
@@ -63,7 +57,7 @@ export function RunwayProyectado({ data }: RunwayProyectadoProps) {
                 }
 
                 return (
-                  <div className="rounded-card border border-white/80 bg-white/95 p-3 text-sm shadow-modal backdrop-blur">
+                  <div className={chartTheme.tooltip.className}>
                     <p className="mb-1 font-label text-carbon">{label}</p>
                     <p className="text-xs text-signal">Caja: {formatUSD(Number(payload[0]?.value ?? 0))}</p>
                   </div>
@@ -73,11 +67,12 @@ export function RunwayProyectado({ data }: RunwayProyectadoProps) {
             <Area
               dataKey="caja"
               name="Caja"
-              stroke="#1F44FF"
+              stroke={chartTheme.colors.signal}
               strokeWidth={2.8}
-              fill={`url(#${gradientId})`}
+              fill={chartTheme.colors.signal}
+              fillOpacity={0.08}
               dot={false}
-              activeDot={{ r: 4, fill: "#FFFFFF", stroke: "#1F44FF", strokeWidth: 2.5 }}
+              activeDot={{ r: 4, fill: "#FFFFFF", stroke: chartTheme.colors.signal, strokeWidth: 2.5 }}
               type="monotone"
             />
           </ComposedChart>

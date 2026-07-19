@@ -9,6 +9,7 @@ import {
   createPieza,
   deletePieza,
   fetchPiezas,
+  generarCompletoPieza,
   subirImagenPieza,
   updatePieza
 } from "@/lib/hooks/useContenido";
@@ -83,10 +84,17 @@ export function PiezasGrid({ pilares }: PiezasGridProps) {
     await loadPiezas();
   }
 
-  async function handleUpload(id: string, file: File) {
-    const saved = await subirImagenPieza(id, file);
+  async function handleUpload(id: string, file: File, slideIndex?: number | null) {
+    const saved = await subirImagenPieza(id, file, slideIndex);
     setSelectedPieza(saved);
     await loadPiezas();
+  }
+
+  async function handleGenerateComplete(id: string) {
+    const result = await generarCompletoPieza(id);
+    setSelectedPieza(result.pieza);
+    await loadPiezas();
+    return result;
   }
 
   async function handleDelete(pieza: PiezaContenido) {
@@ -154,6 +162,7 @@ export function PiezasGrid({ pilares }: PiezasGridProps) {
         onClose={() => setSelectedPieza(null)}
         onSave={handleSave}
         onUploadImage={handleUpload}
+        onGenerateComplete={handleGenerateComplete}
       />
     </Card>
   );

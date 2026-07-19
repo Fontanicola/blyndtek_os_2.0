@@ -131,7 +131,9 @@ export function AgentesClient({ agentes, feed, costoActualMes }: AgentesClientPr
   const [form, setForm] = useState<AgenteConfig>({
     runway_objetivo_meses: 6,
     resumen_automatico_activo: false,
-    frecuencia_resumen: "mensual"
+    frecuencia_resumen: "mensual",
+    generacion_automatica_activa: true,
+    dia_generacion: "lunes"
   });
 
   const selectedAgent = useMemo(
@@ -285,7 +287,7 @@ export function AgentesClient({ agentes, feed, costoActualMes }: AgentesClientPr
                       onClick={() => setSelectedSlug(agente.slug)}
                       className={[
                         "border transition-shadow",
-                        isSelected ? "border-signal/30 bg-signal-light shadow-modal" : "border-line/40 shadow-soft hover:border-signal/20"
+                        isSelected ? "border-signal/30 bg-signal-light shadow-soft" : "border-line/40 shadow-soft hover:border-signal/20"
                       ].join(" ")}
                     >
                       <div className="flex items-start justify-between gap-4">

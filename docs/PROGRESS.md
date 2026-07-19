@@ -1899,3 +1899,100 @@ $ find . -maxdepth 3 \( -name 'middleware.*' -o -name 'proxy.*' \) -not -path '.
 - Las piezas permiten carga manual de imagen al bucket `archivos-blyndtek` bajo `contenido/{pieza_id}.{ext}`, caption, hashtags como chips, pilar y estado del flujo.
 - Se creó `types/contenido.ts` y `lib/hooks/useContenido.ts` como capa cliente única para Content Studio.
 - Verificación local ejecutada: `npm run lint` y `npm run build` pasan correctamente.
+
+## 2026-07-19 — Content Studio: generación de imagen con Higgsfield
+
+- Se instaló `@higgsfield/client` y se creó `/api/piezas-contenido/[id]/generar-imagen` para generar imágenes de piezas con Claude + Higgsfield.
+- Claude genera el prompt final usando la identidad de Blyndtek, el contexto de la pieza y una imagen de referencia opcional leída desde Archivos/Storage cuando aplica.
+- Higgsfield se invoca con el SDK oficial y credenciales `HIGGSFIELD_API_KEY_ID:HIGGSFIELD_API_KEY_SECRET` usando el modelo disponible `/higgsfield-ai/soul/v2/standard`; el resultado se descarga y se guarda en `archivos-blyndtek/contenido/{uuid}.{ext}`.
+- `PiezaEditorModal` suma la sección `Generar con IA`, selector de referencia, loading, prompt generado colapsable, regeneración y feedback de error.
+- `piezas_contenido` ahora documenta `higgsfield_job_id` y `higgsfield_estado` para trazabilidad de cada generación.
+- Verificación real de Higgsfield: `/models` respondió correctamente con las credenciales configuradas y el slug `/higgsfield-ai/soul/v2/standard` llegó a la API; la generación quedó bloqueada por `403 Not enough credits`, no por autenticación `401/403` inválida.
+
+## 2026-07-19 — Design system más técnico y tema único de gráficos
+
+- Se ajustaron los tokens de radio en `tailwind.config.ts`: `rounded-component` pasó a `6px`, `rounded-card` a `8px` y `rounded-pill` se mantiene en `100px`.
+- `components/ui/Card.tsx` ahora define superficies con `border border-line-soft` y sombra mínima; `shadow-soft` y `shadow-card` se bajaron a un shadow casi imperceptible, mientras `shadow-modal` queda reservado para elevación real.
+- `MetricaCard` también suma borde fino para mantener consistencia en las unidades KPI sin perder su rol como card válida.
+- Se creó `lib/charts/chartTheme.ts` como fuente única para colores, grid, ejes, barras y tooltip de gráficos.
+- Se refactorizaron los gráficos principales para usar `chartTheme`: `PLChart`, `CarteraClientesChart`, `RunwayChart`, `MRRChart`, `VentasVsCobradoChart`, `EmbudoLeads`, `LeadsPorEtapaChart`, `WinRateChart`, `PipelineChart`, `RunwayProyectado`, `ClienteRentabilidadChart`, `VentasChart`, `AiHubCostoChart` y los sparklines de `TesoreriaCard`.
+- La grilla de charts quedó unificada con líneas horizontales sutiles y tooltips consistentes; se eliminaron los hardcodes principales de color/grid/tooltip en los componentes de Recharts.
+- Se actualizó la Constitución técnica en el seed de Wiki con los nuevos radios, el criterio de borde sobre sombra, la regla de máximo un nivel de card anidada y `chartTheme.ts` como fuente obligatoria para gráficos nuevos.
+- Verificación visual protegida intentada en local con navegador integrado: `/dashboard` redirigió a `/login` por falta de sesión disponible, por lo que no se pudo completar navegación visual real de Dashboard, Finanzas, Proyectos, Clientes y Mi Panel sin credenciales.
+- Verificación de consistencia realizada por auditoría de código: los gráficos afectados importan `chartTheme`, ya no declaran grids/tooltips/colores principales propios, y las superficies base usan borde fino con sombra mínima.
+- Verificación local ejecutada: `npm run lint` y `npm run build` pasan correctamente. La primera corrida de build falló por manifiestos stale de `.next` (`/leads` y `/equipo-comercial`); se limpió `.next` y el build limpio completó correctamente.
+
+## 2026-07-19 — Content Studio: Plan Semanal
+
+- Se creó `/api/planes-semanales/generar` para generar un plan semanal completo con Claude `claude-sonnet-4-6` y la herramienta `web_search_20250305`, usando una noticia real reciente como fuente.
+- El plan guarda `tema_general`, `noticia_fuente` y `noticia_url` en `planes_semanales`, y crea automáticamente 5 piezas vinculadas: 3 posts de feed en estado `idea`, 1 reel en estado `lista` y 1 pieza de historias en estado `lista`.
+- Las piezas guardan el texto estructurado en `piezas_contenido.guion` y se vinculan por `plan_semanal_id`, dejando listas las piezas de feed para la futura generación visual.
+- `/contenido` ahora abre por default en la tab `Plan Semanal`, con botón para generar la semana actual, contexto de noticia/fuente, cards de feed, guion de reel y checklist local para las 5 historias.
+- Se agregó `/api/planes-semanales` para consultar el plan existente de la semana actual sin regenerarlo.
+- Verificación local ejecutada: `npm run lint` y `npm run build` pasan correctamente.
+
+## 2026-07-19 — Content Studio: regla anti-visibilidad de competidores
+
+- Se actualizó el `system` prompt de `/api/planes-semanales/generar` con una regla crítica: si una noticia real involucra a un competidor directo/indirecto de Blyndtek, el contenido público debe hablar de la tendencia de forma genérica, sin nombrar ni linkear a esa empresa.
+- `noticia_fuente` y `noticia_url` siguen guardando el dato real completo en `planes_semanales` para verificación interna, pero se removieron del `guion` de la pieza pública de feed para que no se filtren a la etapa visual.
+- Se agregó una barrera programática para bloquear planes donde el contenido público mencione el competidor conocido `Santex`; si ocurre, la API falla antes de guardar el plan.
+- Verificación local ejecutada: `npm run lint` y `npm run build` pasan correctamente.
+
+## 2026-07-19 — Content Studio: renderizado visual de slides con ImageResponse
+
+- Se confirmó contra Supabase que `piezas_contenido.imagenes_generadas` ya existe como columna `jsonb`; no hizo falta aplicar SQL adicional.
+- Se creó `lib/contenido/plantillaSlide.tsx` con el template de marca para feed 4:5: fondo lavanda/celeste/blanco, mucho aire, título y texto centrados, footer `BLYNDTEK` e indicador de posición para carruseles.
+- Se creó `/api/piezas-contenido/[id]/renderizar`, admin-only, para convertir `guion.slides` o `guion.texto_principal` en PNGs reales con `ImageResponse`, subirlos a `archivos-blyndtek/contenido/{pieza_id}-slide-{n}.png`, guardar `imagenes_generadas`, usar el primer slide como `storage_path` y pasar la pieza de `idea` a `en_diseno`.
+- `PiezaEditorModal` ahora muestra `Generar imágenes`/`Regenerar todo` para piezas de feed con guion renderizable, con loading, error claro, preview grande y miniaturas navegables de los slides.
+- `PiezaCard` muestra un badge `1/N` con ícono de capas cuando la pieza tiene múltiples imágenes generadas, para distinguir carruseles de piezas simples.
+- El proxy autenticado de imágenes de piezas permite servir tanto `storage_path` como cualquier path listado en `imagenes_generadas`.
+- Verificación local ejecutada: `npm run lint` y `npm run build` pasan correctamente.
+
+## 2026-07-19 — Content Studio: generación completa con fondo IA + texto renderizado
+
+- `/api/piezas-contenido/[id]/generar-imagen` fue reescrito: ahora genera sólo `fondo_storage_path` con Higgsfield, usando un prompt de fondo atmosférico sin texto, sin UI falsa y sin elementos informativos.
+- Claude genera `prompt_fondo` cruzando la identidad de Blyndtek con el tema de la pieza; se guardan `tokens_entrada`, `tokens_salida` y `costo_generacion_usd` en `piezas_contenido`.
+- `lib/contenido/plantillaSlide.tsx` acepta `fondoUrl`; cuando existe, lo usa como imagen de fondo y renderiza encima el texto real con código. Si no hay fondo, conserva el degradé de marca como fallback.
+- `/api/piezas-contenido/[id]/renderizar` ahora resuelve `fondo_storage_path` con signed URL y lo pasa a cada slide del carrusel; todos los slides comparten fondo y cambian sólo su texto real.
+- Se creó `/api/piezas-contenido/[id]/generar-completo`, que ejecuta fondo + renderizado en secuencia, devuelve `imagenes_generadas` y registra actividad en `agente_analisis` bajo `generador-contenido`.
+- `PiezaEditorModal` fue simplificado a un único botón `Generar`/`Regenerar`, loading `Generando...`, imágenes finales y un detalle técnico colapsado para ver `prompt_fondo` y `guion`.
+- Verificación local ejecutada: `npm run lint` y `npm run build` pasan correctamente. La verificación visual real de una pieza nueva queda pendiente de sesión admin y créditos disponibles de Higgsfield.
+
+## 2026-07-19 — Content Studio: fix de Satori con fuente Inter estática
+
+- Se reprodujo el 500 de `/api/piezas-contenido/[id]/renderizar` aislando el mismo `ImageResponse`: el stack real fue `TypeError: Cannot read properties of undefined (reading '256')` en `parseFvarAxis -> parseFvarTable -> parseBuffer -> zt.addFonts`.
+- Causa confirmada: Satori/`@vercel/og` fallaba al parsear `InterVariable.ttf` por su tabla variable `fvar`; no era un problema del fondo de Higgsfield ni de Storage.
+- Se reemplazó la carga de `InterVariable.ttf` por fuentes estáticas separadas de Google Fonts (`Inter` 400 y 700) y se validan bytes antes de pasarlas a `ImageResponse`.
+- `renderizar` ahora valida que la signed URL de `fondo_storage_path` sea accesible y tenga `content-type` de imagen antes de pasarla al `<img>` de Satori.
+- Verificación del repro mínimo: con `InterVariable.ttf` falla en `parseFvarAxis`; con las fuentes estáticas genera PNG correctamente. Verificación local ejecutada: `npm run lint` pasa correctamente.
+
+## 2026-07-19 — Content Studio: layouts editoriales para carruseles
+
+- `lib/contenido/plantillaSlide.tsx` dejó de usar una plantilla única repetida y ahora elige entre 4 layouts según el rol del slide: portada, contenido, dato/cita y cierre.
+- La portada usa título grande alineado a la izquierda y acento editorial azul; los slides intermedios usan bloque de texto angosto y número tipográfico sutil de fondo; el cierre deja más aire y enfatiza el mensaje final.
+- El footer textual `BLYNDTEK` fue reemplazado por el logo real `public/Logo_Blyndtek_plataforma_negro.svg`, embebido como data URI para que Satori lo renderice de forma confiable.
+- El prompt de fondo para Higgsfield ahora exige dirección de arte B2B minimalista con composición real, regla de tercios, espacio negativo y máximo 1-2 elementos abstractos sutiles; se refuerza la prohibición de texto, UI falsa, dashboards o efectos de póster motivacional.
+- `PiezaCard` muestra un tag de tipo visible (`Carrusel`, `Post`, `Historia`, `Reel`) calculado desde `plataforma` y `guion.slides`.
+- Verificación local ejecutada: `npm run lint` y `npm run build` pasan correctamente. La verificación visual de regenerar el carrusel completo queda pendiente de sesión admin/créditos disponibles de Higgsfield en el entorno.
+
+## 2026-07-19 — Content Studio: ciclo semanal automático end-to-end
+
+- Se extrajo la lógica de generación semanal a `lib/contenido/generarPlanSemanal.ts` para que el endpoint manual y el automático compartan exactamente la misma fuente de verdad.
+- Se creó `/api/planes-semanales/generar-automatico`: crea un registro en `generaciones_automaticas`, genera el plan semanal, renderiza automáticamente las 3 piezas de feed con `/generar-completo`, deja feed en `en_diseno` y reel/historias en `lista`.
+- Se agregó `supabase/migrations/009_content_studio_cron.sql` siguiendo el mecanismo real del proyecto (`pg_cron` + `net.http_post`) para ejecutar el ciclo cada lunes a la mañana con service role.
+- `generar-completo`, `generar-imagen` y `renderizar` aceptan autorización por service role además de sesión admin, para que el cron pueda encadenar el flujo completo sin interacción humana.
+- `/contenido` muestra un banner cuando hay piezas de un plan semanal en `en_diseno`: “Tu plan semanal está listo para revisar”, con acceso directo a la vista del plan.
+- `PiezaEditorModal` suma las tres acciones humanas del gate: `Aprobar` (`en_diseno` -> `lista`), `Regenerar` una pieza puntual y `Cambiar imagen` de un slide específico sin tocar los demás. Reel e historias en `lista` pueden marcarse como `publicada`.
+- La subida manual de imagen de pieza acepta `slide_index`, reemplazando sólo el slide elegido dentro de `imagenes_generadas` y actualizando `storage_path` si se reemplaza la portada.
+- Durante la verificación, la primera corrida automática creó el plan pero falló en render por un detalle de Satori (`zIndex` con unidad y propiedades `left/right` indefinidas); se corrigió la plantilla para usar valores compatibles con `ImageResponse`.
+- Verificación real ejecutada contra local: `/api/planes-semanales/generar-automatico` completó una ejecución con `estado='completado'`, `piezas_generadas=3`, `errores=0` y `plan_semanal_id=6357ba7c-ff09-402a-9e1a-8df29d31c8bb`.
+
+## 2026-07-19 — AI Hub: Generador de Contenido integrado
+
+- El feed unificado de agentes ahora incorpora `generaciones_automaticas` como fuente canónica de eventos del Generador de Contenido: planes generados, fallidos o pausados.
+- Para evitar duplicación, los análisis automáticos de `generador-contenido` con `tipo_generacion='content_studio_semanal'` se filtran del feed genérico de `agente_analisis`; los planes vienen desde `generaciones_automaticas` y las generaciones visuales puntuales siguen viniendo desde `agente_analisis`.
+- `fetchAgentesCostoTotal` y `fetchAgentesCostoHistorico` suman `piezas_contenido.costo_generacion_usd` bajo `Generador de Contenido`, por lo que la card y el gráfico de costo de IA del Hub incluyen el gasto real de Content Studio.
+- `/api/planes-semanales/generar-automatico` respeta `agente_config.generacion_automatica_activa`; si está en `false`, registra una ejecución trazada como pausada y no genera plan ni piezas.
+- `/ai-hub/agentes` muestra un panel específico para `Generador de Contenido` con toggle de generación semanal, selector `dia_generacion` preparado y actividad reciente filtrada a ese agente.
+- Verificación real: se pausó temporalmente `generacion_automatica_activa`, se disparó el endpoint automático con service role y respondió `estado='pausado'`, `piezas_generadas=0`, ejecución `50349672-4753-461e-a26b-77e584ad5756`; luego se restauró el toggle a `true`.
+- Verificación de costo: el período actual tiene `0.066243` USD registrados en `piezas_contenido.costo_generacion_usd`, ahora incluidos en el consolidado de IA.
