@@ -37,7 +37,7 @@ function buildArticleContent(): Json {
       [
         "Prohibido el uso de emojis nativos o símbolos decorativos Unicode como recurso visual en cualquier parte de la interfaz: botones, toasts, headers, badges y notificaciones."
       ],
-      ["Todo ícono es SVG de línea propio, coherente con el set de íconos del design system del proyecto."],
+      ["Todo ícono de UI viene de `components/ui/icons.tsx` sobre `lucide-react`, con tamaño y grosor estandarizados."],
       [
         "Aplica también a contenido generado por IA (captions, notificaciones, textos de toast): mismo criterio de marca en todo lo que el sistema produce."
       ],
@@ -59,7 +59,8 @@ function buildArticleContent(): Json {
       ["Nunca duplicar el nombre de la sección como título grande si ya está en la topbar."],
       ["Headers y toolbars fijos, contenido con su propio scroll interno."],
       ['Todo formulario de edición tiene un botón "Guardar" explícito.'],
-      ["Estados vacíos con mensaje breve y útil."],
+      ["Estados vacíos con mensaje breve y útil usando siempre `components/ui/EmptyState.tsx`; no se reimplementan a mano."],
+      ["Indicadores de guardado/autosave usando siempre `components/ui/SavingIndicator.tsx`; no se reimplementan badges sueltos de Guardando/Guardado."],
       ["Mobile-first en cualquier módulo visible a clientes finales."]
     ]),
     tiptapHeading("Cards vs filas con divisor", 3),
@@ -75,6 +76,9 @@ function buildArticleContent(): Json {
       ],
       [
         "Todo icono de UI viene de components/ui/icons.tsx, que reexporta lucide-react con tamaño y grosor estandarizados. No se dibuja un SVG de icono a mano de nuevo."
+      ],
+      [
+        "`EmptyState.tsx` y `SavingIndicator.tsx` son componentes obligatorios para estados vacíos e indicadores de guardado. Ningún módulo nuevo debe resolver esos patrones con texto o badges aislados."
       ],
       [
         "El icono con badge de color solo se permite en MetricaCard y en los tiles de Archivos (ícono o miniatura). En cualquier otro lugar, el icono va solo, sin fondo circular decorativo."

@@ -7,4 +7,5 @@ export type NavItem = {
   roles: ("admin" | "miembro" | "comercial")[];
   section: "top-level" | "comercial" | "entrega" | "control";
   children?: NavItem[];
+  iconClassName?: string;
 };

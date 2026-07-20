@@ -3,6 +3,11 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { getCurrentUser } from "@/lib/auth";
 import { calcularMetricasAsesor } from "@/lib/agentes/calcularMetricasAsesor";
 import { AGENTE_ASESOR_FINANCIERO_SLUG, normalizeAgenteConfig } from "@/lib/agentes/agentes";
+import {
+  AUTOMATIZACION_ASESOR_ENDPOINT,
+  fetchAutomatizacionByEndpoint,
+  marcarAutomatizacionEjecutada
+} from "@/lib/agentes/automatizaciones";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { hoyLocalString } from "@/lib/utils/fechas";
 import type { AgenteAnalisis, AgenteConfigRow, AgentesDatabase } from "@/types/agentes";
@@ -89,6 +94,8 @@ function currentMonthStart(date = new Date()) {
 }
 
 export async function POST(request: NextRequest) {
+  let cronAutomationId: string | null = null;
+
   try {
     const cronAuthorized = isCronAuthorized(request);
     const currentUser = cronAuthorized ? null : await getCurrentUser();
@@ -98,6 +105,14 @@ export async function POST(request: NextRequest) {
     }
 
     const supabase = createAdminClient() as SupabaseClient<AgentesDatabase>;
+    const automatizacion = cronAuthorized ? await fetchAutomatizacionByEndpoint(supabase, AUTOMATIZACION_ASESOR_ENDPOINT) : null;
+    cronAutomationId = automatizacion?.id ?? null;
+
+    if (cronAuthorized && automatizacion && !automatizacion.activa) {
+      await marcarAutomatizacionEjecutada(supabase, automatizacion.id);
+      return NextResponse.json({ data: { skipped: true, motivo: "automatizacion_pausada" } });
+    }
+
     const { data: agente, error: agenteError } = await supabase
       .from("agentes")
       .select("*")
@@ -119,10 +134,6 @@ export async function POST(request: NextRequest) {
     }
 
     const config = normalizeAgenteConfig((configRows ?? []) as AgenteConfigRow[]);
-
-    if (cronAuthorized && !config.resumen_automatico_activo) {
-      return NextResponse.json({ data: { skipped: true, motivo: "resumen_automatico_inactivo" } });
-    }
 
     const [
       { data: finanzasRows, error: finanzasError },
@@ -248,6 +259,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: insertError?.message ?? "No se pudo guardar el análisis." }, { status: 500 });
     }
 
+    if (cronAuthorized && automatizacion) {
+      await marcarAutomatizacionEjecutada(supabase, automatizacion.id);
+    }
+
     return NextResponse.json({
       data: {
         analisis: insertado,
@@ -258,6 +273,10 @@ export async function POST(request: NextRequest) {
       }
     });
   } catch (error) {
+    if (cronAutomationId) {
+      await marcarAutomatizacionEjecutada(createAdminClient() as SupabaseClient<AgentesDatabase>, cronAutomationId).catch(() => undefined);
+    }
+
     const message = error instanceof Error ? error.message : "Unexpected error";
     return NextResponse.json({ error: message }, { status: 500 });
   }

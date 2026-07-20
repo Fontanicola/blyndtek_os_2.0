@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Badge, Button, Card } from "@/components/ui";
+import { Badge, Button, Card, EmptyState } from "@/components/ui";
+import { WalletIcon } from "@/components/ui/icons";
 import { formatCajaLabel } from "@/lib/cajas";
 import { formatFecha, formatUSD } from "@/lib/utils/formatters";
 import { fechaStringAFechaLocal } from "@/lib/utils/fechas";
@@ -163,7 +164,12 @@ export function EgresosTabla({ egresos, cajas = [], onEdit, onDelete, onTogglePa
                 {egresos.length === 0 ? (
                   <tr>
                     <td className="px-4 py-8 text-center text-sm text-graphite" colSpan={8}>
-                      No hay egresos cargados todavía.
+                      <EmptyState
+                        icon={WalletIcon}
+                        titulo="No hay egresos cargados todavía"
+                        descripcion="Los egresos operativos, recurrentes o puntuales van a aparecer en esta tabla."
+                        className="mx-auto max-w-xl"
+                      />
                     </td>
                   </tr>
                 ) : null}

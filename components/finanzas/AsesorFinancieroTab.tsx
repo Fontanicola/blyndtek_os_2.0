@@ -2,8 +2,9 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Badge, Button, Card } from "@/components/ui";
+import { Badge, Button, Card, EmptyState } from "@/components/ui";
 import { DashboardIcon, FinanzasIcon } from "@/components/icons";
+import { SparklesIcon } from "@/components/ui/icons";
 import { MarkdownContent } from "@/components/ui/MarkdownContent";
 import { formatUSD } from "@/lib/utils/formatters";
 import { MetricaCard } from "./MetricaCard";
@@ -103,10 +104,11 @@ export function AsesorFinancieroTab({ analisisReciente, showToast }: AsesorFinan
             </p>
           </div>
 
-          <div className="rounded-card border border-dashed border-line bg-paper/40 p-6 text-sm text-graphite">
-            Todavía no hay un análisis de este mes. Generá el primero para ver opciones concretas sobre el excedente,
-            el runway y la capacidad disponible.
-          </div>
+          <EmptyState
+            icon={SparklesIcon}
+            titulo="Todavía no hay análisis de este mes"
+            descripcion="Generá el primero para ver opciones concretas sobre excedente, runway y capacidad disponible."
+          />
 
           <div className="flex flex-wrap items-center gap-3">
             <Button variant="primary" onClick={() => void handleAnalizarAhora()} loading={loading}>

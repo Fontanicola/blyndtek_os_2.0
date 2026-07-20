@@ -1,6 +1,7 @@
 "use client";
 
-import { Card } from "@/components/ui";
+import { Card, EmptyState } from "@/components/ui";
+import { CheckCircleIcon } from "@/components/ui/icons";
 import { formatFecha } from "@/lib/utils/formatters";
 import type { DashboardRecentFeature } from "@/types/dashboard";
 
@@ -19,9 +20,11 @@ export function FeaturesRecientes({ data }: FeaturesRecientesProps) {
       </div>
 
       {data.length === 0 ? (
-        <div className="rounded-card border border-line-soft bg-paper px-4 py-8 text-sm text-graphite">
-          Todavía no hay features completadas para mostrar.
-        </div>
+        <EmptyState
+          icon={CheckCircleIcon}
+          titulo="Todavía no hay features completadas"
+          descripcion="Las últimas features que pasen a lista se van a mostrar en este bloque."
+        />
       ) : (
         <div className="space-y-2">
           {data.map((feature) => (

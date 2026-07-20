@@ -10,7 +10,8 @@ import {
   XAxis,
   YAxis
 } from "recharts";
-import { Card } from "@/components/ui";
+import { Card, EmptyState } from "@/components/ui";
+import { InboxIcon } from "@/components/ui/icons";
 import { chartTheme } from "@/lib/charts/chartTheme";
 import type { DashboardLeadStageCount } from "@/types/dashboard";
 import type { TooltipContentProps } from "recharts/types/component/Tooltip";
@@ -52,9 +53,11 @@ export function EmbudoLeads({ data }: EmbudoLeadsProps) {
       </div>
 
       {!hasData ? (
-        <div className="rounded-card border border-line-soft bg-paper px-4 py-8 text-sm text-graphite">
-          Sin datos suficientes para construir el embudo.
-        </div>
+        <EmptyState
+          icon={InboxIcon}
+          titulo="Sin datos suficientes para construir el embudo"
+          descripcion="El gráfico se activa cuando haya leads distribuidos en el pipeline."
+        />
       ) : (
         <div className="h-[320px]">
           <ResponsiveContainer width="100%" height="100%">

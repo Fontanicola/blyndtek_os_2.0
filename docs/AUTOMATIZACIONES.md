@@ -65,7 +65,7 @@ O bien, manualmente desde Supabase SQL Editor copiando cada archivo.
 `008_agentes_asesor_financiero.sql`
 
 - Programa el análisis mensual del agente `asesor-financiero` contra `POST /api/agentes/asesor-financiero/analizar`.
-- El route del análisis decide en runtime si genera o no el resumen automático según `agente_config.resumen_automatico_activo`.
+- El route del análisis decide en runtime si genera o no el resumen automático leyendo su fila en `automatizaciones` por `endpoint_trigger`.
 
 ## 3. Placeholders a reemplazar
 
@@ -108,7 +108,7 @@ Buscá:
 - Los cobros vencidos pasan a estado `vencido`.
 - Las features completadas recalculan el avance del proyecto.
 - Los toques de leads agendan el siguiente recordatorio automáticamente.
-- El asesor financiero genera un análisis mensual sólo cuando `resumen_automatico_activo` está encendido.
+- El asesor financiero genera un análisis mensual sólo cuando su automatización está `activa=true`.
 
 ## 5. Nota sobre Google Calendar
 

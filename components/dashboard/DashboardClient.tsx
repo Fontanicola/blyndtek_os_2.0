@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, type ReactNode } from "react";
-import { Card } from "@/components/ui";
+import { Card, EmptyState } from "@/components/ui";
+import { InboxIcon } from "@/components/ui/icons";
 import { MetricaCard, PLChart } from "@/components/finanzas";
 import { VentasVsCobradoChart } from "./VentasVsCobradoChart";
 import {
@@ -442,7 +443,12 @@ export function DashboardClient() {
 
       {!loading && !error && !dashboard ? (
         <Card padding="lg">
-          <p className="text-sm text-graphite">No hay métricas disponibles todavía.</p>
+          <EmptyState
+            icon={InboxIcon}
+            titulo="No hay métricas disponibles todavía"
+            descripcion="Cuando haya actividad comercial, financiera o de entrega, el dashboard va a mostrarla acá."
+            className="border-0 bg-transparent"
+          />
         </Card>
       ) : null}
     </div>

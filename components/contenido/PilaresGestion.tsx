@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
-import { TrashIcon } from "@/components/ui/icons";
+import { InboxIcon, TrashIcon } from "@/components/ui/icons";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { cn } from "@/lib/cn";
 import { createPilar, deletePilar, updatePilar } from "@/lib/hooks/useContenido";
 import type { PilarContenido } from "@/types/contenido";
@@ -115,7 +115,12 @@ export function PilaresGestion({ pilares, onChange }: PilaresGestionProps) {
             </div>
           ))
         ) : (
-          <Badge variant="ghost">Todavía no hay pilares</Badge>
+          <EmptyState
+            icon={InboxIcon}
+            titulo="Todavía no hay pilares"
+            descripcion="Creá el primer pilar para ordenar las ideas de contenido de Blyndtek."
+            className="w-full min-h-[130px]"
+          />
         )}
       </div>
     </Card>

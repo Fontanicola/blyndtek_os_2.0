@@ -10,7 +10,8 @@ import {
   XAxis,
   YAxis
 } from "recharts";
-import { Card } from "@/components/ui";
+import { Card, EmptyState } from "@/components/ui";
+import { TrendingUpIcon } from "@/components/ui/icons";
 import { chartTheme } from "@/lib/charts/chartTheme";
 import type { DashboardWinRateChannel } from "@/types/dashboard";
 import type { TooltipContentProps } from "recharts/types/component/Tooltip";
@@ -56,9 +57,11 @@ export function WinRateChart({ outbound, inbound }: WinRateChartProps) {
       </div>
 
       {!hasData ? (
-        <div className="rounded-card border border-line-soft bg-paper px-4 py-8 text-sm text-graphite">
-          Sin datos suficientes para calcular conversión por canal.
-        </div>
+        <EmptyState
+          icon={TrendingUpIcon}
+          titulo="Sin datos suficientes para calcular conversión"
+          descripcion="El win rate por canal se activa cuando haya leads convertidos."
+        />
       ) : (
         <>
           <div className="h-[280px]">

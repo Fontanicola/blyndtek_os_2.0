@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Badge, Button, Card, Input } from "@/components/ui";
+import { Badge, Button, Card, EmptyState, Input } from "@/components/ui";
+import { DollarSignIcon } from "@/components/ui/icons";
 import { cn } from "@/lib/cn";
 import { formatCajaLabel } from "@/lib/cajas";
 import { isCobroVencido } from "@/lib/finanzas";
@@ -174,7 +175,13 @@ export function CobrosTabla({ cobros, cajas = [], onMarkCobrado, onNew, onEdit }
               {filteredCobros.length === 0 ? (
                 <tr>
                   <td className="px-4 py-8 text-center text-sm text-graphite" colSpan={8}>
-                    No hay cobros para mostrar.
+                    <EmptyState
+                      icon={DollarSignIcon}
+                      titulo="No hay cobros para mostrar"
+                      descripcion="Ajustá los filtros o creá un nuevo cobro para completar esta vista."
+                      accion={{ label: "Nuevo cobro", onClick: onNew }}
+                      className="mx-auto max-w-xl"
+                    />
                   </td>
                 </tr>
               ) : null}

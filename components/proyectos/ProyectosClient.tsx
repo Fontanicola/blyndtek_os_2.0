@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Button, Card, EntityMultiSelect, EntitySelect, Input, Modal } from "@/components/ui";
+import { Button, Card, EmptyState, EntityMultiSelect, EntitySelect, Input, Modal } from "@/components/ui";
+import { ProyectosIcon } from "@/components/ui/icons";
 import { cn } from "@/lib/cn";
 import { useFeatures } from "@/lib/hooks/useFeatures";
 import { useProyectos } from "@/lib/hooks/useProyectos";
@@ -219,9 +220,12 @@ export function ProyectosClient({
                 </div>
               )
             ) : (
-              <Card padding="lg">
-                <p className="text-sm text-graphite">No hay proyectos.</p>
-              </Card>
+              <EmptyState
+                icon={ProyectosIcon}
+                titulo="No hay proyectos"
+                descripcion="Creá el primer proyecto para empezar a organizar fases, features y roadmap."
+                accion={{ label: "Nuevo proyecto", onClick: () => setNewProjectOpen(true) }}
+              />
             )}
           </div>
 

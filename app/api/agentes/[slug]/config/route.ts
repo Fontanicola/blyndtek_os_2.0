@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { getAdminUser } from "@/lib/require-admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { buildAgenteConfigEntries, normalizeAgenteConfig } from "@/lib/agentes/agentes";
+import type { Json } from "@/types/supabase";
 import type { Agente, AgenteConfig, AgenteConfigRow, AgentesDatabase } from "@/types/agentes";
 
 type RouteContext = {
@@ -42,8 +43,33 @@ function parseConfigBody(body: unknown): Partial<AgenteConfig> {
   return config;
 }
 
-async function loadAgenteAndConfig(supabase: SupabaseClient<AgentesDatabase>, slug: string) {
-  const { data: agente, error: agenteError } = await supabase.from("agentes").select("*").eq("slug", slug).single();
+function parseGenericConfigEntries(body: unknown): Array<{ clave: string; valor: Json }> {
+  if (!body || typeof body !== "object") {
+    return [];
+  }
+
+  const payload = body as Record<string, unknown>;
+  const rawValues =
+    payload.valores && typeof payload.valores === "object" && !Array.isArray(payload.valores)
+      ? (payload.valores as Record<string, unknown>)
+      : typeof payload.clave === "string"
+        ? { [payload.clave]: payload.valor }
+        : {};
+
+  return Object.entries(rawValues)
+    .filter(([clave]) => clave.trim().length > 0)
+    .map(([clave, valor]) => ({
+      clave: clave.trim(),
+      valor: (valor ?? null) as Json
+    }));
+}
+
+async function loadAgenteAndConfig(supabase: SupabaseClient<AgentesDatabase>, slugOrId: string) {
+  const { data: agente, error: agenteError } = await supabase
+    .from("agentes")
+    .select("*")
+    .or(`slug.eq.${slugOrId},id.eq.${slugOrId}`)
+    .single();
 
   if (agenteError || !agente) {
     return { agente: null as Agente | null, configRows: [] as AgenteConfigRow[], error: agenteError };
@@ -76,7 +102,8 @@ export async function GET(_request: NextRequest, { params }: RouteContext) {
     return NextResponse.json({
       data: {
         agente,
-        config: normalizeAgenteConfig(configRows)
+        config: normalizeAgenteConfig(configRows),
+        configRows
       }
     });
   } catch (error) {
@@ -92,8 +119,9 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const body = parseConfigBody(await request.json().catch(() => null));
-    const entries = buildAgenteConfigEntries(body);
+    const payload = await request.json().catch(() => null);
+    const genericEntries = parseGenericConfigEntries(payload);
+    const entries = genericEntries.length > 0 ? genericEntries : buildAgenteConfigEntries(parseConfigBody(payload));
 
     if (entries.length === 0) {
       return NextResponse.json({ error: "No hay cambios para guardar." }, { status: 400 });
@@ -146,7 +174,8 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
     return NextResponse.json({
       data: {
         agente,
-        config: normalizeAgenteConfig((updatedRows ?? []) as AgenteConfigRow[])
+        config: normalizeAgenteConfig((updatedRows ?? []) as AgenteConfigRow[]),
+        configRows: (updatedRows ?? []) as AgenteConfigRow[]
       }
     });
   } catch (error) {

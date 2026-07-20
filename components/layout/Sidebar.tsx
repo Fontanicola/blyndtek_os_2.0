@@ -84,7 +84,8 @@ function NavigationRow({
           <span
             className={cn(
               "transition-colors duration-fast ease-fast",
-              isParentActive ? "text-signal" : "text-graphite group-hover:text-carbon"
+              isParentActive ? "text-signal" : "text-graphite group-hover:text-carbon",
+              item.iconClassName
             )}
           >
             {item.icon}
@@ -149,7 +150,8 @@ function NavigationRow({
       <span
         className={cn(
           "transition-colors duration-fast ease-fast",
-          isActive ? "text-signal" : "text-graphite group-hover:text-carbon"
+          isActive ? "text-signal" : "text-graphite group-hover:text-carbon",
+          item.iconClassName
         )}
       >
         {item.icon}

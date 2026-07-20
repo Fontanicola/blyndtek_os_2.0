@@ -21,7 +21,7 @@ type RichTextEditorProps = {
 };
 
 function BoldIcon() {
-  return <span className="text-sm font-bold">B</span>;
+  return <span className="text-sm font-title">B</span>;
 }
 
 function ItalicIcon() {

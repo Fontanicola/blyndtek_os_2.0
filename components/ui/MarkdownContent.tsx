@@ -38,7 +38,7 @@ export function MarkdownContent({ content, className }: MarkdownContentProps) {
           h6: ({ children }) => <h6 className={headingClassName(6)}>{children}</h6>,
           p: ({ children }) => <p className="text-sm leading-7 text-carbon">{children}</p>,
           hr: () => <hr className="my-4 border-line" />,
-          strong: ({ children }) => <strong className="font-semibold text-carbon">{children}</strong>,
+          strong: ({ children }) => <strong className="font-label text-carbon">{children}</strong>,
           ul: ({ children }) => <ul className="list-disc space-y-2 pl-5 text-sm leading-7 text-carbon">{children}</ul>,
           ol: ({ children }) => <ol className="list-decimal space-y-2 pl-5 text-sm leading-7 text-carbon">{children}</ol>,
           li: ({ children }) => <li className="text-sm leading-7 text-carbon">{children}</li>,

@@ -1,8 +1,8 @@
 import { createElement } from "react";
 import {
-  BellIcon,
   BotIcon,
   BarChartIcon,
+  BrainIcon,
   CalendarioIcon,
   ClientesIcon,
   DashboardIcon,
@@ -13,6 +13,7 @@ import {
   SparklesIcon,
   SaasIcon,
   NotasIcon,
+  PlayIcon,
   WikiIcon,
   ProyectosIcon,
   TareasIcon
@@ -33,6 +34,36 @@ export const navigationItems: NavItem[] = [
     icon: createElement(DashboardIcon),
     roles: ["admin"],
     section: "top-level"
+  },
+  {
+    label: "AI Hub",
+    icon: createElement(BrainIcon),
+    iconClassName: "text-[#7C3AED]",
+    roles: ["admin"],
+    section: "top-level",
+    children: [
+      {
+        label: "Centro IA",
+        href: "/ai-hub",
+        icon: createElement(SparklesIcon),
+        roles: ["admin"],
+        section: "top-level"
+      },
+      {
+        label: "Agentes",
+        href: "/ai-hub/agentes",
+        icon: createElement(BotIcon),
+        roles: ["admin"],
+        section: "top-level"
+      },
+      {
+        label: "Automatizaciones",
+        href: "/ai-hub/automatizaciones",
+        icon: createElement(PlayIcon),
+        roles: ["admin"],
+        section: "top-level"
+      }
+    ]
   },
   {
     label: "Leads",
@@ -125,35 +156,6 @@ export const navigationItems: NavItem[] = [
     roles: ["admin"],
     section: "control"
   },
-  {
-    label: "AI Hub",
-    icon: createElement(BotIcon),
-    roles: ["admin"],
-    section: "control",
-    children: [
-      {
-        label: "Centro IA",
-        href: "/ai-hub",
-        icon: createElement(SparklesIcon),
-        roles: ["admin"],
-        section: "control"
-      },
-      {
-        label: "Agentes",
-        href: "/ai-hub/agentes",
-        icon: createElement(BotIcon),
-        roles: ["admin"],
-        section: "control"
-      },
-      {
-        label: "Actividad",
-        href: "/ai-hub/actividad",
-        icon: createElement(BellIcon),
-        roles: ["admin"],
-        section: "control"
-      }
-    ]
-  }
 ];
 
 export const navigationSections = [

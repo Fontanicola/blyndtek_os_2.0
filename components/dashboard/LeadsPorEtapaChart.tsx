@@ -11,7 +11,8 @@ import {
   YAxis
 } from "recharts";
 import type { TooltipContentProps } from "recharts/types/component/Tooltip";
-import { Card } from "@/components/ui";
+import { Card, EmptyState } from "@/components/ui";
+import { InboxIcon } from "@/components/ui/icons";
 import { chartTheme } from "@/lib/charts/chartTheme";
 
 type LeadStageCount = {
@@ -67,9 +68,11 @@ export function LeadsPorEtapaChart({ data }: LeadsPorEtapaChartProps) {
       </div>
 
       {!hasData ? (
-        <div className="rounded-card border border-line-soft bg-paper px-4 py-8 text-sm text-graphite">
-          Todavía no hay leads cargados.
-        </div>
+        <EmptyState
+          icon={InboxIcon}
+          titulo="Todavía no hay leads cargados"
+          descripcion="El embudo se va a completar automáticamente cuando ingresen oportunidades."
+        />
       ) : (
         <div className="h-[340px]">
           <ResponsiveContainer width="100%" height="100%">

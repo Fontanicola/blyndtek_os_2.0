@@ -1,11 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Badge, Card, Input } from "@/components/ui";
+import { Badge, Card, EmptyState, Input } from "@/components/ui";
 import {
   BellIcon,
   BotIcon,
   CheckCircleIcon,
+  InboxIcon,
   SparklesIcon,
   FilterIcon
 } from "@/components/ui/icons";
@@ -16,6 +17,8 @@ import type { AgenteTipo } from "@/types/agentes";
 type AiHubActividadClientProps = {
   feed: AgentesHubFeedItem[];
   agentes: Array<{ slug: string; nombre: string; tipo: AgenteTipo }>;
+  title?: string;
+  description?: string;
 };
 
 const tipoOptions: Array<{ value: AgenteTipo; label: string }> = [
@@ -45,7 +48,12 @@ function feedIcon(tipo: AgenteTipo) {
   }
 }
 
-export function AiHubActividadClient({ feed, agentes }: AiHubActividadClientProps) {
+export function AiHubActividadClient({
+  feed,
+  agentes,
+  title = "Actividad",
+  description = "Cronología unificada de análisis, checklists y ejecuciones AI Dev."
+}: AiHubActividadClientProps) {
   const [agentSlug, setAgentSlug] = useState("all");
   const [types, setTypes] = useState<AgenteTipo[]>([]);
   const [fromDate, setFromDate] = useState("");
@@ -89,8 +97,8 @@ export function AiHubActividadClient({ feed, agentes }: AiHubActividadClientProp
       <Card padding="lg" className="space-y-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h2 className="font-title text-2xl text-carbon">Actividad</h2>
-            <p className="text-sm text-graphite">Cronología unificada de análisis, checklists y ejecuciones AI Dev.</p>
+            <h2 className="font-title text-2xl text-carbon">{title}</h2>
+            <p className="text-sm text-graphite">{description}</p>
           </div>
           <Badge variant="signal">{filteredFeed.length} eventos</Badge>
         </div>
@@ -148,9 +156,11 @@ export function AiHubActividadClient({ feed, agentes }: AiHubActividadClientProp
       </Card>
 
       {filteredFeed.length === 0 ? (
-        <Card padding="lg" className="rounded-card border border-dashed border-line bg-paper/40 text-sm text-graphite">
-          No hay actividad para los filtros seleccionados.
-        </Card>
+        <EmptyState
+          icon={InboxIcon}
+          titulo="No hay actividad para los filtros seleccionados"
+          descripcion="Probá ajustar el agente, el tipo o el rango de fechas para ampliar la búsqueda."
+        />
       ) : (
         <div className="space-y-3">
           {filteredFeed.map((item) => (

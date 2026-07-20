@@ -126,7 +126,7 @@ Estado general actual: Fase 0 completa. Cimientos técnicos listos: documentaci�
 
 ## Actualización 2026-07-15
 
-- Se agregó la sección admin-only `Agentes` en la navegación y se reestructuró como AI Hub con las subsecciones `/ai-hub`, `/ai-hub/agentes` y `/ai-hub/actividad`, manteniendo `Asesor Financiero` como primer caso.
+- Se agregó la sección admin-only `Agentes` en la navegación y se reestructuró como AI Hub, manteniendo `Asesor Financiero` como primer caso.
 - `lib/agentes/calcularMetricasAsesor.ts` calcula la base determinística real del asesor con runway, margen, excedente, capacidad, pipeline y concentración de riesgo; la IA solo sintetiza ese snapshot, no inventa números.
 - Se creó `app/api/agentes/asesor-financiero/analizar/route.ts` para generar y persistir análisis con Claude (`claude-sonnet-4-6`), y se agregó la tab `Asesor` dentro de Finanzas para mostrar el análisis reciente y dispararlo bajo demanda.
 - La automatización mensual quedó montada con el mismo patrón recurrente ya usado en el repo: `pg_cron` / `net.http_post` hacia la route de análisis, condicionado por `agente_config.resumen_automatico_activo`.
@@ -142,7 +142,7 @@ Estado general actual: Fase 0 completa. Cimientos técnicos listos: documentaci�
 
 ## Actualización 2026-07-17
 
-- `AI Hub` quedó reorganizado con sus 3 subsecciones reales: `Centro IA`, `Agentes` y `Actividad`; además, los 3 agentes existentes se distinguen por badge de tipo en una sola grilla y el feed unificado concentra la actividad de Asesor Financiero, Checklist QA y AI Dev.
+- `AI Hub` quedó reorganizado inicialmente con subsecciones propias; además, los 3 agentes existentes se distinguen por badge de tipo en una sola grilla y el feed unificado concentra la actividad de Asesor Financiero, Checklist QA y AI Dev.
 - Se agregaron `app/api/agentes/feed/route.ts` y `app/api/agentes/costo-total/route.ts` para unificar actividad y costo de IA entre el Asesor Financiero, Checklist QA y AI Dev.
 - `app/api/agentes/asesor-financiero/analizar/route.ts` ahora persiste `tokens_entrada`, `tokens_salida` y `costo_estimado_usd`, de modo que el costo mensual del hub incluye el análisis real del asesor además de AI Dev.
 - La UI del hub ahora muestra métricas de costo y acciones semanales, detalle configurable para Asesor Financiero, paneles de solo lectura para los otros agentes y un timeline unificado de actividad reciente.
@@ -1996,3 +1996,26 @@ $ find . -maxdepth 3 \( -name 'middleware.*' -o -name 'proxy.*' \) -not -path '.
 - `/ai-hub/agentes` muestra un panel específico para `Generador de Contenido` con toggle de generación semanal, selector `dia_generacion` preparado y actividad reciente filtrada a ese agente.
 - Verificación real: se pausó temporalmente `generacion_automatica_activa`, se disparó el endpoint automático con service role y respondió `estado='pausado'`, `piezas_generadas=0`, ejecución `50349672-4753-461e-a26b-77e584ad5756`; luego se restauró el toggle a `true`.
 - Verificación de costo: el período actual tiene `0.066243` USD registrados en `piezas_contenido.costo_generacion_usd`, ahora incluidos en el consolidado de IA.
+
+## 2026-07-19 — Refinamiento visual: tipografía, estados vacíos y micro-interacciones
+
+- Se creó `components/ui/EmptyState.tsx` como patrón compartido para estados vacíos con ícono lucide, título, descripción y acción opcional.
+- Se creó `components/ui/SavingIndicator.tsx` como patrón único para autosave/guardado (`idle`, `saving`, `saved`) y se reemplazaron indicadores sueltos en Notas, Wiki e Identidad de marca.
+- La auditoría de tipografía confirmó cero usos restantes de `font-bold`, `font-semibold` o `font-medium` sueltos en `app/`, `components/` y `lib/`; los énfasis quedaron normalizados a `font-title`/`font-label`.
+- Se reemplazaron estados vacíos visibles en Dashboard, Finanzas, Proyectos, Notas, Contenido, Marketing y AI Hub por `EmptyState`, evitando textos sueltos o cajas inconsistentes.
+- `Card.tsx` ahora aplica hover sutil uniforme para cards clickeables (`hover:bg-paper/35` + borde), manteniendo `transition-colors duration-normal ease-normal`.
+- Se actualizó la Constitución técnica de la Wiki para documentar `EmptyState.tsx` y `SavingIndicator.tsx` como componentes obligatorios de acá en adelante.
+- Verificación visual por código realizada en los 6 módulos pedidos: Dashboard, Finanzas, Proyectos, Notas, Contenido y AI Hub. Se compararon jerarquía tipográfica, densidad de cards, empty states y hover states contra los patrones existentes.
+- Verificación con navegador integrado intentada en local: `/dashboard` redirigió correctamente a `/login` por falta de sesión autenticada disponible, por lo que la inspección visual real de módulos protegidos queda pendiente de una sesión admin abierta.
+
+## 2026-07-19 — AI Hub: Centro IA, Agentes y Automatizaciones
+
+- `AI Hub` se movió en `lib/navigation.ts` para quedar inmediatamente debajo de `Dashboard`; usa `BrainIcon` con violeta permanente `#7C3AED` como única excepción cromática fija de la navegación.
+- La navegación del hub quedó en 3 destinos: `Centro IA` (`/ai-hub`), `Agentes` (`/ai-hub/agentes`) y `Automatizaciones` (`/ai-hub/automatizaciones`). La ruta separada `/ai-hub/actividad` fue eliminada; el feed completo con filtros vive dentro de `Centro IA`.
+- Se creó `components/ai-hub/ConfiguracionAgenteForm.tsx`: formulario genérico que lee todas las filas de `agente_config` por `agente_id`, renderiza boolean/number/string según tipo de valor y guarda con autosave de 1500ms.
+- Se crearon `app/api/automatizaciones/route.ts` y `app/api/automatizaciones/[id]/route.ts` para listar, crear, pausar/reanudar y editar frecuencia/día/hora de automatizaciones con join al agente.
+- Se creó `/ai-hub/automatizaciones`, mostrando las 2 automatizaciones reales ya migradas: resumen financiero mensual y plan semanal de contenido, con play/pausa, horario legible y última ejecución.
+- Los endpoints `/api/agentes/asesor-financiero/analizar` y `/api/planes-semanales/generar-automatico` ahora leen `automatizaciones` por `endpoint_trigger`, respetan `activa` y actualizan `ultima_ejecucion`; dejan de usar toggles ad-hoc de `agente_config` para decidir si el cron corre.
+- Verificación de esquema real: se consultó Supabase y se confirmaron las 2 filas existentes en `automatizaciones` con `endpoint_trigger`, `activa`, `frecuencia`, `dia_semana`, `dia_mes`, `hora` y `ultima_ejecucion`.
+- Verificación real de pausa: se pausó temporalmente la automatización `Plan semanal de contenido`, se disparó `POST /api/planes-semanales/generar-automatico` con service role y respondió `estado='pausado'`, `piezas_generadas=0`; luego se restauró `activa=true` y se confirmó `ultima_ejecucion=2026-07-19T23:40:55.672+00:00`.
+- Verificación local ejecutada: `npm run lint` y `npm run build` pasan correctamente; el build confirma que `/ai-hub/automatizaciones` existe y `/ai-hub/actividad` ya no aparece como ruta.

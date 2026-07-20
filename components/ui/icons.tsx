@@ -9,6 +9,7 @@ import {
   Bell,
   BookOpen,
   Bot,
+  Brain,
   Briefcase,
   CalendarDays,
   Check,
@@ -31,6 +32,7 @@ import {
   FolderOpen,
   Grid2x2,
   Image,
+  Inbox,
   Layers,
   LayoutDashboard,
   LayoutGrid,
@@ -52,6 +54,7 @@ import {
   Search,
   Settings2,
   Sparkles,
+  Tags,
   Trash2,
   TrendingUp,
   Upload,
@@ -82,6 +85,7 @@ export const BarChartIcon = createIcon(BarChart3);
 export const BellIcon = createIcon(Bell);
 export const BookOpenIcon = createIcon(BookOpen);
 export const BotIcon = createIcon(Bot);
+export const BrainIcon = createIcon(Brain);
 export const BriefcaseIcon = createIcon(Briefcase);
 export const CalendarIcon = createIcon(CalendarDays);
 export const CheckIcon = createIcon(Check);
@@ -104,6 +108,7 @@ export const FolderIcon = createIcon(Folder);
 export const FolderOpenIcon = createIcon(FolderOpen);
 export const GridIcon = createIcon(Grid2x2);
 export const ImageIcon = createIcon(Image);
+export const InboxIcon = createIcon(Inbox);
 export const LayersIcon = createIcon(Layers);
 export const DashboardIcon = createIcon(LayoutDashboard);
 export const ProyectosIcon = createIcon(LayoutGrid);
@@ -125,6 +130,7 @@ export const RefreshIcon = createIcon(RefreshCw);
 export const SearchIcon = createIcon(Search);
 export const SettingsIcon = createIcon(Settings2);
 export const SparklesIcon = createIcon(Sparkles);
+export const TagsIcon = createIcon(Tags);
 export const TrashIcon = createIcon(Trash2);
 export const TrendingUpIcon = createIcon(TrendingUp);
 export const UploadIcon = createIcon(Upload);

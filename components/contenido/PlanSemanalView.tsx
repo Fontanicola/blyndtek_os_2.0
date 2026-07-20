@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { Spinner } from "@/components/ui/Spinner";
 import { CheckIcon, FileTextIcon, LinkIcon, SparklesIcon } from "@/components/ui/icons";
 import { cn } from "@/lib/cn";
@@ -272,12 +273,12 @@ export function PlanSemanalView() {
             </div>
           </div>
         ) : (
-          <div className="rounded-card border border-line-soft bg-paper p-8 text-center">
-            <p className="font-title text-lg text-carbon">Todavía no hay plan para esta semana.</p>
-            <p className="mt-2 text-sm text-graphite">
-              Generalo con un click: Claude investiga una noticia real y arma el hilo completo.
-            </p>
-          </div>
+          <EmptyState
+            icon={SparklesIcon}
+            titulo="Todavía no hay plan para esta semana"
+            descripcion="Generalo con un click: Claude investiga una noticia real y arma el hilo completo."
+            accion={{ label: "Generar plan", onClick: () => void handleGenerate() }}
+          />
         )}
       </Card>
 

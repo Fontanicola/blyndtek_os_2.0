@@ -2,7 +2,8 @@
 
 import Image from "next/image";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Badge, Button, Card, EntityMultiSelect, EntitySelect, Input } from "@/components/ui";
+import { Badge, Button, Card, EmptyState, EntityMultiSelect, EntitySelect, Input } from "@/components/ui";
+import { ClockIcon, ImageIcon, SettingsIcon } from "@/components/ui/icons";
 import { NotasVinculadasSection } from "@/components/notas";
 import { useCronometro } from "@/lib/hooks/useCronometro";
 import { useFasesProyecto } from "@/lib/hooks/useFasesProyecto";
@@ -749,7 +750,12 @@ export function ProyectoFicha({
                     </div>
                   ) : (
                     <Card padding="sm">
-                      <p className="text-sm text-graphite">Todavía no hay sesiones registradas.</p>
+                      <EmptyState
+                        icon={ClockIcon}
+                        titulo="Todavía no hay sesiones registradas"
+                        descripcion="El tiempo por fase aparece cuando se usa el cronómetro del proyecto."
+                        className="min-h-[130px] border-0 bg-transparent"
+                      />
                     </Card>
                   )}
 
@@ -844,7 +850,12 @@ export function ProyectoFicha({
                   ))
                 ) : (
                   <Card padding="lg">
-                    <p className="text-sm text-graphite">Todavía no hay cuentas/servicios cargados.</p>
+                    <EmptyState
+                      icon={SettingsIcon}
+                      titulo="Todavía no hay cuentas o servicios cargados"
+                      descripcion="Agregá accesos y servicios asociados al proyecto para centralizar la operación."
+                      className="border-0 bg-transparent"
+                    />
                   </Card>
                 )}
               </div>
@@ -963,9 +974,12 @@ export function ProyectoFicha({
                       />
                     </div>
                   ) : (
-                    <div className="rounded-component border border-dashed border-line bg-paper px-4 py-5 text-sm text-graphite">
-                      Todavía no hay imagen cargada.
-                    </div>
+                    <EmptyState
+                      icon={ImageIcon}
+                      titulo="Todavía no hay imagen cargada"
+                      descripcion="Subí una captura manual para mostrar el preview en el roadmap público."
+                      className="min-h-[150px] sm:max-w-md"
+                    />
                   )}
 
                   {imagenSistemaError ? <p className="text-sm text-danger">{imagenSistemaError}</p> : null}

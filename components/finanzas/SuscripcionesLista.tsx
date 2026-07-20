@@ -1,6 +1,7 @@
 "use client";
 
-import { Badge, Button, Card } from "@/components/ui";
+import { Badge, Button, Card, EmptyState } from "@/components/ui";
+import { RefreshIcon } from "@/components/ui/icons";
 import { cn } from "@/lib/cn";
 import { isCobroVencido } from "@/lib/finanzas";
 import { fechaStringAFechaLocal, formatearFechaDisplay } from "@/lib/utils/fechas";
@@ -188,7 +189,12 @@ export function SuscripcionesLista({
 
         {suscripciones.length === 0 ? (
           <Card padding="md" className="md:col-span-2">
-            <p className="text-sm text-graphite">Todavía no hay suscripciones activas o pendientes.</p>
+            <EmptyState
+              icon={RefreshIcon}
+              titulo="Todavía no hay suscripciones activas o pendientes"
+              descripcion="Los planes recurrentes vinculados a clientes van a aparecer en esta sección."
+              className="border-0 bg-transparent"
+            />
           </Card>
         ) : null}
       </div>

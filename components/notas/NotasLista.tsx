@@ -1,7 +1,7 @@
 "use client";
 
-import { Button } from "@/components/ui";
-import { PinIcon } from "@/components/ui/icons";
+import { Button, EmptyState } from "@/components/ui";
+import { FileTextIcon, PinIcon } from "@/components/ui/icons";
 import { cn } from "@/lib/cn";
 import { getNotaPreview, getNotaEtiquetaColorClasses } from "@/lib/notas";
 import { formatFecha } from "@/lib/utils/formatters";
@@ -105,10 +105,13 @@ export function NotasLista({
             })}
           </div>
         ) : (
-          <div className="flex h-full flex-col items-center justify-center gap-4 rounded-card border border-dashed border-line bg-paper p-6 text-center">
-            <p className="text-sm text-graphite">No hay notas para esta vista.</p>
-            <Button onClick={onNewNota}>Crear nota</Button>
-          </div>
+          <EmptyState
+            icon={FileTextIcon}
+            titulo="No hay notas para esta vista"
+            descripcion="Creá una nota o ajustá los filtros para volver a ver contenido."
+            accion={{ label: "Crear nota", onClick: onNewNota }}
+            className="h-full"
+          />
         )}
       </div>
     </section>

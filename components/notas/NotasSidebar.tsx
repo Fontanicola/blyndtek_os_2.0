@@ -1,7 +1,7 @@
 "use client";
 
-import { Button, Input } from "@/components/ui";
-import { FolderIcon, NotasIcon, SearchIcon, TrashIcon } from "@/components/ui/icons";
+import { Button, EmptyState, Input } from "@/components/ui";
+import { FolderIcon, NotasIcon, SearchIcon, TagsIcon, TrashIcon } from "@/components/ui/icons";
 import { cn } from "@/lib/cn";
 import type { CarpetaNota } from "@/types/notas";
 import type { NotaEtiqueta } from "@/types/notasEtiquetas";
@@ -105,9 +105,12 @@ export function NotasSidebar({
                 );
               })
             ) : (
-              <div className="rounded-card border border-dashed border-line bg-paper px-3 py-4 text-sm text-graphite">
-                No hay carpetas todavía.
-              </div>
+              <EmptyState
+                icon={FolderIcon}
+                titulo="No hay carpetas todavía"
+                descripcion="Creá carpetas para ordenar notas por tema o cliente."
+                className="min-h-[130px]"
+              />
             )}
 
             <button
@@ -169,9 +172,12 @@ export function NotasSidebar({
                 })}
               </div>
             ) : (
-              <div className="rounded-card border border-dashed border-line bg-paper px-3 py-4 text-sm text-graphite">
-                Todavía no hay etiquetas.
-              </div>
+              <EmptyState
+                icon={TagsIcon}
+                titulo="Todavía no hay etiquetas"
+                descripcion="Las etiquetas aparecen cuando las agregás a tus notas."
+                className="min-h-[130px]"
+              />
             )}
           </section>
 

@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Badge, Card } from "@/components/ui";
-import { BarChartIcon } from "@/components/ui/icons";
+import { Badge, Card, EmptyState } from "@/components/ui";
+import { BarChartIcon, InboxIcon } from "@/components/ui/icons";
 import { cn } from "@/lib/cn";
 import type { MarketingAtribucionPeriod, MarketingAtribucionRow } from "@/types/marketing";
 
@@ -136,9 +136,11 @@ export default function MarketingPage() {
 
         {!error && !loading && attributionRows.length === 0 ? (
           <div className="px-6 py-12">
-            <div className="rounded-card bg-paper px-6 py-8 text-sm text-graphite">
-              Todavía no hay leads con origen atribuible distinto de orgánico.
-            </div>
+            <EmptyState
+              icon={InboxIcon}
+              titulo="Todavía no hay leads con origen atribuible"
+              descripcion="Cuando cargues leads con canal o campaña, la atribución va a mostrar su retorno real."
+            />
           </div>
         ) : null}
 
@@ -192,4 +194,3 @@ export default function MarketingPage() {
     </div>
   );
 }
-

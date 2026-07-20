@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Badge, Card } from "@/components/ui";
-import { MenuIcon } from "@/components/icons";
+import { Card, EmptyState, SavingIndicator } from "@/components/ui";
+import { FileTextIcon, MenuIcon } from "@/components/ui/icons";
 import { RichTextEditor } from "@/components/shared/RichTextEditor";
 import type { WikiArticulo, WikiCategoria } from "@/types/wiki";
 
@@ -51,8 +51,13 @@ export function WikiEditor({
 
   if (!articulo) {
     return (
-      <Card padding="lg" className="flex h-full min-h-0 items-center justify-center border border-dashed border-line">
-        <p className="text-sm text-graphite">Seleccioná un artículo o creá uno nuevo.</p>
+      <Card padding="lg" className="h-full min-h-0">
+        <EmptyState
+          icon={FileTextIcon}
+          titulo="Seleccioná un artículo"
+          descripcion="Elegí un artículo de la wiki o creá uno nuevo para documentar el sistema."
+          className="h-full border-0 bg-transparent"
+        />
       </Card>
     );
   }
@@ -94,7 +99,7 @@ export function WikiEditor({
           </div>
 
           <div className="flex items-center gap-2">
-            <Badge variant={saving ? "warning" : "success"}>{saving ? "Guardando..." : "Guardado"}</Badge>
+            <SavingIndicator estado={saving ? "saving" : "saved"} />
 
             <div ref={menuRef} className="relative">
               <button

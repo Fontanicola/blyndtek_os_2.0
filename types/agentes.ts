@@ -47,6 +47,27 @@ export type GeneracionAutomaticaAgente = {
   finalizado_at: string | null;
 };
 
+export type AutomatizacionFrecuencia = "diaria" | "semanal" | "mensual";
+
+export type Automatizacion = {
+  id: string;
+  agente_id: string;
+  nombre: string;
+  descripcion: string | null;
+  activa: boolean;
+  frecuencia: AutomatizacionFrecuencia;
+  dia_semana: number | null;
+  dia_mes: number | null;
+  hora: string;
+  endpoint_trigger: string;
+  ultima_ejecucion: string | null;
+  created_at: string;
+};
+
+export type AutomatizacionConAgente = Automatizacion & {
+  agentes?: Pick<Agente, "nombre" | "slug" | "tipo"> | null;
+};
+
 export type PiezaContenidoCostoAgente = {
   id: string;
   costo_generacion_usd: number | null;
@@ -113,6 +134,20 @@ export type AgentesDatabase = Database & {
         Row: GeneracionAutomaticaAgente;
         Insert: Partial<GeneracionAutomaticaAgente> & Pick<GeneracionAutomaticaAgente, "estado">;
         Update: Partial<GeneracionAutomaticaAgente>;
+        Relationships: [];
+      };
+      automatizaciones: {
+        Row: Automatizacion;
+        Insert: Omit<Automatizacion, "id" | "created_at"> & {
+          id?: string;
+          descripcion?: string | null;
+          activa?: boolean;
+          dia_semana?: number | null;
+          dia_mes?: number | null;
+          ultima_ejecucion?: string | null;
+          created_at?: string;
+        };
+        Update: Partial<Automatizacion>;
         Relationships: [];
       };
       piezas_contenido: {

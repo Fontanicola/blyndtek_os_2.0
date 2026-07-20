@@ -543,6 +543,13 @@
 - `lib/charts/chartTheme.ts` es la fuente única para cualquier gráfico nuevo o existente: colores, grid, ejes, barras y tooltip deben salir de ese archivo para mantener coherencia visual entre Finanzas, Dashboard, SaaS, Mi Panel, Clientes y AI Hub.
 - La grilla estándar de gráficos usa sólo líneas horizontales sutiles; no se reintroducen grids verticales ni tooltips custom aislados salvo una justificación analítica concreta.
 
+## 2026-07-19 — Estados vacíos y guardado como componentes obligatorios
+
+- Todo estado vacío de UI debe usar `components/ui/EmptyState.tsx`, con ícono de `components/ui/icons.tsx`, título claro, descripción breve y acción opcional. No se agregan textos sueltos tipo "No hay..." dentro de cards.
+- Todo indicador de autosave/guardado debe usar `components/ui/SavingIndicator.tsx`, con estados `idle`, `saving` y `saved`. No se reimplementan badges o puntos de estado por módulo.
+- La jerarquía tipográfica se mantiene en tres pesos semánticos: `font-base` para cuerpo, `font-label` para énfasis medio y labels, `font-title` para títulos. No se usan `font-bold`, `font-semibold` ni `font-medium` sueltos.
+- Las cards clickeables comparten hover sutil vía el componente base `Card`: transición consistente, borde levemente más visible y fondo `paper` apenas perceptible.
+
 ## 2026-07-19 — Piezas de feed textual renderizadas con ImageResponse
 
 - Las piezas de feed del Plan Semanal que contienen texto real (`noticia`, `caso de uso`, `dato rápido`) se renderizan con `ImageResponse`/Satori sobre un template propio de Blyndtek, no con generadores de imágenes de IA.
@@ -578,5 +585,11 @@
 
 - El Generador de Contenido queda integrado al AI Hub con el mismo estándar que el resto de agentes: aparece en el feed unificado, suma al costo consolidado de IA y tiene configuración propia.
 - La fuente canónica para eventos de planes semanales es `generaciones_automaticas`; `agente_analisis` se conserva para eventos de generación visual puntual y trazabilidad técnica.
-- La pausa/reanudación del agente vive en `agente_config.generacion_automatica_activa`; el cron debe respetarla siempre y registrar una ejecución pausada en vez de fallar silenciosamente o no dejar rastro.
 - `dia_generacion` queda editable como configuración preparada, aunque el cron actual siga fijo en lunes por `pg_cron`; esto evita cambios de esquema cuando el día pase a controlarse desde UI.
+
+## 2026-07-19 — Automatizaciones recurrentes centralizadas
+
+- Toda automatización recurrente de cualquier agente se registra como una fila en `automatizaciones`, nunca como una clave ad-hoc en `agente_config`.
+- Los endpoints llamados por cron buscan su fila por `endpoint_trigger`, respetan `activa` como fuente única de play/pausa y actualizan `ultima_ejecucion` al completar una corrida o registrar una pausa.
+- `/ai-hub/automatizaciones` es el panel canónico para pausar/reanudar y editar frecuencia, día y hora de estas tareas. Cualquier agente futuro debe sumar su automatización ahí antes de conectarse a `pg_cron`.
+- `agente_config` queda reservado para parámetros internos del agente; la agenda y el estado activo/pausado de tareas programadas viven exclusivamente en `automatizaciones`.

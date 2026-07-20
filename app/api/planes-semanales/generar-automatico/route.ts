@@ -1,11 +1,15 @@
 import { NextResponse } from "next/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { normalizeAgenteConfig } from "@/lib/agentes/agentes";
+import {
+  AUTOMATIZACION_CONTENIDO_ENDPOINT,
+  fetchAutomatizacionByEndpoint,
+  marcarAutomatizacionEjecutada
+} from "@/lib/agentes/automatizaciones";
 import { generarPlanSemanalContenido } from "@/lib/contenido/generarPlanSemanal";
 import { getAdminUser } from "@/lib/require-admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { hoyLocalString } from "@/lib/utils/fechas";
-import type { AgenteConfigRow, AgentesDatabase } from "@/types/agentes";
+import type { AgentesDatabase } from "@/types/agentes";
 import type { ContenidoDatabase, PiezaContenido } from "@/types/contenido";
 
 export const runtime = "nodejs";
@@ -51,33 +55,6 @@ async function createExecution(supabase: SupabaseClient<ContenidoDatabase>) {
   }
 
   return (data as GeneracionAutomaticaRow).id;
-}
-
-async function isContentGeneratorEnabled(supabase: SupabaseClient<AgentesDatabase>) {
-  const { data: agente, error: agenteError } = await supabase
-    .from("agentes")
-    .select("id")
-    .eq("slug", "generador-contenido")
-    .maybeSingle();
-
-  if (agenteError) {
-    throw new Error(agenteError.message);
-  }
-
-  if (!agente) {
-    return true;
-  }
-
-  const { data: configRows, error: configError } = await supabase
-    .from("agente_config")
-    .select("*")
-    .eq("agente_id", agente.id);
-
-  if (configError) {
-    throw new Error(configError.message);
-  }
-
-  return normalizeAgenteConfig((configRows ?? []) as AgenteConfigRow[]).generacion_automatica_activa;
 }
 
 async function updateExecution(
@@ -169,6 +146,7 @@ export async function POST(request: Request) {
   const supabase = createAdminClient() as unknown as SupabaseClient<ContenidoDatabase>;
   let executionId: string | null = null;
   let planId: string | null = null;
+  let automationId: string | null = null;
   let piezasGeneradas = 0;
   const errores: string[] = [];
 
@@ -180,7 +158,12 @@ export async function POST(request: Request) {
     }
 
     executionId = await createExecution(supabase);
-    const generatorEnabled = await isContentGeneratorEnabled(supabase as unknown as SupabaseClient<AgentesDatabase>);
+    const automatizacion = await fetchAutomatizacionByEndpoint(
+      supabase as unknown as SupabaseClient<AgentesDatabase>,
+      AUTOMATIZACION_CONTENIDO_ENDPOINT
+    );
+    automationId = automatizacion?.id ?? null;
+    const generatorEnabled = automatizacion?.activa ?? true;
 
     if (!generatorEnabled) {
       const pausedMessage = "Pausado, no se generó plan semanal automático.";
@@ -189,6 +172,9 @@ export async function POST(request: Request) {
         piezas_generadas: 0,
         error_detalle: pausedMessage
       });
+      if (automatizacion) {
+        await marcarAutomatizacionEjecutada(supabase as unknown as SupabaseClient<AgentesDatabase>, automatizacion.id);
+      }
 
       return NextResponse.json({
         data: {
@@ -237,6 +223,10 @@ export async function POST(request: Request) {
       errores
     });
 
+    if (automatizacion) {
+      await marcarAutomatizacionEjecutada(supabase as unknown as SupabaseClient<AgentesDatabase>, automatizacion.id);
+    }
+
     return NextResponse.json({
       data: {
         generacion_automatica_id: executionId,
@@ -249,6 +239,10 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unexpected error";
+    if (automationId) {
+      await marcarAutomatizacionEjecutada(supabase as unknown as SupabaseClient<AgentesDatabase>, automationId).catch(() => undefined);
+    }
+
     if (executionId) {
       await updateExecution(supabase, executionId, {
         estado: "fallido",

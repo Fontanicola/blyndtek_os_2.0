@@ -3,7 +3,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { Spinner } from "@/components/ui/Spinner";
+import { ImageIcon } from "@/components/ui/icons";
 import { cn } from "@/lib/cn";
 import {
   createPieza,
@@ -150,9 +152,12 @@ export function PiezasGrid({ pilares }: PiezasGridProps) {
           ))}
         </div>
       ) : (
-        <div className="rounded-card bg-paper p-8 text-center text-graphite">
-          Todavía no hay piezas en este estado.
-        </div>
+        <EmptyState
+          icon={ImageIcon}
+          titulo="Todavía no hay piezas en este estado"
+          descripcion="Creá una pieza nueva o cambiá el filtro para ver otros estados del flujo."
+          accion={{ label: "Nueva pieza", onClick: () => void handleCreate() }}
+        />
       )}
 
       <PiezaEditorModal

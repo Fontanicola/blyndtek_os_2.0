@@ -832,6 +832,29 @@
 | valor | jsonb | No | valor tipado en JSON |
 | updated_at | timestamptz | No |  |
 
+## Tabla: automatizaciones
+
+**PK:** `id`
+
+**FKs:** `agente_id` → `agentes.id`
+
+**Uso:** registro único de tareas recurrentes de agentes. La UI de `/ai-hub/automatizaciones` lee y edita estas filas; los crons reales respetan `activa` desde acá, no desde claves ad-hoc de `agente_config`.
+
+| Campo | Tipo | Nullable | Notas |
+| --- | --- | --- | --- |
+| id | uuid | No | PK |
+| agente_id | uuid | No | FK → `agentes` |
+| nombre | text | No | nombre visible de la automatización |
+| descripcion | text | Sí | contexto breve de lo que ejecuta |
+| activa | boolean | No | play/pausa canónico para el cron |
+| frecuencia | text/enum (`diaria|semanal|mensual`) | No | frecuencia declarada en UI |
+| dia_semana | integer | Sí | 0-6, usado cuando `frecuencia='semanal'` |
+| dia_mes | integer | Sí | 1-28, usado cuando `frecuencia='mensual'` |
+| hora | time | No | hora local configurada |
+| endpoint_trigger | text | No | route HTTP que ejecuta la automatización |
+| ultima_ejecucion | timestamptz | Sí | última vez que el endpoint corrió o fue salteado por pausa |
+| created_at | timestamptz | No |  |
+
 ## Tabla: agente_analisis
 
 **PK:** `id`

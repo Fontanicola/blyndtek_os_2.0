@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, useRef, useState, type MouseEvent } from "react";
-import { Card } from "@/components/ui";
+import { Card, EmptyState } from "@/components/ui";
+import { BriefcaseIcon } from "@/components/ui/icons";
 import { chartTheme } from "@/lib/charts/chartTheme";
 import { formatUSD } from "@/lib/utils/formatters";
 import type { CarteraClienteItem } from "@/types/finanzas";
@@ -150,9 +151,11 @@ export function CarteraClientesChart({ data }: CarteraClientesChartProps) {
           </div>
         </>
       ) : (
-        <div className="rounded-card border border-line-soft bg-paper px-4 py-8 text-sm text-graphite">
-          Todavía no hay contratos de desarrollo registrados.
-        </div>
+        <EmptyState
+          icon={BriefcaseIcon}
+          titulo="Todavía no hay contratos de desarrollo registrados"
+          descripcion="Cuando existan contratos activos, la cartera por cliente se va a visualizar acá."
+        />
       )}
     </Card>
   );

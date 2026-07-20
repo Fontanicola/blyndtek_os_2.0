@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Card } from "@/components/ui/Card";
-import { cn } from "@/lib/cn";
+import { SavingIndicator } from "@/components/ui/SavingIndicator";
 import { updateMarcaBlyndtek } from "@/lib/hooks/useContenido";
 import type { MarcaContenido } from "@/types/contenido";
 
@@ -67,17 +67,11 @@ export function IdentidadMarcaForm({ marca, onSaved }: IdentidadMarcaFormProps) 
           <h2 className="font-title text-2xl text-carbon">Identidad de Blyndtek</h2>
           <p className="mt-1 text-sm text-graphite">Base manual para mantener consistencia en cada pieza.</p>
         </div>
-        <span
-          className={cn(
-            "rounded-pill px-3 py-1 text-xs font-label",
-            status === "saving" && "bg-warning-light text-warning",
-            status === "saved" && "bg-success-light text-success",
-            status === "error" && "bg-danger-light text-danger",
-            status === "idle" && "bg-paper text-graphite"
-          )}
-        >
-          {status === "saving" ? "Guardando" : status === "saved" ? "Guardado" : status === "error" ? "Error" : "Autosave"}
-        </span>
+        {status === "error" ? (
+          <span className="rounded-pill bg-danger-light px-3 py-1 text-xs font-label text-danger">Error al guardar</span>
+        ) : (
+          <SavingIndicator estado={status === "saving" ? "saving" : status === "saved" ? "saved" : "idle"} />
+        )}
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">

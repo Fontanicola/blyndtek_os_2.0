@@ -1,8 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Badge, Button, Card } from "@/components/ui";
+import { Badge, Button, Card, EmptyState } from "@/components/ui";
 import { FinanzasIcon } from "@/components/icons";
+import { DollarSignIcon } from "@/components/ui/icons";
 import { MetricaCard } from "./MetricaCard";
 import { formatFecha, formatUSD } from "@/lib/utils/formatters";
 import type { ComisionListado } from "@/types/comisiones";
@@ -161,7 +162,12 @@ export function ComisionesTabla({ comisiones, vendedores, onMarkPagada }: Comisi
               {filteredComisiones.length === 0 ? (
                 <tr>
                   <td className="px-4 py-8 text-center text-sm text-graphite" colSpan={8}>
-                    No hay comisiones para mostrar.
+                    <EmptyState
+                      icon={DollarSignIcon}
+                      titulo="No hay comisiones para mostrar"
+                      descripcion="Cuando haya ventas con comisión, se van a listar en esta tabla."
+                      className="mx-auto max-w-xl"
+                    />
                   </td>
                 </tr>
               ) : null}

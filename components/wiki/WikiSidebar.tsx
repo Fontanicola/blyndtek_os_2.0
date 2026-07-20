@@ -1,7 +1,7 @@
 "use client";
 
-import { Button, Input } from "@/components/ui";
-import { SearchIcon } from "@/components/icons";
+import { Button, EmptyState, Input } from "@/components/ui";
+import { BookOpenIcon, SearchIcon } from "@/components/ui/icons";
 import type { WikiCategoria } from "@/types/wiki";
 
 type WikiCategoriaConConteo = WikiCategoria & { cantidad_articulos: number };
@@ -82,9 +82,12 @@ export function WikiSidebar({
                 );
               })
             ) : (
-              <div className="rounded-card border border-dashed border-line bg-paper px-3 py-4 text-sm text-graphite">
-                No hay categorías todavía.
-              </div>
+              <EmptyState
+                icon={BookOpenIcon}
+                titulo="No hay categorías todavía"
+                descripcion="Creá categorías para ordenar los artículos de la wiki."
+                className="min-h-[130px]"
+              />
             )}
           </div>
         </section>

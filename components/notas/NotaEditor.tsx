@@ -2,8 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { Button, Card, Modal } from "@/components/ui";
-import { LinkIcon, MenuIcon, PinIcon, UsersIcon } from "@/components/ui/icons";
+import { Button, Card, EmptyState, Modal, SavingIndicator } from "@/components/ui";
+import { FileTextIcon, LinkIcon, MenuIcon, PinIcon, UsersIcon } from "@/components/ui/icons";
 import { RichTextEditor } from "@/components/shared/RichTextEditor";
 import { cn } from "@/lib/cn";
 import {
@@ -57,15 +57,6 @@ type NotaEditorProps = {
   onUpdateNotaCompartidas?: (notaId: string, usuarioIds: string[]) => Promise<void>;
   imageUploadUrl?: string;
 };
-
-function StatusDot({ saving }: { saving: boolean }) {
-  return (
-    <span
-      title={saving ? "Guardando..." : "Guardado"}
-      className={cn("h-2.5 w-2.5 rounded-full", saving ? "animate-pulse bg-warning" : "bg-success")}
-    />
-  );
-}
 
 function IconButton({
   active,
@@ -204,8 +195,13 @@ export function NotaEditor({
 
   if (!nota) {
     return (
-      <Card padding="lg" className="flex h-full min-h-0 items-center justify-center border border-dashed border-line">
-        <p className="text-sm text-graphite">Seleccioná una nota o creá una nueva.</p>
+      <Card padding="lg" className="h-full min-h-0">
+        <EmptyState
+          icon={FileTextIcon}
+          titulo="Seleccioná una nota"
+          descripcion="Elegí una nota de la lista o creá una nueva para empezar a escribir."
+          className="h-full border-0 bg-transparent"
+        />
       </Card>
     );
   }
@@ -292,7 +288,7 @@ export function NotaEditor({
                 </Link>
               ) : null}
 
-              <StatusDot saving={saving} />
+            <SavingIndicator estado={saving ? "saving" : "saved"} />
 
               {isAdmin && sharedUserIds.length > 0 ? (
                 <span

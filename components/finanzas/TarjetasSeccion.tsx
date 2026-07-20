@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Button, Card, Input, Modal } from "@/components/ui";
+import { Button, Card, EmptyState, Input, Modal } from "@/components/ui";
+import { WalletIcon } from "@/components/ui/icons";
 import { cn } from "@/lib/cn";
 import { useTarjetas } from "@/lib/hooks/useTarjetas";
 import type { Tarjeta, TipoTarjeta, CreateTarjetaInput } from "@/types/tarjetas";
@@ -312,7 +313,12 @@ export function TarjetasSeccion({ showToast }: TarjetasSeccionProps) {
 
         {tarjetas.length === 0 && !loading ? (
           <Card padding="lg" className="border border-dashed border-line bg-white text-sm text-graphite">
-            Todavía no hay tarjetas cargadas.
+            <EmptyState
+              icon={WalletIcon}
+              titulo="Todavía no hay tarjetas cargadas"
+              descripcion="Agregá tarjetas para tener a mano vencimientos, usos y responsables."
+              className="border-0 bg-transparent"
+            />
           </Card>
         ) : null}
       </div>

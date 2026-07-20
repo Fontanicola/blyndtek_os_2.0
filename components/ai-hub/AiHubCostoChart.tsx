@@ -2,7 +2,8 @@
 
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import type { TooltipContentProps } from "recharts/types/component/Tooltip";
-import { Card } from "@/components/ui";
+import { Card, EmptyState } from "@/components/ui";
+import { SparklesIcon } from "@/components/ui/icons";
 import { chartTheme, formatCompactCurrencyTick } from "@/lib/charts/chartTheme";
 import { formatUSD } from "@/lib/utils/formatters";
 import type { AgentesHubCostoHistoricoPoint, AgentesHubCostoHistoricoSerie } from "@/lib/agentes/hub";
@@ -26,9 +27,11 @@ export function AiHubCostoChart({ data, series }: AiHubCostoChartProps) {
       </div>
 
       {!hasData || series.length === 0 ? (
-        <div className="rounded-card border border-line-soft bg-paper px-4 py-8 text-sm text-graphite">
-          Todavía no hay costo de IA en el período seleccionado.
-        </div>
+        <EmptyState
+          icon={SparklesIcon}
+          titulo="Todavía no hay costo de IA en el período seleccionado"
+          descripcion="El consumo de agentes se va a agrupar por mes cuando haya actividad."
+        />
       ) : (
         <>
           <div className="h-[320px]">

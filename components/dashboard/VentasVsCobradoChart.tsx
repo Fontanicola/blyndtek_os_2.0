@@ -2,7 +2,8 @@
 
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import type { TooltipContentProps } from "recharts/types/component/Tooltip";
-import { Card } from "@/components/ui";
+import { Card, EmptyState } from "@/components/ui";
+import { BarChartIcon } from "@/components/ui/icons";
 import { chartTheme, formatCompactCurrencyTick } from "@/lib/charts/chartTheme";
 import { formatUSD } from "@/lib/utils/formatters";
 import type { DashboardVentasVsCobradoPoint } from "@/types/dashboard";
@@ -25,9 +26,11 @@ export function VentasVsCobradoChart({ data }: VentasVsCobradoChartProps) {
       </div>
 
       {!hasData ? (
-        <div className="rounded-card border border-line-soft bg-paper px-4 py-8 text-sm text-graphite">
-          Todavía no hay ventas ni cobros en el período seleccionado.
-        </div>
+        <EmptyState
+          icon={BarChartIcon}
+          titulo="Todavía no hay ventas ni cobros en el período"
+          descripcion="Cuando haya contratos creados o cobros registrados, este gráfico los va a comparar."
+        />
       ) : (
         <>
           <div className="h-[320px]">
