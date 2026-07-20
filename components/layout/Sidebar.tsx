@@ -66,6 +66,7 @@ function NavigationRow({
   const hasChildren = Boolean(item.children?.length);
   const isParentActive = hasChildren && item.children?.some((child) => isActivePath(pathname, child.href));
   const isActive = isActivePath(pathname, item.href) || isParentActive;
+  const isAiHubParent = item.label === "AI Hub" && hasChildren && !item.href && level === 0;
 
   if (hasChildren && !item.href) {
     return (
@@ -78,13 +79,23 @@ function NavigationRow({
           className={cn(
             "group mx-2 flex w-[calc(100%-1rem)] items-center gap-3 rounded-component px-3 py-2 text-left no-underline transition-colors duration-fast ease-fast",
             collapsed && "justify-center px-0",
-            isParentActive ? "bg-white/80 text-carbon" : "hover:bg-white/70"
+            isAiHubParent
+              ? isParentActive
+                ? "bg-[#EDE9FE] text-[#4C1D95] hover:bg-[#DDD6FE]"
+                : "bg-[#7C3AED]/10 text-[#5B21B6] hover:bg-[#7C3AED]/15"
+              : isParentActive
+                ? "bg-white/80 text-carbon"
+                : "hover:bg-white/70"
           )}
         >
           <span
             className={cn(
               "transition-colors duration-fast ease-fast",
-              isParentActive ? "text-signal" : "text-graphite group-hover:text-carbon",
+              isAiHubParent
+                ? "text-[#7C3AED]"
+                : isParentActive
+                  ? "text-signal"
+                  : "text-graphite group-hover:text-carbon",
               item.iconClassName
             )}
           >
@@ -94,7 +105,11 @@ function NavigationRow({
             <span
               className={cn(
                 "text-sm font-label transition-colors duration-fast ease-fast",
-                isParentActive ? "text-carbon" : "text-graphite group-hover:text-carbon"
+                isAiHubParent
+                  ? "text-[#5B21B6]"
+                  : isParentActive
+                    ? "text-carbon"
+                    : "text-graphite group-hover:text-carbon"
               )}
             >
               {item.label}
@@ -103,7 +118,8 @@ function NavigationRow({
           {!collapsed ? (
             <ChevronDownIcon
               className={cn(
-                "ml-auto h-4 w-4 shrink-0 text-graphite transition-transform duration-fast ease-fast",
+                "ml-auto h-4 w-4 shrink-0 transition-transform duration-fast ease-fast",
+                isAiHubParent ? "text-[#7C3AED]" : "text-graphite",
                 expanded ? "rotate-180" : "rotate-0"
               )}
             />

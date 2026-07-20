@@ -2011,6 +2011,7 @@ $ find . -maxdepth 3 \( -name 'middleware.*' -o -name 'proxy.*' \) -not -path '.
 ## 2026-07-19 — AI Hub: Centro IA, Agentes y Automatizaciones
 
 - `AI Hub` se movió en `lib/navigation.ts` para quedar inmediatamente debajo de `Dashboard`; usa `BrainIcon` con violeta permanente `#7C3AED` como única excepción cromática fija de la navegación.
+- La fila padre de `AI Hub` en `Sidebar.tsx` ahora tiene tratamiento visual propio permanente: fondo violeta suave, texto/ícono violeta e intensificación sutil en activo/hover. Los subítems (`Centro IA`, `Agentes`, `Automatizaciones`) mantienen el estilo normal de subnavegación.
 - La navegación del hub quedó en 3 destinos: `Centro IA` (`/ai-hub`), `Agentes` (`/ai-hub/agentes`) y `Automatizaciones` (`/ai-hub/automatizaciones`). La ruta separada `/ai-hub/actividad` fue eliminada; el feed completo con filtros vive dentro de `Centro IA`.
 - Se creó `components/ai-hub/ConfiguracionAgenteForm.tsx`: formulario genérico que lee todas las filas de `agente_config` por `agente_id`, renderiza boolean/number/string según tipo de valor y guarda con autosave de 1500ms.
 - Se crearon `app/api/automatizaciones/route.ts` y `app/api/automatizaciones/[id]/route.ts` para listar, crear, pausar/reanudar y editar frecuencia/día/hora de automatizaciones con join al agente.
