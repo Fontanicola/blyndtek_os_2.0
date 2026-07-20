@@ -57,7 +57,7 @@ export const navigationItems: NavItem[] = [
         section: "top-level"
       },
       {
-        label: "Automatizaciones",
+        label: "Workflows",
         href: "/ai-hub/automatizaciones",
         icon: createElement(PlayIcon),
         roles: ["admin"],
