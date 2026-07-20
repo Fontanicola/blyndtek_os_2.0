@@ -4,15 +4,19 @@ import { useState } from "react";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { ImageIcon, LayersIcon, MoreVerticalIcon } from "@/components/ui/icons";
+import { CheckIcon, ImageIcon, LayersIcon, MoreVerticalIcon, RefreshIcon, SparklesIcon } from "@/components/ui/icons";
 import { cn } from "@/lib/cn";
-import type { PiezaContenido } from "@/types/contenido";
+import type { PiezaContenido, PiezaContenidoTipo } from "@/types/contenido";
 import { getPilarDotClass, PIEZA_ESTADO_BADGES, PIEZA_ESTADO_LABELS } from "@/components/contenido/contenidoStyles";
 
 type PiezaCardProps = {
   pieza: PiezaContenido;
   onEdit: (pieza: PiezaContenido) => void;
   onDelete: (pieza: PiezaContenido) => void;
+  onGenerate?: (pieza: PiezaContenido) => void;
+  onApprove?: (pieza: PiezaContenido) => void;
+  onRegenerate?: (pieza: PiezaContenido) => void;
+  actionLoading?: boolean;
 };
 
 type PiezaTipoVisual = {
@@ -43,6 +47,18 @@ function getPiezaTipoVisual(pieza: PiezaContenido): PiezaTipoVisual {
   return { label: "Post", className: "bg-paper text-graphite" };
 }
 
+const TIPO_PIEZA_VISUAL: Record<Exclude<PiezaContenidoTipo, null>, PiezaTipoVisual> = {
+  noticia: { label: "Noticia", className: "bg-signal-light text-signal" },
+  caso_uso: { label: "Caso de uso", className: "bg-warning-light text-warning" },
+  dato_rapido: { label: "Dato rápido", className: "bg-success-light text-success" },
+  reel: { label: "Reel", className: "bg-danger-light text-danger" },
+  historia: { label: "Historia", className: "bg-paper text-graphite" }
+};
+
+function getTipoContenidoVisual(tipo: PiezaContenidoTipo): PiezaTipoVisual | null {
+  return tipo ? TIPO_PIEZA_VISUAL[tipo] ?? null : null;
+}
+
 export function getPiezaImageUrl(pieza: Pick<PiezaContenido, "id" | "storage_path">) {
   if (!pieza.storage_path) {
     return null;
@@ -55,11 +71,22 @@ export function getPiezaImagePathUrl(piezaId: string, storagePath: string) {
   return `/api/piezas-contenido/${piezaId}/imagen/${encodeURIComponent(storagePath)}`;
 }
 
-export function PiezaCard({ pieza, onEdit, onDelete }: PiezaCardProps) {
+export function PiezaCard({
+  pieza,
+  onEdit,
+  onDelete,
+  onGenerate,
+  onApprove,
+  onRegenerate,
+  actionLoading = false
+}: PiezaCardProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const imageUrl = getPiezaImageUrl(pieza);
   const generatedImages = Array.isArray(pieza.imagenes_generadas) ? pieza.imagenes_generadas : [];
   const tipoVisual = getPiezaTipoVisual(pieza);
+  const tipoContenidoVisual = getTipoContenidoVisual(pieza.tipo_pieza);
+  const showGenerate = pieza.estado === "idea" && Boolean(onGenerate);
+  const showReviewActions = pieza.estado === "en_diseno" && Boolean(onApprove && onRegenerate);
 
   return (
     <Card className="group overflow-hidden border border-line-soft" padding="none">
@@ -135,6 +162,9 @@ export function PiezaCard({ pieza, onEdit, onDelete }: PiezaCardProps) {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+          {tipoContenidoVisual ? (
+            <Badge className={tipoContenidoVisual.className}>{tipoContenidoVisual.label}</Badge>
+          ) : null}
           {pieza.pilar ? (
             <Badge variant="ghost" className="gap-1.5">
               <span className={cn("h-2 w-2 rounded-full", getPilarDotClass(pieza.pilar.color))} />
@@ -145,6 +175,36 @@ export function PiezaCard({ pieza, onEdit, onDelete }: PiezaCardProps) {
           )}
           <Badge variant={PIEZA_ESTADO_BADGES[pieza.estado]}>{PIEZA_ESTADO_LABELS[pieza.estado]}</Badge>
         </div>
+
+        {showGenerate ? (
+          <Button
+            size="sm"
+            className="w-full"
+            loading={actionLoading}
+            onClick={() => onGenerate?.(pieza)}
+          >
+            <SparklesIcon size={16} />
+            Generar
+          </Button>
+        ) : null}
+
+        {showReviewActions ? (
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              size="sm"
+              loading={actionLoading}
+              onClick={() => onApprove?.(pieza)}
+              className="bg-success text-white hover:bg-success/90 focus-visible:ring-success/20"
+            >
+              <CheckIcon size={16} />
+              Aprobar
+            </Button>
+            <Button size="sm" variant="secondary" loading={actionLoading} onClick={() => onRegenerate?.(pieza)}>
+              <RefreshIcon size={16} />
+              Regenerar
+            </Button>
+          </div>
+        ) : null}
       </div>
     </Card>
   );

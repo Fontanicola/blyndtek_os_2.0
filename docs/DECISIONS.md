@@ -587,6 +587,13 @@
 - La fuente canónica para eventos de planes semanales es `generaciones_automaticas`; `agente_analisis` se conserva para eventos de generación visual puntual y trazabilidad técnica.
 - `dia_generacion` queda editable como configuración preparada, aunque el cron actual siga fijo en lunes por `pg_cron`; esto evita cambios de esquema cuando el día pase a controlarse desde UI.
 
+## 2026-07-20 — Content Studio: Higgsfield condicional, DM Sans e identidad oculta
+
+- Higgsfield se usa condicionalmente según `piezas_contenido.tipo_pieza`: nunca para `dato_rapido`, que se renderiza con fondo CSS de marca; sí para `noticia` y `caso_uso`, donde el fondo debe conectar visualmente con el tema semanal o rubro sin incluir texto, UI falsa ni elementos informativos.
+- `DM Sans` es la tipografía fija de todo contenido generado por Content Studio, usando archivos estáticos separados 400/700 en `public/fonts`; no se usan fuentes variables con Satori/ImageResponse. Inter sigue siendo la fuente de la plataforma y no se reemplaza en la UI general.
+- Las piezas del plan semanal se organizan por semana y exponen acciones primarias directamente en la card: generar, aprobar y regenerar no deben quedar escondidas en menús secundarios.
+- La identidad de marca de Blyndtek queda oculta de la UI normal para simplificar Content Studio, pero sus endpoints y campos (`tipografia`, `reglas_visuales`, tono, público, paleta, mostrar/evitar) siguen completamente funcionales en backend.
+
 ## 2026-07-19 — Automatizaciones recurrentes centralizadas
 
 - Toda automatización recurrente de cualquier agente se registra como una fila en `automatizaciones`, nunca como una clave ad-hoc en `agente_config`.

@@ -9,6 +9,8 @@ const EDITABLE_FIELDS = [
   "tono_voz",
   "publico_objetivo",
   "paleta_colores",
+  "tipografia",
+  "reglas_visuales",
   "que_mostrar",
   "que_evitar"
 ] as const;

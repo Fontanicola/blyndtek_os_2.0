@@ -460,7 +460,7 @@ export function PlantillaSlide({
         display: "flex",
         background: "#FFFFFF",
         color: "#0B0E14",
-        fontFamily: "Inter",
+        fontFamily: "DM Sans",
         position: "relative",
         overflow: "hidden"
       }}

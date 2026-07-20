@@ -6,15 +6,13 @@ import { Spinner } from "@/components/ui/Spinner";
 import { cn } from "@/lib/cn";
 import { fetchMarcaBlyndtek, fetchPiezas, fetchPilares } from "@/lib/hooks/useContenido";
 import type { MarcaContenido, PilarContenido } from "@/types/contenido";
-import { IdentidadMarcaForm } from "@/components/contenido/IdentidadMarcaForm";
-import { PilaresGestion } from "@/components/contenido/PilaresGestion";
 import { PlanSemanalView } from "@/components/contenido/PlanSemanalView";
 import { PiezasGrid } from "@/components/contenido/PiezasGrid";
 
-type Tab = "plan" | "identidad" | "piezas";
+type Tab = "plan" | "piezas";
 
 export default function ContenidoPage() {
-  const [activeTab, setActiveTab] = useState<Tab>("plan");
+  const [activeTab, setActiveTab] = useState<Tab>("piezas");
   const [marca, setMarca] = useState<MarcaContenido | null>(null);
   const [pilares, setPilares] = useState<PilarContenido[]>([]);
   const [piezasRevisionCount, setPiezasRevisionCount] = useState(0);
@@ -34,11 +32,6 @@ export default function ContenidoPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
-
-  const loadPilares = useCallback(async () => {
-    const data = await fetchPilares();
-    setPilares(data);
   }, []);
 
   useEffect(() => {
@@ -66,7 +59,7 @@ export default function ContenidoPage() {
       {piezasRevisionCount > 0 ? (
         <button
           type="button"
-          onClick={() => setActiveTab("plan")}
+          onClick={() => setActiveTab("piezas")}
           className="flex w-full items-center justify-between gap-4 rounded-card border border-signal/20 bg-signal-light px-5 py-4 text-left transition-colors duration-fast ease-fast hover:border-signal/40"
         >
           <span>
@@ -75,14 +68,13 @@ export default function ContenidoPage() {
               {piezasRevisionCount} pieza{piezasRevisionCount === 1 ? "" : "s"} esperando tu aprobación.
             </span>
           </span>
-          <span className="shrink-0 text-sm font-label text-signal">Ver plan</span>
+          <span className="shrink-0 text-sm font-label text-signal">Ver piezas</span>
         </button>
       ) : null}
 
       <div className="flex flex-wrap gap-2 border-b border-line-soft pb-3">
         {[
           { id: "plan", label: "Plan Semanal" },
-          { id: "identidad", label: "Identidad" },
           { id: "piezas", label: "Piezas" }
         ].map((tab) => (
           <Button
@@ -101,11 +93,6 @@ export default function ContenidoPage() {
 
       {activeTab === "plan" ? (
         <PlanSemanalView />
-      ) : activeTab === "identidad" ? (
-        <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-          <IdentidadMarcaForm marca={marca} onSaved={setMarca} />
-          <PilaresGestion pilares={pilares} onChange={() => void loadPilares()} />
-        </div>
       ) : (
         <PiezasGrid pilares={pilares} />
       )}

@@ -2020,3 +2020,14 @@ $ find . -maxdepth 3 \( -name 'middleware.*' -o -name 'proxy.*' \) -not -path '.
 - Verificación de esquema real: se consultó Supabase y se confirmaron las 2 filas existentes en `automatizaciones` con `endpoint_trigger`, `activa`, `frecuencia`, `dia_semana`, `dia_mes`, `hora` y `ultima_ejecucion`.
 - Verificación real de pausa: se pausó temporalmente la automatización `Plan semanal de contenido`, se disparó `POST /api/planes-semanales/generar-automatico` con service role y respondió `estado='pausado'`, `piezas_generadas=0`; luego se restauró `activa=true` y se confirmó `ultima_ejecucion=2026-07-19T23:40:55.672+00:00`.
 - Verificación local ejecutada: `npm run lint` y `npm run build` pasan correctamente; el build confirma que `/ai-hub/automatizaciones` existe y `/ai-hub/actividad` ya no aparece como ruta.
+
+## 2026-07-20 — Content Studio: tipos, DM Sans y piezas por semana
+
+- `generarPlanSemanalContenido` ahora setea `piezas_contenido.tipo_pieza` al crear el plan: `noticia`, `caso_uso`, `dato_rapido`, `reel` e `historia`.
+- `/api/piezas-contenido/[id]/generar-completo` usa Higgsfield condicionalmente: `dato_rapido` saltea por completo la generación de fondo IA y renderiza directo con el fondo CSS de marca; `noticia` y `caso_uso` sí generan fondo temático.
+- El prompt de `/api/piezas-contenido/[id]/generar-imagen` incorpora `marcas_contenido.reglas_visuales`, `tipografia`, el `rubro` del caso de uso o el `tema_general` de la noticia, reforzando que el fondo tenga conexión contextual sin texto, UI falsa ni ruido visual.
+- `ImageResponse` cambió la fuente del contenido generado a `DM Sans` con archivos estáticos separados (`public/fonts/DMSans-Regular.ttf`, `public/fonts/DMSans-Bold.ttf`), manteniendo Inter sólo para la plataforma.
+- `PiezaCard` muestra dos badges visibles: formato (`Carrusel`, `Post`, `Reel`, `Historia`) y tipo semántico (`Noticia`, `Caso de uso`, `Dato rápido`, `Reel`, `Historia`).
+- `PiezasGrid` agrupa las piezas por `plan_semanal_id`, muestra secciones colapsables por semana (`Agosto Semana 1`), abre la semana más reciente por default y deja las acciones principales visibles en cada card (`Generar`, `Aprobar`, `Regenerar`).
+- La tab visible `Identidad` fue ocultada de `/contenido`; sus endpoints GET/PATCH siguen activos y ahora aceptan también `tipografia` y `reglas_visuales`.
+- Se ejecutó update real en Supabase para la marca `blyndtek`: `tipografia='DM Sans'` y `reglas_visuales` completas con las reglas de fondos, carruseles, competidores y uso condicional de Higgsfield.

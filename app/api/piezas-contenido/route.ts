@@ -33,7 +33,7 @@ export async function GET(request: Request) {
     const pilarId = url.searchParams.get("pilar_id");
     let query = supabase
       .from("piezas_contenido")
-      .select("*, pilar:pilares_contenido(*)")
+      .select("*, pilar:pilares_contenido(*), plan:planes_semanales(*)")
       .eq("marca_id", marca.id)
       .order("updated_at", { ascending: false });
 
@@ -79,10 +79,11 @@ export async function POST(request: Request) {
         marca_id: marca.id,
         titulo: body.titulo?.trim() || "Sin título",
         pilar_id: body.pilar_id || null,
+        tipo_pieza: null,
         estado: "idea",
         creado_por: admin.id
       } as never)
-      .select("*, pilar:pilares_contenido(*)")
+      .select("*, pilar:pilares_contenido(*), plan:planes_semanales(*)")
       .single();
 
     if (error) {

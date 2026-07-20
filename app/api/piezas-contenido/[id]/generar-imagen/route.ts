@@ -56,6 +56,8 @@ function buildBrandContext(marca: MarcaContenido) {
     `Tone of voice: ${marca.tono_voz ?? "not specified"}`,
     `Target audience: ${marca.publico_objetivo ?? "not specified"}`,
     `Color palette: ${marca.paleta_colores ?? "lavender #DCD9F2, sky blue #D9EAF5, white #FFFFFF, black #0B0E14"}`,
+    `Typography: ${marca.tipografia ?? "DM Sans"}`,
+    `Mandatory visual rules: ${marca.reglas_visuales ?? "minimal B2B, calm, airy, premium, no generic stock look"}`,
     `What to show: ${marca.que_mostrar ?? "soft, clean, premium, airy visuals"}`,
     `What to avoid: ${marca.que_evitar ?? "generic stock visuals, fake user interfaces, illegible text"}`
   ].join("\n");
@@ -76,6 +78,20 @@ function getPieceTopic(pieza: PiezaContenido) {
     .filter(Boolean)
     .slice(0, 3)
     .join("\n");
+}
+
+function getThematicContext(pieza: PiezaContenido) {
+  const guion = asRecord(pieza.guion);
+
+  if (pieza.tipo_pieza === "caso_uso") {
+    return asString(guion.rubro);
+  }
+
+  if (pieza.tipo_pieza === "noticia") {
+    return pieza.plan?.tema_general ?? "";
+  }
+
+  return "";
 }
 
 function getTextFromClaude(payload: ClaudeResponse) {
@@ -133,15 +149,18 @@ async function generateBackgroundPromptWithClaude({
     "Use an iridescent pastel lavender-sky-white palette, soft grain, diffused light, and at most 1-2 subtle abstract elements such as one organic gradient shape, one quiet curve, or one restrained geometric plane.",
     "The background is the stage, not the protagonist. It must feel premium, quiet, editorial, and specific to a serious B2B technology company.",
     "Avoid absolutely: motivational poster effects, light rays, sparkles, glowing particles, bokeh, generic stock textures, clutter, anything visually loud, or anything that competes with the overlaid text.",
+    "If a specific industry, rubro, or weekly theme is provided, the background must have a real visual connection to that context. For a bakery, use soft blurred cues of a bakery atmosphere such as warm display textures or pastry-toned surfaces; for AI/technology themes, use abstract shapes that evoke networks or data flow, never literal circuits or generic robots. Always keep the Blyndtek visual calm: soft blur, pastel palette, never hard documentary photography, never noisy.",
     "PROHIBITED: any text, letters, words, numbers, typography, labels, icons with labels, UI mockups, dashboards, charts, screens, buttons, data visualization, tables, menus, browser windows, forms, or anything that requires readable information.",
     "Return ONLY the final prompt. No explanation."
   ].join(" ");
+  const thematicContext = getThematicContext(pieza);
 
   const userPrompt = [
     "Create a background prompt for this Blyndtek content piece.",
     "",
     "Brand identity:",
     buildBrandContext(marca),
+    thematicContext ? `\nSpecific thematic context:\n${thematicContext}` : "",
     "",
     "Piece topic/title:",
     getPieceTopic(pieza),
@@ -238,7 +257,7 @@ export async function POST(_request: Request, { params }: RouteContext) {
 
     const { data: piezaData, error: piezaError } = await supabase
       .from("piezas_contenido")
-      .select("*, pilar:pilares_contenido(*)")
+      .select("*, pilar:pilares_contenido(*), plan:planes_semanales(*)")
       .eq("id", params.id)
       .eq("marca_id", marca.id)
       .maybeSingle();
@@ -309,7 +328,7 @@ export async function POST(_request: Request, { params }: RouteContext) {
         updated_at: new Date().toISOString()
       } as never)
       .eq("id", params.id)
-      .select("*, pilar:pilares_contenido(*)")
+      .select("*, pilar:pilares_contenido(*), plan:planes_semanales(*)")
       .single();
 
     if (updateError) {

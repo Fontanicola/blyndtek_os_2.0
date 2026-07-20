@@ -22,7 +22,7 @@ async function assertBlyndtekPieza(supabase: SupabaseClient<ContenidoDatabase>, 
 
   const { data } = await supabase
     .from("piezas_contenido")
-    .select("*, pilar:pilares_contenido(*)")
+    .select("*, pilar:pilares_contenido(*), plan:planes_semanales(*)")
     .eq("id", id)
     .eq("marca_id", marca.id)
     .maybeSingle();
@@ -89,7 +89,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
       .from("piezas_contenido")
       .update(updatePayload as never)
       .eq("id", params.id)
-      .select("*, pilar:pilares_contenido(*)")
+      .select("*, pilar:pilares_contenido(*), plan:planes_semanales(*)")
       .single();
 
     if (error) {

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Spinner } from "@/components/ui/Spinner";
-import { ImageIcon } from "@/components/ui/icons";
+import { ChevronDownIcon, ImageIcon } from "@/components/ui/icons";
 import { cn } from "@/lib/cn";
 import {
   createPieza,
@@ -37,6 +37,8 @@ export function PiezasGrid({ pilares }: PiezasGridProps) {
   const [activeFilter, setActiveFilter] = useState<PiezaContenidoEstado | "todas">("todas");
   const [piezas, setPiezas] = useState<PiezaContenido[]>([]);
   const [selectedPieza, setSelectedPieza] = useState<PiezaContenido | null>(null);
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
+  const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
 
@@ -69,6 +71,52 @@ export function PiezasGrid({ pilares }: PiezasGridProps) {
     return piezas.filter((pieza) => pieza.estado === activeFilter);
   }, [activeFilter, piezas]);
 
+  const groupedPiezas = useMemo(() => {
+    const groups = new Map<
+      string,
+      {
+        key: string;
+        label: string;
+        sortValue: string;
+        piezas: PiezaContenido[];
+      }
+    >();
+
+    for (const pieza of visiblePiezas) {
+      const key = pieza.plan_semanal_id ?? "sin-plan";
+      const sortValue = pieza.plan?.semana_inicio ?? pieza.created_at;
+      const existing = groups.get(key);
+      if (existing) {
+        existing.piezas.push(pieza);
+      } else {
+        groups.set(key, {
+          key,
+          label: pieza.plan?.semana_inicio ? getWeekLabel(pieza.plan.semana_inicio) : "Piezas sueltas",
+          sortValue,
+          piezas: [pieza]
+        });
+      }
+    }
+
+    return Array.from(groups.values()).sort((a, b) => b.sortValue.localeCompare(a.sortValue));
+  }, [visiblePiezas]);
+
+  useEffect(() => {
+    if (groupedPiezas.length === 0) {
+      return;
+    }
+
+    setExpandedGroups((current) => {
+      const next = { ...current };
+      for (const [index, group] of groupedPiezas.entries()) {
+        if (!(group.key in next)) {
+          next[group.key] = index === 0;
+        }
+      }
+      return next;
+    });
+  }, [groupedPiezas]);
+
   async function handleCreate() {
     setCreating(true);
     try {
@@ -93,6 +141,39 @@ export function PiezasGrid({ pilares }: PiezasGridProps) {
   }
 
   async function handleGenerateComplete(id: string) {
+    setActionLoadingId(id);
+    try {
+      const result = await generarCompletoPieza(id);
+      setSelectedPieza(result.pieza);
+      await loadPiezas();
+      return result;
+    } finally {
+      setActionLoadingId(null);
+    }
+  }
+
+  async function handleGenerateFromCard(pieza: PiezaContenido) {
+    await handleGenerateComplete(pieza.id);
+  }
+
+  async function handleApproveFromCard(pieza: PiezaContenido) {
+    setActionLoadingId(pieza.id);
+    try {
+      const saved = await updatePieza(pieza.id, { estado: "lista" });
+      if (selectedPieza?.id === pieza.id) {
+        setSelectedPieza(saved);
+      }
+      await loadPiezas();
+    } finally {
+      setActionLoadingId(null);
+    }
+  }
+
+  async function handleRegenerateFromCard(pieza: PiezaContenido) {
+    await handleGenerateComplete(pieza.id);
+  }
+
+  async function handleGenerateCompleteForModal(id: string) {
     const result = await generarCompletoPieza(id);
     setSelectedPieza(result.pieza);
     await loadPiezas();
@@ -145,11 +226,56 @@ export function PiezasGrid({ pilares }: PiezasGridProps) {
         <div className="flex min-h-[220px] items-center justify-center">
           <Spinner />
         </div>
-      ) : visiblePiezas.length > 0 ? (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-          {visiblePiezas.map((pieza) => (
-            <PiezaCard key={pieza.id} pieza={pieza} onEdit={setSelectedPieza} onDelete={(item) => void handleDelete(item)} />
-          ))}
+      ) : groupedPiezas.length > 0 ? (
+        <div className="space-y-4">
+          {groupedPiezas.map((group) => {
+            const expanded = expandedGroups[group.key] ?? false;
+
+            return (
+              <section key={group.key} className="overflow-hidden rounded-card border border-line-soft bg-white">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setExpandedGroups((current) => ({
+                      ...current,
+                      [group.key]: !(current[group.key] ?? false)
+                    }))
+                  }
+                  className="flex w-full items-center justify-between gap-4 border-b border-line-soft px-4 py-3 text-left transition-colors duration-fast ease-fast hover:bg-paper"
+                >
+                  <span>
+                    <span className="block font-title text-base text-carbon">{group.label}</span>
+                    <span className="mt-0.5 block text-xs text-graphite">
+                      {group.piezas.length} pieza{group.piezas.length === 1 ? "" : "s"}
+                    </span>
+                  </span>
+                  <ChevronDownIcon
+                    className={cn(
+                      "h-4 w-4 text-graphite transition-transform duration-fast ease-fast",
+                      expanded ? "rotate-180" : "rotate-0"
+                    )}
+                  />
+                </button>
+
+                {expanded ? (
+                  <div className="grid gap-4 p-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+                    {group.piezas.map((pieza) => (
+                      <PiezaCard
+                        key={pieza.id}
+                        pieza={pieza}
+                        onEdit={setSelectedPieza}
+                        onDelete={(item) => void handleDelete(item)}
+                        onGenerate={(item) => void handleGenerateFromCard(item)}
+                        onApprove={(item) => void handleApproveFromCard(item)}
+                        onRegenerate={(item) => void handleRegenerateFromCard(item)}
+                        actionLoading={actionLoadingId === pieza.id}
+                      />
+                    ))}
+                  </div>
+                ) : null}
+              </section>
+            );
+          })}
         </div>
       ) : (
         <EmptyState
@@ -167,8 +293,25 @@ export function PiezasGrid({ pilares }: PiezasGridProps) {
         onClose={() => setSelectedPieza(null)}
         onSave={handleSave}
         onUploadImage={handleUpload}
-        onGenerateComplete={handleGenerateComplete}
+        onGenerateComplete={handleGenerateCompleteForModal}
       />
     </Card>
   );
+}
+
+function getWeekLabel(dateInput: string) {
+  const [year = 0, month = 1, day = 1] = dateInput.split("-").map(Number);
+  if (!year || !month || !day) {
+    return "Semana sin fecha";
+  }
+
+  const date = new Date(year, month - 1, day);
+  const monthLabel = date.toLocaleDateString("es-AR", { month: "long" });
+  const weekNumber = Math.floor((day - 1) / 7) + 1;
+
+  return `${capitalize(monthLabel)} Semana ${weekNumber}`;
+}
+
+function capitalize(value: string) {
+  return value.charAt(0).toUpperCase() + value.slice(1);
 }

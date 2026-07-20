@@ -5,6 +5,8 @@ export type MarcaContenido = {
   tono_voz: string | null;
   publico_objetivo: string | null;
   paleta_colores: string | null;
+  tipografia: string | null;
+  reglas_visuales: string | null;
   que_mostrar: string | null;
   que_evitar: string | null;
   meta_ig_business_id: string | null;
@@ -53,11 +55,14 @@ export type PiezaContenidoEstado =
   | "publicada"
   | "fallida";
 
+export type PiezaContenidoTipo = "noticia" | "caso_uso" | "dato_rapido" | "reel" | "historia" | null;
+
 export type PiezaContenido = {
   id: string;
   marca_id: string;
   plan_semanal_id: string | null;
   pilar_id: string | null;
+  tipo_pieza: PiezaContenidoTipo;
   titulo: string;
   storage_path: string | null;
   fondo_storage_path: string | null;
@@ -84,6 +89,7 @@ export type PiezaContenido = {
   updated_at: string;
   created_at: string;
   pilar?: PilarContenido | null;
+  plan?: PlanSemanal | null;
 };
 
 export type ContenidoDatabase = {

@@ -216,6 +216,8 @@ function buildBrandContext(marca: MarcaContenido) {
   return [
     `Tono de voz: ${marca.tono_voz || "directo, claro, premium y cercano"}`,
     `Público objetivo: ${marca.publico_objetivo || "dueños de PyME y empresas que necesitan sistemas reales"}`,
+    `Tipografía de contenido: ${marca.tipografia || "DM Sans"}`,
+    `Reglas visuales obligatorias: ${marca.reglas_visuales || "minimalismo B2B, aire visual, paleta suave, cero contenido genérico"}`,
     `Qué mostrar: ${marca.que_mostrar || "procesos, decisiones de negocio, automatización útil, sistemas que conectan datos"}`,
     `Qué evitar: ${marca.que_evitar || "contenido genérico, humo de IA, promesas irreales"}`
   ].join("\n");
@@ -396,6 +398,7 @@ async function insertPlan(
     {
       marca_id: marcaId,
       plan_semanal_id: planId,
+      tipo_pieza: "noticia",
       titulo: plan.post_noticia.titulo,
       caption: plan.post_noticia.caption,
       hashtags: plan.post_noticia.hashtags,
@@ -407,6 +410,7 @@ async function insertPlan(
     {
       marca_id: marcaId,
       plan_semanal_id: planId,
+      tipo_pieza: "caso_uso",
       titulo: plan.post_caso_uso.titulo,
       caption: plan.post_caso_uso.caption,
       hashtags: plan.post_caso_uso.hashtags,
@@ -418,6 +422,7 @@ async function insertPlan(
     {
       marca_id: marcaId,
       plan_semanal_id: planId,
+      tipo_pieza: "dato_rapido",
       titulo: plan.post_dato_rapido.titulo,
       caption: plan.post_dato_rapido.caption,
       hashtags: plan.post_dato_rapido.hashtags,
@@ -429,6 +434,7 @@ async function insertPlan(
     {
       marca_id: marcaId,
       plan_semanal_id: planId,
+      tipo_pieza: "reel",
       titulo: `Reel — ${plan.tema_general}`,
       caption: plan.guion_reel.caption,
       hashtags: plan.guion_reel.hashtags,
@@ -440,6 +446,7 @@ async function insertPlan(
     {
       marca_id: marcaId,
       plan_semanal_id: planId,
+      tipo_pieza: "historia",
       titulo: `Historias — ${plan.tema_general}`,
       caption: null,
       hashtags: [],

@@ -22,39 +22,34 @@ type SlideRenderable = {
   texto: string;
 };
 
-const INTER_REGULAR_FONT_URL = "https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuLyfMZg.ttf";
-const INTER_BOLD_FONT_URL = "https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuFuYMZg.ttf";
 const BLYNDTEK_LOGO_PATH = "Logo_Blyndtek_plataforma_negro.svg";
+const DM_SANS_REGULAR_PATH = "fonts/DMSans-Regular.ttf";
+const DM_SANS_BOLD_PATH = "fonts/DMSans-Bold.ttf";
 
-type InterFonts = {
+type ContentFonts = {
   regular: ArrayBuffer;
   bold: ArrayBuffer;
 };
 
-let interFontsPromise: Promise<InterFonts> | null = null;
+let contentFontsPromise: Promise<ContentFonts> | null = null;
 let logoDataUriPromise: Promise<string> | null = null;
 
-async function fetchFont(url: string, label: string) {
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(`No se pudo cargar la fuente Inter ${label} para renderizar la pieza.`);
-  }
-
-  const fontData = await response.arrayBuffer();
+async function readStaticFont(path: string, label: string) {
+  const fontData = await readFile(join(process.cwd(), "public", path));
   if (fontData.byteLength === 0) {
-    throw new Error(`La fuente Inter ${label} llegó vacía.`);
+    throw new Error(`La fuente DM Sans ${label} llegó vacía.`);
   }
 
-  return fontData;
+  return fontData.buffer.slice(fontData.byteOffset, fontData.byteOffset + fontData.byteLength);
 }
 
-function getInterFonts() {
-  interFontsPromise ??= Promise.all([
-    fetchFont(INTER_REGULAR_FONT_URL, "Regular"),
-    fetchFont(INTER_BOLD_FONT_URL, "Bold")
+function getContentFonts() {
+  contentFontsPromise ??= Promise.all([
+    readStaticFont(DM_SANS_REGULAR_PATH, "Regular"),
+    readStaticFont(DM_SANS_BOLD_PATH, "Bold")
   ]).then(([regular, bold]) => ({ regular, bold }));
 
-  return interFontsPromise;
+  return contentFontsPromise;
 }
 
 function getBlyndtekLogoDataUri() {
@@ -122,7 +117,7 @@ async function renderSlide(
   slide: SlideRenderable,
   index: number,
   total: number,
-  fonts: InterFonts,
+  fonts: ContentFonts,
   fondoUrl: string | null,
   logoUrl: string
 ) {
@@ -140,13 +135,13 @@ async function renderSlide(
       height: 1350,
       fonts: [
         {
-          name: "Inter",
+          name: "DM Sans",
           data: fonts.regular.slice(0),
           weight: 400,
           style: "normal"
         },
         {
-          name: "Inter",
+          name: "DM Sans",
           data: fonts.bold.slice(0),
           weight: 700,
           style: "normal"
@@ -197,7 +192,7 @@ export async function POST(request: Request, { params }: RouteContext) {
 
     const { data: piezaData, error: piezaError } = await supabase
       .from("piezas_contenido")
-      .select("*, pilar:pilares_contenido(*)")
+      .select("*, pilar:pilares_contenido(*), plan:planes_semanales(*)")
       .eq("id", params.id)
       .eq("marca_id", marca.id)
       .maybeSingle();
@@ -220,7 +215,7 @@ export async function POST(request: Request, { params }: RouteContext) {
       return NextResponse.json({ error: "La pieza no tiene guion renderizable." }, { status: 400 });
     }
 
-    const fonts = await getInterFonts();
+    const fonts = await getContentFonts();
     const logoUrl = await getBlyndtekLogoDataUri();
     const fondoUrl = await getSignedBackgroundUrl(supabase, pieza.fondo_storage_path);
     const generatedPaths: string[] = [];
@@ -257,7 +252,7 @@ export async function POST(request: Request, { params }: RouteContext) {
         updated_at: new Date().toISOString()
       } as never)
       .eq("id", params.id)
-      .select("*, pilar:pilares_contenido(*)")
+      .select("*, pilar:pilares_contenido(*), plan:planes_semanales(*)")
       .single();
 
     if (updateError) {

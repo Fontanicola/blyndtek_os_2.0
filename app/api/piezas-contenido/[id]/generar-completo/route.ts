@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getAdminUser } from "@/lib/require-admin";
+import { getBlyndtekContentBrand } from "@/lib/contenido/blyndtek";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { AgentesDatabase } from "@/types/agentes";
+import type { ContenidoDatabase, PiezaContenido } from "@/types/contenido";
 
 export const runtime = "nodejs";
 export const maxDuration = 90;
@@ -56,6 +58,32 @@ async function postInternal<T>(request: Request, path: string) {
   return payload.data;
 }
 
+async function getPiezaForGeneration(id: string) {
+  const supabase = createAdminClient() as unknown as SupabaseClient<ContenidoDatabase>;
+  const marca = await getBlyndtekContentBrand(supabase);
+
+  if (!marca) {
+    throw new Error("Marca Blyndtek not found");
+  }
+
+  const { data, error } = await supabase
+    .from("piezas_contenido")
+    .select("*, pilar:pilares_contenido(*), plan:planes_semanales(*)")
+    .eq("id", id)
+    .eq("marca_id", marca.id)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  if (!data) {
+    throw new Error("Pieza not found");
+  }
+
+  return data as PiezaContenido;
+}
+
 async function registrarActividadGenerador({
   supabase,
   generadoPor,
@@ -68,7 +96,7 @@ async function registrarActividadGenerador({
   generadoPor: string | null;
   piezaId: string;
   titulo: string;
-  fondo: GenerarFondoData;
+  fondo: GenerarFondoData | null;
   render: RenderizarData;
 }) {
   const { data: agente, error: agenteError } = await supabase
@@ -88,13 +116,13 @@ async function registrarActividadGenerador({
       tipo: "bajo_demanda",
       datos_calculados: {
         pieza_id: piezaId,
-        fondo_storage_path: fondo.fondo_storage_path,
+        fondo_storage_path: fondo?.fondo_storage_path ?? null,
         imagenes_generadas: render.imagenes_generadas
       },
       analisis_texto: `Generación visual completada para "${titulo}" (${render.imagenes_generadas.length} slide${render.imagenes_generadas.length === 1 ? "" : "s"}).`,
-      tokens_entrada: fondo.tokens_entrada,
-      tokens_salida: fondo.tokens_salida,
-      costo_estimado_usd: fondo.costo_generacion_usd,
+      tokens_entrada: fondo?.tokens_entrada ?? null,
+      tokens_salida: fondo?.tokens_salida ?? null,
+      costo_estimado_usd: fondo?.costo_generacion_usd ?? null,
       generado_por: generadoPor
     })
     .select("id")
@@ -115,7 +143,11 @@ export async function POST(request: Request, { params }: RouteContext) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const fondo = await postInternal<GenerarFondoData>(request, `/api/piezas-contenido/${params.id}/generar-imagen`);
+    const pieza = await getPiezaForGeneration(params.id);
+    const shouldGenerateBackground = pieza.tipo_pieza === "noticia" || pieza.tipo_pieza === "caso_uso";
+    const fondo = shouldGenerateBackground
+      ? await postInternal<GenerarFondoData>(request, `/api/piezas-contenido/${params.id}/generar-imagen`)
+      : null;
     const render = await postInternal<RenderizarData>(request, `/api/piezas-contenido/${params.id}/renderizar`);
 
     const supabase = createAdminClient() as SupabaseClient<AgentesDatabase>;
@@ -123,7 +155,7 @@ export async function POST(request: Request, { params }: RouteContext) {
       supabase,
       generadoPor: admin?.id ?? null,
       piezaId: params.id,
-      titulo: fondo.pieza?.titulo ?? "Pieza sin título",
+      titulo: fondo?.pieza?.titulo ?? pieza.titulo ?? "Pieza sin título",
       fondo,
       render
     });
@@ -131,8 +163,8 @@ export async function POST(request: Request, { params }: RouteContext) {
     return NextResponse.json({
       data: {
         imagenes_generadas: render.imagenes_generadas,
-        prompt_fondo: fondo.prompt_fondo,
-        fondo_storage_path: fondo.fondo_storage_path,
+        prompt_fondo: fondo?.prompt_fondo ?? null,
+        fondo_storage_path: fondo?.fondo_storage_path ?? null,
         actividad_id: actividadId,
         pieza: render.pieza
       }

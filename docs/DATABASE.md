@@ -19,6 +19,8 @@
 | tono_voz | text | Sí | Identidad editorial editable |
 | publico_objetivo | text | Sí | Público objetivo de la marca |
 | paleta_colores | text | Sí | Criterios visuales/paleta |
+| tipografia | text | Sí | Tipografía fija para piezas de contenido generadas; Blyndtek usa `DM Sans` |
+| reglas_visuales | text | Sí | Reglas visuales obligatorias usadas como contexto en prompts de contenido/fondos |
 | que_mostrar | text | Sí | Lineamientos de contenido permitido/deseado |
 | que_evitar | text | Sí | Lineamientos de contenido a evitar |
 | meta_ig_business_id | text | Sí | Preparado para futura integración Instagram |
@@ -53,6 +55,7 @@
 | marca_id | uuid | No | FK a la marca Blyndtek |
 | plan_semanal_id | uuid | Sí | FK a `planes_semanales.id`, usado para agrupar piezas generadas por una misma semana |
 | pilar_id | uuid | Sí | FK al pilar de contenido |
+| tipo_pieza | text | Sí | Tipo semántico: `noticia`, `caso_uso`, `dato_rapido`, `reel`, `historia` |
 | titulo | text | No | Default `Sin título` |
 | storage_path | text | Sí | Imagen manual subida a Storage (`archivos-blyndtek/contenido/...`) |
 | fondo_storage_path | text | Sí | Fondo atmosférico generado por Higgsfield, sin texto ni UI falsa |
