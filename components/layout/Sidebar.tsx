@@ -127,7 +127,13 @@ function NavigationRow({
         </button>
 
         {expanded && !collapsed ? (
-          <div className="mt-1 space-y-1">
+          <div
+            className={cn(
+              "mt-1 space-y-1",
+              isAiHubParent &&
+                "mx-2 rounded-card border border-dashed border-[#7C3AED]/30 bg-[#7C3AED]/[0.035] px-2 py-2"
+            )}
+          >
             {item.children?.map((child) => (
               <NavigationRow
                 key={child.href ?? child.label}
