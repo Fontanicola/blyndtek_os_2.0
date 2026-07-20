@@ -46,6 +46,7 @@ export type Lead = {
   relacion: string | null;
   nivel_confianza: NivelConfianza | null;
   contexto: string | null;
+  mensaje_inicial: string | null;
   presupuesto_estimado: number | null;
   monto_propuesto_desarrollo: number | null;
   monto_propuesto_mensual: number | null;
@@ -90,7 +91,8 @@ export type LeadStageTransitionInput = {
   mismo_monto?: boolean;
 };
 
-export type CreateLeadInput = Omit<LeadWritableFields, "vendedor_id"> & {
+export type CreateLeadInput = Omit<LeadWritableFields, "vendedor_id" | "mensaje_inicial"> & {
+  mensaje_inicial?: string | null;
   vendedor_id?: string | null;
 };
 export type UpdateLeadInput = Partial<CreateLeadInput>;

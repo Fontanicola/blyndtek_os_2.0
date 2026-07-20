@@ -1027,6 +1027,7 @@ export type Database = {
           relacion: string | null;
           nivel_confianza: "alto" | "medio" | "bajo" | null;
           contexto: string | null;
+          mensaje_inicial: string | null;
           presupuesto_estimado: number | null;
           monto_propuesto_desarrollo: number | null;
           monto_propuesto_mensual: number | null;
@@ -1079,6 +1080,7 @@ export type Database = {
           relacion?: string | null;
           nivel_confianza?: "alto" | "medio" | "bajo" | null;
           contexto?: string | null;
+          mensaje_inicial?: string | null;
           presupuesto_estimado?: number | null;
           monto_propuesto_desarrollo?: number | null;
           monto_propuesto_mensual?: number | null;
@@ -1131,6 +1133,7 @@ export type Database = {
           relacion?: string | null;
           nivel_confianza?: "alto" | "medio" | "bajo" | null;
           contexto?: string | null;
+          mensaje_inicial?: string | null;
           presupuesto_estimado?: number | null;
           monto_propuesto_desarrollo?: number | null;
           monto_propuesto_mensual?: number | null;

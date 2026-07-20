@@ -594,9 +594,23 @@
 - Las piezas del plan semanal se organizan por semana y exponen acciones primarias directamente en la card: generar, aprobar y regenerar no deben quedar escondidas en menús secundarios.
 - La identidad de marca de Blyndtek queda oculta de la UI normal para simplificar Content Studio, pero sus endpoints y campos (`tipografia`, `reglas_visuales`, tono, público, paleta, mostrar/evitar) siguen completamente funcionales en backend.
 
+## 2026-07-20 — Dirección de arte por tipo en Content Studio
+
+- La regla anterior de fondo abstracto queda supersedida para `noticia`: las noticias usan fotografía realista editorial como imagen protagonista, con texto mínimo en una franja inferior oscura tipo portada de revista. El intento abstracto producía resultados genéricos y poco específicos.
+- `noticia` es el único tipo de pieza de feed que usa Higgsfield para fondo visual. El prompt exige fotografía creíble, relación real con el tema, tercio inferior naturalmente legible y prohíbe texto, logos, marcas de agua, dashboards, pantallas o UI falsa.
+- `caso_uso` se renderiza 100% con código: fondo sólido de marca, texto blanco grande y composición editorial variable por rol de slide. No usa Higgsfield.
+- `dato_rapido` se mantiene 100% con código: pastel claro y texto negro. Así queda visualmente separado de `caso_uso` y de `noticia`.
+- La identidad visual queda diferenciada por función: `Dato Rápido` comunica claridad inmediata, `Caso de Uso` comunica impacto directo y `Noticia` comunica actualidad/editorial con fotografía protagonista.
+
 ## 2026-07-19 — Automatizaciones recurrentes centralizadas
 
 - Toda automatización recurrente de cualquier agente se registra como una fila en `automatizaciones`, nunca como una clave ad-hoc en `agente_config`.
 - Los endpoints llamados por cron buscan su fila por `endpoint_trigger`, respetan `activa` como fuente única de play/pausa y actualizan `ultima_ejecucion` al completar una corrida o registrar una pausa.
 - `/ai-hub/automatizaciones` es el panel canónico para pausar/reanudar y editar frecuencia, día y hora de estas tareas. Cualquier agente futuro debe sumar su automatización ahí antes de conectarse a `pg_cron`.
 - `agente_config` queda reservado para parámetros internos del agente; la agenda y el estado activo/pausado de tareas programadas viven exclusivamente en `automatizaciones`.
+
+## 2026-07-20 — Leads públicos desde el sitio institucional
+
+- El sitio institucional, que vive como proyecto separado, alimenta Blyndtek OS mediante `POST /api/public/leads`, un endpoint público protegido con honeypot, CORS restringido por `MARKETING_SITE_URL` y rate limiting por IP.
+- El visitante nunca necesita autenticarse: la ruta usa service role únicamente en servidor para insertar el lead como `canal='inbound'`, `etapa='por_contactar'` y `vendedor_id=null`, dejando la asignación comercial para el equipo dentro del OS.
+- La atribución inicial se deriva de UTM: `utm_source` define `canal_origen` y `utm_campaign` queda como `campana_origen`, para conectar el formulario web con la vista de Marketing/Atribución sin depender todavía de integraciones publicitarias externas.

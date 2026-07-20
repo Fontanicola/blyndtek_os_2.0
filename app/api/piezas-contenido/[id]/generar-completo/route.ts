@@ -144,7 +144,7 @@ export async function POST(request: Request, { params }: RouteContext) {
     }
 
     const pieza = await getPiezaForGeneration(params.id);
-    const shouldGenerateBackground = pieza.tipo_pieza === "noticia" || pieza.tipo_pieza === "caso_uso";
+    const shouldGenerateBackground = pieza.tipo_pieza === "noticia";
     const fondo = shouldGenerateBackground
       ? await postInternal<GenerarFondoData>(request, `/api/piezas-contenido/${params.id}/generar-imagen`)
       : null;

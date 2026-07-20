@@ -2031,3 +2031,21 @@ $ find . -maxdepth 3 \( -name 'middleware.*' -o -name 'proxy.*' \) -not -path '.
 - `PiezasGrid` agrupa las piezas por `plan_semanal_id`, muestra secciones colapsables por semana (`Agosto Semana 1`), abre la semana más reciente por default y deja las acciones principales visibles en cada card (`Generar`, `Aprobar`, `Regenerar`).
 - La tab visible `Identidad` fue ocultada de `/contenido`; sus endpoints GET/PATCH siguen activos y ahora aceptan también `tipografia` y `reglas_visuales`.
 - Se ejecutó update real en Supabase para la marca `blyndtek`: `tipografia='DM Sans'` y `reglas_visuales` completas con las reglas de fondos, carruseles, competidores y uso condicional de Higgsfield.
+
+## 2026-07-20 — Content Studio: dirección de arte diferenciada por tipo
+
+- `noticia` vuelve a usar Higgsfield con criterio fotográfico realista: el prompt de Claude ahora pide una fotografía editorial creíble, relacionada con el tema, con tercio inferior despejado/oscuro para texto superpuesto y prohibición explícita de texto, logos, marcas de agua o UI falsa generada por el modelo.
+- Para `noticia`, `lib/contenido/plantillaSlide.tsx` usa un layout específico de foto protagonista: imagen full-frame, degradé oscuro sólo en el tercio inferior, título blanco más chico como pie/editorial inferior, logo e indicador de slide discretos en esa franja.
+- `caso_uso` dejó de llamar a Higgsfield: `/api/piezas-contenido/[id]/generar-completo` sólo genera fondo IA si `tipo_pieza === 'noticia'`. Los casos de uso se renderizan 100% por código con fondo sólido azul/oscuro alternado, texto blanco grande y la variedad editorial de portada/contenido/cierre.
+- `dato_rapido` se mantiene sin cambios: fondo pastel CSS + texto negro, sin proveedor externo.
+- Se configuró `HIGGSFIELD_PHOTO_MODEL` con default `seedream-5.0-pro/text-to-image` y fallback al endpoint ya validado en esta cuenta (`/higgsfield-ai/soul/v2/standard`), para priorizar fotorrealismo sin dejar el flujo atado a un único slug no disponible.
+- `/api/piezas-contenido/[id]/renderizar` ahora versiona los storage paths de cada slide (`slide-N-{timestamp}.png`) para evitar que Supabase/CDN sirva una versión vieja al regenerar una pieza.
+- Verificación real ejecutada en local con service role: `caso_uso` `2260d413-14ec-42c6-8196-0b24d1def9a8` generó 5 slides sin `prompt_fondo` ni `fondo_storage_path`, confirmando que no llamó a Higgsfield; `noticia` `7227f7bf-8447-4bb8-a516-8a84f43c18cd` generó 5 slides con fondo fotográfico y render final.
+- Verificación visual realizada sobre los PNG finales descargados: Noticia quedó con fotografía protagonista y texto real limpio en una banda inferior negra; Caso de Uso quedó con fondo sólido azul, texto blanco grande, logo y contador separados, claramente distinto del tratamiento pastel de Dato Rápido.
+
+## 2026-07-20 — Endpoint público de leads institucionales
+
+- Se creó `POST /api/public/leads` como endpoint sin autenticación para recibir consultas del sitio institucional y crear leads `inbound` en `por_contactar`, sin vendedor asignado.
+- La ruta usa service role sólo del lado servidor, valida `nombre` y `email`, guarda `mensaje_inicial`, mapea `utm_source` a `canal_origen` (`meta_ads`, `google_ads`, `organico`, `otro`) y conserva `utm_campaign` en `campana_origen`.
+- Se agregó protección anti-spam con honeypot silencioso, CORS estricto contra `MARKETING_SITE_URL` (`https://blyndtek.com` como placeholder) y rate limiting en memoria de 5 requests por minuto por IP.
+- Se actualizaron `types/leads.ts`, `types/supabase.ts`, `.env.example` y `docs/DATABASE.md` para documentar `mensaje_inicial` y el contrato de integración pública.

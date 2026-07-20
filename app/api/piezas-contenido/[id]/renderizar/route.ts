@@ -119,7 +119,8 @@ async function renderSlide(
   total: number,
   fonts: ContentFonts,
   fondoUrl: string | null,
-  logoUrl: string
+  logoUrl: string,
+  tipoPieza: PiezaContenido["tipo_pieza"]
 ) {
   const response = new ImageResponse(
     PlantillaSlide({
@@ -128,7 +129,8 @@ async function renderSlide(
       indiceSlide: index,
       totalSlides: total,
       fondoUrl,
-      logoUrl
+      logoUrl,
+      tipoPieza
     }),
     {
       width: 1080,
@@ -219,10 +221,11 @@ export async function POST(request: Request, { params }: RouteContext) {
     const logoUrl = await getBlyndtekLogoDataUri();
     const fondoUrl = await getSignedBackgroundUrl(supabase, pieza.fondo_storage_path);
     const generatedPaths: string[] = [];
+    const renderVersion = Date.now();
 
     for (const [index, slide] of slides.entries()) {
-      const imageBuffer = await renderSlide(slide, index, slides.length, fonts, fondoUrl, logoUrl);
-      const storagePath = `contenido/${params.id}-slide-${index + 1}.png`;
+      const imageBuffer = await renderSlide(slide, index, slides.length, fonts, fondoUrl, logoUrl, pieza.tipo_pieza);
+      const storagePath = `contenido/${params.id}-slide-${index + 1}-${renderVersion}.png`;
 
       const { error: uploadError } = await supabase.storage.from(CONTENT_BUCKET).upload(storagePath, imageBuffer, {
         contentType: "image/png",

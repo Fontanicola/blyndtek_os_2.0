@@ -41,7 +41,8 @@ type HiggsfieldResult = {
   images?: HiggsfieldImage[];
 };
 
-const HIGGSFIELD_MODEL = "/higgsfield-ai/soul/v2/standard";
+const HIGGSFIELD_PHOTO_MODEL = process.env.HIGGSFIELD_PHOTO_MODEL ?? "seedream-5.0-pro/text-to-image";
+const HIGGSFIELD_PHOTO_FALLBACK_MODEL = "/higgsfield-ai/soul/v2/standard";
 
 function asRecord(value: JsonValue | null): Record<string, JsonValue | undefined> {
   return typeof value === "object" && value !== null && !Array.isArray(value) ? value : {};
@@ -142,21 +143,20 @@ async function generateBackgroundPromptWithClaude({
   }
 
   const system = [
-    "Act as a senior art director specialized in visual identity for minimalist B2B tech social media brands, with the calm precision of Linear, Stripe, and Mercury.",
+    "Act as a photographer and art director specialized in realistic editorial images for business news content.",
     "Generate one final English prompt for an AI image generator.",
-    "The prompt must describe ONLY an abstract visual background or atmosphere for a software factory brand.",
-    "The background must NEVER be a flat full-frame gradient with no composition. It needs real visual intent: use the rule of thirds, define a clear negative-space area where real text will be overlaid later, usually the left third or upper third, never the exact center filling the entire frame.",
-    "Use an iridescent pastel lavender-sky-white palette, soft grain, diffused light, and at most 1-2 subtle abstract elements such as one organic gradient shape, one quiet curve, or one restrained geometric plane.",
-    "The background is the stage, not the protagonist. It must feel premium, quiet, editorial, and specific to a serious B2B technology company.",
-    "Avoid absolutely: motivational poster effects, light rays, sparkles, glowing particles, bokeh, generic stock textures, clutter, anything visually loud, or anything that competes with the overlaid text.",
-    "If a specific industry, rubro, or weekly theme is provided, the background must have a real visual connection to that context. For a bakery, use soft blurred cues of a bakery atmosphere such as warm display textures or pastry-toned surfaces; for AI/technology themes, use abstract shapes that evoke networks or data flow, never literal circuits or generic robots. Always keep the Blyndtek visual calm: soft blur, pastel palette, never hard documentary photography, never noisy.",
-    "PROHIBITED: any text, letters, words, numbers, typography, labels, icons with labels, UI mockups, dashboards, charts, screens, buttons, data visualization, tables, menus, browser windows, forms, or anything that requires readable information.",
+    "The prompt must describe a HIGH-QUALITY REALISTIC PHOTOGRAPH, not an illustration, not abstract art, not a gradient, and not a decorative background.",
+    "The image must visually represent the supplied business topic or industry in a credible editorial-magazine way. For example, if the topic is a bakery, describe a real warm bakery environment with natural light, professional composition, depth of field, and believable details. If the topic is conceptual technology or AI, describe a realistic modern workspace, hands working, a real screen detail, or a credible business environment. Always photographic, grounded, and believable.",
+    "The composition MUST leave the lower third of the frame naturally darker or cleaner, using shadow, depth, foreground falloff, or a low-detail area, so real white caption text can be overlaid there with strong legibility. Think of a business magazine cover with the headline at the bottom.",
+    "The lower third must contain no papers, notes, labels, signs, screens, notebooks, handwriting, printed marks, or any shapes that resemble letters or text. It should be a quiet photographic area with texture, shadow, or simple material only.",
+    "Use professional editorial photography language: natural light, subtle depth of field, believable materials, clean composition, premium but not flashy.",
+    "PROHIBITED: any text, letters, words, numbers, typography, labels, logos, watermarks, icons, fake UI, dashboards, charts, browser windows, buttons, screens with readable content, or generated brand marks.",
     "Return ONLY the final prompt. No explanation."
   ].join(" ");
   const thematicContext = getThematicContext(pieza);
 
   const userPrompt = [
-    "Create a background prompt for this Blyndtek content piece.",
+    "Create a photorealistic editorial image prompt for this Blyndtek news content piece.",
     "",
     "Brand identity:",
     buildBrandContext(marca),
@@ -165,7 +165,7 @@ async function generateBackgroundPromptWithClaude({
     "Piece topic/title:",
     getPieceTopic(pieza),
     "",
-    "The generated image will sit behind real text rendered later with code, so the background must leave enough clean negative space and must contain no readable or fake informational elements."
+    "The generated photograph will receive real text rendered later with code in the lower third, so the lower third must be darker or visually quiet and the image itself must contain no readable or fake informational elements."
   ].join("\n");
 
   const response = await fetch("https://api.anthropic.com/v1/messages", {
@@ -230,6 +230,37 @@ async function markGenerationFailed(supabase: SupabaseClient<ContenidoDatabase>,
     .eq("id", id);
 }
 
+async function subscribePhotorealisticImage({
+  client,
+  prompt
+}: {
+  client: ReturnType<typeof createHiggsfieldClient>;
+  prompt: string;
+}) {
+  const input = {
+    prompt,
+    width_and_height: "1080x1350",
+    quality: "1080p",
+    batch_size: 1
+  };
+
+  try {
+    return (await client.subscribe(HIGGSFIELD_PHOTO_MODEL, {
+      input,
+      withPolling: true
+    })) as HiggsfieldResult;
+  } catch (error) {
+    if (HIGGSFIELD_PHOTO_MODEL === HIGGSFIELD_PHOTO_FALLBACK_MODEL) {
+      throw error;
+    }
+
+    return (await client.subscribe(HIGGSFIELD_PHOTO_FALLBACK_MODEL, {
+      input,
+      withPolling: true
+    })) as HiggsfieldResult;
+  }
+}
+
 function isServiceRoleAuthorized(request: Request) {
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   return Boolean(serviceRoleKey && request.headers.get("authorization") === `Bearer ${serviceRoleKey}`);
@@ -288,15 +319,10 @@ export async function POST(_request: Request, { params }: RouteContext) {
     const client = createHiggsfieldClient({
       credentials: `${higgsfieldKeyId}:${higgsfieldSecret}`
     });
-    const higgsfieldResult = (await client.subscribe(HIGGSFIELD_MODEL, {
-      input: {
-        prompt: promptData.prompt,
-        width_and_height: "1080x1350",
-        quality: "1080p",
-        batch_size: 1
-      },
-      withPolling: true
-    })) as HiggsfieldResult;
+    const higgsfieldResult = await subscribePhotorealisticImage({
+      client,
+      prompt: promptData.prompt
+    });
 
     const generatedUrl = higgsfieldResult.images?.[0]?.url;
     if (!generatedUrl) {

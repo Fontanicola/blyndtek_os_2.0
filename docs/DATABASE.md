@@ -151,6 +151,7 @@
 | relacion | text | No especificado | solo inbound |
 | nivel_confianza | enum (`alto|medio|bajo`) | No especificado | solo inbound |
 | contexto | text | No especificado | necesidad/dolor |
+| mensaje_inicial | text | Sí | Mensaje enviado por el visitante desde el sitio institucional o capturado manualmente |
 | presupuesto_estimado | numeric | No especificado |  |
 | motivo_descarte | text | No especificado | solo si descartado |
 | notas | text | No especificado |  |
@@ -158,6 +159,12 @@
 | updated_at | timestamptz | No especificado |  |
 
 > Nota: el esquema documentado originalmente no incluía `ganado`; la definición efectiva usada por la app se amplió para reflejar la etapa de cierre antes de `descartado`.
+
+### Endpoint público de leads
+
+`POST /api/public/leads` recibe consultas del sitio institucional sin requerir sesión del visitante. Inserta en `leads` con `canal='inbound'`, `etapa='por_contactar'`, `vendedor_id=null`, `canal_origen` derivado de `utm_source`, `campana_origen` desde `utm_campaign` y `mensaje_inicial` con el texto enviado.
+
+Protecciones activas: honeypot silencioso, CORS restringido a `MARKETING_SITE_URL` y rate limiting básico por IP.
 
 ## Tabla: clientes
 
