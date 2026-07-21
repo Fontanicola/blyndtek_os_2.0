@@ -66,7 +66,7 @@ function CajaCard({ item, onOpen }: { item: TesoreriaCajaBalance; onOpen?: (item
     <Card
       padding="md"
       onClick={onOpen ? () => onOpen(item) : undefined}
-      className={cn("space-y-4 transition-opacity duration-fast ease-fast", isInactive && "opacity-70")}
+      className={cn("min-w-0 space-y-4 transition-opacity duration-fast ease-fast", isInactive && "opacity-70")}
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0 flex items-center gap-3">
@@ -85,18 +85,27 @@ function CajaCard({ item, onOpen }: { item: TesoreriaCajaBalance; onOpen?: (item
         </Badge>
       </div>
 
-      <div className="grid gap-3 text-sm">
-        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
+      <div className="grid min-w-0 gap-3 text-sm">
+        <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(0,auto)] items-center gap-3">
           <span className="truncate text-graphite">Cobrado</span>
-          <span className="whitespace-nowrap text-right font-label text-success">{formatUSD(item.total_cobrado)}</span>
+          <span className="min-w-0 text-right font-label leading-tight text-success [overflow-wrap:anywhere]">
+            {formatUSD(item.total_cobrado)}
+          </span>
         </div>
-        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
+        <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(0,auto)] items-center gap-3">
           <span className="truncate text-graphite">Egresado</span>
-          <span className="whitespace-nowrap text-right font-label text-danger">{formatUSD(item.total_egresado)}</span>
+          <span className="min-w-0 text-right font-label leading-tight text-danger [overflow-wrap:anywhere]">
+            {formatUSD(item.total_egresado)}
+          </span>
         </div>
-        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-t border-line-soft pt-3">
+        <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(0,auto)] items-center gap-3 border-t border-line-soft pt-3">
           <span className="truncate text-graphite">Balance</span>
-          <span className={cn("whitespace-nowrap text-right font-title text-lg", item.balance >= 0 ? "text-signal" : "text-danger")}>
+          <span
+            className={cn(
+              "min-w-0 text-right font-title text-lg leading-tight [overflow-wrap:anywhere]",
+              item.balance >= 0 ? "text-signal" : "text-danger"
+            )}
+          >
             {formatUSD(item.balance)}
           </span>
         </div>
@@ -114,7 +123,7 @@ function CajaCard({ item, onOpen }: { item: TesoreriaCajaBalance; onOpen?: (item
           </div>
           <div className="h-[88px] overflow-hidden rounded-component border border-line-soft bg-paper px-2 py-2">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={item.historico} margin={{ top: 4, right: 4, bottom: 0, left: -18 }}>
+              <LineChart data={item.historico} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
                 <CartesianGrid
                   stroke={chartTheme.grid.stroke}
                   strokeDasharray={chartTheme.grid.strokeDasharray}
@@ -127,7 +136,8 @@ function CajaCard({ item, onOpen }: { item: TesoreriaCajaBalance; onOpen?: (item
                   axisLine={false}
                   tickLine={false}
                   tickMargin={6}
-                  minTickGap={8}
+                  minTickGap={18}
+                  interval="preserveStartEnd"
                 />
                 <YAxis hide domain={[0, "dataMax"]} />
                 <Line
@@ -458,7 +468,7 @@ export function TesoreriaCard({
         </div>
       </Card>
 
-      <div className="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-4">
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,36rem),1fr))] gap-4">
         {cajasVisibles.map((item) => (
           <CajaCard key={item.slug} item={item} onOpen={setSelectedCaja} />
         ))}

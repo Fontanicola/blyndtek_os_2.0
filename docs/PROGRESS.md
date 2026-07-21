@@ -10,6 +10,29 @@ Estado general actual: Fase 0 completa. Cimientos técnicos listos: documentaci�
 
 ## Actualización 2026-07-21
 
+- Se corrigió por fin el bug real de responsive en las cards de caja de Finanzas → Tesorería cuando el sidebar está expandido.
+- Causa raíz exacta:
+  - en `components/finanzas/TesoreriaCard.tsx`, el contenedor de cards usaba `grid-cols-[repeat(auto-fit,minmax(300px,1fr))]`, lo que seguía permitiendo dos columnas aun cuando el ancho útil del panel ya no alcanzaba con el sidebar expandido;
+  - dentro de cada card, las filas de `Cobrado / Egresado / Balance` no tenían `min-w-0` en todos los niveles relevantes y los montos vivían en un layout demasiado rígido, por eso el texto se terminaba cortando literalmente (`US` en vez de `USD`);
+  - el sparkline compacto todavía dejaba margen negativo a izquierda y necesitaba volver a declarar `YAxis hide` de forma explícita para no mostrar ticks numéricos superpuestos en un gráfico tan chico.
+- Archivos modificados:
+  - `components/finanzas/TesoreriaCard.tsx`
+  - `docs/PROGRESS.md`
+- Corrección aplicada:
+  - el grid de cajas pasó a `grid-cols-[repeat(auto-fit,minmax(min(100%,36rem),1fr))]`, forzando una sola columna antes de que las cards lleguen a un ancho visualmente roto;
+  - se agregó `min-w-0` al card y a las grillas internas de métricas;
+  - los montos ahora usan un contenedor derecho flexible con `leading-tight` y `[overflow-wrap:anywhere]`, evitando recortes literales del string;
+  - el sparkline quedó con margen izquierdo `0`, `YAxis hide`, y un `XAxis` más compacto (`minTickGap={18}`, `interval="preserveStartEnd"`), eliminando la superposición de labels.
+- Verificación visual real:
+  - se reprodujo el escenario en un preview local con dos anchos equivalentes al área de contenido con sidebar colapsado y expandido, sobre viewport estándar de laptop;
+  - en el ancho “colapsado” las cajas siguen en dos columnas y los montos ya no se cortan;
+  - en el ancho “expandido” las cajas se apilan en una sola columna antes de romperse, y los montos completos (`USD` incluido) siguen visibles;
+  - el sparkline ya no muestra ticks numéricos superpuestos en ninguno de los dos anchos verificados.
+- Decisión técnica:
+  - para este sparkline de card se priorizó claridad compacta sobre detalle analítico: el eje Y queda oculto y el gráfico funciona como resumen visual, no como chart principal.
+
+## Actualización 2026-07-21
+
 - Se ajustó la UI de Finanzas → Tesorería en cuatro frentes: limpieza del modal de caja, filtros avanzados, sparkline por caja y responsive real con sidebar expandido.
 - Archivos modificados:
   - `components/finanzas/CajaDetalleModal.tsx`
