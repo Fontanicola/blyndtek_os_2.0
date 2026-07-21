@@ -89,6 +89,18 @@ type ContentGenerationCostRow = {
   created_at: string;
 };
 
+type CierreMensualRow = {
+  id: string;
+  mes: string;
+  ingresos_totales_usd: number | null;
+  egresos_totales_usd: number | null;
+  margen_usd: number | null;
+  desvio_pct_vs_anterior: number | null;
+  resumen_texto: string | null;
+  costo_generacion_usd: number | null;
+  generado_at: string;
+};
+
 function monthKey(date = new Date()) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
 }
@@ -254,6 +266,20 @@ function buildAgenteFeedFromContentGenerations(rows: GeneracionAutomaticaRow[]):
   });
 }
 
+function buildAgenteFeedFromClosures(rows: CierreMensualRow[]): AgentesHubFeedItem[] {
+  return rows.map((row) => ({
+    id: `cierre-mensual-${row.id}`,
+    agente: "Cierre de Caja Mensual",
+    agente_slug: "cierre-mensual",
+    tipo: "generador" as const,
+    resumen: `Cierre generado para ${formatHistoricalMonthLabel(row.mes.slice(0, 7))} · margen ${row.margen_usd == null ? "sin datos" : `$${Number(row.margen_usd).toLocaleString("en-US")} USD`}`,
+    fecha: row.generado_at,
+    costo_usd: row.costo_generacion_usd ?? null,
+    pr_url: null,
+    items_generados: null
+  }));
+}
+
 export async function fetchAgentesFeed(supabase: SupabaseClient<AgentesDatabase>, limit = 30) {
   const fetchLimit = Math.max(10, Math.min(limit * 3, 500));
 
@@ -261,7 +287,8 @@ export async function fetchAgentesFeed(supabase: SupabaseClient<AgentesDatabase>
     { data: analysesData, error: analysesError },
     { data: checklistData, error: checklistError },
     { data: aiDevData, error: aiDevError },
-    { data: contentGenerationsData, error: contentGenerationsError }
+    { data: contentGenerationsData, error: contentGenerationsError },
+    { data: closuresData, error: closuresError }
   ] =
     await Promise.all([
       supabase
@@ -329,10 +356,27 @@ export async function fetchAgentesFeed(supabase: SupabaseClient<AgentesDatabase>
           `
         )
         .order("iniciado_at", { ascending: false })
+        .limit(fetchLimit),
+      supabase
+        .from("cierres_mensuales")
+        .select(
+          `
+            id,
+            mes,
+            ingresos_totales_usd,
+            egresos_totales_usd,
+            margen_usd,
+            desvio_pct_vs_anterior,
+            resumen_texto,
+            costo_generacion_usd,
+            generado_at
+          `
+        )
+        .order("generado_at", { ascending: false })
         .limit(fetchLimit)
     ]);
 
-  const errors = [analysesError, checklistError, aiDevError, contentGenerationsError].filter(Boolean);
+  const errors = [analysesError, checklistError, aiDevError, contentGenerationsError, closuresError].filter(Boolean);
   if (errors.length > 0) {
     throw new Error(errors[0]?.message ?? "No se pudo cargar la actividad de los agentes.");
   }
@@ -341,8 +385,9 @@ export async function fetchAgentesFeed(supabase: SupabaseClient<AgentesDatabase>
   const checklists = buildAgenteFeedFromChecklist((checklistData ?? []) as ChecklistQaRow[]);
   const aiDev = buildAgenteFeedFromAiDev((aiDevData ?? []) as AiDevExecutionRow[]);
   const contentGenerations = buildAgenteFeedFromContentGenerations((contentGenerationsData ?? []) as GeneracionAutomaticaRow[]);
+  const closures = buildAgenteFeedFromClosures((closuresData ?? []) as CierreMensualRow[]);
 
-  return [...analyses, ...checklists, ...aiDev, ...contentGenerations]
+  return [...analyses, ...checklists, ...aiDev, ...contentGenerations, ...closures]
     .sort((left, right) => new Date(right.fecha).getTime() - new Date(left.fecha).getTime())
     .slice(0, limit);
 }
@@ -358,7 +403,8 @@ export async function fetchAgentesCostoTotal(
   const [
     { data: analysesData, error: analysesError },
     { data: aiDevData, error: aiDevError },
-    { data: contentData, error: contentError }
+    { data: contentData, error: contentError },
+    { data: closuresData, error: closuresError }
   ] = await Promise.all([
     supabase
       .from("agente_analisis")
@@ -390,10 +436,19 @@ export async function fetchAgentesCostoTotal(
           created_at
         `
       )
-      .gte("created_at", periodStartIso)
+      .gte("created_at", periodStartIso),
+    supabase
+      .from("cierres_mensuales")
+      .select(
+        `
+          costo_generacion_usd,
+          generado_at
+        `
+      )
+      .gte("generado_at", periodStartIso)
   ]);
 
-  const errors = [analysesError, aiDevError, contentError].filter(Boolean);
+  const errors = [analysesError, aiDevError, contentError, closuresError].filter(Boolean);
   if (errors.length > 0) {
     throw new Error(errors[0]?.message ?? "No se pudo calcular el costo de IA.");
   }
@@ -426,6 +481,15 @@ export async function fetchAgentesCostoTotal(
     }
 
     breakdown.set("Generador de Contenido", (breakdown.get("Generador de Contenido") ?? 0) + costo);
+  }
+
+  for (const row of (closuresData ?? []) as Array<{ costo_generacion_usd: number | null }>) {
+    const costo = Number(row.costo_generacion_usd ?? 0);
+    if (costo <= 0) {
+      continue;
+    }
+
+    breakdown.set("Cierre de Caja Mensual", (breakdown.get("Cierre de Caja Mensual") ?? 0) + costo);
   }
 
   const desglose = Array.from(breakdown.entries()).map(([agente, costo_usd]) => ({
@@ -461,7 +525,7 @@ export async function fetchAgentesCostoHistorico(
   const periodStart = new Date(parseMonthKey(monthKeys[0] ?? monthKey(referenceDate)).getTime());
   const periodStartIso = periodStart.toISOString();
 
-  const [analysesResult, aiDevResult, contentResult] = await Promise.all([
+  const [analysesResult, aiDevResult, contentResult, closuresResult] = await Promise.all([
     supabase
       .from("agente_analisis")
       .select(
@@ -494,10 +558,19 @@ export async function fetchAgentesCostoHistorico(
           created_at
         `
       )
-      .gte("created_at", periodStartIso)
+      .gte("created_at", periodStartIso),
+    supabase
+      .from("cierres_mensuales")
+      .select(
+        `
+          costo_generacion_usd,
+          generado_at
+        `
+      )
+      .gte("generado_at", periodStartIso)
   ]);
 
-  const errors = [analysesResult.error, aiDevResult.error, contentResult.error].filter(Boolean);
+  const errors = [analysesResult.error, aiDevResult.error, contentResult.error, closuresResult.error].filter(Boolean);
   if (errors.length > 0) {
     throw new Error(errors[0]?.message ?? "No se pudo cargar el histórico de costos.");
   }
@@ -512,6 +585,14 @@ export async function fetchAgentesCostoHistorico(
       iniciado_at: undefined,
       agente_slug: "generador-contenido",
       agente_nombre: "Generador de Contenido"
+    }) satisfies HistoricalCostRow),
+    ...((closuresResult.data ?? []) as Array<{ costo_generacion_usd: number | null; generado_at: string }>).map((row) => ({
+      costo_estimado_usd: null,
+      costo_generacion_usd: row.costo_generacion_usd,
+      created_at: row.generado_at,
+      iniciado_at: undefined,
+      agente_slug: "cierre-mensual",
+      agente_nombre: "Cierre de Caja Mensual"
     }) satisfies HistoricalCostRow)
   ];
 

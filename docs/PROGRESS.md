@@ -2079,3 +2079,82 @@ $ find . -maxdepth 3 \( -name 'middleware.*' -o -name 'proxy.*' \) -not -path '.
 - El resumen de Contrato en la ficha del cliente muestra `Diagnóstico descontado` para que el saldo final quede trazable.
 - El pipeline ponderado usa pesos progresivos: `diagnostico_ofrecido=0.6` y `diagnostico_pagado=0.68`, entre `calificado=0.5` y `cotizacion=0.75`.
 - Verificación local ejecutada: `npm run lint` OK y `npm run build` OK.
+
+## 2026-07-21 — Egresos recurrentes como plantilla + instancias mensuales
+
+- Antes de tocar código se contrastó `docs/DATABASE.md` contra el esquema real expuesto por Supabase para `egresos`: el modelo vigente seguía usando `recurrente` boolean en la instancia real y ya tenía `recurrente_config_id` disponible para vincularla con `egresos_recurrentes_config`.
+- Se consultó el volumen real antes de migrar: había **14 egresos con `recurrente=true`**, todos todavía sin `recurrente_config_id`.
+- Se creó `lib/finanzas/egresosRecurrentes.ts` como capa compartida para: resolver mes objetivo, crear/actualizar plantillas recurrentes, generar instancias mensuales sin duplicar y armar el historial de pagos por mes.
+- Se extendieron `types/egresos.ts` y `types/supabase.ts` para reflejar `egresos.recurrente_config_id` y la tabla `egresos_recurrentes_config`.
+- Se agregaron `GET /api/egresos/recurrentes-config`, `POST /api/egresos/generar-recurrentes-mes` y `PATCH /api/egresos/recurrentes-config/[id]/historial`.
+- `POST /api/egresos` ahora crea automáticamente la plantilla si el egreso nace como recurrente; `PATCH /api/egresos/[id]` sincroniza la plantilla al editar y desactiva la recurrencia futura si se destilda el checkbox.
+- `calcularEgresosPeriodo()` dejó de “arrastrar” recurrentes por booleano: ahora cuenta únicamente instancias reales dentro del período, que era la condición necesaria para pasar del modelo viejo al nuevo.
+- La tab `Egresos` de Finanzas se reestructuró a vista navegable por mes, con flechas, KPIs (`Pagado`, `Pendiente`, `Desvío vs. mes anterior`) y dos secciones separadas: `Recurrentes` y `No recurrentes`.
+- `EgresosTabla` ahora muestra íconos lucide por categoría (`Globe`, `Server`, `Wrench`, `Megaphone`, `Landmark`, `Users`, `Wallet`, `MoreHorizontal`).
+- `EgresoModal` suma `Historial de pagos` para egresos vinculados a plantilla, mostrando los últimos 12 meses como checkboxes independientes.
+- Se ejecutó la migración real en Supabase: **14 egresos recurrentes existentes quedaron vinculados a 14 plantillas**, sin duplicar registros históricos.
+- Se registró la automatización mensual `Instancias mensuales de egresos recurrentes` en la tabla `automatizaciones`, asociada al agente existente `cierre-mensual`, y se dejó documentado el cron en `supabase/migrations/011_egresos_recurrentes_cron.sql`.
+- Verificación funcional real por HTTP:
+  - `POST /api/egresos/generar-recurrentes-mes` para `2026-09` devolvió `configs=14`, `generados=14`.
+  - Repetir el mismo POST devolvió `generados=0`, `existentes=14`, confirmando que no duplica.
+  - `PATCH /api/egresos/recurrentes-config/[id]/historial` permitió crear/agrupar el mes `2026-08` de una plantilla recurrente como `pagado=true` y luego volverlo a `pagado=false` sobre la misma instancia, sin afectar otros meses.
+- Verificación técnica final ejecutada: `npm run lint` OK y `npm run build` OK.
+## 2026-07-21 — Finanzas: Cobros pasa a Ingresos con vista mensual y caja explícita
+
+- Se renombró la tab visible de `Cobros` a `Ingresos` dentro de Finanzas, sin tocar rutas ni el nombre real de la tabla `cobros`.
+- `components/finanzas/FinanzasClient.tsx` ahora organiza la vista de ingresos por mes, con navegación `← →`, y muestra solo los ingresos cuyo mes de referencia cae en el período seleccionado:
+  - cuotas/hitos por `fecha_vencimiento`,
+  - cobros recurrentes de suscripciones ya generados como registros reales,
+  - ingresos sueltos cargados manualmente.
+- La fila de métricas de la tab quedó enfocada al mes seleccionado: `Cobrado este mes`, `Pendiente este mes` y `Vencido`.
+- `components/finanzas/CobroModal.tsx` pasó a modo de edición completa para cualquier ingreso: concepto, monto, tipo, estado, fecha de emisión, fecha de vencimiento, fecha de cobro, cliente opcional y caja.
+- Se habilitó la carga de ingresos genéricos no vinculados a cliente/lead/contrato/suscripción, usando `tipo='otro'`.
+- Se validó contra el esquema real de Supabase que `cobros` ya tiene `caja_id`; se incorporó a `types/cobros.ts`, `types/supabase.ts` y `app/api/cobros/route.ts`.
+- La verificación directa contra Supabase también mostró que en producción `cobros.cliente_id` seguía con `NOT NULL`, bloqueando los ingresos genéricos sin cliente; por eso se agregó la migración `supabase/migrations/012_ingresos_genericos_cobros.sql` para volverlo nullable y ampliar el check de `tipo` con `otro`.
+- Para no romper tesorería ni históricos, el guardado sincroniza `caja_id` con `cuenta_medio` (slug de la caja) cuando el usuario elige una caja.
+- `components/finanzas/CobrosTabla.tsx` pasó a mostrar la caja explícitamente y actualizó toda la terminología visible a `ingresos`.
+- Verificación ejecutada:
+  - `npm run lint` OK.
+  - `npm run build` OK.
+  - Inserción temporal contra Supabase intentada para validar un ingreso genérico real: falló por `null value in column "cliente_id" of relation "cobros" violates not-null constraint`, confirmando la causa exacta y justificando la migración agregada.
+
+## 2026-07-21 — Finanzas: nueva tab Presupuesto
+
+- Se creó `GET/PATCH /api/presupuestos/[mes]` como fuente única de verdad para planificación manual mensual.
+- Si un mes todavía no tiene presupuesto, el `GET` lo genera automáticamente con sugeridos incluidos por default:
+  - cuotas de contrato pendientes (`cobros.tipo='hito'`) que vencen ese mes,
+  - suscripciones activas,
+  - plantillas activas de `egresos_recurrentes_config`.
+- `caja_inicial_usd` parte del `caja_final_proyectada_usd` del presupuesto del mes anterior cuando existe; si no, cae al balance real de Tesorería.
+- Se agregó la tab `Presupuesto` en Finanzas con navegación por mes, KPIs de caja/ingresos/egresos, edición inline de monto, toggle incluido/excluido, alta de items manuales y gráfico resumen.
+- Se registraron `presupuestos_mensuales` y `presupuesto_items` en `types/supabase.ts` y en `docs/DATABASE.md`.
+- Verificación ejecutada:
+  - `npm run lint` OK.
+  - `npm run build` OK.
+
+## 2026-07-21 — Finanzas: cierre mensual automático de caja
+
+- Se creó `POST /api/cierres-mensuales/generar`, siguiendo el mismo patrón de Claude + trazabilidad de costo ya usado por el Asesor Financiero.
+- El endpoint calcula en código los números base del mes:
+  - ingresos = suma de `cobros.estado='cobrado'` del mes,
+  - egresos = suma de `egresos.pagado=true` del mes, usando `fecha_pago` si existe y `fecha` como fallback,
+  - margen = ingresos - egresos,
+  - desvío % vs. el mes anterior usando el cierre previo guardado o, si no existe, el cálculo directo del mes anterior.
+- Se agregó `components/finanzas/CierresMensualesPanel.tsx` a la tab `Resumen` de Finanzas para mostrar el cierre más reciente, sus 3 números clave, el texto de Claude y un historial navegable de cierres anteriores.
+- `lib/agentes/hub.ts` ahora incorpora `cierres_mensuales` en el feed unificado del AI Hub y en el consolidado de costo de IA por mes.
+- Se agregó la constante `AUTOMATIZACION_CIERRE_MENSUAL_ENDPOINT` y la migración `supabase/migrations/013_cierre_mensual_automatizacion.sql` para registrar la automatización mensual del agente `cierre-mensual`.
+- Verificación real ejecutada el **martes 21 de julio de 2026**:
+  - Se llamó localmente `POST /api/cierres-mensuales/generar` con autorización de cron.
+  - El cierre generado para **julio de 2026** devolvió:
+    - `ingresos_totales_usd = 6100`
+    - `egresos_totales_usd = 359.74`
+    - `margen_usd = 5740.26`
+    - `desvio_pct_vs_anterior = 856.71`
+  - Se confirmó por REST contra Supabase que la automatización quedó registrada y activa en `automatizaciones`:
+    - `endpoint_trigger = /api/cierres-mensuales/generar`
+    - `frecuencia = mensual`
+    - `dia_mes = 28`
+    - `hora = 18:00:00`
+    - `ultima_ejecucion = 2026-07-21T16:28:11.691+00:00`
+  - `npm run lint` OK.
+  - `npm run build` OK.

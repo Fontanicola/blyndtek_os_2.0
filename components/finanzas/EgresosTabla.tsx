@@ -2,7 +2,16 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Badge, Button, Card, EmptyState } from "@/components/ui";
-import { WalletIcon } from "@/components/ui/icons";
+import {
+  GlobeIcon,
+  LandmarkIcon,
+  MegaphoneIcon,
+  MoreHorizontalIcon,
+  ServerIcon,
+  UsersIcon,
+  WalletIcon,
+  WrenchIcon
+} from "@/components/ui/icons";
 import { formatCajaLabel } from "@/lib/cajas";
 import { formatFecha, formatUSD } from "@/lib/utils/formatters";
 import { fechaStringAFechaLocal } from "@/lib/utils/fechas";
@@ -16,21 +25,38 @@ type EgresosTablaProps = {
   onEdit?: (egreso: Egreso) => void;
   onDelete?: (egreso: Egreso) => Promise<void> | void;
   onTogglePagado?: (egreso: Egreso) => Promise<void> | void;
+  showRecurrenteColumn?: boolean;
+  emptyTitle?: string;
+  emptyDescription?: string;
 };
 
-const categorias: Array<{ value: CategoriaEgreso; label: string }> = [
-  { value: "dominios", label: "Dominios" },
-  { value: "hosting_infraestructura", label: "Hosting/Infraestructura" },
-  { value: "herramientas_software", label: "Herramientas/Software" },
-  { value: "marketing_ads", label: "Marketing/Ads" },
-  { value: "impuestos_contable", label: "Impuestos/Contable" },
-  { value: "sueldos_honorarios", label: "Sueldos/Honorarios" },
-  { value: "comisiones", label: "Comisiones" },
-  { value: "otro", label: "Otro" }
+const categorias: Array<{
+  value: CategoriaEgreso;
+  label: string;
+  Icon: typeof GlobeIcon;
+}> = [
+  { value: "dominios", label: "Dominios", Icon: GlobeIcon },
+  { value: "hosting_infraestructura", label: "Hosting/Infraestructura", Icon: ServerIcon },
+  { value: "herramientas_software", label: "Herramientas/Software", Icon: WrenchIcon },
+  { value: "marketing_ads", label: "Marketing/Ads", Icon: MegaphoneIcon },
+  { value: "impuestos_contable", label: "Impuestos/Contable", Icon: LandmarkIcon },
+  { value: "sueldos_honorarios", label: "Sueldos/Honorarios", Icon: UsersIcon },
+  { value: "comisiones", label: "Comisiones", Icon: WalletIcon },
+  { value: "otro", label: "Otro", Icon: MoreHorizontalIcon }
 ];
 
 function categoryLabel(value: CategoriaEgreso) {
   return categorias.find((item) => item.value === value)?.label ?? value;
+}
+
+function categoryMeta(value: CategoriaEgreso) {
+  return (
+    categorias.find((item) => item.value === value) ?? {
+      value: "otro",
+      label: "Otro",
+      Icon: MoreHorizontalIcon
+    }
+  );
 }
 
 function startOfToday() {
@@ -47,7 +73,16 @@ function isEgresoVencido(egreso: Egreso) {
   return !Number.isNaN(fecha.getTime()) && fecha < startOfToday();
 }
 
-export function EgresosTabla({ egresos, cajas = [], onEdit, onDelete, onTogglePagado }: EgresosTablaProps) {
+export function EgresosTabla({
+  egresos,
+  cajas = [],
+  onEdit,
+  onDelete,
+  onTogglePagado,
+  showRecurrenteColumn = true,
+  emptyTitle = "No hay egresos cargados todavía",
+  emptyDescription = "Los egresos operativos, recurrentes o puntuales van a aparecer en esta tabla."
+}: EgresosTablaProps) {
   const total = useMemo(() => egresos.reduce((sum, egreso) => sum + egreso.monto, 0), [egresos]);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const menuRootRef = useRef<HTMLDivElement | null>(null);
@@ -75,24 +110,31 @@ export function EgresosTabla({ egresos, cajas = [], onEdit, onDelete, onTogglePa
             <table className="min-w-full table-fixed divide-y divide-line-soft">
               <thead className="sticky top-0 z-10 bg-paper">
                 <tr className="text-left text-xs font-label uppercase tracking-[0.08em] text-graphite">
-                  <th className="w-[19%] px-4 py-3">Concepto</th>
-                  <th className="w-[16%] px-4 py-3">Categoría</th>
+                  <th className={cn("px-4 py-3", showRecurrenteColumn ? "w-[19%]" : "w-[21%]")}>Concepto</th>
+                  <th className="w-[18%] px-4 py-3">Categoría</th>
                   <th className="w-[12%] px-4 py-3">Estado</th>
                   <th className="w-[16%] px-4 py-3">Medio</th>
                   <th className="w-[11%] px-4 py-3">Monto</th>
-                  <th className="w-[12%] px-4 py-3">Fecha</th>
-                  <th className="w-[10%] px-4 py-3">Recurrente</th>
-                  <th className="w-[4%] px-2 py-3 text-right">
+                  <th className="w-[13%] px-4 py-3">Fecha</th>
+                  {showRecurrenteColumn ? <th className="w-[10%] px-4 py-3">Recurrente</th> : null}
+                  <th className={cn("px-2 py-3 text-right", showRecurrenteColumn ? "w-[4%]" : "w-[9%]")}>
                     <span className="sr-only">Acciones</span>
                   </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-line-soft bg-white">
-                {egresos.map((egreso) => (
+                {egresos.map((egreso) => {
+                  const categoria = categoryMeta(egreso.categoria);
+                  const CategoriaIcon = categoria.Icon;
+
+                  return (
                   <tr key={egreso.id} className={cn(isEgresoVencido(egreso) && "bg-danger-light")}>
                     <td className="px-4 py-3 text-sm font-label text-carbon">{egreso.concepto}</td>
                     <td className="px-4 py-3">
-                      <Badge variant="default">{categoryLabel(egreso.categoria)}</Badge>
+                      <div className="inline-flex items-center gap-2 text-sm text-carbon">
+                        <CategoriaIcon size={16} className="text-graphite" />
+                        <span>{categoryLabel(egreso.categoria)}</span>
+                      </div>
                     </td>
                     <td className="px-4 py-3">
                       {onTogglePagado ? (
@@ -113,7 +155,7 @@ export function EgresosTabla({ egresos, cajas = [], onEdit, onDelete, onTogglePa
                     </td>
                     <td className="px-4 py-3 text-sm font-label text-carbon">{formatUSD(egreso.monto)}</td>
                     <td className="px-4 py-3 text-sm text-graphite">{formatFecha(egreso.fecha)}</td>
-                    <td className="px-4 py-3 text-sm text-graphite">{egreso.recurrente ? "Sí" : "No"}</td>
+                    {showRecurrenteColumn ? <td className="px-4 py-3 text-sm text-graphite">{egreso.recurrente ? "Sí" : "No"}</td> : null}
                     <td className="px-2 py-3 text-right">
                       <div className="relative inline-flex justify-end" data-egreso-actions>
                         <Button
@@ -160,14 +202,15 @@ export function EgresosTabla({ egresos, cajas = [], onEdit, onDelete, onTogglePa
                       </div>
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
                 {egresos.length === 0 ? (
                   <tr>
-                    <td className="px-4 py-8 text-center text-sm text-graphite" colSpan={8}>
+                    <td className="px-4 py-8 text-center text-sm text-graphite" colSpan={showRecurrenteColumn ? 8 : 7}>
                       <EmptyState
                         icon={WalletIcon}
-                        titulo="No hay egresos cargados todavía"
-                        descripcion="Los egresos operativos, recurrentes o puntuales van a aparecer en esta tabla."
+                        titulo={emptyTitle}
+                        descripcion={emptyDescription}
                         className="mx-auto max-w-xl"
                       />
                     </td>

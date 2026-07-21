@@ -415,28 +415,34 @@ Protecciones activas: honeypot silencioso, CORS restringido a `MARKETING_SITE_UR
 
 **PK:** `id`
 
-**FKs:** `cliente_id` → `clientes.id`; `contrato_id` → `contratos.id`; `proyecto_id` → `proyectos.id`; `suscripcion_id` → `suscripciones.id`; `cotizacion_id` → `cotizaciones.id`
+**FKs:** `cliente_id` → `clientes.id`; `lead_id` → `leads.id`; `contrato_id` → `contratos.id`; `proyecto_id` → `proyectos.id`; `suscripcion_id` → `suscripciones.id`; `cotizacion_id` → `cotizaciones.id`; `caja_id` → `cajas.id`
 
 **RLS esperada:** acceso para `admin` sí; acceso para `miembro` no.
 
 | Campo | Tipo | Nullable | Notas |
 | --- | --- | --- | --- |
 | id | uuid | No | PK |
-| cliente_id | uuid | No especificado | FK → `clientes` |
+| cliente_id | uuid | Sí | FK → `clientes`; nullable para ingresos no vinculados o cobros de lead |
+| lead_id | uuid | Sí | FK → `leads`; usado por diagnósticos pagos antes de convertir a cliente |
 | contrato_id | uuid | Sí | FK → `contratos` (nullable) |
 | proyecto_id | uuid | Sí | FK → `proyectos` (nullable) |
 | suscripcion_id | uuid | Sí | FK → `suscripciones` (nullable) |
 | cotizacion_id | uuid | Sí | FK → `cotizaciones` (nullable) |
+| caja_id | uuid | Sí | FK → `cajas`; caja elegida explícitamente para tesorería |
 | concepto | text | No especificado |  |
-| tipo | enum (`one_pay|hito|mantenimiento|brick`) | No especificado |  |
+| tipo | enum (`one_pay|hito|mantenimiento|brick|diagnostico|otro`) | No especificado | `otro` habilita ingresos genéricos no vinculados |
 | monto | numeric (USD) | No especificado |  |
 | fecha_emision | date | No especificado |  |
 | fecha_vencimiento | date | No especificado |  |
 | fecha_cobro | date | No especificado | cuándo entró la plata |
-| cuenta_medio | text | No especificado | medio de cobro |
+| cuenta_medio | text | No especificado | slug histórico de caja; se mantiene por compatibilidad con tesorería y datos previos |
 | tolerancia_dias | int | No especificado | días extra para considerar vencido |
 | estado | enum (`pendiente|facturado|cobrado|vencido`) | No especificado |  |
 | created_at | timestamptz | No especificado |  |
+
+Notas de verificación:
+- OpenAPI real de Supabase consultado el 2026-07-21 confirmó que `cobros.caja_id` ya existe en la base productiva.
+- En esa misma verificación, `cobros.cliente_id` seguía con `NOT NULL` en producción; la migración `012_ingresos_genericos_cobros.sql` deja el esquema alineado con la app para permitir ingresos genéricos sin cliente vinculado.
 
 ## Tabla: cobros_historial_cambios
 
@@ -462,7 +468,7 @@ Protecciones activas: honeypot silencioso, CORS restringido a `MARKETING_SITE_UR
 
 **PK:** `id`
 
-**FKs:** ninguna
+**FKs:** `cliente_id` → `clientes.id`; `comision_id` → `comisiones.id`; `recurrente_config_id` → `egresos_recurrentes_config.id`
 
 **RLS esperada:** acceso para `admin` sí; acceso para `miembro` no.
 
@@ -477,9 +483,33 @@ Protecciones activas: honeypot silencioso, CORS restringido a `MARKETING_SITE_UR
 | cuenta_medio | text | No especificado | medio de pago |
 | pagado | bool | No especificado | si el egreso ya fue abonado |
 | fecha_pago | date | No especificado | fecha en que se pagó |
+| cliente_id | uuid | Sí | FK → `clientes` para imputación opcional por cliente |
 | proyecto_id | uuid | No especificado | imputación opcional a proyecto |
 | comision_id | uuid | Sí | FK → `comisiones` para egresos generados al pagar comisiones |
+| recurrente_config_id | uuid | Sí | FK → `egresos_recurrentes_config`; vincula la instancia mensual real con su plantilla |
 | notas | text | No especificado |  |
+| created_at | timestamptz | No especificado |  |
+
+## Tabla: egresos_recurrentes_config
+
+**PK:** `id`
+
+**FKs:** `cliente_id` → `clientes.id`; `proyecto_id` → `proyectos.id`; `caja_id` → `cajas.id`
+
+**RLS esperada:** acceso para `admin` sí; acceso para `miembro` no.
+
+| Campo | Tipo | Nullable | Notas |
+| --- | --- | --- | --- |
+| id | uuid | No | PK |
+| concepto | text | No | concepto base del egreso recurrente |
+| categoria | enum (`dominios|hosting_infraestructura|herramientas_software|marketing_ads|impuestos_contable|sueldos_honorarios|comisiones|otro`) | No | categoría base |
+| monto | numeric (USD) | No | monto mensual esperado |
+| cliente_id | uuid | Sí | FK → `clientes` |
+| proyecto_id | uuid | Sí | FK → `proyectos` |
+| caja_id | uuid | Sí | FK → `cajas`; caja sugerida para nuevas instancias |
+| dia_pago | int | No | día del mes (1-28) usado para generar la instancia |
+| activo | bool | No | si la plantilla sigue generando meses futuros |
+| fecha_inicio | date | No | primer mes desde el cual se puede generar la instancia |
 | created_at | timestamptz | No especificado |  |
 
 ## Tabla: contratos
@@ -545,6 +575,42 @@ Protecciones activas: honeypot silencioso, CORS restringido a `MARKETING_SITE_UR
 | id | uuid | No | PK |
 | caja_inicial | numeric | No especificado | editable, punto de partida del runway |
 | updated_at | timestamptz | No especificado |  |
+
+## Tabla: presupuestos_mensuales
+
+**PK:** `id`
+
+**FKs:** ninguna
+
+**RLS esperada:** acceso para `admin` sí; acceso para `miembro` no.
+
+| Campo | Tipo | Nullable | Notas |
+| --- | --- | --- | --- |
+| id | uuid | No | PK |
+| mes | date | No | mes presupuestado, persistido como primer día (`YYYY-MM-01`) |
+| caja_inicial_usd | numeric | Sí | caja de arranque del mes; si no existe presupuesto previo, parte del balance real de Tesorería |
+| caja_final_proyectada_usd | numeric | Sí | caja final recalculada = caja inicial + ingresos incluidos - egresos incluidos |
+| created_at | timestamptz | No especificado |  |
+
+## Tabla: presupuesto_items
+
+**PK:** `id`
+
+**FKs:** `presupuesto_id` → `presupuestos_mensuales.id`
+
+**RLS esperada:** acceso para `admin` sí; acceso para `miembro` no.
+
+| Campo | Tipo | Nullable | Notas |
+| --- | --- | --- | --- |
+| id | uuid | No | PK |
+| presupuesto_id | uuid | No | FK → `presupuestos_mensuales` |
+| tipo | text | No | `ingreso` o `egreso` |
+| origen | text | No | `cobro_existente`, `suscripcion`, `egreso_recurrente` o `manual` |
+| referencia_id | uuid | Sí | referencia opcional al registro origen |
+| concepto | text | No | texto editable del item |
+| monto | numeric | No | monto editable del item |
+| incluido | bool | No | define si entra o no en el cálculo del mes |
+| created_at | timestamptz | No especificado |  |
 
 ## Tabla: carpetas
 
@@ -865,6 +931,26 @@ Protecciones activas: honeypot silencioso, CORS restringido a `MARKETING_SITE_UR
 | ultima_ejecucion | timestamptz | Sí | última vez que el endpoint corrió o fue salteado por pausa |
 | created_at | timestamptz | No |  |
 
+## Tabla: cierres_mensuales
+
+**PK:** `id`
+
+**Uso:** historial de cierres automáticos de caja generados por el agente `cierre-mensual`, visibles en Finanzas y sumados al AI Hub como actividad/costo de IA.
+
+| Campo | Tipo | Nullable | Notas |
+| --- | --- | --- | --- |
+| id | uuid | No | PK |
+| mes | date | No | Mes que se cierra, normalizado al primer día (`YYYY-MM-01`) |
+| ingresos_totales_usd | numeric | Sí | Suma de cobros `cobrado` del mes |
+| egresos_totales_usd | numeric | Sí | Suma de egresos `pagado` del mes |
+| margen_usd | numeric | Sí | `ingresos - egresos` |
+| desvio_pct_vs_anterior | numeric | Sí | Variación porcentual del margen contra el mes previo |
+| resumen_texto | text | Sí | Síntesis de Claude con tono financiero cercano |
+| tokens_entrada | integer | Sí | Tokens de entrada consumidos por Claude |
+| tokens_salida | integer | Sí | Tokens de salida generados por Claude |
+| costo_generacion_usd | numeric | Sí | Costo estimado del resumen mensual |
+| generado_at | timestamptz | No | Momento de generación / última regeneración |
+
 ## Tabla: agente_analisis
 
 **PK:** `id`
@@ -924,10 +1010,16 @@ Protecciones activas: honeypot silencioso, CORS restringido a `MARKETING_SITE_UR
 - `suscripciones.plan_id` → `producto_planes.id`
 - `egresos.cliente_id` → `clientes.id`
 - `egresos.comision_id` → `comisiones.id`
+- `egresos.recurrente_config_id` → `egresos_recurrentes_config.id`
+- `egresos_recurrentes_config.cliente_id` → `clientes.id`
+- `egresos_recurrentes_config.proyecto_id` → `proyectos.id`
+- `egresos_recurrentes_config.caja_id` → `cajas.id`
+- `presupuesto_items.presupuesto_id` → `presupuestos_mensuales.id`
 - `wiki_categorias.creado_por` → `usuarios.id`
 - `wiki_articulos.categoria_id` → `wiki_categorias.id`
 - `wiki_articulos.creado_por` → `usuarios.id`
 - `agente_config.agente_id` → `agentes.id`
+- `automatizaciones.agente_id` → `agentes.id`
 - `agente_analisis.agente_id` → `agentes.id`
 - `agente_analisis.generado_por` → `usuarios.id`
 - `carpetas.carpeta_padre_id` → `carpetas.id`
@@ -956,17 +1048,22 @@ Orden sugerido respetando dependencias de FK:
 14. `contratos`
 15. `suscripciones`
 16. `cobros`
-17. `egresos`
-18. `config_finanzas`
-19. `cajas`
-20. `wiki_categorias`
-21. `wiki_articulos`
-22. `carpetas`
-23. `archivos`
-24. `tarjetas`
-25. `agentes`
-26. `agente_config`
-27. `agente_analisis`
+17. `cajas`
+18. `egresos_recurrentes_config`
+19. `egresos`
+20. `config_finanzas`
+21. `presupuestos_mensuales`
+22. `presupuesto_items`
+23. `wiki_categorias`
+24. `wiki_articulos`
+25. `carpetas`
+26. `archivos`
+27. `tarjetas`
+28. `agentes`
+29. `agente_config`
+30. `automatizaciones`
+31. `cierres_mensuales`
+32. `agente_analisis`
 
 Nota: `usuarios` debe existir antes que `leads`, `proyectos`, `features`, `tareas`, `eventos` y `eventos_invitados`. `contratos`, `suscripciones` y `cobros` se apoyan en `clientes` y deben poder crearse con FKs nullable o deferrable según el orden de carga.
 
@@ -975,6 +1072,7 @@ Nota: `usuarios` debe existir antes que `leads`, `proyectos`, `features`, `tarea
 - `proyectos.github_repo` texto nullable con formato `owner/repo`.
 - `fases_proyecto.ai_dev_estado` texto enumerado para el estado de AI Dev.
 - `fases_proyecto.ai_dev_iniciado_at` timestamptz nullable.
+- `egresos.recurrente_config_id` uuid nullable para vincular la instancia mensual real con su plantilla recurrente.
 - `fases_proyecto.ai_dev_error` texto nullable.
 - `fases_proyecto.pr_url` texto nullable.
 - `fases_proyecto.pr_numero` integer nullable.
@@ -999,6 +1097,7 @@ Nota: `usuarios` debe existir antes que `leads`, `proyectos`, `features`, `tarea
 - `suscripciones.contrato_id` uuid nullable para vincular la suscripción de mantenimiento al contrato que la originó o la reemplazó.
 - `comisiones` no tiene `proyecto_id`; cualquier referencia de proyecto para reporting debe resolverse vía `cliente_id` / `cotizacion_id` y joins a `proyectos` según contexto.
 - `agentes`, `agente_config` y `agente_analisis` soportan el módulo de Agentes; `agente_analisis` guarda tanto la base determinística como la síntesis en lenguaje natural.
+- `cierres_mensuales` guarda el resumen financiero mensual generado por el agente `cierre-mensual`, con base numérica real y texto sintetizado por Claude.
 - `preguntas_diagnostico` guarda las preguntas activas del formulario público de diagnóstico, agrupadas por categoría y orden.
 - `diagnosticos` guarda un diagnóstico por lead con `token_publico`, respuestas JSON, estado, quién lo completó, informe generado, módulos sugeridos y precios calculados para la propuesta.
 - `modulos_catalogo` guarda el catálogo editable de módulos con precios ideal/mínimo e incremento mensual para usar en propuestas.
@@ -1009,6 +1108,7 @@ Nota: `usuarios` debe existir antes que `leads`, `proyectos`, `features`, `tarea
 - `preguntas_diagnostico`: banco de preguntas del diagnóstico comercial, filtrable por `activa=true`.
 - `diagnosticos`: instancia de diagnóstico vinculada a `leads.id`, con `token_publico` para formulario e informe sin login, `respuestas` en `jsonb`, `informe_hallazgos`, `modulos_sugeridos`, precios ideal/mínimo de desarrollo y mensual, y estado `pendiente`/`respondido`/`informe_generado`.
 - `modulos_catalogo`: catálogo admin de módulos comerciales con categoría, descripción, precio ideal, precio mínimo, incremento mensual y estado activo.
+- `cierres_mensuales`: histórico de cierres de caja mensuales con ingresos, egresos, margen, desvío versus el mes anterior, resumen generado y costo de IA.
 
 ### Diagnóstico pago
 

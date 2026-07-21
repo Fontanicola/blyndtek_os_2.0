@@ -1,4 +1,4 @@
-export type TipoCobro = "one_pay" | "hito" | "mantenimiento" | "brick" | "diagnostico";
+export type TipoCobro = "one_pay" | "hito" | "mantenimiento" | "brick" | "diagnostico" | "otro";
 export type EstadoCobro = "pendiente" | "facturado" | "cobrado" | "vencido";
 export type CuentaMedio = string;
 
@@ -26,6 +26,7 @@ export type Cobro = {
   proyecto_id: string | null;
   suscripcion_id: string | null;
   cotizacion_id: string | null;
+  caja_id: string | null;
   concepto: string;
   tipo: TipoCobro;
   monto: number;
@@ -46,6 +47,7 @@ export type CreateCobroInput = {
   proyecto_id?: string | null;
   suscripcion_id?: string | null;
   cotizacion_id?: string | null;
+  caja_id?: string | null;
   concepto: string;
   tipo: TipoCobro;
   monto: number;

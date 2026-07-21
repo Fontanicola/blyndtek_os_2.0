@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import { Button, EntitySelect, Input, Modal } from "@/components/ui";
 import { getProyectoDisplayLabel } from "@/lib/proyectos/labels";
 import { fechaInputAString, hoyLocalString } from "@/lib/utils/fechas";
-import type { CategoriaEgreso, CreateEgresoInput, Egreso } from "@/types/egresos";
+import { formatMonthLabel } from "@/lib/finanzas";
+import type { CategoriaEgreso, CreateEgresoInput, Egreso, EgresoRecurrenteHistorialItem } from "@/types/egresos";
 import type { Proyecto } from "@/types/proyectos";
 import type { Caja } from "@/types/cajas";
 
@@ -17,6 +18,8 @@ type EgresoModalProps = {
   proyectos: Array<Pick<Proyecto, "id" | "nombre" | "estado" | "cliente_id"> & { clienteNombre?: string | null }>;
   cajas: Caja[];
   saving?: boolean;
+  historialPagos?: EgresoRecurrenteHistorialItem[];
+  onToggleHistorialPago?: (month: string, pagado: boolean) => Promise<void> | void;
 };
 
 const categorias: Array<{ value: CategoriaEgreso; label: string }> = [
@@ -45,7 +48,18 @@ function getInitialState(egreso: Egreso | null | undefined, defaults: Partial<Cr
   };
 }
 
-export function EgresoModal({ isOpen, onClose, onSave, egreso, defaults, proyectos, cajas, saving }: EgresoModalProps) {
+export function EgresoModal({
+  isOpen,
+  onClose,
+  onSave,
+  egreso,
+  defaults,
+  proyectos,
+  cajas,
+  saving,
+  historialPagos = [],
+  onToggleHistorialPago
+}: EgresoModalProps) {
   const initialState = getInitialState(egreso, defaults, cajas);
   const [concepto, setConcepto] = useState(initialState.concepto);
   const [categoria, setCategoria] = useState<CategoriaEgreso>(initialState.categoria);
@@ -159,6 +173,30 @@ export function EgresoModal({ isOpen, onClose, onSave, egreso, defaults, proyect
             className="min-h-[110px] w-full rounded-component border border-line bg-white px-3 py-2 text-sm text-carbon focus:border-signal focus:outline-none focus:ring-2 focus:ring-signal/20"
           />
         </div>
+        {egreso?.recurrente_config_id && historialPagos.length > 0 ? (
+          <div className="space-y-3 rounded-card border border-line-soft p-4">
+            <div className="space-y-1">
+              <h3 className="text-sm font-label text-carbon">Historial de pagos</h3>
+              <p className="text-sm text-graphite">Marcá o desmarcá cada mes sin afectar el resto de la plantilla recurrente.</p>
+            </div>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {historialPagos.map((item) => (
+                <label
+                  key={item.month}
+                  className="flex items-center justify-between rounded-component border border-line-soft px-3 py-2 text-sm text-carbon"
+                >
+                  <span>{item.label || formatMonthLabel(new Date(`${item.month}-01T00:00:00`))}</span>
+                  <input
+                    type="checkbox"
+                    checked={item.pagado}
+                    onChange={(event) => void onToggleHistorialPago?.(item.month, event.target.checked)}
+                    className="h-4 w-4 rounded border-line text-signal focus:ring-signal/20"
+                  />
+                </label>
+              ))}
+            </div>
+          </div>
+        ) : null}
         <div className="flex justify-end gap-2">
           <Button variant="ghost" onClick={onClose}>
             Cancelar

@@ -629,3 +629,16 @@
 - Si el lead tiene vendedor asignado, registrar `diagnostico_pagado` crea una comisión pendiente `tipo='diagnostico'` usando `config_comisiones.comision_diagnostico_usd`.
 - Si ese lead luego se convierte en cliente, `crearOActualizarContrato` descuenta automáticamente la suma de cobros `tipo='diagnostico'` ya cobrados del saldo que genera adelanto/cuotas, y guarda la trazabilidad en `contratos.descuento_diagnostico_usd`.
 - Este circuito reemplaza al viejo Cotizador como mecanismo real de calificación y pricing: diagnóstico, propuesta por catálogo, cobro, comisión y contrato quedan unidos por lead/cliente sin duplicar fuentes de verdad.
+
+## 2026-07-21 — Presupuesto mensual manual en Finanzas
+
+- `Presupuesto` y `Runway Lab` resuelven problemas distintos: Presupuesto es planificación curada a mano, mes por mes, con items concretos editables; Runway Lab sigue siendo simulación de escenarios con hipótesis sobre la proyección automática.
+- Cada presupuesto mensual nace con sugeridos reales del sistema: cuotas pendientes de contratos, suscripciones activas y plantillas de egresos recurrentes; desde ahí el admin decide qué incluir, qué excluir y qué ajustar manualmente.
+- La caja inicial de un presupuesto toma como fuente única el cierre del presupuesto anterior si existe; si todavía no hay cadena de presupuestos, arranca desde la caja real calculada por Tesorería.
+
+## 2026-07-21 — Cierre mensual de caja como agente generador
+
+- El cierre mensual sigue el mismo patrón del Asesor Financiero: primero se calculan números determinísticos reales en código y recién después Claude redacta una síntesis breve en lenguaje natural.
+- Los campos `ingresos_totales_usd`, `egresos_totales_usd`, `margen_usd` y `desvio_pct_vs_anterior` se calculan exclusivamente a partir de cobros `cobrado` y egresos `pagado`; la IA no inventa ni recalcula cifras.
+- El agente `cierre-mensual` queda integrado como un generador más del AI Hub: su actividad entra en el feed unificado y su costo suma al consolidado mensual de IA.
+- Su automatización vive como fila en `automatizaciones` con `endpoint_trigger='/api/cierres-mensuales/generar'`; el criterio operativo inicial es correrlo el día 28 a las 18:00 para capturar los últimos días hábiles del mes sin esperar al cierre administrativo final.

@@ -18,7 +18,7 @@ function parseEstado(searchParams: URLSearchParams): EstadoCobro | null {
 
 function parseTipo(searchParams: URLSearchParams): TipoCobro | null {
   const tipo = searchParams.get("tipo");
-  if (tipo === "one_pay" || tipo === "hito" || tipo === "mantenimiento" || tipo === "brick" || tipo === "diagnostico") {
+  if (tipo === "one_pay" || tipo === "hito" || tipo === "mantenimiento" || tipo === "brick" || tipo === "diagnostico" || tipo === "otro") {
     return tipo;
   }
   return null;
@@ -127,12 +127,6 @@ export async function POST(request: NextRequest) {
     const body = (await request.json()) as CreateCobroInput;
 
     const clienteId = body.cliente_id?.trim() || null;
-    const leadId = body.lead_id?.trim() || null;
-
-    if (!clienteId && !leadId) {
-      return NextResponse.json({ error: "cliente_id or lead_id is required" }, { status: 400 });
-    }
-
     if (!body.concepto?.trim()) {
       return NextResponse.json({ error: "concepto is required" }, { status: 400 });
     }
@@ -150,18 +144,18 @@ export async function POST(request: NextRequest) {
     }
 
     const supabase = createAdminClient();
-    const payload: CreateCobroInput = {
+    const payload = {
       ...body,
       cliente_id: clienteId,
-      lead_id: leadId,
       concepto: body.concepto.trim(),
       estado: body.estado ?? "pendiente",
-      cuenta_medio: body.cuenta_medio ?? null,
       tolerancia_dias: body.tolerancia_dias ?? 0,
       proyecto_id: body.proyecto_id ?? null,
       suscripcion_id: body.suscripcion_id ?? null,
       cotizacion_id: body.cotizacion_id ?? null,
-      fecha_cobro: body.fecha_cobro ?? null
+      fecha_cobro: body.fecha_cobro ?? null,
+      cuenta_medio: body.cuenta_medio ?? null,
+      caja_id: body.caja_id ?? null
     };
 
     const { data, error } = await supabase.from("cobros").insert(payload).select("*").single();

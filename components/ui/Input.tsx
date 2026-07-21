@@ -13,6 +13,9 @@ type InputProps = {
   inputMode?: InputHTMLAttributes<HTMLInputElement>["inputMode"];
   maxLength?: number;
   minLength?: number;
+  min?: InputHTMLAttributes<HTMLInputElement>["min"];
+  max?: InputHTMLAttributes<HTMLInputElement>["max"];
+  step?: InputHTMLAttributes<HTMLInputElement>["step"];
   pattern?: string;
   autoComplete?: string;
   error?: string;
@@ -41,6 +44,9 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
     inputMode,
     maxLength,
     minLength,
+    min,
+    max,
+    step,
     pattern,
     autoComplete,
     error,
@@ -89,6 +95,9 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
           inputMode={inputMode}
           maxLength={maxLength}
           minLength={minLength}
+          min={min}
+          max={max}
+          step={step}
           pattern={pattern}
           autoComplete={autoComplete}
           disabled={disabled}

@@ -14,3 +14,6 @@ export { TarjetasSeccion } from "./TarjetasSeccion";
 export { SuscripcionModal } from "./SuscripcionModal";
 export { SuscripcionesLista } from "./SuscripcionesLista";
 export { AsesorFinancieroTab } from "./AsesorFinancieroTab";
+export { PresupuestoChart } from "./PresupuestoChart";
+export { PresupuestoTab } from "./PresupuestoTab";
+export { CierresMensualesPanel } from "./CierresMensualesPanel";

@@ -123,10 +123,13 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     const currentCobro = existingCobro as Pick<Cobro, "id" | "monto" | "fecha_vencimiento" | "fecha_cobro">;
     const nextMonto = updatableBody.monto ?? currentCobro.monto;
     const nextFechaVencimiento = updatableBody.fecha_vencimiento ?? currentCobro.fecha_vencimiento;
-    const nextFechaCobro =
-      updatableBody.estado === "cobrado"
-        ? updatableBody.fecha_cobro ?? currentCobro.fecha_cobro ?? hoyLocalString()
-        : updatableBody.fecha_cobro ?? currentCobro.fecha_cobro;
+    let nextFechaCobro = updatableBody.fecha_cobro ?? currentCobro.fecha_cobro;
+
+    if (updatableBody.estado === "cobrado") {
+      nextFechaCobro = updatableBody.fecha_cobro ?? currentCobro.fecha_cobro ?? hoyLocalString();
+    } else if (updatableBody.estado) {
+      nextFechaCobro = updatableBody.fecha_cobro ?? null;
+    }
 
     const nextPayload: Omit<UpdateCobroInput, "nota_historial"> = {
       ...updatableBody,

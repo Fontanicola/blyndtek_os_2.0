@@ -239,8 +239,9 @@ export type Database = {
           proyecto_id: string | null;
           suscripcion_id: string | null;
           cotizacion_id: string | null;
+          caja_id: string | null;
           concepto: string;
-          tipo: "one_pay" | "hito" | "mantenimiento" | "brick" | "diagnostico";
+          tipo: "one_pay" | "hito" | "mantenimiento" | "brick" | "diagnostico" | "otro";
           monto: number;
           fecha_emision: string;
           fecha_vencimiento: string;
@@ -258,8 +259,9 @@ export type Database = {
           proyecto_id?: string | null;
           suscripcion_id?: string | null;
           cotizacion_id?: string | null;
+          caja_id?: string | null;
           concepto: string;
-          tipo: "one_pay" | "hito" | "mantenimiento" | "brick" | "diagnostico";
+          tipo: "one_pay" | "hito" | "mantenimiento" | "brick" | "diagnostico" | "otro";
           monto: number;
           fecha_emision: string;
           fecha_vencimiento: string;
@@ -277,8 +279,9 @@ export type Database = {
           proyecto_id?: string | null;
           suscripcion_id?: string | null;
           cotizacion_id?: string | null;
+          caja_id?: string | null;
           concepto?: string;
-          tipo?: "one_pay" | "hito" | "mantenimiento" | "brick" | "diagnostico";
+          tipo?: "one_pay" | "hito" | "mantenimiento" | "brick" | "diagnostico" | "otro";
           monto?: number;
           fecha_emision?: string;
           fecha_vencimiento?: string;
@@ -294,6 +297,13 @@ export type Database = {
             columns: ["cliente_id"];
             isOneToOne: false;
             referencedRelation: "clientes";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "cobros_caja_id_fkey";
+            columns: ["caja_id"];
+            isOneToOne: false;
+            referencedRelation: "cajas";
             referencedColumns: ["id"];
           },
           {
@@ -383,6 +393,48 @@ export type Database = {
             referencedColumns: ["id"];
           }
         ];
+      };
+      cierres_mensuales: {
+        Row: {
+          id: string;
+          mes: string;
+          ingresos_totales_usd: number | null;
+          egresos_totales_usd: number | null;
+          margen_usd: number | null;
+          desvio_pct_vs_anterior: number | null;
+          resumen_texto: string | null;
+          tokens_entrada: number | null;
+          tokens_salida: number | null;
+          costo_generacion_usd: number | null;
+          generado_at: string;
+        };
+        Insert: {
+          id?: string;
+          mes: string;
+          ingresos_totales_usd?: number | null;
+          egresos_totales_usd?: number | null;
+          margen_usd?: number | null;
+          desvio_pct_vs_anterior?: number | null;
+          resumen_texto?: string | null;
+          tokens_entrada?: number | null;
+          tokens_salida?: number | null;
+          costo_generacion_usd?: number | null;
+          generado_at?: string;
+        };
+        Update: {
+          id?: string;
+          mes?: string;
+          ingresos_totales_usd?: number | null;
+          egresos_totales_usd?: number | null;
+          margen_usd?: number | null;
+          desvio_pct_vs_anterior?: number | null;
+          resumen_texto?: string | null;
+          tokens_entrada?: number | null;
+          tokens_salida?: number | null;
+          costo_generacion_usd?: number | null;
+          generado_at?: string;
+        };
+        Relationships: [];
       };
       features: {
         Row: {
@@ -827,6 +879,74 @@ export type Database = {
         };
         Relationships: [];
       };
+      presupuesto_items: {
+        Row: {
+          id: string;
+          presupuesto_id: string;
+          tipo: string;
+          origen: string;
+          referencia_id: string | null;
+          concepto: string;
+          monto: number;
+          incluido: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          presupuesto_id: string;
+          tipo: string;
+          origen: string;
+          referencia_id?: string | null;
+          concepto: string;
+          monto: number;
+          incluido?: boolean;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          presupuesto_id?: string;
+          tipo?: string;
+          origen?: string;
+          referencia_id?: string | null;
+          concepto?: string;
+          monto?: number;
+          incluido?: boolean;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "presupuesto_items_presupuesto_id_fkey";
+            columns: ["presupuesto_id"];
+            isOneToOne: false;
+            referencedRelation: "presupuestos_mensuales";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      presupuestos_mensuales: {
+        Row: {
+          id: string;
+          mes: string;
+          caja_inicial_usd: number | null;
+          caja_final_proyectada_usd: number | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          mes: string;
+          caja_inicial_usd?: number | null;
+          caja_final_proyectada_usd?: number | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          mes?: string;
+          caja_inicial_usd?: number | null;
+          caja_final_proyectada_usd?: number | null;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
       archivos: {
         Row: {
           id: string;
@@ -973,6 +1093,7 @@ export type Database = {
           cliente_id: string | null;
           proyecto_id: string | null;
           comision_id: string | null;
+          recurrente_config_id: string | null;
           notas: string | null;
           created_at: string;
         };
@@ -997,6 +1118,7 @@ export type Database = {
           cliente_id?: string | null;
           proyecto_id?: string | null;
           comision_id?: string | null;
+          recurrente_config_id?: string | null;
           notas?: string | null;
           created_at?: string;
         };
@@ -1021,6 +1143,7 @@ export type Database = {
           cliente_id?: string | null;
           proyecto_id?: string | null;
           comision_id?: string | null;
+          recurrente_config_id?: string | null;
           notas?: string | null;
           created_at?: string;
         };
@@ -1030,6 +1153,101 @@ export type Database = {
             columns: ["cliente_id"];
             isOneToOne: false;
             referencedRelation: "clientes";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "egresos_recurrente_config_id_fkey";
+            columns: ["recurrente_config_id"];
+            isOneToOne: false;
+            referencedRelation: "egresos_recurrentes_config";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      egresos_recurrentes_config: {
+        Row: {
+          id: string;
+          concepto: string;
+          categoria:
+            | "dominios"
+            | "hosting_infraestructura"
+            | "herramientas_software"
+            | "marketing_ads"
+            | "impuestos_contable"
+            | "sueldos_honorarios"
+            | "comisiones"
+            | "otro";
+          monto: number;
+          cliente_id: string | null;
+          proyecto_id: string | null;
+          caja_id: string | null;
+          dia_pago: number;
+          activo: boolean;
+          fecha_inicio: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          concepto: string;
+          categoria:
+            | "dominios"
+            | "hosting_infraestructura"
+            | "herramientas_software"
+            | "marketing_ads"
+            | "impuestos_contable"
+            | "sueldos_honorarios"
+            | "comisiones"
+            | "otro";
+          monto: number;
+          cliente_id?: string | null;
+          proyecto_id?: string | null;
+          caja_id?: string | null;
+          dia_pago: number;
+          activo?: boolean;
+          fecha_inicio: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          concepto?: string;
+          categoria?:
+            | "dominios"
+            | "hosting_infraestructura"
+            | "herramientas_software"
+            | "marketing_ads"
+            | "impuestos_contable"
+            | "sueldos_honorarios"
+            | "comisiones"
+            | "otro";
+          monto?: number;
+          cliente_id?: string | null;
+          proyecto_id?: string | null;
+          caja_id?: string | null;
+          dia_pago?: number;
+          activo?: boolean;
+          fecha_inicio?: string;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "egresos_recurrentes_config_caja_id_fkey";
+            columns: ["caja_id"];
+            isOneToOne: false;
+            referencedRelation: "cajas";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "egresos_recurrentes_config_cliente_id_fkey";
+            columns: ["cliente_id"];
+            isOneToOne: false;
+            referencedRelation: "clientes";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "egresos_recurrentes_config_proyecto_id_fkey";
+            columns: ["proyecto_id"];
+            isOneToOne: false;
+            referencedRelation: "proyectos";
             referencedColumns: ["id"];
           }
         ];

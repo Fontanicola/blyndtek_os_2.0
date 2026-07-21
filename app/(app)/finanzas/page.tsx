@@ -4,6 +4,7 @@ import { FinanzasClient } from "@/components/finanzas";
 import { getCurrentUser, getDefaultRouteForRole } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { AgentesDatabase, AgenteAnalisis } from "@/types/agentes";
+import type { CierreMensual } from "@/types/cierres";
 import type { Cotizacion } from "@/types/cotizaciones";
 
 export const dynamic = "force-dynamic";
@@ -31,6 +32,12 @@ export default async function FinanzasPage() {
     .eq("slug", "asesor-financiero")
     .maybeSingle();
 
+  const { data: cierresData } = await supabase
+    .from("cierres_mensuales")
+    .select("*")
+    .order("generado_at", { ascending: false })
+    .limit(12);
+
   let asesorFinancieroAnalisis: AgenteAnalisis | null = null;
 
   if (agenteData?.id) {
@@ -45,6 +52,13 @@ export default async function FinanzasPage() {
   }
 
   const cotizaciones = (cotizacionesData ?? []) as Array<Pick<Cotizacion, "id" | "empresa" | "precio_total">>;
+  const cierresMensuales = (cierresData ?? []) as CierreMensual[];
 
-  return <FinanzasClient cotizaciones={cotizaciones} asesorFinancieroAnalisis={asesorFinancieroAnalisis} />;
+  return (
+    <FinanzasClient
+      cotizaciones={cotizaciones}
+      asesorFinancieroAnalisis={asesorFinancieroAnalisis}
+      cierresMensuales={cierresMensuales}
+    />
+  );
 }

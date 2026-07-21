@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Button, EntitySelect, Input, Modal } from "@/components/ui";
+import { normalizeCajaSlug } from "@/lib/cajas";
 import { getProyectoDisplayLabel } from "@/lib/proyectos/labels";
 import { fechaInputAString, hoyLocalString } from "@/lib/utils/fechas";
-import type { Cobro, CreateCobroInput } from "@/types/cobros";
+import type { Cobro, CreateCobroInput, EstadoCobro } from "@/types/cobros";
 import type { Caja } from "@/types/cajas";
 import type { Cliente } from "@/types/clientes";
 import type { Proyecto } from "@/types/proyectos";
@@ -38,12 +39,26 @@ export function CobroModal({
   suscripciones,
   cajas
 }: CobroModalProps) {
+  const resolveInitialCajaId = useCallback(
+    (currentCobro?: Cobro | null) => {
+      if (currentCobro?.caja_id) {
+        return currentCobro.caja_id;
+      }
+
+      const legacySlug = normalizeCajaSlug(currentCobro?.cuenta_medio);
+      return legacySlug ? cajas.find((item) => item.slug === legacySlug)?.id ?? "" : "";
+    },
+    [cajas]
+  );
+
   const [concepto, setConcepto] = useState(cobro?.concepto ?? "");
   const [monto, setMonto] = useState(String(cobro?.monto ?? ""));
   const [fechaEmision, setFechaEmision] = useState(cobro?.fecha_emision ?? hoyLocalString());
   const [fechaVencimiento, setFechaVencimiento] = useState(cobro?.fecha_vencimiento ?? hoyLocalString());
   const [tipo, setTipo] = useState<CreateCobroInput["tipo"]>(cobro?.tipo ?? "hito");
-  const [cuentaMedio, setCuentaMedio] = useState<CreateCobroInput["cuenta_medio"]>(cobro?.cuenta_medio ?? cajas[0]?.slug ?? null);
+  const [estado, setEstado] = useState<EstadoCobro>(cobro?.estado ?? "pendiente");
+  const [fechaCobro, setFechaCobro] = useState(cobro?.fecha_cobro ?? hoyLocalString());
+  const [selectedCajaId, setSelectedCajaId] = useState(resolveInitialCajaId(cobro));
   const [toleranciaDias, setToleranciaDias] = useState(String(cobro?.tolerancia_dias ?? 0));
   const [clienteId, setClienteId] = useState(cobro?.cliente_id ?? "");
   const [proyectoId, setProyectoId] = useState(cobro?.proyecto_id ?? "");
@@ -57,23 +72,25 @@ export function CobroModal({
     setFechaEmision(cobro?.fecha_emision ?? hoyLocalString());
     setFechaVencimiento(cobro?.fecha_vencimiento ?? hoyLocalString());
     setTipo(cobro?.tipo ?? "hito");
-    setCuentaMedio(cobro?.cuenta_medio ?? cajas[0]?.slug ?? null);
+    setEstado(cobro?.estado ?? "pendiente");
+    setFechaCobro(cobro?.fecha_cobro ?? hoyLocalString());
+    setSelectedCajaId(resolveInitialCajaId(cobro));
     setToleranciaDias(String(cobro?.tolerancia_dias ?? 0));
     setClienteId(cobro?.cliente_id ?? "");
     setProyectoId(cobro?.proyecto_id ?? "");
     setSuscripcionId(cobro?.suscripcion_id ?? "");
     setCotizacionId(cobro?.cotizacion_id ?? "");
     setNotaCambio("");
-  }, [cobro, cajas, isOpen]);
+  }, [cobro, isOpen, resolveInitialCajaId]);
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={cobro ? "Editar cobro" : "Nuevo cobro"} size="md">
+    <Modal isOpen={isOpen} onClose={onClose} title={cobro ? "Editar ingreso" : "Nuevo ingreso"} size="md">
       <div className="space-y-4">
         <EntitySelect
           label="Cliente"
           value={clienteId || null}
-          required
-          placeholder="Seleccionar cliente"
+          allowEmpty
+          placeholder="Sin cliente"
           options={clientes.map((cliente) => ({
             id: cliente.id,
             label: cliente.empresa,
@@ -96,22 +113,23 @@ export function CobroModal({
               <option value="mantenimiento">Mantenimiento</option>
               <option value="brick">Brick</option>
               <option value="diagnostico">Diagnóstico</option>
+              <option value="otro">Otro</option>
             </select>
           </div>
         </div>
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-1">
-            <label className="text-sm font-label text-carbon">Cuenta / medio de cobro</label>
+            <label className="text-sm font-label text-carbon">Caja</label>
             <select
-              value={cuentaMedio ?? ""}
-              onChange={(event) => setCuentaMedio(event.target.value || null)}
+              value={selectedCajaId}
+              onChange={(event) => setSelectedCajaId(event.target.value)}
               className="w-full rounded-component border border-line bg-white px-3 py-2 text-sm text-carbon focus:border-signal focus:outline-none focus:ring-2 focus:ring-signal/20"
             >
-              <option value="" disabled>
-                Seleccionar caja
+              <option value="">
+                Sin caja
               </option>
               {cajas.map((item) => (
-                <option key={item.id} value={item.slug}>
+                <option key={item.id} value={item.id}>
                   {item.nombre}
                 </option>
               ))}
@@ -127,6 +145,26 @@ export function CobroModal({
         <div className="grid gap-4 md:grid-cols-2">
           <Input label="Fecha emisión" type="date" value={fechaEmision} onChange={(event) => setFechaEmision(event.target.value)} />
           <Input label="Fecha vencimiento" type="date" value={fechaVencimiento} onChange={(event) => setFechaVencimiento(event.target.value)} />
+        </div>
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="space-y-1">
+            <label className="text-sm font-label text-carbon">Estado</label>
+            <select
+              value={estado}
+              onChange={(event) => setEstado(event.target.value as EstadoCobro)}
+              className="w-full rounded-component border border-line bg-white px-3 py-2 text-sm text-carbon focus:border-signal focus:outline-none focus:ring-2 focus:ring-signal/20"
+            >
+              <option value="pendiente">Pendiente</option>
+              <option value="facturado">Facturado</option>
+              <option value="cobrado">Cobrado</option>
+              <option value="vencido">Vencido</option>
+            </select>
+          </div>
+          {estado === "cobrado" ? (
+            <Input label="Fecha de cobro" type="date" value={fechaCobro} onChange={(event) => setFechaCobro(event.target.value)} />
+          ) : (
+            <div />
+          )}
         </div>
         <div className="grid gap-4 md:grid-cols-2">
           <EntitySelect
@@ -188,12 +226,14 @@ export function CobroModal({
           </Button>
           <Button
             onClick={() => {
-              if (!clienteId.trim() || !concepto.trim() || !monto.trim()) {
+              if (!concepto.trim() || !monto.trim()) {
                 return;
               }
 
+              const selectedCaja = cajas.find((item) => item.id === selectedCajaId) ?? null;
+
               void onSave({
-                cliente_id: clienteId.trim(),
+                cliente_id: clienteId.trim() || null,
                 concepto: concepto.trim(),
                 tipo,
                 monto: Number(monto),
@@ -202,9 +242,11 @@ export function CobroModal({
                 proyecto_id: proyectoId.trim() || null,
                 suscripcion_id: suscripcionId.trim() || null,
                 cotizacion_id: cotizacionId.trim() || null,
-                cuenta_medio: cuentaMedio ?? null,
+                caja_id: selectedCaja?.id ?? null,
+                cuenta_medio: selectedCaja?.slug ?? null,
                 tolerancia_dias: Number(toleranciaDias || 0),
-                estado: cobro?.estado ?? "pendiente",
+                estado,
+                fecha_cobro: estado === "cobrado" ? fechaInputAString(fechaCobro) : null,
                 nota_historial: cobro ? notaCambio.trim() || null : undefined
               });
             }}

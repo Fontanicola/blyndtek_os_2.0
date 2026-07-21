@@ -25,11 +25,6 @@ export function calcularEgresosPeriodo(egresos: Egreso[], start: Date, end: Date
     }
 
     const fecha = fechaStringAFechaLocal(egreso.fecha);
-
-    if (egreso.recurrente) {
-      return fecha < end;
-    }
-
     return fecha >= start && fecha < end;
   });
 }

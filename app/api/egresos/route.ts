@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminUser } from "@/lib/require-admin";
+import { createRecurrenteConfig } from "@/lib/finanzas/egresosRecurrentes";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { CreateEgresoInput, Egreso, CategoriaEgreso } from "@/types/egresos";
 
@@ -97,7 +98,28 @@ export async function POST(request: NextRequest) {
       recurrente: body.recurrente ?? false
     };
 
-    const { data, error } = await supabase.from("egresos").insert(payload).select("*").single();
+    let recurrenteConfigId = payload.recurrente_config_id ?? null;
+    if (payload.recurrente && !recurrenteConfigId) {
+      const config = await createRecurrenteConfig(supabase, {
+        concepto: payload.concepto,
+        categoria: payload.categoria,
+        monto: payload.monto,
+        fecha: payload.fecha,
+        cliente_id: payload.cliente_id ?? null,
+        proyecto_id: payload.proyecto_id ?? null,
+        cuenta_medio: payload.cuenta_medio ?? null
+      });
+      recurrenteConfigId = config.id;
+    }
+
+    const { data, error } = await supabase
+      .from("egresos")
+      .insert({
+        ...payload,
+        recurrente_config_id: recurrenteConfigId
+      })
+      .select("*")
+      .single();
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });

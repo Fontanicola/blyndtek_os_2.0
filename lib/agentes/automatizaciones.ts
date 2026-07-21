@@ -3,6 +3,8 @@ import type { AgentesDatabase, Automatizacion, AutomatizacionFrecuencia } from "
 
 export const AUTOMATIZACION_ASESOR_ENDPOINT = "/api/agentes/asesor-financiero/analizar";
 export const AUTOMATIZACION_CONTENIDO_ENDPOINT = "/api/planes-semanales/generar-automatico";
+export const AUTOMATIZACION_EGRESOS_RECURRENTES_ENDPOINT = "/api/egresos/generar-recurrentes-mes";
+export const AUTOMATIZACION_CIERRE_MENSUAL_ENDPOINT = "/api/cierres-mensuales/generar";
 
 const WEEKDAY_LABELS = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
 
@@ -63,4 +65,3 @@ export async function marcarAutomatizacionEjecutada(
     throw new Error(error.message);
   }
 }
-

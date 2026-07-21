@@ -2,6 +2,7 @@ import { forwardRef } from "react";
 import type { LucideIcon, LucideProps } from "lucide-react";
 import {
   AlertTriangle,
+  ArrowLeft,
   ArrowDownLeft,
   ArrowRight,
   ArrowUpRight,
@@ -31,9 +32,11 @@ import {
   Folder,
   FolderOpen,
   Grid2x2,
+  Globe,
   Image,
   Inbox,
   Layers,
+  Landmark,
   LayoutDashboard,
   LayoutGrid,
   Link2,
@@ -43,7 +46,9 @@ import {
   LogOut,
   Mail,
   Menu,
+  Megaphone,
   MoreVertical,
+  MoreHorizontal,
   Pause,
   Play,
   Pencil,
@@ -51,6 +56,7 @@ import {
   Pin,
   Plus,
   RefreshCw,
+  Server,
   Search,
   Settings2,
   Sparkles,
@@ -61,6 +67,7 @@ import {
   User,
   Users,
   Wallet,
+  Wrench,
   X
 } from "lucide-react";
 
@@ -78,6 +85,7 @@ function createIcon(Icon: LucideIcon, defaultSize = 20): IconComponent {
 export type { LucideProps as IconProps };
 
 export const AlertTriangleIcon = createIcon(AlertTriangle);
+export const ArrowLeftIcon = createIcon(ArrowLeft);
 export const ArrowDownLeftIcon = createIcon(ArrowDownLeft);
 export const ArrowRightIcon = createIcon(ArrowRight);
 export const ArrowUpRightIcon = createIcon(ArrowUpRight);
@@ -107,9 +115,11 @@ export const FilterIcon = createIcon(Filter);
 export const FolderIcon = createIcon(Folder);
 export const FolderOpenIcon = createIcon(FolderOpen);
 export const GridIcon = createIcon(Grid2x2);
+export const GlobeIcon = createIcon(Globe);
 export const ImageIcon = createIcon(Image);
 export const InboxIcon = createIcon(Inbox);
 export const LayersIcon = createIcon(Layers);
+export const LandmarkIcon = createIcon(Landmark);
 export const DashboardIcon = createIcon(LayoutDashboard);
 export const ProyectosIcon = createIcon(LayoutGrid);
 export const LinkIcon = createIcon(Link2);
@@ -119,7 +129,9 @@ export const LoaderIcon = createIcon(Loader2);
 export const LogoutIcon = createIcon(LogOut);
 export const MailIcon = createIcon(Mail);
 export const MenuIcon = createIcon(Menu);
+export const MegaphoneIcon = createIcon(Megaphone);
 export const MoreVerticalIcon = createIcon(MoreVertical);
+export const MoreHorizontalIcon = createIcon(MoreHorizontal);
 export const PauseIcon = createIcon(Pause);
 export const PlayIcon = createIcon(Play);
 export const PencilIcon = createIcon(Pencil);
@@ -127,6 +139,7 @@ export const PhoneIcon = createIcon(Phone);
 export const PinIcon = createIcon(Pin);
 export const PlusIcon = createIcon(Plus);
 export const RefreshIcon = createIcon(RefreshCw);
+export const ServerIcon = createIcon(Server);
 export const SearchIcon = createIcon(Search);
 export const SettingsIcon = createIcon(Settings2);
 export const SparklesIcon = createIcon(Sparkles);
@@ -137,6 +150,7 @@ export const UploadIcon = createIcon(Upload);
 export const UserIcon = createIcon(User);
 export const UsersIcon = createIcon(Users);
 export const WalletIcon = createIcon(Wallet);
+export const WrenchIcon = createIcon(Wrench);
 export const XIcon = createIcon(X);
 
 // Legacy semantic aliases used throughout the app

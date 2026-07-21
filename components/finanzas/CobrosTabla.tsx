@@ -46,6 +46,9 @@ function getTipoLabel(tipo: Cobro["tipo"]) {
   if (tipo === "one_pay") {
     return "One pay";
   }
+  if (tipo === "otro") {
+    return "Otro";
+  }
   if (tipo === "mantenimiento") {
     return "Mantenimiento";
   }
@@ -81,7 +84,7 @@ export function CobrosTabla({ cobros, cajas = [], onMarkCobrado, onNew, onEdit }
       <Card padding="md" className="space-y-4">
         <div className="flex flex-wrap items-center gap-3">
           <Input
-            placeholder="Buscar cobros"
+            placeholder="Buscar ingresos"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             className="min-w-[220px] flex-1"
@@ -110,10 +113,11 @@ export function CobrosTabla({ cobros, cajas = [], onMarkCobrado, onNew, onEdit }
             <option value="mantenimiento">Mantenimiento</option>
             <option value="brick">Brick</option>
             <option value="diagnostico">Diagnóstico</option>
+            <option value="otro">Otro</option>
           </select>
 
           <Button variant="primary" size="sm" onClick={onNew}>
-            Nuevo cobro
+            Nuevo ingreso
           </Button>
         </div>
       </Card>
@@ -129,6 +133,7 @@ export function CobrosTabla({ cobros, cajas = [], onMarkCobrado, onNew, onEdit }
                 <th className="px-4 py-3">Emisión</th>
                 <th className="px-4 py-3">Monto</th>
                 <th className="px-4 py-3">Vencimiento</th>
+                <th className="px-4 py-3">Caja</th>
                 <th className="px-4 py-3">Estado</th>
                 <th className="px-4 py-3 text-right">Acción</th>
               </tr>
@@ -155,13 +160,15 @@ export function CobrosTabla({ cobros, cajas = [], onMarkCobrado, onNew, onEdit }
                     <td className="px-4 py-3 text-sm text-graphite whitespace-nowrap">{formatearFechaDisplay(cobro.fecha_emision)}</td>
                     <td className="px-4 py-3 text-sm font-label text-carbon">{formatUSD(cobro.monto)}</td>
                     <td className="px-4 py-3 text-sm text-graphite whitespace-nowrap">{formatearFechaDisplay(cobro.fecha_vencimiento)}</td>
+                    <td className="px-4 py-3 text-sm text-graphite">
+                      {cobro.caja_id
+                        ? cajas.find((item) => item.id === cobro.caja_id)?.nombre ?? formatCajaLabel(cobro.cuenta_medio, cajas)
+                        : cobro.cuenta_medio
+                          ? formatCajaLabel(cobro.cuenta_medio, cajas)
+                          : "Sin caja"}
+                    </td>
                     <td className="px-4 py-3">
-                      <div className="flex flex-col gap-2">
-                        <Badge variant={getEstadoVariant(cobro.estado)}>{estadoLabels[cobro.estado]}</Badge>
-                        {cobro.estado === "cobrado" && cobro.cuenta_medio ? (
-                          <Badge variant="default">{formatCajaLabel(cobro.cuenta_medio, cajas)}</Badge>
-                        ) : null}
-                      </div>
+                      <Badge variant={getEstadoVariant(cobro.estado)}>{estadoLabels[cobro.estado]}</Badge>
                     </td>
                     <td className="px-4 py-3 text-right">
                       <Button
@@ -178,15 +185,15 @@ export function CobrosTabla({ cobros, cajas = [], onMarkCobrado, onNew, onEdit }
               })}
               {filteredCobros.length === 0 ? (
                 <tr>
-                  <td className="px-4 py-8 text-center text-sm text-graphite" colSpan={8}>
-                    <EmptyState
-                      icon={DollarSignIcon}
-                      titulo="No hay cobros para mostrar"
-                      descripcion="Ajustá los filtros o creá un nuevo cobro para completar esta vista."
-                      accion={{ label: "Nuevo cobro", onClick: onNew }}
-                      className="mx-auto max-w-xl"
-                    />
-                  </td>
+                    <td className="px-4 py-8 text-center text-sm text-graphite" colSpan={9}>
+                      <EmptyState
+                        icon={DollarSignIcon}
+                        titulo="No hay ingresos para mostrar"
+                        descripcion="Ajustá los filtros o cargá un ingreso para completar esta vista."
+                        accion={{ label: "Nuevo ingreso", onClick: onNew }}
+                        className="mx-auto max-w-xl"
+                      />
+                    </td>
                 </tr>
               ) : null}
             </tbody>

@@ -8,7 +8,12 @@ import type {
   MetricasFinanzas,
   TesoreriaFinanzas
 } from "@/types/finanzas";
-import type { CreateEgresoInput, Egreso, UpdateEgresoInput } from "@/types/egresos";
+import type {
+  CreateEgresoInput,
+  Egreso,
+  EgresoRecurrenteConfig,
+  UpdateEgresoInput
+} from "@/types/egresos";
 import type {
   CreateSuscripcionInput,
   EstadoSuscripcion,
@@ -73,6 +78,7 @@ async function readJsonResponse<T>(response: Response): Promise<T> {
 export function useFinanzas() {
   const [cobros, setCobros] = useState<Cobro[]>([]);
   const [egresos, setEgresos] = useState<Egreso[]>([]);
+  const [egresosRecurrentesConfig, setEgresosRecurrentesConfig] = useState<EgresoRecurrenteConfig[]>([]);
   const [suscripciones, setSuscripciones] = useState<Suscripcion[]>([]);
   const [comisiones, setComisiones] = useState<ComisionListado[]>([]);
   const [metricas, setMetricas] = useState<MetricasFinanzas | null>(null);
@@ -217,6 +223,61 @@ export function useFinanzas() {
     }
 
     setEgresos((current) => current.filter((item) => item.id !== id));
+  }, []);
+
+  const fetchEgresosRecurrentesConfig = useCallback(async () => {
+    const response = await fetch("/api/egresos/recurrentes-config");
+    const payload = await readJsonResponse<ApiResponse<EgresoRecurrenteConfig[]>>(response);
+
+    if (!response.ok || !payload.data) {
+      throw new Error(payload.error ?? "No se pudieron cargar las plantillas recurrentes.");
+    }
+
+    setEgresosRecurrentesConfig(payload.data);
+    return payload.data;
+  }, []);
+
+  const generarEgresosRecurrentesMes = useCallback(async (mes?: string) => {
+    const response = await fetch("/api/egresos/generar-recurrentes-mes", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(mes ? { mes } : {})
+    });
+    const payload = await readJsonResponse<ApiResponse<{ month: string; configs: number; generados: number; existentes: number }>>(response);
+
+    if (!response.ok || !payload.data) {
+      throw new Error(payload.error ?? "No se pudieron generar los egresos recurrentes del mes.");
+    }
+
+    return payload.data;
+  }, []);
+
+  const toggleEgresoRecurrenteMesPagado = useCallback(async (configId: string, month: string, pagado: boolean) => {
+    const response = await fetch(`/api/egresos/recurrentes-config/${configId}/historial`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ month, pagado })
+    });
+    const payload = await readJsonResponse<ApiResponse<Egreso>>(response);
+
+    if (!response.ok || !payload.data) {
+      throw new Error(payload.error ?? "No se pudo actualizar el historial del egreso recurrente.");
+    }
+
+    setEgresos((current) => {
+      const found = current.some((item) => item.id === payload.data!.id);
+      if (found) {
+        return current.map((item) => (item.id === payload.data!.id ? payload.data! : item));
+      }
+
+      return [payload.data!, ...current];
+    });
+
+    return payload.data;
   }, []);
 
   const fetchSuscripciones = useCallback(async (filters?: SuscripcionFilters) => {
@@ -407,6 +468,7 @@ export function useFinanzas() {
       await Promise.all([
         fetchCobros(),
         fetchEgresos(),
+        fetchEgresosRecurrentesConfig(),
         fetchSuscripciones(),
         fetchComisiones(),
         fetchMetricas(),
@@ -420,7 +482,17 @@ export function useFinanzas() {
       setLoading(false);
       setSaving(false);
     }
-  }, [fetchCobros, fetchCarteraClientes, fetchComisiones, fetchConfig, fetchEgresos, fetchMetricas, fetchSuscripciones, fetchTesoreria]);
+  }, [
+    fetchCobros,
+    fetchCarteraClientes,
+    fetchComisiones,
+    fetchConfig,
+    fetchEgresos,
+    fetchEgresosRecurrentesConfig,
+    fetchMetricas,
+    fetchSuscripciones,
+    fetchTesoreria
+  ]);
 
   useEffect(() => {
     void refreshAll();
@@ -429,6 +501,7 @@ export function useFinanzas() {
   return {
     cobros,
     egresos,
+    egresosRecurrentesConfig,
     suscripciones,
     comisiones,
     metricas,
@@ -450,9 +523,12 @@ export function useFinanzas() {
     updateCobro,
     deleteCobro,
     fetchEgresos,
+    fetchEgresosRecurrentesConfig,
     createEgreso,
     updateEgreso,
     deleteEgreso,
+    generarEgresosRecurrentesMes,
+    toggleEgresoRecurrenteMesPagado,
     fetchSuscripciones,
     fetchComisiones,
     createSuscripcion,

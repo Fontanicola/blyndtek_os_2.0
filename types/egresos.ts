@@ -17,6 +17,7 @@ export type Egreso = {
   monto: number;
   fecha: string;
   recurrente: boolean;
+  recurrente_config_id: string | null;
   cuenta_medio: CuentaMedio | null;
   pagado: boolean;
   fecha_pago: string | null;
@@ -33,6 +34,7 @@ export type CreateEgresoInput = {
   monto: number;
   fecha: string;
   recurrente?: boolean;
+  recurrente_config_id?: string | null;
   cuenta_medio?: CuentaMedio | null;
   pagado?: boolean;
   fecha_pago?: string | null;
@@ -43,3 +45,25 @@ export type CreateEgresoInput = {
 };
 
 export type UpdateEgresoInput = Partial<CreateEgresoInput>;
+
+export type EgresoRecurrenteConfig = {
+  id: string;
+  concepto: string;
+  categoria: CategoriaEgreso;
+  monto: number;
+  cliente_id: string | null;
+  proyecto_id: string | null;
+  caja_id: string | null;
+  dia_pago: number;
+  activo: boolean;
+  fecha_inicio: string;
+  created_at: string;
+};
+
+export type EgresoRecurrenteHistorialItem = {
+  month: string;
+  label: string;
+  pagado: boolean;
+  exists: boolean;
+  egreso_id: string | null;
+};
