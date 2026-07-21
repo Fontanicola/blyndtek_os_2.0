@@ -2132,6 +2132,18 @@ $ find . -maxdepth 3 \( -name 'middleware.*' -o -name 'proxy.*' \) -not -path '.
   - `npm run lint` OK.
   - `npm run build` OK.
 
+## 2026-07-21 — Fix de comisiones de diagnóstico sin `lead_id` en base
+
+- Se confirmó la causa exacta del error en `/finanzas`: `app/api/comisiones/route.ts` estaba seleccionando `lead_id` sobre `comisiones`, pero la base real respondió `42703 column comisiones.lead_id does not exist`.
+- La inconsistencia venía de que el código y `supabase/migrations/010_diagnostico_pago.sql` ya asumían `comisiones.lead_id` para comisiones `tipo='diagnostico'`, pero ese cambio no estaba aplicado en el entorno real consultado.
+- Fix aplicado en dos capas:
+  - Se creó `supabase/migrations/014_repair_comisiones_lead_id.sql`, idempotente, para asegurar `comisiones.lead_id`, mantener `cliente_id` nullable y reconstruir el check de `tipo` con `diagnostico`.
+  - `app/api/comisiones/route.ts` ahora intenta cargar `lead_id` + relación a `leads`, pero si el entorno todavía no tiene la columna aplicada cae en fallback automático sin `lead_id`, evitando que `/finanzas` y `/mi-panel` exploten por una columna inexistente.
+- `components/finanzas/ComisionesTabla.tsx` ahora muestra `cliente_nombre` o `lead_nombre` como origen legible; para comisiones de diagnóstico ya no depende de que exista un cliente formal.
+- `types/comisiones.ts` suma `lead_nombre` en `ComisionListado` para exponer ese contexto al frontend.
+- Verificación de esquema real ejecutada:
+  - `GET /rest/v1/comisiones?select=id,lead_id&limit=1` devolvió `400` con `column comisiones.lead_id does not exist`, confirmando la causa exacta antes del fix.
+
 ## 2026-07-21 — Finanzas: cierre mensual automático de caja
 
 - Se creó `POST /api/cierres-mensuales/generar`, siguiendo el mismo patrón de Claude + trazabilidad de costo ya usado por el Asesor Financiero.

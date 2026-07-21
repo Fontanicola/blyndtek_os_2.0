@@ -33,4 +33,5 @@ export type Comision = {
 export type ComisionListado = Comision & {
   vendedor_nombre: string | null;
   cliente_nombre: string | null;
+  lead_nombre: string | null;
 };

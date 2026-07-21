@@ -562,6 +562,32 @@ Notas de verificación:
 | motivo_baja | text | No especificado |  |
 | created_at | timestamptz | No especificado |  |
 
+## Tabla: comisiones
+
+**PK:** `id`
+
+**FKs:** `vendedor_id` → `usuarios.id`; `cliente_id` → `clientes.id`; `lead_id` → `leads.id`; `cotizacion_id` → `cotizaciones.id`; `config_comisiones_id` → `config_comisiones.id`
+
+**RLS esperada:** acceso para `admin` sí; acceso para `miembro` no; acceso para `comercial` sólo sobre sus propias comisiones.
+
+| Campo | Tipo | Nullable | Notas |
+| --- | --- | --- | --- |
+| id | uuid | No | PK |
+| vendedor_id | uuid | No | FK → `usuarios` |
+| cliente_id | uuid | Sí | FK → `clientes`; nullable para comisiones de diagnóstico antes de crear el cliente |
+| lead_id | uuid | Sí | FK → `leads`; usado por comisiones `tipo='diagnostico'` |
+| cotizacion_id | uuid | Sí | FK → `cotizaciones` |
+| tipo | enum (`venta|diagnostico`) | No | venta cerrada o diagnóstico pago |
+| estado | enum (`pendiente|pagada|cancelada`) | No | estado de pago de la comisión |
+| monto_venta | numeric | No | base comercial de la operación |
+| base_comision | numeric | No | base efectiva usada para calcular la comisión |
+| porcentaje | numeric | No | porcentaje aplicado sobre la base cuando corresponde |
+| monto_comision | numeric | No | monto final de la comisión |
+| config_comisiones_id | uuid | Sí | FK → `config_comisiones` vigente al momento de generarla |
+| pagada_at | timestamptz | Sí | fecha real de pago |
+| created_at | timestamptz | No | creación del registro |
+| updated_at | timestamptz | No | última actualización |
+
 ## Tabla: config_finanzas
 
 **PK:** `id`
@@ -1115,7 +1141,7 @@ Nota: `usuarios` debe existir antes que `leads`, `proyectos`, `features`, `tarea
 - Esquema real verificado el 2026-07-21 vía OpenAPI de Supabase: `cobros.required` incluía `cliente_id`, por lo que `cobros.cliente_id` era NOT NULL antes de esta unidad.
 - `cobros.cliente_id` pasa a nullable para permitir cobros reales de diagnóstico antes de que el lead exista como cliente formal.
 - `cobros.lead_id` uuid nullable referencia `leads.id` con `ON DELETE SET NULL`; `cobros.tipo` admite también `diagnostico`.
-- `comisiones.cliente_id` pasa a nullable y `comisiones.lead_id` uuid nullable referencia `leads.id` para comisiones generadas por diagnósticos pagos.
+- `comisiones.cliente_id` pasa a nullable y `comisiones.lead_id` uuid nullable referencia `leads.id` para comisiones generadas por diagnósticos pagos. La migración de reparación `014_repair_comisiones_lead_id.sql` existe porque el entorno real consultado el martes 21 de julio de 2026 todavía no tenía aplicada esa columna.
 - `comisiones.tipo` admite `diagnostico` además de `venta`.
 - `contratos.descuento_diagnostico_usd` numeric default `0` guarda el monto ya pagado por diagnóstico que se descontó del saldo del contrato final.
 - `config_comisiones.comision_diagnostico_usd` numeric define el monto fijo de comisión pendiente que se genera al registrar un diagnóstico pagado.
