@@ -2498,7 +2498,45 @@ $ find . -maxdepth 3 \( -name 'middleware.*' -o -name 'proxy.*' \) -not -path '.
     - `endpoint_trigger = /api/cierres-mensuales/generar`
     - `frecuencia = mensual`
     - `dia_mes = 28`
-    - `hora = 18:00:00`
-    - `ultima_ejecucion = 2026-07-21T16:28:11.691+00:00`
+  - `hora = 18:00:00`
+  - `ultima_ejecucion = 2026-07-21T16:28:11.691+00:00`
+  - `npm run lint` OK.
+  - `npm run build` OK.
+
+## 2026-07-21 — Repair de `cobros.lead_id` + hardening de transferencias
+
+- Se confirmó la causa exacta del bug: `app/api/transferencias-caja/route.ts` insertaba `lead_id: null` en `cobros`, pero en el entorno real de Supabase la columna `cobros.lead_id` no existía todavía en el schema cache. El error observable era: `Could not find the 'lead_id' column of 'cobros' in the schema cache`.
+- Se creó `supabase/migrations/018_repair_cobros_lead_id.sql`, idempotente, para reflejar exactamente el repair ya aplicado en Supabase:
+  - `cobros.cliente_id` queda nullable,
+  - `cobros.lead_id` se agrega con FK a `leads(id)` y `ON DELETE SET NULL`,
+  - `cobros.tipo` se reconstruye permitiendo también `transferencia`.
+- Se agregó `lib/cobros/leadIdFallback.ts` como helper defensivo centralizado, siguiendo el mismo criterio ya usado antes con `comisiones.lead_id`:
+  - retry automático de inserts a `cobros` sin `lead_id` cuando un entorno viejo responde `42703` por columna inexistente,
+  - fallback seguro para lecturas por `lead_id` en `cobros`, devolviendo colección vacía en vez de romper el flujo completo.
+- Archivos modificados:
+  - `lib/cobros/leadIdFallback.ts`
+  - `supabase/migrations/018_repair_cobros_lead_id.sql`
+  - `app/api/transferencias-caja/route.ts`
+  - `app/api/cobros/route.ts`
+  - `app/api/leads/[id]/etapa/route.ts`
+  - `lib/contratos/crearOActualizarContrato.ts`
+  - `docs/PROGRESS.md`
+- Archivos verificados y ya alineados, sin cambios:
+  - `types/supabase.ts` ya reflejaba `cobros.lead_id`
+  - `types/cobros.ts` ya reflejaba `cobros.lead_id`
+  - `docs/DATABASE.md` ya documentaba `cobros.lead_id`, `cobros.cliente_id` nullable y `tipo='transferencia'`
+- Verificación real ejecutada el **martes 21 de julio de 2026**:
+  - REST contra Supabase: `select=id,lead_id,tipo,cliente_id` sobre `cobros` respondió `200`, confirmando que `lead_id` existe en el esquema real.
+  - Se ejecutó una transferencia de prueba completa contra Supabase con la misma secuencia backend del endpoint:
+    - egreso `categoria='transferencia'` en caja origen,
+    - cobro `tipo='transferencia'` en caja destino con `lead_id=null` y `cliente_id=null`,
+    - registro puente en `transferencias_caja`.
+  - Resultado de la prueba:
+    - origen: `Dólar App`
+    - destino: `Efectivo`
+    - `cobro.tipo = transferencia`
+    - `cobro.lead_id = null`
+    - `cobro.cliente_id = null`
+  - La prueba se limpió al final borrando los tres registros temporales.
   - `npm run lint` OK.
   - `npm run build` OK.

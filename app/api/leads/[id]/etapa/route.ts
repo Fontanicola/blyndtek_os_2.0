@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
+import { insertCobrosWithLeadIdFallback } from "@/lib/cobros/leadIdFallback";
 import { getLeadEtapaIndex } from "@/lib/leads";
 import { crearComisionDiagnostico, crearComisionVenta } from "@/lib/comisiones/crearComisionVenta";
 import { crearOActualizarContrato } from "@/lib/contratos/crearOActualizarContrato";
@@ -305,9 +306,9 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
       let comisionId: string | null = null;
 
       try {
-        const { data: cobroCreado, error: cobroError } = await supabase
-          .from("cobros")
-          .insert({
+        const { data: cobroCreado, error: cobroError } = await insertCobrosWithLeadIdFallback<{ id: string }>(
+          supabase,
+          {
             cliente_id: null,
             lead_id: lead.id,
             contrato_id: null,
@@ -323,9 +324,10 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
             cuenta_medio: null,
             tolerancia_dias: 0,
             estado: "cobrado"
-          } as never)
-          .select("id")
-          .single();
+          },
+          "id",
+          { single: true }
+        );
 
         if (cobroError || !cobroCreado) {
           throw new Error(cobroError?.message ?? "No se pudo registrar el cobro del diagnóstico.");

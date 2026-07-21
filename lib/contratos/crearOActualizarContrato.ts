@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { insertCobrosWithLeadIdFallback, selectCobrosByLeadIdWithFallback } from "@/lib/cobros/leadIdFallback";
 import type { CreateContratoInput, CreateContratoResponse } from "@/types/contratos";
 import type { Cobro } from "@/types/cobros";
 import type { Database } from "@/types/supabase";
@@ -109,18 +110,19 @@ async function fetchDescuentoDiagnostico(supabase: SupabaseClient<Database>, lea
     return 0;
   }
 
-  const { data, error } = await supabase
-    .from("cobros")
-    .select("monto")
-    .eq("lead_id", leadId)
-    .eq("tipo", "diagnostico")
-    .eq("estado", "cobrado");
+  const { data, error } = await selectCobrosByLeadIdWithFallback<
+    Array<{ monto: number | null; tipo: string; estado: string }>
+  >(supabase, leadId, "monto, tipo, estado");
 
   if (error) {
     throw new Error(error.message);
   }
 
-  return normalizeMoney((data ?? []).reduce((total, cobro) => total + Number(cobro.monto ?? 0), 0));
+  return normalizeMoney(
+    (data ?? [])
+      .filter((cobro) => cobro.tipo === "diagnostico" && cobro.estado === "cobrado")
+      .reduce((total, cobro) => total + Number(cobro.monto ?? 0), 0)
+  );
 }
 
 function buildAdelantoMonto(valorTotal: number, adelantoPct: number) {
@@ -312,7 +314,11 @@ export async function crearOActualizarContrato(
       }))
     ];
 
-    const { data: cobrosCreados, error: cobrosError } = await supabase.from("cobros").insert(cobrosPayload).select("*");
+    const { data: cobrosCreados, error: cobrosError } = await insertCobrosWithLeadIdFallback<CobroRow[]>(
+      supabase,
+      cobrosPayload,
+      "*"
+    );
 
     if (cobrosError) {
       throw new Error(cobrosError.message);
@@ -455,7 +461,7 @@ export async function crearOActualizarContrato(
             void historial;
             return rest;
           });
-          await supabase.from("cobros").insert(cobrosParaReinsertar);
+          await insertCobrosWithLeadIdFallback(supabase, cobrosParaReinsertar, "*");
         }
 
         await supabase.from("contratos").update({ estado: "activo" }).eq("id", oldContrato.id);

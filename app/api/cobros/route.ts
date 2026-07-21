@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { normalizeCajaSlug } from "@/lib/cajas";
+import { insertCobrosWithLeadIdFallback } from "@/lib/cobros/leadIdFallback";
 import { getAdminUser } from "@/lib/require-admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Cobro, CreateCobroInput, EstadoCobro, TipoCobro } from "@/types/cobros";
@@ -201,7 +202,7 @@ export async function POST(request: NextRequest) {
       caja_id: cajaSelection.caja_id
     };
 
-    const { data, error } = await supabase.from("cobros").insert(payload).select("*").single();
+    const { data, error } = await insertCobrosWithLeadIdFallback<Cobro>(supabase, payload, "*", { single: true });
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });

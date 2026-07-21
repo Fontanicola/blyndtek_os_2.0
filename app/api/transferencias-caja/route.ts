@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { insertCobrosWithLeadIdFallback } from "@/lib/cobros/leadIdFallback";
 import { getAdminUser } from "@/lib/require-admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { fechaInputAString, fechaStringAFechaLocal } from "@/lib/utils/fechas";
@@ -164,9 +165,9 @@ export async function POST(request: NextRequest) {
 
     egresoId = egreso.id;
 
-    const { data: cobro, error: cobroError } = await supabase
-      .from("cobros")
-      .insert({
+    const { data: cobro, error: cobroError } = await insertCobrosWithLeadIdFallback<{ id: string }>(
+      supabase,
+      {
         cliente_id: null,
         lead_id: null,
         contrato_id: null,
@@ -183,9 +184,10 @@ export async function POST(request: NextRequest) {
         cuenta_medio: cajaDestino.slug,
         tolerancia_dias: 0,
         estado: "cobrado"
-      })
-      .select("id")
-      .single();
+      },
+      "id",
+      { single: true }
+    );
 
     if (cobroError || !cobro) {
       if (egresoId) {
