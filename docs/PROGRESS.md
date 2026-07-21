@@ -10,6 +10,92 @@ Estado general actual: Fase 0 completa. Cimientos técnicos listos: documentaci�
 
 ## Actualización 2026-07-21
 
+- Se ajustó la UI de Finanzas → Tesorería en cuatro frentes: limpieza del modal de caja, filtros avanzados, sparkline por caja y responsive real con sidebar expandido.
+- Archivos modificados:
+  - `components/finanzas/CajaDetalleModal.tsx`
+  - `components/finanzas/TesoreriaCard.tsx`
+  - `components/ui/FilterPopover.tsx`
+  - `app/api/finanzas/tesoreria/route.ts`
+  - `docs/PROGRESS.md`
+- Cambios aplicados:
+  - se eliminó la fila redundante `CAJA / nombre` dentro de `CajaDetalleModal`; el nombre de la caja queda solo en el título del modal;
+  - la navegación simple `← Mes →` fue reemplazada por un filtro compacto en la fila de acciones:
+    - selector de mes único,
+    - opción de rango `mes_desde / mes_hasta`,
+    - selector de tipo `Todos / Solo ingresos / Solo egresos`,
+    - aplicación directa contra `useCajaMovimientos` y el endpoint actualizado;
+  - `FilterPopover` ahora soporta alineación a derecha e ícono-only para este uso puntual, sin romper los usos existentes;
+  - el mini-gráfico de cada card de caja se rehízo con dos series reales (`Ingresos` / `Egresos`) usando `chartTheme.ts`, labels compactos y sin ejes que se pisen;
+  - el grid de Tesorería pasó a `auto-fit/minmax`, y las filas internas de cada card ahora usan columnas `minmax(0,1fr)` + valor nowrap para evitar recortes cuando el sidebar está expandido.
+- Refuerzo de datos reales por caja:
+  - `app/api/finanzas/tesoreria/route.ts` dejó de depender solo de `cuenta_medio` legacy para armar el histórico y los balances por caja;
+  - ahora resuelve la caja primero por `caja_id` y solo cae a `cuenta_medio` normalizado como compatibilidad, manteniendo el histórico y el sparkline alineados con la caja real.
+- Decisiones técnicas:
+  - el modal sigue operando por defecto en “mes actual / todos los tipos”, pero ya quedó preparado para períodos más amplios sin rediseñar el hook otra vez;
+  - el resumen y el sparkline de Tesorería siguen mostrando solo movimientos reales de caja (`cobrado` / `pagado`), coherente con el contrato nuevo del endpoint de movimientos.
+- Verificación técnica local:
+  - `npm run lint` OK
+  - `npm run build` OK
+
+## Actualización 2026-07-21
+
+- Se ajustó el endpoint de movimientos por caja para que represente exclusivamente movimientos reales de caja y soporte filtros de período/tipo más precisos.
+- Archivos modificados:
+  - `app/api/cajas/[id]/movimientos/route.ts`
+  - `lib/hooks/useCajaMovimientos.ts`
+  - `types/finanzas.ts`
+  - `components/finanzas/CajaDetalleModal.tsx`
+  - `docs/PROGRESS.md`
+- Cambios aplicados:
+  - el endpoint ahora excluye completamente movimientos pendientes:
+    - solo incluye `cobros` con `estado='cobrado'`;
+    - solo incluye `egresos` con `pagado=true`;
+    - cobros `pendiente/facturado/vencido` y egresos `pagado=false` ya no aparecen en el detalle de caja;
+  - se reemplazó el query param único `mes` por soporte de rango con `mes_desde` y `mes_hasta` (`YYYY-MM`), manteniendo compatibilidad con `mes` legacy y usando `mes_desde` como mes único cuando `mes_hasta` no viene;
+  - se agregó filtro opcional `tipo=ingreso|egreso|todos` (default `todos`);
+  - la respuesta ahora devuelve `mes_desde`, `mes_hasta`, `tipo` y `resumen_periodo`, cuyos totales reflejan exactamente el rango y el filtro aplicados;
+  - `useCajaMovimientos` ahora expone estado de rango (`mesDesde`, `mesHasta`, `setRango`, `seleccionarMes`) y filtro (`tipoSeleccionado`, `setTipo`), manteniendo `mesAnterior()` / `mesSiguiente()` para el caso de mes único.
+- Decisiones técnicas:
+  - se mantuvo compatibilidad de lectura con `mes` y con el alias `resumenMes` dentro del hook para no romper `CajaDetalleModal` mientras la UI todavía opera en modo mes único;
+  - el detalle de caja queda conceptualmente alineado a “caja real” y no a “cronograma de pendientes”: los pendientes siguen viviendo en las tabs `Ingresos` y `Egresos` de Finanzas, no acá.
+- Verificación técnica local:
+  - `npm run lint` OK
+  - `npm run build` OK
+
+## Actualización 2026-07-21
+
+- Se corrigió la causa raíz real del agrupamiento de egresos recurrentes históricos dentro de julio 2026 en el detalle de movimientos por caja.
+- Aclaración importante:
+  - el endpoint `app/api/cajas/[id]/movimientos/route.ts` no tenía un bug en su criterio temporal;
+  - usar `fecha_pago` como fecha efectiva cuando existe sigue siendo correcto y consistente con `historico_pl`, `tesoreria` y `calcularEgresosPeriodo`;
+  - el dato histórico ya fue reparado manualmente en Supabase fuera de este prompt, restaurando `fecha_pago = fecha` en los egresos recurrentes afectados.
+- Causa raíz exacta del bug:
+  - `app/api/egresos/recurrentes-config/[id]/historial/route.ts` enviaba `fechaPago: body.pagado ? body.fecha_pago ?? hoyLocalString() : null`;
+  - a su vez, `lib/finanzas/egresosRecurrentes.ts`, dentro de `ensureEgresoRecurrenteInstance()`, también tenía el mismo fallback implícito a `hoyLocalString()` al crear o actualizar una instancia recurrente marcada como pagada;
+  - resultado: al tildar un mes histórico como pagado desde el “Historial de pagos” de una plantilla recurrente, `fecha_pago` quedaba en la fecha actual del sistema en vez de quedar dentro del mes real de esa instancia.
+- Archivos modificados:
+  - `app/api/egresos/recurrentes-config/[id]/historial/route.ts`
+  - `lib/finanzas/egresosRecurrentes.ts`
+  - `docs/PROGRESS.md`
+- Corrección aplicada:
+  - el endpoint de historial ya no inyecta “hoy” como default al marcar `pagado=true`;
+  - `ensureEgresoRecurrenteInstance()` ahora resuelve `fechaPago` así:
+    - si el usuario manda una `fecha_pago` explícita, la respeta;
+    - si no manda ninguna, usa `fecha` de la propia instancia recurrente para ese mes;
+  - esta misma corrección cubre tanto la creación de una instancia histórica pagada como la actualización de una ya existente, dejando el comportamiento consistente en todos los puntos de entrada que reusan el helper.
+- Verificación real ejecutada:
+  - se simuló el toggle real vía `PATCH /api/egresos/recurrentes-config/991ed829-4f2b-4008-8977-92a7f612b370/historial` para el mes `2026-05`;
+  - primero se marcó la instancia como pendiente y luego nuevamente como pagada;
+  - resultado devuelto por la API:
+    - `fecha = 2026-05-06`
+    - `fecha_pago = 2026-05-06`
+  - confirmación: `fecha_pago` quedó dentro del mismo mes que `fecha`, no en la fecha actual del sistema (`2026-07-21`).
+- Verificación técnica local:
+  - `npm run lint` OK
+  - `npm run build` OK
+
+## Actualización 2026-07-21
+
 - Se corrigió un bug de duplicación en el detalle de movimientos por caja (`CajaDetalleModal`) que mostraba egresos e ingresos repetidos aunque la base no tuviera filas duplicadas reales.
 - Causa exacta confirmada:
   - `app/api/cajas/[id]/movimientos/route.ts` hacía dos búsquedas separadas para compatibilidad histórica:

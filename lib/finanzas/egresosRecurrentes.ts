@@ -217,6 +217,7 @@ export async function ensureEgresoRecurrenteInstance(
 
   const caja = await getCajaById(supabase, config.caja_id);
   const fecha = buildEgresoDateForMonth(month, config.dia_pago);
+  const fechaPagoResolved = options?.forcePagado ? options.fechaPago ?? fecha : null;
   const patch: Database["public"]["Tables"]["egresos"]["Insert"] = {
     concepto: config.concepto,
     categoria: config.categoria,
@@ -227,7 +228,7 @@ export async function ensureEgresoRecurrenteInstance(
     caja_id: caja?.id ?? null,
     cuenta_medio: caja?.slug ?? null,
     pagado: options?.forcePagado ?? false,
-    fecha_pago: options?.forcePagado ? options?.fechaPago ?? hoyLocalString() : null,
+    fecha_pago: fechaPagoResolved,
     cliente_id: config.cliente_id,
     proyecto_id: config.proyecto_id,
     notas: null
@@ -249,7 +250,7 @@ export async function ensureEgresoRecurrenteInstance(
 
     if (options?.forcePagado !== undefined) {
       updatePayload.pagado = options.forcePagado;
-      updatePayload.fecha_pago = options.forcePagado ? options.fechaPago ?? hoyLocalString() : null;
+      updatePayload.fecha_pago = options.forcePagado ? fechaPagoResolved : null;
     }
 
     const { data, error } = await supabase.from("egresos").update(updatePayload).eq("id", existing.id).select("*").single();

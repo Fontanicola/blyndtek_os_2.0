@@ -55,12 +55,40 @@ function isMonthKey(value: string | null | undefined): value is string {
   return Boolean(value && /^\d{4}-\d{2}$/.test(value));
 }
 
-function normalizeRequestedMonth(value: string | null | undefined) {
-  if (!isMonthKey(value)) {
-    return getCurrentMonthKey();
+function normalizeRequestedType(value: string | null | undefined): "ingreso" | "egreso" | "todos" {
+  if (value === "ingreso" || value === "egreso") {
+    return value;
   }
 
-  return value;
+  return "todos";
+}
+
+function normalizeRequestedRange(searchParams: URLSearchParams) {
+  const legacyMonth = searchParams.get("mes");
+  const mesDesdeParam = searchParams.get("mes_desde") ?? legacyMonth;
+  const mesHastaParam = searchParams.get("mes_hasta");
+  const defaultMonth = getCurrentMonthKey();
+  const mesDesde = isMonthKey(mesDesdeParam) ? mesDesdeParam : defaultMonth;
+  const mesHastaCandidate = isMonthKey(mesHastaParam) ? mesHastaParam : null;
+
+  if (!mesHastaCandidate) {
+    return {
+      mesDesde,
+      mesHasta: mesDesde
+    };
+  }
+
+  if (mesHastaCandidate < mesDesde) {
+    return {
+      mesDesde: mesHastaCandidate,
+      mesHasta: mesDesde
+    };
+  }
+
+  return {
+    mesDesde,
+    mesHasta: mesHastaCandidate
+  };
 }
 
 function getCobroEffectiveDate(cobro: CobroMovimientoRow) {
@@ -71,7 +99,7 @@ function getEgresoEffectiveDate(egreso: EgresoMovimientoRow) {
   return egreso.fecha_pago ?? egreso.fecha;
 }
 
-function isDateInMonth(dateValue: string | null | undefined, monthKey: string) {
+function isDateInRange(dateValue: string | null | undefined, mesDesde: string, mesHasta: string) {
   if (!dateValue) {
     return false;
   }
@@ -81,7 +109,8 @@ function isDateInMonth(dateValue: string | null | undefined, monthKey: string) {
     return false;
   }
 
-  return formatMonthKey(startOfMonth(date)) === monthKey;
+  const monthKey = formatMonthKey(startOfMonth(date));
+  return monthKey >= mesDesde && monthKey <= mesHasta;
 }
 
 function compareByFechaDesc(a: MovimientoCaja, b: MovimientoCaja) {
@@ -112,7 +141,8 @@ export async function GET(request: NextRequest, context: { params: { id: string 
 
     const cajaId = context.params.id;
     const isSinAsignar = cajaId === "sin_asignar";
-    const month = normalizeRequestedMonth(request.nextUrl.searchParams.get("mes"));
+    const { mesDesde, mesHasta } = normalizeRequestedRange(request.nextUrl.searchParams);
+    const tipoFiltro = normalizeRequestedType(request.nextUrl.searchParams.get("tipo"));
     const supabase = createAdminClient();
 
     let matchValues: string[] = [];
@@ -132,38 +162,51 @@ export async function GET(request: NextRequest, context: { params: { id: string 
       matchValues = Array.from(new Set([cajaRow.slug, ...getLegacyCuentaMedioValues(cajaRow.slug)]));
     }
 
+    const includeIngresos = tipoFiltro === "todos" || tipoFiltro === "ingreso";
+    const includeEgresos = tipoFiltro === "todos" || tipoFiltro === "egreso";
+
     const [cobrosByCajaResult, cobrosByCuentaResult, egresosByCajaResult, egresosByCuentaResult] = await Promise.all([
-      isSinAsignar
+      !includeIngresos
+        ? Promise.resolve({ data: [] as CobroMovimientoRow[], error: null })
+        : isSinAsignar
         ? supabase
             .from("cobros")
             .select("id, concepto, monto, fecha_cobro, fecha_vencimiento, created_at, estado, tipo, cliente:clientes(empresa)")
+            .eq("estado", "cobrado")
             .is("caja_id", null)
             .is("cuenta_medio", null)
         : supabase
             .from("cobros")
             .select("id, concepto, monto, fecha_cobro, fecha_vencimiento, created_at, estado, tipo, cliente:clientes(empresa)")
+            .eq("estado", "cobrado")
             .eq("caja_id", cajaId),
-      isSinAsignar || matchValues.length === 0
+      !includeIngresos || isSinAsignar || matchValues.length === 0
         ? Promise.resolve({ data: [] as CobroMovimientoRow[], error: null })
         : supabase
             .from("cobros")
             .select("id, concepto, monto, fecha_cobro, fecha_vencimiento, created_at, estado, tipo, cliente:clientes(empresa)")
+            .eq("estado", "cobrado")
             .in("cuenta_medio", matchValues),
-      isSinAsignar
+      !includeEgresos
+        ? Promise.resolve({ data: [] as EgresoMovimientoRow[], error: null })
+        : isSinAsignar
         ? supabase
             .from("egresos")
             .select("id, concepto, monto, fecha_pago, fecha, pagado, categoria, cliente:clientes(empresa)")
+            .eq("pagado", true)
             .is("caja_id", null)
             .is("cuenta_medio", null)
         : supabase
             .from("egresos")
             .select("id, concepto, monto, fecha_pago, fecha, pagado, categoria, cliente:clientes(empresa)")
+            .eq("pagado", true)
             .eq("caja_id", cajaId),
-      isSinAsignar || matchValues.length === 0
+      !includeEgresos || isSinAsignar || matchValues.length === 0
         ? Promise.resolve({ data: [] as EgresoMovimientoRow[], error: null })
         : supabase
             .from("egresos")
             .select("id, concepto, monto, fecha_pago, fecha, pagado, categoria, cliente:clientes(empresa)")
+            .eq("pagado", true)
             .in("cuenta_medio", matchValues)
     ]);
 
@@ -188,7 +231,7 @@ export async function GET(request: NextRequest, context: { params: { id: string 
     ]);
 
     const cobros = cobrosSource
-      .filter((cobro) => isDateInMonth(getCobroEffectiveDate(cobro), month))
+      .filter((cobro) => isDateInRange(getCobroEffectiveDate(cobro), mesDesde, mesHasta))
       .map(
         (cobro) =>
           ({
@@ -205,7 +248,7 @@ export async function GET(request: NextRequest, context: { params: { id: string 
       );
 
     const egresos = egresosSource
-      .filter((egreso) => isDateInMonth(getEgresoEffectiveDate(egreso), month))
+      .filter((egreso) => isDateInRange(getEgresoEffectiveDate(egreso), mesDesde, mesHasta))
       .map(
         (egreso) =>
           ({
@@ -229,18 +272,21 @@ export async function GET(request: NextRequest, context: { params: { id: string 
       .filter((item) => item.tipo === "egreso")
       .reduce((total, item) => total + item.monto, 0);
 
-    const resumenMes: ResumenMovimientosCaja = {
+    const resumenPeriodo: ResumenMovimientosCaja = {
       total_ingresos: resumenIngresos,
       total_egresos: resumenEgresos,
-      balance_neto_mes: resumenIngresos - resumenEgresos
+      balance_neto_periodo: resumenIngresos - resumenEgresos
     };
 
     return NextResponse.json({
       data: {
         caja_id: cajaId,
-        mes: month,
+        mes: mesDesde === mesHasta ? mesDesde : null,
+        mes_desde: mesDesde,
+        mes_hasta: mesHasta,
+        tipo: tipoFiltro,
         movimientos,
-        resumen_mes: resumenMes
+        resumen_periodo: resumenPeriodo
       }
     });
   } catch (error) {

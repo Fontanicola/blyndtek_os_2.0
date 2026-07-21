@@ -54,14 +54,19 @@ export type MovimientoCaja = {
 export type ResumenMovimientosCaja = {
   total_ingresos: number;
   total_egresos: number;
-  balance_neto_mes: number;
+  balance_neto_periodo: number;
 };
+
+export type FiltroMovimientosCaja = "ingreso" | "egreso" | "todos";
 
 export type CajaMovimientosPayload = {
   caja_id: string;
-  mes: string;
+  mes: string | null;
+  mes_desde: string;
+  mes_hasta: string;
+  tipo: FiltroMovimientosCaja;
   movimientos: MovimientoCaja[];
-  resumen_mes: ResumenMovimientosCaja;
+  resumen_periodo: ResumenMovimientosCaja;
 };
 
 export type MetricasFinanzas = {

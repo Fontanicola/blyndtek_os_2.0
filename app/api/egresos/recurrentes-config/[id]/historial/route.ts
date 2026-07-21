@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { ensureEgresoRecurrenteInstance } from "@/lib/finanzas/egresosRecurrentes";
 import { getAdminUser } from "@/lib/require-admin";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { hoyLocalString } from "@/lib/utils/fechas";
 import type { EgresoRecurrenteConfig } from "@/types/egresos";
 
 type RouteContext = {
@@ -37,7 +36,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 
     const result = await ensureEgresoRecurrenteInstance(supabase, config as EgresoRecurrenteConfig, body.month, {
       forcePagado: body.pagado,
-      fechaPago: body.pagado ? body.fecha_pago ?? hoyLocalString() : null
+      fechaPago: body.pagado ? body.fecha_pago ?? null : null
     });
 
     return NextResponse.json({ data: result.egreso });

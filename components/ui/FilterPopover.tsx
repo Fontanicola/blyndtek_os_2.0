@@ -9,9 +9,19 @@ type FilterPopoverProps = {
   children: ReactNode;
   activeCount?: number;
   className?: string;
+  align?: "left" | "right";
+  label?: string;
+  iconOnly?: boolean;
 };
 
-export function FilterPopover({ children, activeCount = 0, className }: FilterPopoverProps) {
+export function FilterPopover({
+  children,
+  activeCount = 0,
+  className,
+  align = "left",
+  label = "Filtros",
+  iconOnly = false
+}: FilterPopoverProps) {
   const rootRef = useRef<HTMLDivElement | null>(null);
   const [open, setOpen] = useState(false);
 
@@ -48,10 +58,10 @@ export function FilterPopover({ children, activeCount = 0, className }: FilterPo
         variant="secondary"
         size="sm"
         onClick={() => setOpen((current) => !current)}
-        className="relative"
+        className={cn("relative", iconOnly && "px-2.5")}
       >
         <FilterIcon />
-        Filtros
+        {!iconOnly ? label : null}
         {activeCount > 0 ? (
           <span className="absolute -right-2 -top-2 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-signal px-1 text-[10px] font-label leading-none text-white">
             {activeCount}
@@ -60,7 +70,12 @@ export function FilterPopover({ children, activeCount = 0, className }: FilterPo
       </Button>
 
       {open ? (
-        <div className="absolute left-0 top-full z-50 mt-2 w-[340px] rounded-card border border-[#EAECF0] bg-white p-4 shadow-modal">
+        <div
+          className={cn(
+            "absolute top-full z-50 mt-2 w-[340px] rounded-card border border-[#EAECF0] bg-white p-4 shadow-modal",
+            align === "right" ? "right-0" : "left-0"
+          )}
+        >
           {children}
         </div>
       ) : null}

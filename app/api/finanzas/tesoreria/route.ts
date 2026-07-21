@@ -12,6 +12,7 @@ import type { TesoreriaCajaBalance, TesoreriaFinanzas, TesoreriaHistoricoPoint }
 type CobroRow = {
   monto: number;
   estado: EstadoCobro;
+  caja_id: string | null;
   cuenta_medio: string | null;
   fecha_emision: string | null;
   fecha_cobro: string | null;
@@ -20,6 +21,7 @@ type CobroRow = {
 type EgresoRow = {
   monto: number;
   pagado: boolean;
+  caja_id: string | null;
   cuenta_medio: string | null;
   fecha_pago: string | null;
   fecha: string;
@@ -102,6 +104,29 @@ function makeSinAsignarBucket(): BucketBuild {
   };
 }
 
+function resolveBucketKey(
+  row: { caja_id: string | null; cuenta_medio: string | null },
+  cajasById: Map<string, CajaRow>,
+  cajasBySlug: Map<string, CajaRow>
+) {
+  if (row.caja_id) {
+    const cajaById = cajasById.get(row.caja_id);
+    if (cajaById) {
+      return cajaById.slug;
+    }
+  }
+
+  const normalizedSlug = normalizeCajaSlug(row.cuenta_medio);
+  if (normalizedSlug) {
+    const cajaBySlug = cajasBySlug.get(normalizedSlug);
+    if (cajaBySlug) {
+      return cajaBySlug.slug;
+    }
+  }
+
+  return "sin_asignar";
+}
+
 export async function GET() {
   try {
     const admin = await getAdminUser();
@@ -112,8 +137,8 @@ export async function GET() {
     const supabase = createAdminClient();
     const [cajasResult, cobrosResult, egresosResult, configResult] = await Promise.all([
       supabase.from("cajas").select("id, nombre, slug, color, activa, orden").order("orden", { ascending: true }),
-      supabase.from("cobros").select("monto, estado, cuenta_medio, fecha_emision, fecha_cobro").eq("estado", "cobrado"),
-      supabase.from("egresos").select("monto, pagado, cuenta_medio, fecha_pago, fecha").eq("pagado", true),
+      supabase.from("cobros").select("monto, estado, caja_id, cuenta_medio, fecha_emision, fecha_cobro").eq("estado", "cobrado"),
+      supabase.from("egresos").select("monto, pagado, caja_id, cuenta_medio, fecha_pago, fecha").eq("pagado", true),
       supabase.from("config_finanzas").select("caja_inicial").order("updated_at", { ascending: false }).limit(1)
     ]);
 
@@ -134,6 +159,8 @@ export async function GET() {
     }
 
     const cajas = (cajasResult.data ?? []) as CajaRow[];
+    const cajasById = new Map(cajas.map((caja) => [caja.id, caja] as const));
+    const cajasBySlug = new Map(cajas.map((caja) => [caja.slug, caja] as const));
     const months = getLastMonths(6);
     const monthKeys = months.map((monthDate) => formatMonthKey(monthDate));
     const monthIndexByKey = new Map(monthKeys.map((key, index) => [key, index] as const));
@@ -147,7 +174,7 @@ export async function GET() {
     const egresos = (egresosResult.data ?? []) as EgresoRow[];
 
     for (const cobro of cobros) {
-      const key = normalizeCajaSlug(cobro.cuenta_medio) ?? "sin_asignar";
+      const key = resolveBucketKey(cobro, cajasById, cajasBySlug);
       const bucket = buckets.get(key) ?? buckets.get("sin_asignar");
       const monthKey = getMonthKey(cobro.fecha_cobro ?? cobro.fecha_emision);
       const monthIndex = monthKey ? monthIndexByKey.get(monthKey) : null;
@@ -165,7 +192,7 @@ export async function GET() {
     }
 
     for (const egreso of egresos) {
-      const key = normalizeCajaSlug(egreso.cuenta_medio) ?? "sin_asignar";
+      const key = resolveBucketKey(egreso, cajasById, cajasBySlug);
       const bucket = buckets.get(key) ?? buckets.get("sin_asignar");
       const monthKey = getMonthKey(egreso.fecha_pago ?? egreso.fecha);
       const monthIndex = monthKey ? monthIndexByKey.get(monthKey) : null;

@@ -14,7 +14,7 @@ import type { TesoreriaCajaBalance, TesoreriaFinanzas } from "@/types/finanzas";
 import type { Proyecto } from "@/types/proyectos";
 import type { Cotizacion } from "@/types/cotizaciones";
 import type { Suscripcion } from "@/types/suscripciones";
-import { Area, AreaChart, ResponsiveContainer } from "recharts";
+import { CartesianGrid, Line, LineChart, ResponsiveContainer, XAxis, YAxis } from "recharts";
 import { CajaDetalleModal } from "./CajaDetalleModal";
 import { TransferenciaCajaModal } from "./TransferenciaCajaModal";
 
@@ -49,6 +49,10 @@ function formatMovement(item: TesoreriaCajaBalance) {
   return item.ultimo_movimiento ? formatFecha(item.ultimo_movimiento) : "Sin movimientos";
 }
 
+function formatSparklineMonth(label: string | number) {
+  return String(label).slice(0, 3);
+}
+
 function CajaCard({ item, onOpen }: { item: TesoreriaCajaBalance; onOpen?: (item: TesoreriaCajaBalance) => void }) {
   const isInactive = !item.activa && !item.es_sin_asignar;
   const colorTone = getCajaLightBg(item.color);
@@ -64,60 +68,83 @@ function CajaCard({ item, onOpen }: { item: TesoreriaCajaBalance; onOpen?: (item
       onClick={onOpen ? () => onOpen(item) : undefined}
       className={cn("space-y-4 transition-opacity duration-fast ease-fast", isInactive && "opacity-70")}
     >
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0 flex items-center gap-3">
           <span className={cn("h-3 w-3 rounded-full", colorTone)} />
-          <div>
+          <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <h4 className="text-base font-label text-carbon">{item.nombre}</h4>
+              <h4 className="truncate text-base font-label text-carbon">{item.nombre}</h4>
               {isInactive ? <Badge variant="ghost">Inactiva</Badge> : null}
               {item.es_sin_asignar ? <Badge variant="default">Sin asignar</Badge> : null}
             </div>
-            <p className="text-xs text-graphite">{formatMovement(item)}</p>
+            <p className="truncate text-xs text-graphite">{formatMovement(item)}</p>
           </div>
         </div>
-        <Badge variant={balanceVariant(item.balance)}>{formatUSD(item.balance)}</Badge>
+        <Badge variant={balanceVariant(item.balance)} className="max-w-full shrink-0">
+          {formatUSD(item.balance)}
+        </Badge>
       </div>
 
       <div className="grid gap-3 text-sm">
-        <div className="flex items-center justify-between gap-3">
-          <span className="text-graphite">Cobrado</span>
-          <span className="font-label text-success">{formatUSD(item.total_cobrado)}</span>
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
+          <span className="truncate text-graphite">Cobrado</span>
+          <span className="whitespace-nowrap text-right font-label text-success">{formatUSD(item.total_cobrado)}</span>
         </div>
-        <div className="flex items-center justify-between gap-3">
-          <span className="text-graphite">Egresado</span>
-          <span className="font-label text-danger">{formatUSD(item.total_egresado)}</span>
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
+          <span className="truncate text-graphite">Egresado</span>
+          <span className="whitespace-nowrap text-right font-label text-danger">{formatUSD(item.total_egresado)}</span>
         </div>
-        <div className="flex items-center justify-between gap-3 border-t border-line-soft pt-3">
-          <span className="text-graphite">Balance</span>
-          <span className={cn("font-title text-lg", item.balance >= 0 ? "text-signal" : "text-danger")}>
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-t border-line-soft pt-3">
+          <span className="truncate text-graphite">Balance</span>
+          <span className={cn("whitespace-nowrap text-right font-title text-lg", item.balance >= 0 ? "text-signal" : "text-danger")}>
             {formatUSD(item.balance)}
           </span>
         </div>
 
-        <div className="pt-1">
-          <div className="h-[56px] overflow-hidden rounded-component border border-line-soft bg-paper px-2 py-1">
+        <div className="space-y-2 pt-1">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-graphite">
+            <span className="inline-flex items-center gap-1">
+              <span className="h-2 w-2 rounded-full bg-success" />
+              Ingresos
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <span className="h-2 w-2 rounded-full bg-danger" />
+              Egresos
+            </span>
+          </div>
+          <div className="h-[88px] overflow-hidden rounded-component border border-line-soft bg-paper px-2 py-2">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={item.historico} margin={{ top: 2, right: 0, bottom: 2, left: 0 }}>
-                <Area
+              <LineChart data={item.historico} margin={{ top: 4, right: 4, bottom: 0, left: -18 }}>
+                <CartesianGrid
+                  stroke={chartTheme.grid.stroke}
+                  strokeDasharray={chartTheme.grid.strokeDasharray}
+                  vertical={false}
+                />
+                <XAxis
+                  dataKey="mes"
+                  tickFormatter={formatSparklineMonth}
+                  tick={{ ...chartTheme.axis.tick, fontSize: 9 }}
+                  axisLine={false}
+                  tickLine={false}
+                  tickMargin={6}
+                  minTickGap={8}
+                />
+                <YAxis hide domain={[0, "dataMax"]} />
+                <Line
                   dataKey="cobrado"
                   stroke={chartTheme.colors.success}
-                  strokeWidth={2.2}
-                  fill={chartTheme.colors.success}
-                  fillOpacity={0.08}
+                  strokeWidth={2}
                   dot={false}
                   type="monotone"
                 />
-                <Area
+                <Line
                   dataKey="egresado"
                   stroke={chartTheme.colors.danger}
-                  strokeWidth={2.2}
-                  fill={chartTheme.colors.danger}
-                  fillOpacity={0.06}
+                  strokeWidth={2}
                   dot={false}
                   type="monotone"
                 />
-              </AreaChart>
+              </LineChart>
             </ResponsiveContainer>
           </div>
         </div>
@@ -431,7 +458,7 @@ export function TesoreriaCard({
         </div>
       </Card>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-4">
         {cajasVisibles.map((item) => (
           <CajaCard key={item.slug} item={item} onOpen={setSelectedCaja} />
         ))}

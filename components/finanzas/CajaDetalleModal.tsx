@@ -1,11 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Badge, Button, Card, EmptyState, Modal, Spinner } from "@/components/ui";
+import { Badge, Button, Card, EmptyState, FilterPopover, Input, Modal, Spinner } from "@/components/ui";
 import { formatMonthLabel } from "@/lib/finanzas";
 import { useCajaMovimientos } from "@/lib/hooks/useCajaMovimientos";
 import { cn } from "@/lib/cn";
-import { getCajaLightBg } from "@/lib/cajas";
 import { fechaInputAString, hoyLocalString } from "@/lib/utils/fechas";
 import { formatFecha, formatUSD } from "@/lib/utils/formatters";
 import type { Caja } from "@/types/cajas";
@@ -20,13 +19,12 @@ import type { Suscripcion } from "@/types/suscripciones";
 import {
   AlertTriangleIcon,
   ArrowDownLeftIcon,
-  ArrowLeftIcon,
-  ArrowRightIcon,
   ArrowUpRightIcon,
   BriefcaseIcon,
   CalendarIcon,
   DollarSignIcon,
   FileTextIcon,
+  FilterIcon,
   GlobeIcon,
   LandmarkIcon,
   MegaphoneIcon,
@@ -64,6 +62,14 @@ type CajaDetalleModalProps = {
 function monthLabelFromKey(monthKey: string) {
   const [year = NaN, month = NaN] = monthKey.split("-").map(Number);
   return formatMonthLabel(new Date(year, month - 1, 1));
+}
+
+function buildPeriodLabel(mesDesde: string, mesHasta: string | null) {
+  if (!mesHasta || mesHasta === mesDesde) {
+    return monthLabelFromKey(mesDesde);
+  }
+
+  return `${monthLabelFromKey(mesDesde)} - ${monthLabelFromKey(mesHasta)}`;
 }
 
 function getMovimientoMeta(movimiento: MovimientoCaja) {
@@ -191,28 +197,81 @@ export function CajaDetalleModal({
   showToast
 }: CajaDetalleModalProps) {
   const cajaId = caja?.id ?? null;
-  const { movimientos, resumenMes, mesSeleccionado, mesAnterior, mesSiguiente, fetchMovimientos, loading } = useCajaMovimientos(cajaId);
+  const {
+    movimientos,
+    resumenPeriodo,
+    mesSeleccionado,
+    mesHasta,
+    isSingleMonth,
+    tipoSeleccionado,
+    mesAnterior,
+    mesSiguiente,
+    setRango,
+    setTipo,
+    fetchMovimientos,
+    loading
+  } = useCajaMovimientos(cajaId);
   const [cobroModalOpen, setCobroModalOpen] = useState(false);
   const [egresoModalOpen, setEgresoModalOpen] = useState(false);
   const [savingIngreso, setSavingIngreso] = useState(false);
   const [savingEgreso, setSavingEgreso] = useState(false);
+  const [draftMesDesde, setDraftMesDesde] = useState(mesSeleccionado);
+  const [draftMesHasta, setDraftMesHasta] = useState<string | null>(mesHasta);
+  const [draftTipo, setDraftTipo] = useState(tipoSeleccionado);
+  const [rangeEnabled, setRangeEnabled] = useState(Boolean(mesHasta && mesHasta !== mesSeleccionado));
 
-  const monthLabel = useMemo(() => monthLabelFromKey(mesSeleccionado), [mesSeleccionado]);
+  const periodLabel = useMemo(() => buildPeriodLabel(mesSeleccionado, mesHasta), [mesHasta, mesSeleccionado]);
   const canTransfer = Boolean(cajaId && cajaId !== "sin_asignar");
   const cajaReal = useMemo(() => (cajaId ? cajas.find((item) => item.id === cajaId) ?? null : null), [cajaId, cajas]);
   const canCreateMovements = Boolean(cajaReal);
+  const activeFilterCount = (mesHasta && mesHasta !== mesSeleccionado ? 1 : 0) + (tipoSeleccionado !== "todos" ? 1 : 0);
+
+  useEffect(() => {
+    setDraftMesDesde(mesSeleccionado);
+    setDraftMesHasta(mesHasta);
+    setDraftTipo(tipoSeleccionado);
+    setRangeEnabled(Boolean(mesHasta && mesHasta !== mesSeleccionado));
+  }, [mesHasta, mesSeleccionado, tipoSeleccionado]);
 
   useEffect(() => {
     if (!isOpen || !cajaId) {
       return;
     }
 
-    void fetchMovimientos(mesSeleccionado).catch(() => undefined);
-  }, [cajaId, fetchMovimientos, isOpen, mesSeleccionado, refreshKey]);
+    void fetchMovimientos({
+      mesDesde: mesSeleccionado,
+      mesHasta,
+      tipo: tipoSeleccionado
+    }).catch(() => undefined);
+  }, [cajaId, fetchMovimientos, isOpen, mesHasta, mesSeleccionado, refreshKey, tipoSeleccionado]);
 
   async function handleMutationSuccess(message: string) {
-    await Promise.all([fetchMovimientos(mesSeleccionado).catch(() => undefined), Promise.resolve(onRefreshTesoreria())]);
+    await Promise.all([
+      fetchMovimientos({
+        mesDesde: mesSeleccionado,
+        mesHasta,
+        tipo: tipoSeleccionado
+      }).catch(() => undefined),
+      Promise.resolve(onRefreshTesoreria())
+    ]);
     showToast(message, "success");
+  }
+
+  function applyFilters() {
+    const nextMesDesde = draftMesDesde || hoyLocalString().slice(0, 7);
+    const nextMesHasta = rangeEnabled && draftMesHasta && draftMesHasta !== nextMesDesde ? draftMesHasta : null;
+    setRango(nextMesDesde, nextMesHasta);
+    setTipo(draftTipo);
+  }
+
+  function resetFilters() {
+    const currentMonth = hoyLocalString().slice(0, 7);
+    setDraftMesDesde(currentMonth);
+    setDraftMesHasta(null);
+    setDraftTipo("todos");
+    setRangeEnabled(false);
+    setRango(currentMonth, null);
+    setTipo("todos");
   }
 
   async function handleCreateIngreso(input: CobroModalInput) {
@@ -243,38 +302,8 @@ export function CajaDetalleModal({
 
   const body = cajaId ? (
     <div className="space-y-5">
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <span className={cn("h-3 w-3 rounded-full", getCajaLightBg(caja?.color ?? "signal"))} />
-          <div>
-            <p className="text-xs font-label uppercase tracking-[0.08em] text-graphite">Caja</p>
-            <p className="mt-1 text-base font-title text-carbon">{caja?.nombre}</p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-1 rounded-pill border border-line-soft bg-white p-1">
-          <button
-            type="button"
-            onClick={mesAnterior}
-            className="flex h-8 w-8 items-center justify-center rounded-pill text-graphite transition-colors duration-fast hover:bg-paper"
-            aria-label="Mes anterior"
-          >
-            <ArrowLeftIcon size={16} />
-          </button>
-          <span className="min-w-[128px] text-center text-sm font-label capitalize text-carbon">{monthLabel}</span>
-          <button
-            type="button"
-            onClick={mesSiguiente}
-            className="flex h-8 w-8 items-center justify-center rounded-pill text-graphite transition-colors duration-fast hover:bg-paper"
-            aria-label="Mes siguiente"
-          >
-            <ArrowRightIcon size={16} />
-          </button>
-        </div>
-      </div>
-
-      {canCreateMovements || (canTransfer && onRequestTransfer) ? (
-        <div className="flex flex-wrap items-center gap-2 rounded-card border border-line-soft bg-paper p-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-card border border-line-soft bg-paper p-3">
+        <div className="flex flex-wrap items-center gap-2">
           {canCreateMovements ? (
             <>
               <Button variant="primary" size="sm" onClick={() => setCobroModalOpen(true)}>
@@ -292,7 +321,87 @@ export function CajaDetalleModal({
             </Button>
           ) : null}
         </div>
-      ) : null}
+
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <Badge variant="ghost" className="capitalize">
+            {periodLabel}
+          </Badge>
+          <FilterPopover activeCount={activeFilterCount} align="right" iconOnly>
+            <div className="space-y-4">
+              <div className="space-y-1">
+                <p className="text-sm font-label text-carbon">Período</p>
+                <p className="text-xs text-graphite">Podés usar un solo mes o un rango continuo.</p>
+              </div>
+
+              <Input
+                label="Mes"
+                type="month"
+                value={draftMesDesde}
+                onChange={(event) => setDraftMesDesde(event.target.value)}
+              />
+
+              <label className="inline-flex items-center gap-2 text-sm text-carbon">
+                <input
+                  type="checkbox"
+                  checked={rangeEnabled}
+                  onChange={(event) => {
+                    const checked = event.target.checked;
+                    setRangeEnabled(checked);
+                    setDraftMesHasta(checked ? draftMesHasta ?? draftMesDesde : null);
+                  }}
+                  className="h-4 w-4 rounded border-line text-signal focus:ring-signal/20"
+                />
+                Usar rango de meses
+              </label>
+
+              {rangeEnabled ? (
+                <Input
+                  label="Mes hasta"
+                  type="month"
+                  value={draftMesHasta ?? draftMesDesde}
+                  min={draftMesDesde}
+                  onChange={(event) => setDraftMesHasta(event.target.value)}
+                />
+              ) : null}
+
+              <div className="space-y-1">
+                <label className="text-sm font-label text-carbon">Tipo</label>
+                <select
+                  value={draftTipo}
+                  onChange={(event) => setDraftTipo(event.target.value as "todos" | "ingreso" | "egreso")}
+                  className="w-full rounded-component border border-line bg-white px-3 py-2 text-sm text-carbon focus:border-signal focus:outline-none focus:ring-2 focus:ring-signal/20"
+                >
+                  <option value="todos">Todos</option>
+                  <option value="ingreso">Solo ingresos</option>
+                  <option value="egreso">Solo egresos</option>
+                </select>
+              </div>
+
+              {!rangeEnabled && isSingleMonth ? (
+                <div className="flex items-center justify-between rounded-component border border-line-soft bg-white p-2">
+                  <Button variant="ghost" size="sm" onClick={mesAnterior}>
+                    Mes anterior
+                  </Button>
+                  <span className="text-xs font-label capitalize text-carbon">{monthLabelFromKey(mesSeleccionado)}</span>
+                  <Button variant="ghost" size="sm" onClick={mesSiguiente}>
+                    Mes siguiente
+                  </Button>
+                </div>
+              ) : null}
+
+              <div className="flex items-center justify-between gap-2 pt-1">
+                <Button variant="ghost" size="sm" onClick={resetFilters}>
+                  Resetear
+                </Button>
+                <Button variant="primary" size="sm" onClick={applyFilters}>
+                  <FilterIcon size={16} />
+                  Aplicar filtros
+                </Button>
+              </div>
+            </div>
+          </FilterPopover>
+        </div>
+      </div>
 
       {loading ? (
         <div className="flex min-h-[240px] items-center justify-center rounded-card border border-line-soft bg-white">
@@ -301,9 +410,9 @@ export function CajaDetalleModal({
       ) : (
         <>
           <div className="grid gap-3 md:grid-cols-3">
-            <KpiMiniCard label="Ingresos" value={resumenMes?.total_ingresos ?? 0} tone="success" />
-            <KpiMiniCard label="Egresos" value={resumenMes?.total_egresos ?? 0} tone="danger" />
-            <KpiMiniCard label="Balance neto" value={resumenMes?.balance_neto_mes ?? 0} tone="signal" />
+            <KpiMiniCard label="Ingresos" value={resumenPeriodo?.total_ingresos ?? 0} tone="success" />
+            <KpiMiniCard label="Egresos" value={resumenPeriodo?.total_egresos ?? 0} tone="danger" />
+            <KpiMiniCard label="Balance neto" value={resumenPeriodo?.balance_neto_periodo ?? 0} tone="signal" />
           </div>
 
           <Card padding="sm" className="overflow-hidden">
