@@ -10,6 +10,96 @@ Estado general actual: Fase 0 completa. Cimientos técnicos listos: documentaci�
 
 ## Actualización 2026-07-21
 
+- Se corrigió un bug de duplicación en el detalle de movimientos por caja (`CajaDetalleModal`) que mostraba egresos e ingresos repetidos aunque la base no tuviera filas duplicadas reales.
+- Causa exacta confirmada:
+  - `app/api/cajas/[id]/movimientos/route.ts` hacía dos búsquedas separadas para compatibilidad histórica:
+    - una por `caja_id = [id]`
+    - otra por `cuenta_medio = [slug legacy]`
+  - luego concatenaba ambos universos y, aunque ya existía una deduplicación parcial sobre las filas crudas, la respuesta final y el `resumen_mes` no quedaban blindados explícitamente en la última capa;
+  - en cajas donde los mismos movimientos ya tenían correctamente seteados `caja_id` y `cuenta_medio`, el universo combinado quedaba duplicado antes de calcular lo que veía el modal.
+- Archivos modificados:
+  - `app/api/cajas/[id]/movimientos/route.ts`
+  - `docs/PROGRESS.md`
+- Fix aplicado:
+  - se agregó una deduplicación final explícita sobre la lista normalizada de movimientos usando `Map` indexado por `tipo:id` (`ingreso:uuid` / `egreso:uuid`);
+  - el `resumen_mes` ahora se calcula a partir de la lista final ya deduplicada, para que `Ingresos`, `Egresos` y `Balance neto` no queden inflados aunque un movimiento matchee por ambos criterios;
+  - también se normalizó `matchValues` con `Set` para evitar aliases repetidos en la consulta por `cuenta_medio`.
+- Verificación real contra Supabase para la caja `Dólar App` en julio 2026:
+  - `egresos` por `caja_id = dolar_app`: `15`
+  - `egresos` por `cuenta_medio IN ('dolar_app', 'stripe')`: `15`
+  - universo crudo concatenado previo al fix: `30`
+  - universo único real después de deduplicar por `id`: `15`
+  - resultado esperado del endpoint corregido para ese mes/caja: `15` filas, ni una más.
+- Verificación técnica local:
+  - `npm run lint` OK
+  - `npm run build` OK
+
+## Actualización 2026-07-21
+
+- Se corrigieron dos problemas en el detalle de movimientos por caja y en las acciones del modal de caja dentro de `Tesorería`.
+- Causa exacta del problema 1:
+  - `app/api/cajas/[id]/movimientos/route.ts` filtraba únicamente por `caja_id`,
+  - pero gran parte del histórico y algunos flujos legacy siguen usando solo `cuenta_medio` con el slug de la caja,
+  - por eso el detalle mensual omitía movimientos válidos aunque existieran en la base.
+- Causa exacta del problema 2:
+  - `CajaDetalleModal.tsx` ya tenía cableadas las acciones `+ Ingreso`, `+ Egreso` y `Transferir desde esta caja`,
+  - pero estaban embebidas dentro del mismo bloque compacto de navegación mensual, por lo que en la práctica quedaban visualmente escondidas y daban la impresión de no existir.
+- Archivos creados/modificados para este fix:
+  - `app/api/cajas/[id]/movimientos/route.ts`
+  - `app/api/cobros/route.ts`
+  - `app/api/cobros/[id]/route.ts`
+  - `app/api/egresos/route.ts`
+  - `app/api/egresos/[id]/route.ts`
+  - `app/api/clientes/[id]/costos/route.ts`
+  - `lib/finanzas/egresosRecurrentes.ts`
+  - `components/finanzas/CajaDetalleModal.tsx`
+  - `docs/PROGRESS.md`
+- Fix aplicado:
+  - el endpoint de movimientos ahora resuelve primero la caja real, toma su `slug` y trae movimientos por `caja_id = [id]` o por `cuenta_medio` legacy equivalente, deduplicando por `id` para no duplicar registros que matchean por ambos campos;
+  - la caja virtual `sin_asignar` ahora considera correctamente solo movimientos con `caja_id IS NULL` y `cuenta_medio IS NULL`, para no mezclar históricos ya asociados por slug;
+  - todas las escrituras auditadas de `cobros` y `egresos` ahora normalizan server-side la selección de caja para persistir siempre `caja_id` y `cuenta_medio` juntos cuando hay una caja elegida;
+  - la generación y sincronización de egresos recurrentes ahora también propaga ambos campos (`caja_id` + `cuenta_medio`) a la plantilla y a cada instancia mensual;
+  - `CajaDetalleModal.tsx` separó la navegación mensual de la fila de acciones, dejando los botones `+ Ingreso`, `+ Egreso` y `Transferir desde esta caja` visibles y accesibles a simple vista.
+- Resultado de la auditoría de puntos de escritura:
+  - ya estaban bien del lado cliente: `components/finanzas/CobroModal.tsx`, `components/finanzas/EgresoModal.tsx`, `components/finanzas/CajaDetalleModal.tsx`, `app/api/transferencias-caja/route.ts`;
+  - hubo que corregir persistencia server-side en: `app/api/cobros/route.ts`, `app/api/cobros/[id]/route.ts`, `app/api/egresos/route.ts`, `app/api/egresos/[id]/route.ts`, `app/api/clientes/[id]/costos/route.ts`, `lib/finanzas/egresosRecurrentes.ts`.
+- Verificación real ejecutada contra Supabase para la caja `Efectivo` en julio 2026:
+  - movimientos legacy por `cuenta_medio='efectivo'`: `4 cobros + 2 egresos = 6 movimientos`;
+  - movimientos devueltos con el criterio corregido del endpoint (`caja_id OR cuenta_medio`, deduplicado): `4 cobros + 2 egresos = 6 movimientos`;
+  - los conteos coinciden exactamente.
+- Verificación técnica local:
+  - `npm run lint` OK
+  - `npm run build` OK
+- Decisiones técnicas tomadas:
+  - cualquier lectura histórica de movimientos por caja debe contemplar compatibilidad con `cuenta_medio` legacy además de `caja_id`;
+  - cualquier escritura nueva que elija caja debe persistir siempre ambos campos para evitar futuros desfasajes entre el balance por caja y los movimientos históricos.
+
+## Actualización 2026-07-21
+
+- Se reparó el desfasaje entre documentación/tipos y la creación real de contratos respecto de `contratos.descuento_diagnostico_usd`.
+- Causa exacta del bug reportado:
+  - el campo ya estaba documentado en `docs/DATABASE.md` y tipado en `types/supabase.ts` / `types/contratos.ts`,
+  - pero la creación/redefinición de contrato dependía de insertarlo siempre, sin fallback defensivo si un entorno todavía no tenía aplicada esa columna, lo que llevaba al error de schema cache al redefinir desde `/clientes`.
+- Archivos creados/modificados:
+  - `supabase/migrations/016_repair_contratos_descuento_diagnostico.sql`
+  - `lib/contratos/crearOActualizarContrato.ts`
+  - `docs/PROGRESS.md`
+- Fix aplicado:
+  - se agregó la migración idempotente de repair para asegurar `contratos.descuento_diagnostico_usd numeric not null default 0`,
+  - `lib/contratos/crearOActualizarContrato.ts` ahora normaliza `descuento_diagnostico_usd` a `0` al leer contratos,
+  - el insert del contrato ahora intenta primero con `descuento_diagnostico_usd` y, si Supabase responde error `42703` por columna inexistente, reintenta sin ese campo y deja un `console.warn`, siguiendo el mismo criterio defensivo ya usado antes en comisiones.
+- Revisión de tipos:
+  - `types/supabase.ts` ya incluía `descuento_diagnostico_usd` en `Row`, `Insert` y `Update`.
+  - `types/contratos.ts` ya incluía `descuento_diagnostico_usd` en `Contrato`.
+  - no hizo falta modificar tipos, solo confirmar que estaban alineados.
+- Verificación real contra Supabase ejecutada el martes 21 de julio de 2026:
+  - consulta REST: `GET /rest/v1/contratos?select=id,descuento_diagnostico_usd&limit=1`
+  - resultado: `200 OK` con payload incluyendo `descuento_diagnostico_usd`, confirmando que la columna existe en el schema cache del proyecto consultado.
+- Decisión técnica:
+  - aunque la columna ya esté presente en el entorno hoy, el fallback se mantiene para evitar que una redefinición de contrato se caiga completa en cualquier entorno atrasado o recién restaurado antes de correr la migración.
+
+## Actualización 2026-07-21
+
 - Se preparó el esquema de base para transferencias entre cajas, sin tocar todavía endpoints ni UI.
 - Archivos creados/modificados:
   - `supabase/migrations/015_transferencias_caja.sql`
@@ -2182,6 +2272,96 @@ $ find . -maxdepth 3 \( -name 'middleware.*' -o -name 'proxy.*' \) -not -path '.
 - Decisiones técnicas:
   - El modal es solo de visualización: no agrega alta/edición de ingresos o egresos desde Tesorería en esta unidad.
   - Se mantuvo el criterio de fecha efectiva del backend existente y el uso del helper central de fechas para evitar parseos inconsistentes.
+
+## 2026-07-21 — Endpoint de transferencias entre cajas
+
+- Se creó `app/api/transferencias-caja/route.ts` con:
+  - `POST` para ejecutar una transferencia entre dos cajas activas.
+  - `GET` para listar historial de transferencias, filtrable por `caja_id`.
+- El `POST` valida:
+  - origen y destino distintos,
+  - `monto > 0`,
+  - fecha válida,
+  - existencia de ambas cajas,
+  - estado activo de ambas cajas.
+- La transferencia se ejecuta como cascada manual con `service_role`:
+  - crea un `egreso` pagado en la caja origen con `categoria='transferencia'`,
+  - crea un `cobro` cobrado en la caja destino con `tipo='transferencia'`,
+  - crea el registro de `transferencias_caja` vinculando ambos movimientos y `creado_por`.
+- Se implementó rollback manual:
+  - si falla la creación del cobro, se elimina el egreso recién creado;
+  - si falla el registro en `transferencias_caja`, se eliminan el cobro y el egreso creados.
+- Se extendió `types/transferencias.ts` con:
+  - `CreateTransferenciaCajaInput`
+  - `TransferenciaCajaListadoItem`
+  - `TransferenciaCajaResponse`
+  - `TransferenciasCajaListResponse`
+- Se ajustó `app/api/cobros/route.ts` para aceptar `transferencia` como `tipo` válido en filtros y mantener consistencia con el nuevo esquema.
+- Archivos creados/modificados:
+  - `app/api/transferencias-caja/route.ts`
+  - `types/transferencias.ts`
+  - `app/api/cobros/route.ts`
+  - `docs/PROGRESS.md`
+- Decisiones técnicas:
+  - La transferencia entre cajas se mantiene como movimiento puramente contable entre cajas propias: no dispara comisiones, ni alta de clientes, ni automatizaciones comerciales, porque el flujo nuevo inserta directo en `cobros`, `egresos` y `transferencias_caja` sin pasar por rutas que generan lógica de negocio adicional.
+  - Para compatibilidad con la lectura legacy de Tesorería, el endpoint sigue completando `cuenta_medio` con el `slug` de cada caja además de `caja_id`.
+  - `npm run lint` OK.
+  - `npm run build` OK.
+
+## 2026-07-21 — UI de transferencias entre cajas en Tesorería
+
+- Se creó `components/finanzas/TransferenciaCajaModal.tsx` como modal reutilizable para ejecutar transferencias entre cajas desde Finanzas → Tesorería.
+- El modal incluye:
+  - selector de caja origen,
+  - selector de caja destino excluyendo la caja ya elegida como origen,
+  - monto,
+  - fecha,
+  - nota opcional,
+  - `SavingIndicator` con estados `idle/saving/saved`,
+  - errores inline claros cuando la API responde validaciones de negocio.
+- `components/finanzas/TesoreriaCard.tsx` ahora muestra un botón visible `Transferir` en el header de la tab Tesorería y monta una única instancia compartida del modal.
+- `components/finanzas/CajaDetalleModal.tsx` suma el acceso rápido `Transferir desde esta caja`, preseleccionando `caja_origen_id` con la caja actualmente abierta.
+- También se agregó un mecanismo de refresh compartido:
+  - al confirmar una transferencia se refresca la tab Tesorería completa,
+  - y si el detalle de caja está abierto, se vuelve a consultar el mes actual para reflejar el nuevo movimiento sin cerrar el modal.
+- Archivos creados/modificados:
+  - `components/finanzas/TransferenciaCajaModal.tsx`
+  - `components/finanzas/TesoreriaCard.tsx`
+  - `components/finanzas/CajaDetalleModal.tsx`
+  - `docs/PROGRESS.md`
+- Decisiones técnicas:
+  - La UI reutiliza el endpoint `POST /api/transferencias-caja` ya implementado, sin crear lógica paralela en frontend.
+  - Se usaron únicamente componentes del design system vigente (`Modal`, `Input`, `Button`, `SavingIndicator`) y `lucide-react` vía el registro centralizado.
+  - `npm run lint` OK.
+  - `npm run build` OK.
+
+## 2026-07-21 — Alta directa de ingresos y egresos desde el detalle de caja
+
+- `components/finanzas/CajaDetalleModal.tsx` ahora muestra acciones rápidas `+ Ingreso` y `+ Egreso` dentro del detalle mensual de cada caja.
+- Ambas acciones reutilizan los modales existentes del módulo Finanzas:
+  - `CobroModal` para ingresos,
+  - `EgresoModal` para egresos.
+- No se creó ningún endpoint ni formulario paralelo:
+  - el detalle de caja recibe y usa las mismas mutaciones reales de `useFinanzas` (`createCobro` y `createEgreso`) ya utilizadas por la tab general de Finanzas;
+  - el único cambio es la preselección del contexto de caja.
+- `components/finanzas/CobroModal.tsx` se extendió para soportar `defaults` y `saving`, alineándolo con el patrón ya existente de `EgresoModal`.
+- `components/finanzas/EgresoModal.tsx` se ajustó para manejar y devolver explícitamente `caja_id` además de `cuenta_medio`, manteniendo compatibilidad legacy por slug y dejando el dato normalizado de caja en la creación.
+- `components/finanzas/TesoreriaCard.tsx` y `components/finanzas/FinanzasClient.tsx` ahora pasan al detalle de caja los datasets y handlers necesarios para reutilizar esos modales sin duplicar lógica.
+- Refresh aplicado al guardar:
+  - se refresca la lista de movimientos del mes visible dentro de `CajaDetalleModal`,
+  - se refresca la Tesorería de fondo para actualizar balance general y balance por caja sin tener que cerrar el modal.
+- Archivos creados/modificados:
+  - `components/finanzas/CajaDetalleModal.tsx`
+  - `components/finanzas/CobroModal.tsx`
+  - `components/finanzas/EgresoModal.tsx`
+  - `components/finanzas/TesoreriaCard.tsx`
+  - `components/finanzas/FinanzasClient.tsx`
+  - `docs/PROGRESS.md`
+- Decisiones técnicas:
+  - Los ingresos creados desde una caja arrancan con `tipo='otro'` y `cliente_id=null` por default, para habilitar ingresos genéricos sin fricción.
+  - Los egresos creados desde una caja siguen usando `cuenta_medio` para compatibilidad con lecturas legacy, pero ahora también propagan `caja_id` explícito desde el modal.
+  - `npm run lint` OK.
+  - `npm run build` OK.
   - Inserción temporal contra Supabase intentada para validar un ingreso genérico real: falló por `null value in column "cliente_id" of relation "cobros" violates not-null constraint`, confirmando la causa exacta y justificando la migración agregada.
 
 ## 2026-07-21 — Finanzas: nueva tab Presupuesto

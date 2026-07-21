@@ -1,18 +1,28 @@
 "use client";
 
-import { useMemo } from "react";
-import { Badge, Card, EmptyState, Modal, Spinner } from "@/components/ui";
+import { useEffect, useMemo, useState } from "react";
+import { Badge, Button, Card, EmptyState, Modal, Spinner } from "@/components/ui";
 import { formatMonthLabel } from "@/lib/finanzas";
 import { useCajaMovimientos } from "@/lib/hooks/useCajaMovimientos";
 import { cn } from "@/lib/cn";
 import { getCajaLightBg } from "@/lib/cajas";
+import { fechaInputAString, hoyLocalString } from "@/lib/utils/fechas";
 import { formatFecha, formatUSD } from "@/lib/utils/formatters";
+import type { Caja } from "@/types/cajas";
+import type { CobroModalInput } from "@/components/finanzas/CobroModal";
+import type { CreateEgresoInput } from "@/types/egresos";
 import type { MovimientoCaja } from "@/types/finanzas";
+import type { CreateCobroInput } from "@/types/cobros";
+import type { Cliente } from "@/types/clientes";
+import type { Proyecto } from "@/types/proyectos";
+import type { Cotizacion } from "@/types/cotizaciones";
+import type { Suscripcion } from "@/types/suscripciones";
 import {
   AlertTriangleIcon,
   ArrowDownLeftIcon,
   ArrowLeftIcon,
   ArrowRightIcon,
+  ArrowUpRightIcon,
   BriefcaseIcon,
   CalendarIcon,
   DollarSignIcon,
@@ -27,6 +37,8 @@ import {
   WalletIcon,
   WrenchIcon
 } from "@/components/ui/icons";
+import { CobroModal } from "./CobroModal";
+import { EgresoModal } from "./EgresoModal";
 
 type CajaDetalleModalProps = {
   isOpen: boolean;
@@ -36,6 +48,17 @@ type CajaDetalleModalProps = {
     nombre: string;
     color: string;
   } | null;
+  refreshKey?: number;
+  onRequestTransfer?: (cajaId: string) => void;
+  cajas: Caja[];
+  clientes: Array<Pick<Cliente, "id" | "empresa" | "pais" | "estado">>;
+  proyectos: Array<Pick<Proyecto, "id" | "nombre" | "estado" | "cliente_id"> & { clienteNombre?: string | null }>;
+  cotizaciones: Array<Pick<Cotizacion, "id" | "empresa" | "precio_total">>;
+  suscripciones: Array<Pick<Suscripcion, "id" | "tipo" | "estado" | "monto_mensual">>;
+  onCreateCobro: (input: CreateCobroInput) => Promise<unknown>;
+  onCreateEgreso: (input: CreateEgresoInput) => Promise<unknown>;
+  onRefreshTesoreria: () => Promise<void> | void;
+  showToast: (message: string, type?: "success" | "info" | "warning" | "error") => void;
 };
 
 function monthLabelFromKey(monthKey: string) {
@@ -151,11 +174,72 @@ function MovimientoRow({ movimiento }: { movimiento: MovimientoCaja }) {
   );
 }
 
-export function CajaDetalleModal({ isOpen, onClose, caja }: CajaDetalleModalProps) {
+export function CajaDetalleModal({
+  isOpen,
+  onClose,
+  caja,
+  refreshKey = 0,
+  onRequestTransfer,
+  cajas,
+  clientes,
+  proyectos,
+  cotizaciones,
+  suscripciones,
+  onCreateCobro,
+  onCreateEgreso,
+  onRefreshTesoreria,
+  showToast
+}: CajaDetalleModalProps) {
   const cajaId = caja?.id ?? null;
-  const { movimientos, resumenMes, mesSeleccionado, mesAnterior, mesSiguiente, loading } = useCajaMovimientos(cajaId);
+  const { movimientos, resumenMes, mesSeleccionado, mesAnterior, mesSiguiente, fetchMovimientos, loading } = useCajaMovimientos(cajaId);
+  const [cobroModalOpen, setCobroModalOpen] = useState(false);
+  const [egresoModalOpen, setEgresoModalOpen] = useState(false);
+  const [savingIngreso, setSavingIngreso] = useState(false);
+  const [savingEgreso, setSavingEgreso] = useState(false);
 
   const monthLabel = useMemo(() => monthLabelFromKey(mesSeleccionado), [mesSeleccionado]);
+  const canTransfer = Boolean(cajaId && cajaId !== "sin_asignar");
+  const cajaReal = useMemo(() => (cajaId ? cajas.find((item) => item.id === cajaId) ?? null : null), [cajaId, cajas]);
+  const canCreateMovements = Boolean(cajaReal);
+
+  useEffect(() => {
+    if (!isOpen || !cajaId) {
+      return;
+    }
+
+    void fetchMovimientos(mesSeleccionado).catch(() => undefined);
+  }, [cajaId, fetchMovimientos, isOpen, mesSeleccionado, refreshKey]);
+
+  async function handleMutationSuccess(message: string) {
+    await Promise.all([fetchMovimientos(mesSeleccionado).catch(() => undefined), Promise.resolve(onRefreshTesoreria())]);
+    showToast(message, "success");
+  }
+
+  async function handleCreateIngreso(input: CobroModalInput) {
+    try {
+      setSavingIngreso(true);
+      await onCreateCobro(input);
+      setCobroModalOpen(false);
+      await handleMutationSuccess("Ingreso creado correctamente.");
+    } catch (mutationError) {
+      showToast(mutationError instanceof Error ? mutationError.message : "No se pudo guardar el ingreso.", "error");
+    } finally {
+      setSavingIngreso(false);
+    }
+  }
+
+  async function handleCreateEgreso(input: CreateEgresoInput) {
+    try {
+      setSavingEgreso(true);
+      await onCreateEgreso(input);
+      setEgresoModalOpen(false);
+      await handleMutationSuccess("Egreso creado correctamente.");
+    } catch (mutationError) {
+      showToast(mutationError instanceof Error ? mutationError.message : "No se pudo guardar el egreso.", "error");
+    } finally {
+      setSavingEgreso(false);
+    }
+  }
 
   const body = cajaId ? (
     <div className="space-y-5">
@@ -188,6 +272,27 @@ export function CajaDetalleModal({ isOpen, onClose, caja }: CajaDetalleModalProp
           </button>
         </div>
       </div>
+
+      {canCreateMovements || (canTransfer && onRequestTransfer) ? (
+        <div className="flex flex-wrap items-center gap-2 rounded-card border border-line-soft bg-paper p-3">
+          {canCreateMovements ? (
+            <>
+              <Button variant="primary" size="sm" onClick={() => setCobroModalOpen(true)}>
+                + Ingreso
+              </Button>
+              <Button variant="secondary" size="sm" onClick={() => setEgresoModalOpen(true)}>
+                + Egreso
+              </Button>
+            </>
+          ) : null}
+          {canTransfer && onRequestTransfer ? (
+            <Button variant="secondary" size="sm" onClick={() => onRequestTransfer(cajaId)}>
+              <ArrowUpRightIcon size={16} />
+              Transferir desde esta caja
+            </Button>
+          ) : null}
+        </div>
+      ) : null}
 
       {loading ? (
         <div className="flex min-h-[240px] items-center justify-center rounded-card border border-line-soft bg-white">
@@ -230,8 +335,57 @@ export function CajaDetalleModal({ isOpen, onClose, caja }: CajaDetalleModalProp
   );
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={caja?.nombre ?? "Detalle de movimientos"} size="xl">
-      {body}
-    </Modal>
+    <>
+      <Modal isOpen={isOpen} onClose={onClose} title={caja?.nombre ?? "Detalle de movimientos"} size="xl">
+        {body}
+      </Modal>
+
+      <CobroModal
+        isOpen={cobroModalOpen}
+        onClose={() => setCobroModalOpen(false)}
+        onSave={handleCreateIngreso}
+        defaults={{
+          cliente_id: null,
+          concepto: "",
+          tipo: "otro",
+          monto: 0,
+          fecha_emision: hoyLocalString(),
+          fecha_vencimiento: hoyLocalString(),
+          fecha_cobro: null,
+          caja_id: cajaReal?.id ?? null,
+          cuenta_medio: cajaReal?.slug ?? null,
+          tolerancia_dias: 0,
+          estado: "pendiente"
+        }}
+        clientes={clientes}
+        proyectos={proyectos}
+        cotizaciones={cotizaciones}
+        suscripciones={suscripciones}
+        cajas={cajas.filter((item) => item.activa)}
+        saving={savingIngreso}
+      />
+
+      <EgresoModal
+        isOpen={egresoModalOpen}
+        onClose={() => setEgresoModalOpen(false)}
+        onSave={handleCreateEgreso}
+        defaults={{
+          concepto: "",
+          categoria: "otro",
+          monto: 0,
+          fecha: fechaInputAString(mesSeleccionado ? `${mesSeleccionado}-01` : hoyLocalString()) || hoyLocalString(),
+          caja_id: cajaReal?.id ?? null,
+          cuenta_medio: cajaReal?.slug ?? null,
+          pagado: false,
+          fecha_pago: null,
+          proyecto_id: null,
+          notas: null,
+          recurrente: false
+        }}
+        proyectos={proyectos}
+        cajas={cajas.filter((item) => item.activa)}
+        saving={savingEgreso}
+      />
+    </>
   );
 }

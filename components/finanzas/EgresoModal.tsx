@@ -35,11 +35,18 @@ const categorias: Array<{ value: CategoriaEgreso; label: string }> = [
 ];
 
 function getInitialState(egreso: Egreso | null | undefined, defaults: Partial<CreateEgresoInput> | undefined, cajas: Caja[]) {
+  const cajaId =
+    egreso?.caja_id ??
+    defaults?.caja_id ??
+    (egreso?.cuenta_medio ? cajas.find((item) => item.slug === egreso.cuenta_medio)?.id ?? "" : "") ??
+    (defaults?.cuenta_medio ? cajas.find((item) => item.slug === defaults.cuenta_medio)?.id ?? "" : "");
+
   return {
     concepto: egreso?.concepto ?? defaults?.concepto ?? "",
     categoria: egreso?.categoria ?? defaults?.categoria ?? "otro",
     monto: String(egreso?.monto ?? defaults?.monto ?? ""),
     fecha: egreso?.fecha ?? defaults?.fecha ?? hoyLocalString(),
+    cajaId,
     cuentaMedio: egreso?.cuenta_medio ?? defaults?.cuenta_medio ?? cajas[0]?.slug ?? null,
     pagado: Boolean(egreso?.pagado ?? defaults?.pagado),
     fechaPago: egreso?.fecha_pago ?? defaults?.fecha_pago ?? hoyLocalString(),
@@ -66,6 +73,7 @@ export function EgresoModal({
   const [categoria, setCategoria] = useState<CategoriaEgreso>(initialState.categoria);
   const [monto, setMonto] = useState(initialState.monto);
   const [fecha, setFecha] = useState(initialState.fecha);
+  const [cajaId, setCajaId] = useState(initialState.cajaId);
   const [cuentaMedio, setCuentaMedio] = useState<CreateEgresoInput["cuenta_medio"]>(initialState.cuentaMedio);
   const [pagado, setPagado] = useState(initialState.pagado);
   const [fechaPago, setFechaPago] = useState(initialState.fechaPago);
@@ -79,6 +87,7 @@ export function EgresoModal({
     setCategoria(nextState.categoria);
     setMonto(nextState.monto);
     setFecha(nextState.fecha);
+    setCajaId(nextState.cajaId);
     setCuentaMedio(nextState.cuentaMedio);
     setPagado(nextState.pagado);
     setFechaPago(nextState.fechaPago);
@@ -110,17 +119,22 @@ export function EgresoModal({
         </div>
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-1">
-            <label className="text-sm font-label text-carbon">Cuenta / medio de pago</label>
+            <label className="text-sm font-label text-carbon">Caja</label>
             <select
-              value={cuentaMedio ?? ""}
-              onChange={(event) => setCuentaMedio(event.target.value || null)}
+              value={cajaId ?? ""}
+              onChange={(event) => {
+                const nextCajaId = event.target.value || "";
+                const selectedCaja = cajas.find((item) => item.id === nextCajaId) ?? null;
+                setCajaId(nextCajaId);
+                setCuentaMedio(selectedCaja?.slug ?? null);
+              }}
               className="w-full rounded-component border border-line bg-white px-3 py-2 text-sm text-carbon focus:border-signal focus:outline-none focus:ring-2 focus:ring-signal/20"
             >
               <option value="" disabled>
                 Seleccionar caja
               </option>
               {cajas.map((item) => (
-                <option key={item.id} value={item.slug}>
+                <option key={item.id} value={item.id}>
                   {item.nombre}
                 </option>
               ))}
@@ -211,6 +225,7 @@ export function EgresoModal({
                 monto: Number(monto),
                 fecha: fechaInputAString(fecha),
                 recurrente,
+                caja_id: cajaId || null,
                 cuenta_medio: cuentaMedio ?? null,
                 pagado,
                 fecha_pago: pagado ? fechaInputAString(fechaPago) : null,

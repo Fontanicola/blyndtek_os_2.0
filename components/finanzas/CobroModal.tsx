@@ -17,11 +17,13 @@ type CobroModalProps = {
   onClose: () => void;
   onSave: (input: CobroModalInput) => Promise<void> | void;
   cobro?: Cobro | null;
+  defaults?: Partial<CreateCobroInput>;
   clientes: Array<Pick<Cliente, "id" | "empresa" | "pais" | "estado">>;
   proyectos: Array<Pick<Proyecto, "id" | "nombre" | "estado" | "cliente_id"> & { clienteNombre?: string | null }>;
   cotizaciones: Array<Pick<Cotizacion, "id" | "empresa" | "precio_total">>;
   suscripciones: Array<Pick<Suscripcion, "id" | "tipo" | "estado" | "monto_mensual">>;
   cajas: Caja[];
+  saving?: boolean;
 };
 
 export type CobroModalInput = CreateCobroInput & {
@@ -33,12 +35,48 @@ export function CobroModal({
   onClose,
   onSave,
   cobro,
+  defaults,
   clientes,
   proyectos,
   cotizaciones,
   suscripciones,
-  cajas
+  cajas,
+  saving
 }: CobroModalProps) {
+  const getInitialState = useCallback(
+    (currentCobro?: Cobro | null, currentDefaults?: Partial<CreateCobroInput>) => {
+      const resolveCajaId = (targetCobro?: Cobro | null, targetDefaults?: Partial<CreateCobroInput>) => {
+        if (targetCobro?.caja_id) {
+          return targetCobro.caja_id;
+        }
+
+        if (targetDefaults?.caja_id) {
+          return targetDefaults.caja_id;
+        }
+
+        const legacySlug = normalizeCajaSlug(targetCobro?.cuenta_medio ?? targetDefaults?.cuenta_medio);
+        return legacySlug ? cajas.find((item) => item.slug === legacySlug)?.id ?? "" : "";
+      };
+
+      return {
+        concepto: currentCobro?.concepto ?? currentDefaults?.concepto ?? "",
+        monto: String(currentCobro?.monto ?? currentDefaults?.monto ?? ""),
+        fechaEmision: currentCobro?.fecha_emision ?? currentDefaults?.fecha_emision ?? hoyLocalString(),
+        fechaVencimiento: currentCobro?.fecha_vencimiento ?? currentDefaults?.fecha_vencimiento ?? hoyLocalString(),
+        tipo: currentCobro?.tipo ?? currentDefaults?.tipo ?? "hito",
+        estado: currentCobro?.estado ?? currentDefaults?.estado ?? "pendiente",
+        fechaCobro: currentCobro?.fecha_cobro ?? currentDefaults?.fecha_cobro ?? hoyLocalString(),
+        selectedCajaId: resolveCajaId(currentCobro, currentDefaults),
+        toleranciaDias: String(currentCobro?.tolerancia_dias ?? currentDefaults?.tolerancia_dias ?? 0),
+        clienteId: currentCobro?.cliente_id ?? currentDefaults?.cliente_id ?? "",
+        proyectoId: currentCobro?.proyecto_id ?? currentDefaults?.proyecto_id ?? "",
+        suscripcionId: currentCobro?.suscripcion_id ?? currentDefaults?.suscripcion_id ?? "",
+        cotizacionId: currentCobro?.cotizacion_id ?? currentDefaults?.cotizacion_id ?? ""
+      };
+    },
+    [cajas]
+  );
+
   const resolveInitialCajaId = useCallback(
     (currentCobro?: Cobro | null) => {
       if (currentCobro?.caja_id) {
@@ -51,37 +89,39 @@ export function CobroModal({
     [cajas]
   );
 
-  const [concepto, setConcepto] = useState(cobro?.concepto ?? "");
-  const [monto, setMonto] = useState(String(cobro?.monto ?? ""));
-  const [fechaEmision, setFechaEmision] = useState(cobro?.fecha_emision ?? hoyLocalString());
-  const [fechaVencimiento, setFechaVencimiento] = useState(cobro?.fecha_vencimiento ?? hoyLocalString());
-  const [tipo, setTipo] = useState<CreateCobroInput["tipo"]>(cobro?.tipo ?? "hito");
-  const [estado, setEstado] = useState<EstadoCobro>(cobro?.estado ?? "pendiente");
-  const [fechaCobro, setFechaCobro] = useState(cobro?.fecha_cobro ?? hoyLocalString());
-  const [selectedCajaId, setSelectedCajaId] = useState(resolveInitialCajaId(cobro));
-  const [toleranciaDias, setToleranciaDias] = useState(String(cobro?.tolerancia_dias ?? 0));
-  const [clienteId, setClienteId] = useState(cobro?.cliente_id ?? "");
-  const [proyectoId, setProyectoId] = useState(cobro?.proyecto_id ?? "");
-  const [suscripcionId, setSuscripcionId] = useState(cobro?.suscripcion_id ?? "");
-  const [cotizacionId, setCotizacionId] = useState(cobro?.cotizacion_id ?? "");
+  const initialState = getInitialState(cobro, defaults);
+  const [concepto, setConcepto] = useState(initialState.concepto);
+  const [monto, setMonto] = useState(initialState.monto);
+  const [fechaEmision, setFechaEmision] = useState(initialState.fechaEmision);
+  const [fechaVencimiento, setFechaVencimiento] = useState(initialState.fechaVencimiento);
+  const [tipo, setTipo] = useState<CreateCobroInput["tipo"]>(initialState.tipo);
+  const [estado, setEstado] = useState<EstadoCobro>(initialState.estado);
+  const [fechaCobro, setFechaCobro] = useState(initialState.fechaCobro);
+  const [selectedCajaId, setSelectedCajaId] = useState(initialState.selectedCajaId);
+  const [toleranciaDias, setToleranciaDias] = useState(initialState.toleranciaDias);
+  const [clienteId, setClienteId] = useState(initialState.clienteId);
+  const [proyectoId, setProyectoId] = useState(initialState.proyectoId);
+  const [suscripcionId, setSuscripcionId] = useState(initialState.suscripcionId);
+  const [cotizacionId, setCotizacionId] = useState(initialState.cotizacionId);
   const [notaCambio, setNotaCambio] = useState("");
 
   useEffect(() => {
-    setConcepto(cobro?.concepto ?? "");
-    setMonto(String(cobro?.monto ?? ""));
-    setFechaEmision(cobro?.fecha_emision ?? hoyLocalString());
-    setFechaVencimiento(cobro?.fecha_vencimiento ?? hoyLocalString());
-    setTipo(cobro?.tipo ?? "hito");
-    setEstado(cobro?.estado ?? "pendiente");
-    setFechaCobro(cobro?.fecha_cobro ?? hoyLocalString());
-    setSelectedCajaId(resolveInitialCajaId(cobro));
-    setToleranciaDias(String(cobro?.tolerancia_dias ?? 0));
-    setClienteId(cobro?.cliente_id ?? "");
-    setProyectoId(cobro?.proyecto_id ?? "");
-    setSuscripcionId(cobro?.suscripcion_id ?? "");
-    setCotizacionId(cobro?.cotizacion_id ?? "");
+    const nextState = getInitialState(cobro, defaults);
+    setConcepto(nextState.concepto);
+    setMonto(nextState.monto);
+    setFechaEmision(nextState.fechaEmision);
+    setFechaVencimiento(nextState.fechaVencimiento);
+    setTipo(nextState.tipo);
+    setEstado(nextState.estado);
+    setFechaCobro(nextState.fechaCobro);
+    setSelectedCajaId(nextState.selectedCajaId || resolveInitialCajaId(cobro));
+    setToleranciaDias(nextState.toleranciaDias);
+    setClienteId(nextState.clienteId);
+    setProyectoId(nextState.proyectoId);
+    setSuscripcionId(nextState.suscripcionId);
+    setCotizacionId(nextState.cotizacionId);
     setNotaCambio("");
-  }, [cobro, isOpen, resolveInitialCajaId]);
+  }, [cobro, defaults, getInitialState, isOpen, resolveInitialCajaId]);
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={cobro ? "Editar ingreso" : "Nuevo ingreso"} size="md">
@@ -113,6 +153,7 @@ export function CobroModal({
               <option value="mantenimiento">Mantenimiento</option>
               <option value="brick">Brick</option>
               <option value="diagnostico">Diagnóstico</option>
+              <option value="transferencia">Transferencia</option>
               <option value="otro">Otro</option>
             </select>
           </div>
@@ -225,6 +266,7 @@ export function CobroModal({
             Cancelar
           </Button>
           <Button
+            loading={saving}
             onClick={() => {
               if (!concepto.trim() || !monto.trim()) {
                 return;

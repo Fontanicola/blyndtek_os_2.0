@@ -31,6 +31,21 @@ type ClienteRow = {
   lead_id: string | null;
 };
 
+function isMissingDescuentoDiagnosticoColumn(error: { code?: string; message?: string } | null | undefined) {
+  if (!error) {
+    return false;
+  }
+
+  return error.code === "42703" && error.message?.includes("descuento_diagnostico_usd") === true;
+}
+
+function normalizeContratoRow(row: Partial<ContratoRow> & { id: string; cliente_id: string; valor_total: number }): ContratoRow {
+  return {
+    ...row,
+    descuento_diagnostico_usd: Number(row.descuento_diagnostico_usd ?? 0)
+  } as ContratoRow;
+}
+
 function toIsoDate(date: Date) {
   return hoyLocalString(date);
 }
@@ -76,7 +91,7 @@ async function fetchActiveContrato(supabase: SupabaseClient<Database>, clienteId
     return null;
   }
 
-  return data as ContratoRow;
+  return normalizeContratoRow(data as ContratoRow);
 }
 
 async function fetchCliente(supabase: SupabaseClient<Database>, clienteId: string) {
@@ -120,6 +135,39 @@ function buildCuotaMontoDistribucion(valorRestante: number, cantidadCuotas: numb
   );
 
   return cuotas.map((cents) => cents / 100);
+}
+
+async function insertContratoWithDescuentoFallback(
+  supabase: SupabaseClient<Database>,
+  contratoPayload: Database["public"]["Tables"]["contratos"]["Insert"]
+) {
+  const initialResult = await supabase.from("contratos").insert(contratoPayload).select("*").single();
+
+  if (!initialResult.error && initialResult.data) {
+    return normalizeContratoRow(initialResult.data as ContratoRow);
+  }
+
+  if (!isMissingDescuentoDiagnosticoColumn(initialResult.error)) {
+    throw new Error(initialResult.error?.message ?? "No se pudo crear el contrato.");
+  }
+
+  console.warn(
+    "[contratos] La columna contratos.descuento_diagnostico_usd no existe en este entorno. Reintentando insert sin ese campo."
+  );
+
+  const { descuento_diagnostico_usd: _ignored, ...fallbackPayload } = contratoPayload;
+  void _ignored;
+
+  const fallbackResult = await supabase.from("contratos").insert(fallbackPayload).select("*").single();
+
+  if (fallbackResult.error || !fallbackResult.data) {
+    throw new Error(fallbackResult.error?.message ?? "No se pudo crear el contrato.");
+  }
+
+  return normalizeContratoRow({
+    ...(fallbackResult.data as ContratoRow),
+    descuento_diagnostico_usd: contratoPayload.descuento_diagnostico_usd ?? 0
+  });
 }
 
 export async function crearOActualizarContrato(
@@ -220,17 +268,9 @@ export async function crearOActualizarContrato(
       motivo_redefinicion: motivoRedefinicion
     };
 
-    const { data: contratoCreado, error: contratoError } = await supabase
-      .from("contratos")
-      .insert(contratoPayload)
-      .select("*")
-      .single();
+    const contratoCreado = await insertContratoWithDescuentoFallback(supabase, contratoPayload);
 
-    if (contratoError || !contratoCreado) {
-      throw new Error(contratoError?.message ?? "No se pudo crear el contrato.");
-    }
-
-    newContratoId = (contratoCreado as ContratoRow).id;
+    newContratoId = contratoCreado.id;
 
     const montoAdelanto = buildAdelantoMonto(valorTotalNeto, adelantoPct);
     const saldoRestante = normalizeMoney(valorTotalNeto - montoAdelanto);
@@ -396,7 +436,7 @@ export async function crearOActualizarContrato(
       }
     }
 
-    const contratoResponse = contratoCreado as ContratoRow;
+    const contratoResponse = normalizeContratoRow(contratoCreado);
     return {
       contrato: contratoResponse,
       cobros_creados: insertedCobros.length,

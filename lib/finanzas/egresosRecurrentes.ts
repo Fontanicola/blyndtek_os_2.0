@@ -20,6 +20,7 @@ type RecurrentePayload = {
   fecha: string;
   cliente_id?: string | null;
   proyecto_id?: string | null;
+  caja_id?: string | null;
   cuenta_medio?: string | null;
 };
 
@@ -114,7 +115,9 @@ export async function createRecurrenteConfig(
   supabase: FinanzasClient,
   payload: RecurrentePayload
 ) {
-  const caja = await getCajaBySlug(supabase, payload.cuenta_medio ?? null);
+  const caja = payload.caja_id
+    ? await getCajaById(supabase, payload.caja_id)
+    : await getCajaBySlug(supabase, payload.cuenta_medio ?? null);
   const diaPago = clampDiaPago(new Date(`${payload.fecha}T00:00:00`).getDate());
 
   const { data, error } = await supabase
@@ -166,8 +169,10 @@ export async function updateRecurrenteConfig(
     updatePayload.fecha_inicio = payload.fecha;
     updatePayload.dia_pago = clampDiaPago(new Date(`${payload.fecha}T00:00:00`).getDate());
   }
-  if (payload.cuenta_medio !== undefined) {
-    const caja = await getCajaBySlug(supabase, payload.cuenta_medio ?? null);
+  if (payload.caja_id !== undefined || payload.cuenta_medio !== undefined) {
+    const caja = payload.caja_id
+      ? await getCajaById(supabase, payload.caja_id)
+      : await getCajaBySlug(supabase, payload.cuenta_medio ?? null);
     updatePayload.caja_id = caja?.id ?? null;
   }
 
@@ -219,6 +224,7 @@ export async function ensureEgresoRecurrenteInstance(
     fecha,
     recurrente: true,
     recurrente_config_id: config.id,
+    caja_id: caja?.id ?? null,
     cuenta_medio: caja?.slug ?? null,
     pagado: options?.forcePagado ?? false,
     fecha_pago: options?.forcePagado ? options?.fechaPago ?? hoyLocalString() : null,
@@ -235,6 +241,7 @@ export async function ensureEgresoRecurrenteInstance(
       fecha,
       recurrente: true,
       recurrente_config_id: config.id,
+      caja_id: caja?.id ?? null,
       cuenta_medio: caja?.slug ?? null,
       cliente_id: config.cliente_id,
       proyecto_id: config.proyecto_id
@@ -321,6 +328,7 @@ export async function syncRecurrenteConfigFromInstance(
       fecha: input.fecha ?? current.fecha,
       cliente_id: input.cliente_id ?? current.cliente_id,
       proyecto_id: input.proyecto_id ?? current.proyecto_id,
+      caja_id: input.caja_id ?? current.caja_id,
       cuenta_medio: input.cuenta_medio ?? current.cuenta_medio
     });
   }
@@ -332,6 +340,7 @@ export async function syncRecurrenteConfigFromInstance(
     fecha: input.fecha ?? current.fecha,
     cliente_id: input.cliente_id ?? current.cliente_id,
     proyecto_id: input.proyecto_id ?? current.proyecto_id,
+    caja_id: input.caja_id ?? current.caja_id,
     cuenta_medio: input.cuenta_medio ?? current.cuenta_medio
   });
 }

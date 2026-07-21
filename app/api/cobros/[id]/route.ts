@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { normalizeCajaSlug } from "@/lib/cajas";
 import { getAdminUser } from "@/lib/require-admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { hoyLocalString } from "@/lib/utils/fechas";
@@ -29,6 +30,39 @@ type CobroHistorialItem = CobroHistorialRow & {
 type CobroConHistorial = Cobro & {
   historial: CobroHistorialItem[];
 };
+
+async function resolveCajaSelection(
+  supabase: ReturnType<typeof createAdminClient>,
+  cajaId: string | null | undefined,
+  cuentaMedio: string | null | undefined
+) {
+  if (cajaId) {
+    const { data, error } = await supabase.from("cajas").select("id, slug").eq("id", cajaId).maybeSingle();
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    if (data) {
+      return { caja_id: data.id, cuenta_medio: data.slug };
+    }
+  }
+
+  const normalizedSlug = normalizeCajaSlug(cuentaMedio);
+  if (normalizedSlug) {
+    const { data, error } = await supabase.from("cajas").select("id, slug").eq("slug", normalizedSlug).maybeSingle();
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    if (data) {
+      return { caja_id: data.id, cuenta_medio: data.slug };
+    }
+
+    return { caja_id: null, cuenta_medio: normalizedSlug };
+  }
+
+  return { caja_id: null, cuenta_medio: null };
+}
 
 async function fetchCobroHistorial(supabase: ReturnType<typeof createAdminClient>, cobroId: string) {
   const { data: historial, error } = await supabase
@@ -135,6 +169,16 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       ...updatableBody,
       fecha_cobro: nextFechaCobro
     };
+
+    if (updatableBody.caja_id !== undefined || updatableBody.cuenta_medio !== undefined) {
+      const cajaSelection = await resolveCajaSelection(
+        supabase,
+        updatableBody.caja_id ?? null,
+        updatableBody.cuenta_medio ?? null
+      );
+      nextPayload.caja_id = cajaSelection.caja_id;
+      nextPayload.cuenta_medio = cajaSelection.cuenta_medio;
+    }
 
     const { data, error } = await supabase
       .from("cobros")

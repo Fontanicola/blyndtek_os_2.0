@@ -1,8 +1,42 @@
 import { NextRequest, NextResponse } from "next/server";
+import { normalizeCajaSlug } from "@/lib/cajas";
 import { getAdminUser } from "@/lib/require-admin";
 import { createRecurrenteConfig } from "@/lib/finanzas/egresosRecurrentes";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { CreateEgresoInput, Egreso, CategoriaEgreso } from "@/types/egresos";
+
+async function resolveCajaSelection(
+  supabase: ReturnType<typeof createAdminClient>,
+  cajaId: string | null | undefined,
+  cuentaMedio: string | null | undefined
+) {
+  if (cajaId) {
+    const { data, error } = await supabase.from("cajas").select("id, slug").eq("id", cajaId).maybeSingle();
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    if (data) {
+      return { caja_id: data.id, cuenta_medio: data.slug };
+    }
+  }
+
+  const normalizedSlug = normalizeCajaSlug(cuentaMedio);
+  if (normalizedSlug) {
+    const { data, error } = await supabase.from("cajas").select("id, slug").eq("slug", normalizedSlug).maybeSingle();
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    if (data) {
+      return { caja_id: data.id, cuenta_medio: data.slug };
+    }
+
+    return { caja_id: null, cuenta_medio: normalizedSlug };
+  }
+
+  return { caja_id: null, cuenta_medio: null };
+}
 
 function parseCategoria(searchParams: URLSearchParams): CategoriaEgreso | null {
   const categoria = searchParams.get("categoria");
@@ -88,10 +122,12 @@ export async function POST(request: NextRequest) {
     }
 
     const supabase = createAdminClient();
+    const cajaSelection = await resolveCajaSelection(supabase, body.caja_id ?? null, body.cuenta_medio ?? null);
     const payload: CreateEgresoInput = {
       ...body,
       concepto: body.concepto.trim(),
-      cuenta_medio: body.cuenta_medio ?? null,
+      caja_id: cajaSelection.caja_id,
+      cuenta_medio: cajaSelection.cuenta_medio,
       pagado: body.pagado ?? false,
       fecha_pago: body.pagado ? body.fecha_pago ?? null : null,
       proyecto_id: body.proyecto_id ?? null,
@@ -116,6 +152,7 @@ export async function POST(request: NextRequest) {
         fecha: payload.fecha,
         cliente_id: payload.cliente_id ?? null,
         proyecto_id: payload.proyecto_id ?? null,
+        caja_id: payload.caja_id ?? null,
         cuenta_medio: payload.cuenta_medio ?? null
       });
       recurrenteConfigId = config.id;

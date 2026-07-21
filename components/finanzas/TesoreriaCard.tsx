@@ -6,10 +6,17 @@ import { cn } from "@/lib/cn";
 import { CAJA_COLOR_OPTIONS, getCajaLightBg } from "@/lib/cajas";
 import { chartTheme } from "@/lib/charts/chartTheme";
 import { formatFecha, formatUSD } from "@/lib/utils/formatters";
+import type { CreateCobroInput } from "@/types/cobros";
 import type { Caja } from "@/types/cajas";
+import type { Cliente } from "@/types/clientes";
+import type { CreateEgresoInput } from "@/types/egresos";
 import type { TesoreriaCajaBalance, TesoreriaFinanzas } from "@/types/finanzas";
+import type { Proyecto } from "@/types/proyectos";
+import type { Cotizacion } from "@/types/cotizaciones";
+import type { Suscripcion } from "@/types/suscripciones";
 import { Area, AreaChart, ResponsiveContainer } from "recharts";
 import { CajaDetalleModal } from "./CajaDetalleModal";
+import { TransferenciaCajaModal } from "./TransferenciaCajaModal";
 
 type TesoreriaCardProps = {
   data: TesoreriaFinanzas | null;
@@ -21,6 +28,12 @@ type TesoreriaCardProps = {
   onCreateCaja: (input: { nombre: string; color: string }) => Promise<Caja>;
   onUpdateCaja: (id: string, input: Partial<Pick<Caja, "nombre" | "color" | "activa" | "orden">>) => Promise<Caja>;
   onDeleteCaja: (id: string) => Promise<void>;
+  onCreateCobro: (input: CreateCobroInput) => Promise<unknown>;
+  onCreateEgreso: (input: CreateEgresoInput) => Promise<unknown>;
+  clientes: Array<Pick<Cliente, "id" | "empresa" | "pais" | "estado">>;
+  proyectos: Array<Pick<Proyecto, "id" | "nombre" | "estado" | "cliente_id"> & { clienteNombre?: string | null }>;
+  cotizaciones: Array<Pick<Cotizacion, "id" | "empresa" | "precio_total">>;
+  suscripciones: Array<Pick<Suscripcion, "id" | "tipo" | "estado" | "monto_mensual">>;
   showToast: (message: string, type?: "success" | "info" | "warning" | "error") => void;
 };
 
@@ -343,14 +356,34 @@ export function TesoreriaCard({
   onCreateCaja,
   onUpdateCaja,
   onDeleteCaja,
+  onCreateCobro,
+  onCreateEgreso,
+  clientes,
+  proyectos,
+  cotizaciones,
+  suscripciones,
   showToast
 }: TesoreriaCardProps) {
   const [manageOpen, setManageOpen] = useState(false);
   const [selectedCaja, setSelectedCaja] = useState<TesoreriaCajaBalance | null>(null);
+  const [transferOpen, setTransferOpen] = useState(false);
+  const [transferDefaultOrigenId, setTransferDefaultOrigenId] = useState<string | null>(null);
+  const [movimientosRefreshKey, setMovimientosRefreshKey] = useState(0);
   const cajasVisibles = useMemo(
     () => (data?.cajas ?? []).filter((item) => !(item.es_sin_asignar && item.total_cobrado === 0 && item.total_egresado === 0)),
     [data?.cajas]
   );
+
+  function openTransferModal(cajaOrigenId?: string | null) {
+    setTransferDefaultOrigenId(cajaOrigenId ?? null);
+    setTransferOpen(true);
+  }
+
+  async function handleTransferSuccess() {
+    await onRefreshData();
+    setMovimientosRefreshKey((current) => current + 1);
+    showToast("Transferencia registrada correctamente.", "success");
+  }
 
   return (
     <div className="space-y-4">
@@ -362,6 +395,9 @@ export function TesoreriaCard({
           </div>
           <div className="flex items-center gap-2">
             <Badge variant={data ? balanceVariant(data.balance_total) : "default"}>{formatUSD(data?.balance_total ?? 0)}</Badge>
+            <Button variant="primary" size="sm" onClick={() => openTransferModal()}>
+              Transferir
+            </Button>
             <Button variant="secondary" size="sm" onClick={() => setManageOpen(true)}>
               Gestionar cajas
             </Button>
@@ -415,6 +451,17 @@ export function TesoreriaCard({
       <CajaDetalleModal
         isOpen={Boolean(selectedCaja)}
         onClose={() => setSelectedCaja(null)}
+        refreshKey={movimientosRefreshKey}
+        onRequestTransfer={(cajaId) => openTransferModal(cajaId)}
+        cajas={cajas.filter((item) => item.activa)}
+        clientes={clientes}
+        proyectos={proyectos}
+        cotizaciones={cotizaciones}
+        suscripciones={suscripciones}
+        onCreateCobro={onCreateCobro}
+        onCreateEgreso={onCreateEgreso}
+        onRefreshTesoreria={onRefreshData}
+        showToast={showToast}
         caja={
           selectedCaja
             ? {
@@ -424,6 +471,14 @@ export function TesoreriaCard({
               }
             : null
         }
+      />
+
+      <TransferenciaCajaModal
+        isOpen={transferOpen}
+        onClose={() => setTransferOpen(false)}
+        cajas={cajas}
+        defaultCajaOrigenId={transferDefaultOrigenId}
+        onSuccess={handleTransferSuccess}
       />
     </div>
   );

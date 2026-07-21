@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getLegacyCuentaMedioValues } from "@/lib/cajas";
 import { formatMonthKey, startOfMonth } from "@/lib/finanzas";
 import { getAdminUser } from "@/lib/require-admin";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -39,6 +40,11 @@ type EgresoMovimientoRow = {
   cliente: {
     empresa: string;
   } | null;
+};
+
+type CajaRow = {
+  id: string;
+  slug: string;
 };
 
 function getCurrentMonthKey() {
@@ -89,6 +95,14 @@ function compareByFechaDesc(a: MovimientoCaja, b: MovimientoCaja) {
   return bDate.getTime() - aDate.getTime();
 }
 
+function dedupeRowsById<T extends { id: string }>(rows: T[]) {
+  return Array.from(new Map(rows.map((row) => [row.id, row])).values());
+}
+
+function dedupeMovimientos(rows: MovimientoCaja[]) {
+  return Array.from(new Map(rows.map((row) => [`${row.tipo}:${row.id}`, row])).values());
+}
+
 export async function GET(request: NextRequest, context: { params: { id: string } }) {
   try {
     const admin = await getAdminUser();
@@ -101,36 +115,79 @@ export async function GET(request: NextRequest, context: { params: { id: string 
     const month = normalizeRequestedMonth(request.nextUrl.searchParams.get("mes"));
     const supabase = createAdminClient();
 
-    const [cobrosResult, egresosResult] = await Promise.all([
+    let matchValues: string[] = [];
+
+    if (!isSinAsignar) {
+      const { data: caja, error: cajaError } = await supabase.from("cajas").select("id, slug").eq("id", cajaId).maybeSingle();
+
+      if (cajaError) {
+        return NextResponse.json({ error: cajaError.message }, { status: 500 });
+      }
+
+      if (!caja) {
+        return NextResponse.json({ error: "Caja no encontrada." }, { status: 404 });
+      }
+
+      const cajaRow = caja as CajaRow;
+      matchValues = Array.from(new Set([cajaRow.slug, ...getLegacyCuentaMedioValues(cajaRow.slug)]));
+    }
+
+    const [cobrosByCajaResult, cobrosByCuentaResult, egresosByCajaResult, egresosByCuentaResult] = await Promise.all([
       isSinAsignar
         ? supabase
             .from("cobros")
             .select("id, concepto, monto, fecha_cobro, fecha_vencimiento, created_at, estado, tipo, cliente:clientes(empresa)")
             .is("caja_id", null)
+            .is("cuenta_medio", null)
         : supabase
             .from("cobros")
             .select("id, concepto, monto, fecha_cobro, fecha_vencimiento, created_at, estado, tipo, cliente:clientes(empresa)")
             .eq("caja_id", cajaId),
+      isSinAsignar || matchValues.length === 0
+        ? Promise.resolve({ data: [] as CobroMovimientoRow[], error: null })
+        : supabase
+            .from("cobros")
+            .select("id, concepto, monto, fecha_cobro, fecha_vencimiento, created_at, estado, tipo, cliente:clientes(empresa)")
+            .in("cuenta_medio", matchValues),
       isSinAsignar
         ? supabase
             .from("egresos")
             .select("id, concepto, monto, fecha_pago, fecha, pagado, categoria, cliente:clientes(empresa)")
             .is("caja_id", null)
+            .is("cuenta_medio", null)
         : supabase
             .from("egresos")
             .select("id, concepto, monto, fecha_pago, fecha, pagado, categoria, cliente:clientes(empresa)")
-            .eq("caja_id", cajaId)
+            .eq("caja_id", cajaId),
+      isSinAsignar || matchValues.length === 0
+        ? Promise.resolve({ data: [] as EgresoMovimientoRow[], error: null })
+        : supabase
+            .from("egresos")
+            .select("id, concepto, monto, fecha_pago, fecha, pagado, categoria, cliente:clientes(empresa)")
+            .in("cuenta_medio", matchValues)
     ]);
 
-    if (cobrosResult.error) {
-      return NextResponse.json({ error: cobrosResult.error.message }, { status: 500 });
+    const cobrosError = cobrosByCajaResult.error ?? cobrosByCuentaResult.error;
+    const egresosError = egresosByCajaResult.error ?? egresosByCuentaResult.error;
+
+    if (cobrosError) {
+      return NextResponse.json({ error: cobrosError.message }, { status: 500 });
     }
 
-    if (egresosResult.error) {
-      return NextResponse.json({ error: egresosResult.error.message }, { status: 500 });
+    if (egresosError) {
+      return NextResponse.json({ error: egresosError.message }, { status: 500 });
     }
 
-    const cobros = ((cobrosResult.data ?? []) as CobroMovimientoRow[])
+    const cobrosSource = dedupeRowsById([
+      ...((cobrosByCajaResult.data ?? []) as CobroMovimientoRow[]),
+      ...((cobrosByCuentaResult.data ?? []) as CobroMovimientoRow[])
+    ]);
+    const egresosSource = dedupeRowsById([
+      ...((egresosByCajaResult.data ?? []) as EgresoMovimientoRow[]),
+      ...((egresosByCuentaResult.data ?? []) as EgresoMovimientoRow[])
+    ]);
+
+    const cobros = cobrosSource
       .filter((cobro) => isDateInMonth(getCobroEffectiveDate(cobro), month))
       .map(
         (cobro) =>
@@ -147,7 +204,7 @@ export async function GET(request: NextRequest, context: { params: { id: string 
           }) satisfies MovimientoCaja
       );
 
-    const egresos = ((egresosResult.data ?? []) as EgresoMovimientoRow[])
+    const egresos = egresosSource
       .filter((egreso) => isDateInMonth(getEgresoEffectiveDate(egreso), month))
       .map(
         (egreso) =>
@@ -164,12 +221,18 @@ export async function GET(request: NextRequest, context: { params: { id: string 
           }) satisfies MovimientoCaja
       );
 
-    const movimientos = [...cobros, ...egresos].sort(compareByFechaDesc);
+    const movimientos = dedupeMovimientos([...cobros, ...egresos]).sort(compareByFechaDesc);
+    const resumenIngresos = movimientos
+      .filter((item) => item.tipo === "ingreso")
+      .reduce((total, item) => total + item.monto, 0);
+    const resumenEgresos = movimientos
+      .filter((item) => item.tipo === "egreso")
+      .reduce((total, item) => total + item.monto, 0);
 
     const resumenMes: ResumenMovimientosCaja = {
-      total_ingresos: cobros.reduce((total, item) => total + item.monto, 0),
-      total_egresos: egresos.reduce((total, item) => total + item.monto, 0),
-      balance_neto_mes: cobros.reduce((total, item) => total + item.monto, 0) - egresos.reduce((total, item) => total + item.monto, 0)
+      total_ingresos: resumenIngresos,
+      total_egresos: resumenEgresos,
+      balance_neto_mes: resumenIngresos - resumenEgresos
     };
 
     return NextResponse.json({

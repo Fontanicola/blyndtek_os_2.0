@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { normalizeCajaSlug } from "@/lib/cajas";
 import { getAdminUser } from "@/lib/require-admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Cobro, CreateCobroInput, EstadoCobro, TipoCobro } from "@/types/cobros";
@@ -7,6 +8,39 @@ type ClienteRow = {
   id: string;
   empresa: string;
 };
+
+async function resolveCajaSelection(
+  supabase: ReturnType<typeof createAdminClient>,
+  cajaId: string | null | undefined,
+  cuentaMedio: string | null | undefined
+) {
+  if (cajaId) {
+    const { data, error } = await supabase.from("cajas").select("id, slug").eq("id", cajaId).maybeSingle();
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    if (data) {
+      return { caja_id: data.id, cuenta_medio: data.slug };
+    }
+  }
+
+  const normalizedSlug = normalizeCajaSlug(cuentaMedio);
+  if (normalizedSlug) {
+    const { data, error } = await supabase.from("cajas").select("id, slug").eq("slug", normalizedSlug).maybeSingle();
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    if (data) {
+      return { caja_id: data.id, cuenta_medio: data.slug };
+    }
+
+    return { caja_id: null, cuenta_medio: normalizedSlug };
+  }
+
+  return { caja_id: null, cuenta_medio: null };
+}
 
 function parseEstado(searchParams: URLSearchParams): EstadoCobro | null {
   const estado = searchParams.get("estado");
@@ -18,7 +52,15 @@ function parseEstado(searchParams: URLSearchParams): EstadoCobro | null {
 
 function parseTipo(searchParams: URLSearchParams): TipoCobro | null {
   const tipo = searchParams.get("tipo");
-  if (tipo === "one_pay" || tipo === "hito" || tipo === "mantenimiento" || tipo === "brick" || tipo === "diagnostico" || tipo === "otro") {
+  if (
+    tipo === "one_pay" ||
+    tipo === "hito" ||
+    tipo === "mantenimiento" ||
+    tipo === "brick" ||
+    tipo === "diagnostico" ||
+    tipo === "otro" ||
+    tipo === "transferencia"
+  ) {
     return tipo;
   }
   return null;
@@ -144,6 +186,7 @@ export async function POST(request: NextRequest) {
     }
 
     const supabase = createAdminClient();
+    const cajaSelection = await resolveCajaSelection(supabase, body.caja_id ?? null, body.cuenta_medio ?? null);
     const payload = {
       ...body,
       cliente_id: clienteId,
@@ -154,8 +197,8 @@ export async function POST(request: NextRequest) {
       suscripcion_id: body.suscripcion_id ?? null,
       cotizacion_id: body.cotizacion_id ?? null,
       fecha_cobro: body.fecha_cobro ?? null,
-      cuenta_medio: body.cuenta_medio ?? null,
-      caja_id: body.caja_id ?? null
+      cuenta_medio: cajaSelection.cuenta_medio,
+      caja_id: cajaSelection.caja_id
     };
 
     const { data, error } = await supabase.from("cobros").insert(payload).select("*").single();

@@ -810,6 +810,12 @@ export function FinanzasClient({ cotizaciones, asesorFinancieroAnalisis, cierres
           onCreateCaja={createCaja}
           onUpdateCaja={updateCaja}
           onDeleteCaja={deleteCaja}
+          onCreateCobro={createCobro}
+          onCreateEgreso={createEgreso}
+          clientes={clientes}
+          proyectos={proyectosConCliente}
+          cotizaciones={cotizaciones}
+          suscripciones={suscripciones}
           showToast={showToast}
         />
         ) : null}
