@@ -166,6 +166,7 @@ export type Database = {
           id: string;
           cliente_id: string;
           valor_total: number;
+          descuento_diagnostico_usd: number;
           adelanto_pct: number;
           fecha_adelanto: string | null;
           cantidad_cuotas: number;
@@ -182,6 +183,7 @@ export type Database = {
           id?: string;
           cliente_id: string;
           valor_total: number;
+          descuento_diagnostico_usd?: number;
           adelanto_pct?: number;
           fecha_adelanto?: string | null;
           cantidad_cuotas: number;
@@ -198,6 +200,7 @@ export type Database = {
           id?: string;
           cliente_id?: string;
           valor_total?: number;
+          descuento_diagnostico_usd?: number;
           adelanto_pct?: number;
           fecha_adelanto?: string | null;
           cantidad_cuotas?: number;
@@ -230,13 +233,14 @@ export type Database = {
       cobros: {
         Row: {
           id: string;
-          cliente_id: string;
+          cliente_id: string | null;
+          lead_id: string | null;
           contrato_id: string | null;
           proyecto_id: string | null;
           suscripcion_id: string | null;
           cotizacion_id: string | null;
           concepto: string;
-          tipo: "one_pay" | "hito" | "mantenimiento" | "brick";
+          tipo: "one_pay" | "hito" | "mantenimiento" | "brick" | "diagnostico";
           monto: number;
           fecha_emision: string;
           fecha_vencimiento: string;
@@ -248,13 +252,14 @@ export type Database = {
         };
         Insert: {
           id?: string;
-          cliente_id: string;
+          cliente_id?: string | null;
+          lead_id?: string | null;
           contrato_id?: string | null;
           proyecto_id?: string | null;
           suscripcion_id?: string | null;
           cotizacion_id?: string | null;
           concepto: string;
-          tipo: "one_pay" | "hito" | "mantenimiento" | "brick";
+          tipo: "one_pay" | "hito" | "mantenimiento" | "brick" | "diagnostico";
           monto: number;
           fecha_emision: string;
           fecha_vencimiento: string;
@@ -266,13 +271,14 @@ export type Database = {
         };
         Update: {
           id?: string;
-          cliente_id?: string;
+          cliente_id?: string | null;
+          lead_id?: string | null;
           contrato_id?: string | null;
           proyecto_id?: string | null;
           suscripcion_id?: string | null;
           cotizacion_id?: string | null;
           concepto?: string;
-          tipo?: "one_pay" | "hito" | "mantenimiento" | "brick";
+          tipo?: "one_pay" | "hito" | "mantenimiento" | "brick" | "diagnostico";
           monto?: number;
           fecha_emision?: string;
           fecha_vencimiento?: string;
@@ -288,6 +294,13 @@ export type Database = {
             columns: ["cliente_id"];
             isOneToOne: false;
             referencedRelation: "clientes";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "cobros_lead_id_fkey";
+            columns: ["lead_id"];
+            isOneToOne: false;
+            referencedRelation: "leads";
             referencedColumns: ["id"];
           },
           {
@@ -571,9 +584,10 @@ export type Database = {
         Row: {
           id: string;
           vendedor_id: string;
-          cliente_id: string;
+          cliente_id: string | null;
+          lead_id: string | null;
           cotizacion_id: string | null;
-          tipo: "venta";
+          tipo: "venta" | "diagnostico";
           estado: "pendiente" | "pagada" | "cancelada";
           monto_venta: number;
           base_comision: number;
@@ -587,9 +601,10 @@ export type Database = {
         Insert: {
           id?: string;
           vendedor_id: string;
-          cliente_id: string;
+          cliente_id?: string | null;
+          lead_id?: string | null;
           cotizacion_id?: string | null;
-          tipo?: "venta";
+          tipo?: "venta" | "diagnostico";
           estado?: "pendiente" | "pagada" | "cancelada";
           monto_venta: number;
           base_comision: number;
@@ -603,9 +618,10 @@ export type Database = {
         Update: {
           id?: string;
           vendedor_id?: string;
-          cliente_id?: string;
+          cliente_id?: string | null;
+          lead_id?: string | null;
           cotizacion_id?: string | null;
-          tipo?: "venta";
+          tipo?: "venta" | "diagnostico";
           estado?: "pendiente" | "pagada" | "cancelada";
           monto_venta?: number;
           base_comision?: number;
@@ -629,6 +645,13 @@ export type Database = {
             columns: ["cliente_id"];
             isOneToOne: false;
             referencedRelation: "clientes";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "comisiones_lead_id_fkey";
+            columns: ["lead_id"];
+            isOneToOne: false;
+            referencedRelation: "leads";
             referencedColumns: ["id"];
           },
           {
@@ -656,6 +679,7 @@ export type Database = {
           tier_2_pct: number;
           bono_ventas_mes_umbral: number;
           bono_monto_usd: number;
+          comision_diagnostico_usd: number;
           updated_at: string;
         };
         Insert: {
@@ -666,6 +690,7 @@ export type Database = {
           tier_2_pct: number;
           bono_ventas_mes_umbral: number;
           bono_monto_usd: number;
+          comision_diagnostico_usd?: number;
           updated_at?: string;
         };
         Update: {
@@ -676,7 +701,129 @@ export type Database = {
           tier_2_pct?: number;
           bono_ventas_mes_umbral?: number;
           bono_monto_usd?: number;
+          comision_diagnostico_usd?: number;
           updated_at?: string;
+        };
+        Relationships: [];
+      };
+      diagnosticos: {
+        Row: {
+          id: string;
+          lead_id: string;
+          token_publico: string;
+          respuestas: Record<string, string> | null;
+          completado_por: string | null;
+          fecha_completado: string | null;
+          informe_hallazgos: unknown | null;
+          modulos_sugeridos: unknown | null;
+          precio_ideal_desarrollo: number | null;
+          precio_minimo_desarrollo: number | null;
+          precio_ideal_mensual: number | null;
+          precio_minimo_mensual: number | null;
+          estado: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          lead_id: string;
+          token_publico?: string;
+          respuestas?: Record<string, string> | null;
+          completado_por?: string | null;
+          fecha_completado?: string | null;
+          informe_hallazgos?: unknown | null;
+          modulos_sugeridos?: unknown | null;
+          precio_ideal_desarrollo?: number | null;
+          precio_minimo_desarrollo?: number | null;
+          precio_ideal_mensual?: number | null;
+          precio_minimo_mensual?: number | null;
+          estado?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          lead_id?: string;
+          token_publico?: string;
+          respuestas?: Record<string, string> | null;
+          completado_por?: string | null;
+          fecha_completado?: string | null;
+          informe_hallazgos?: unknown | null;
+          modulos_sugeridos?: unknown | null;
+          precio_ideal_desarrollo?: number | null;
+          precio_minimo_desarrollo?: number | null;
+          precio_ideal_mensual?: number | null;
+          precio_minimo_mensual?: number | null;
+          estado?: string;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "diagnosticos_lead_id_fkey";
+            columns: ["lead_id"];
+            referencedRelation: "leads";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      modulos_catalogo: {
+        Row: {
+          id: string;
+          nombre: string;
+          descripcion: string | null;
+          categoria: string | null;
+          precio_ideal: number;
+          precio_minimo: number;
+          incremento_mensual: number | null;
+          activo: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          nombre: string;
+          descripcion?: string | null;
+          categoria?: string | null;
+          precio_ideal: number;
+          precio_minimo: number;
+          incremento_mensual?: number | null;
+          activo?: boolean;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          nombre?: string;
+          descripcion?: string | null;
+          categoria?: string | null;
+          precio_ideal?: number;
+          precio_minimo?: number;
+          incremento_mensual?: number | null;
+          activo?: boolean;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      preguntas_diagnostico: {
+        Row: {
+          id: string;
+          categoria: string;
+          pregunta: string;
+          orden: number;
+          activa: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          categoria: string;
+          pregunta: string;
+          orden?: number;
+          activa?: boolean;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          categoria?: string;
+          pregunta?: string;
+          orden?: number;
+          activa?: boolean;
+          created_at?: string;
         };
         Relationships: [];
       };
@@ -1012,6 +1159,8 @@ export type Database = {
             | "contactado"
             | "seguimiento"
             | "calificado"
+            | "diagnostico_ofrecido"
+            | "diagnostico_pagado"
             | "cotizacion"
             | "ganado"
             | "descartado";
@@ -1065,6 +1214,8 @@ export type Database = {
             | "contactado"
             | "seguimiento"
             | "calificado"
+            | "diagnostico_ofrecido"
+            | "diagnostico_pagado"
             | "cotizacion"
             | "ganado"
             | "descartado";
@@ -1118,6 +1269,8 @@ export type Database = {
             | "contactado"
             | "seguimiento"
             | "calificado"
+            | "diagnostico_ofrecido"
+            | "diagnostico_pagado"
             | "cotizacion"
             | "ganado"
             | "descartado";

@@ -3,6 +3,7 @@ import {
   BotIcon,
   BarChartIcon,
   BrainIcon,
+  BriefcaseIcon,
   CalendarioIcon,
   ClientesIcon,
   DashboardIcon,
@@ -90,6 +91,13 @@ export const navigationItems: NavItem[] = [
     label: "Contenido",
     href: "/contenido",
     icon: createElement(FileTextIcon),
+    roles: ["admin"],
+    section: "comercial"
+  },
+  {
+    label: "Módulos",
+    href: "/modulos-catalogo",
+    icon: createElement(BriefcaseIcon),
     roles: ["admin"],
     section: "comercial"
   },

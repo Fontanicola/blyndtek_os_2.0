@@ -140,7 +140,9 @@ export function ComisionesTabla({ comisiones, vendedores, onMarkPagada }: Comisi
                 return (
                   <tr key={comision.id}>
                     <td className="px-4 py-3 text-sm text-carbon">{vendedorNombre}</td>
-                    <td className="px-4 py-3 text-sm text-graphite">{comision.cliente_nombre ?? comision.cliente_id}</td>
+                    <td className="px-4 py-3 text-sm text-graphite">
+                      {comision.cliente_nombre ?? (comision.tipo === "diagnostico" ? "Lead sin cliente" : comision.cliente_id)}
+                    </td>
                     <td className="px-4 py-3 text-sm font-label text-carbon">{formatUSD(comision.monto_venta)}</td>
                     <td className="px-4 py-3 text-sm text-graphite">{comision.porcentaje.toFixed(1)}%</td>
                     <td className="px-4 py-3 text-sm font-label text-carbon">{formatUSD(comision.monto_comision)}</td>

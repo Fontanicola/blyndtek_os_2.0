@@ -64,11 +64,11 @@ function stageTone(etapa: EtapaLead) {
     return "bg-signal/85";
   }
 
-  if (etapa === "seguimiento" || etapa === "calificado") {
+  if (etapa === "seguimiento" || etapa === "calificado" || etapa === "diagnostico_ofrecido") {
     return "bg-warning/85";
   }
 
-  if (etapa === "cotizacion") {
+  if (etapa === "diagnostico_pagado" || etapa === "cotizacion") {
     return "bg-success/85";
   }
 

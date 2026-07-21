@@ -12,6 +12,8 @@ export const OUTBOUND_ETAPAS: EtapaLead[] = [
   "contactado",
   "seguimiento",
   "calificado",
+  "diagnostico_ofrecido",
+  "diagnostico_pagado",
   "cotizacion",
   "ganado",
   "descartado"
@@ -22,6 +24,8 @@ export const ETAPA_LABELS: Record<EtapaLead, string> = {
   contactado: "Contactado",
   seguimiento: "En seguimiento",
   calificado: "Calificado",
+  diagnostico_ofrecido: "Diagnóstico ofrecido",
+  diagnostico_pagado: "Diagnóstico pagado",
   cotizacion: "Pasado a cotización",
   ganado: "Ganado",
   descartado: "Descartado"

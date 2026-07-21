@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     let query = supabase
       .from("comisiones")
       .select(
-        "id, vendedor_id, cliente_id, cotizacion_id, tipo, estado, monto_venta, base_comision, monto_comision, pagada_at, created_at, vendedor:usuarios(nombre), cliente:clientes(empresa)"
+        "id, vendedor_id, cliente_id, lead_id, cotizacion_id, tipo, estado, monto_venta, base_comision, monto_comision, pagada_at, created_at, vendedor:usuarios(nombre), cliente:clientes(empresa)"
       )
       .order("created_at", { ascending: false });
 

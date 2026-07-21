@@ -6,6 +6,7 @@ export type ConfigComisiones = {
   tier_2_pct: number;
   bono_ventas_mes_umbral: number;
   bono_monto_usd: number;
+  comision_diagnostico_usd: number;
   updated_at: string;
 };
 
@@ -14,9 +15,10 @@ export type ComisionEstado = "pendiente" | "pagada" | "cancelada";
 export type Comision = {
   id: string;
   vendedor_id: string;
-  cliente_id: string;
+  cliente_id: string | null;
+  lead_id: string | null;
   cotizacion_id: string | null;
-  tipo: "venta";
+  tipo: "venta" | "diagnostico";
   estado: ComisionEstado;
   monto_venta: number;
   base_comision: number;

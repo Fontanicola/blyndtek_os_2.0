@@ -30,6 +30,8 @@ const ETAPAS = [
   "contactado",
   "seguimiento",
   "calificado",
+  "diagnostico_ofrecido",
+  "diagnostico_pagado",
   "cotizacion",
   "ganado",
   "descartado"

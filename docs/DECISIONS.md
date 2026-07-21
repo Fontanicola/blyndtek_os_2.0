@@ -614,3 +614,18 @@
 - El sitio institucional, que vive como proyecto separado, alimenta Blyndtek OS mediante `POST /api/public/leads`, un endpoint público protegido con honeypot, CORS restringido por `MARKETING_SITE_URL` y rate limiting por IP.
 - El visitante nunca necesita autenticarse: la ruta usa service role únicamente en servidor para insertar el lead como `canal='inbound'`, `etapa='por_contactar'` y `vendedor_id=null`, dejando la asignación comercial para el equipo dentro del OS.
 - La atribución inicial se deriva de UTM: `utm_source` define `canal_origen` y `utm_campaign` queda como `campana_origen`, para conectar el formulario web con la vista de Marketing/Atribución sin depender todavía de integraciones publicitarias externas.
+
+## 2026-07-21 — Precio de propuesta calculado por catálogo, no por IA
+
+- El precio de una propuesta nunca lo genera la IA directamente. Claude sólo interpreta respuestas cualitativas del diagnóstico y selecciona módulos existentes de `modulos_catalogo` por `modulo_id`.
+- El backend calcula los precios matemáticamente sumando los campos reales del catálogo: `precio_ideal`, `precio_minimo` e `incremento_mensual`. Si Claude devuelve un módulo que no existe o está inactivo, se descarta.
+- La vista pública del informe sólo muestra el precio ideal de desarrollo y el mensual si aplica. `precio_minimo_desarrollo` y `precio_minimo_mensual` son información interna de negociación y nunca se exponen al cliente.
+- Al generar un informe, los montos ideales se copian a `leads.monto_propuesto_desarrollo` y `leads.monto_propuesto_mensual` para preparar la etapa `cotizacion` sin recargar datos manualmente.
+
+## 2026-07-21 — Diagnóstico pago como etapa formal del embudo
+
+- El diagnóstico pago es una etapa formal del embudo comercial: `diagnostico_ofrecido` y `diagnostico_pagado` viven entre `calificado` y `cotizacion`.
+- El pago del diagnóstico se registra como un cobro real en `cobros` con `tipo='diagnostico'`, `lead_id` y `cliente_id=null`; no existe una tabla paralela de pagos de diagnóstico.
+- Si el lead tiene vendedor asignado, registrar `diagnostico_pagado` crea una comisión pendiente `tipo='diagnostico'` usando `config_comisiones.comision_diagnostico_usd`.
+- Si ese lead luego se convierte en cliente, `crearOActualizarContrato` descuenta automáticamente la suma de cobros `tipo='diagnostico'` ya cobrados del saldo que genera adelanto/cuotas, y guarda la trazabilidad en `contratos.descuento_diagnostico_usd`.
+- Este circuito reemplaza al viejo Cotizador como mecanismo real de calificación y pricing: diagnóstico, propuesta por catálogo, cobro, comisión y contrato quedan unidos por lead/cliente sin duplicar fuentes de verdad.

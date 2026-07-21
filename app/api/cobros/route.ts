@@ -18,7 +18,7 @@ function parseEstado(searchParams: URLSearchParams): EstadoCobro | null {
 
 function parseTipo(searchParams: URLSearchParams): TipoCobro | null {
   const tipo = searchParams.get("tipo");
-  if (tipo === "one_pay" || tipo === "hito" || tipo === "mantenimiento" || tipo === "brick") {
+  if (tipo === "one_pay" || tipo === "hito" || tipo === "mantenimiento" || tipo === "brick" || tipo === "diagnostico") {
     return tipo;
   }
   return null;
@@ -83,7 +83,7 @@ export async function GET(request: NextRequest) {
     }
 
     const cobros = (data ?? []) as Cobro[];
-    const clienteIds = [...new Set(cobros.map((cobro) => cobro.cliente_id).filter(Boolean))];
+    const clienteIds = [...new Set(cobros.map((cobro) => cobro.cliente_id).filter((clienteId): clienteId is string => Boolean(clienteId)))];
 
     if (clienteIds.length === 0) {
       return NextResponse.json({ data: cobros.map((cobro) => ({ ...cobro, cliente: null })) });
@@ -104,9 +104,11 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       data: cobros.map((cobro) => ({
         ...cobro,
-        cliente: {
-          empresa: clientesMap.get(cobro.cliente_id) ?? cobro.cliente_id
-        }
+        cliente: cobro.cliente_id
+          ? {
+              empresa: clientesMap.get(cobro.cliente_id) ?? cobro.cliente_id
+            }
+          : null
       }))
     });
   } catch (error) {
@@ -124,8 +126,11 @@ export async function POST(request: NextRequest) {
 
     const body = (await request.json()) as CreateCobroInput;
 
-    if (!body.cliente_id?.trim()) {
-      return NextResponse.json({ error: "cliente_id is required" }, { status: 400 });
+    const clienteId = body.cliente_id?.trim() || null;
+    const leadId = body.lead_id?.trim() || null;
+
+    if (!clienteId && !leadId) {
+      return NextResponse.json({ error: "cliente_id or lead_id is required" }, { status: 400 });
     }
 
     if (!body.concepto?.trim()) {
@@ -147,7 +152,8 @@ export async function POST(request: NextRequest) {
     const supabase = createAdminClient();
     const payload: CreateCobroInput = {
       ...body,
-      cliente_id: body.cliente_id.trim(),
+      cliente_id: clienteId,
+      lead_id: leadId,
       concepto: body.concepto.trim(),
       estado: body.estado ?? "pendiente",
       cuenta_medio: body.cuenta_medio ?? null,

@@ -13,6 +13,8 @@ const PIPELINE_WEIGHTS: Record<string, number> = {
   contactado: 0.1,
   seguimiento: 0.25,
   calificado: 0.5,
+  diagnostico_ofrecido: 0.6,
+  diagnostico_pagado: 0.68,
   cotizacion: 0.75,
   ganado: 1,
   descartado: 0

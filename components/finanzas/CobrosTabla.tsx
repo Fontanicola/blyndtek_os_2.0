@@ -52,6 +52,9 @@ function getTipoLabel(tipo: Cobro["tipo"]) {
   if (tipo === "brick") {
     return "Brick";
   }
+  if (tipo === "diagnostico") {
+    return "Diagnóstico";
+  }
   return "Hito";
 }
 
@@ -106,6 +109,7 @@ export function CobrosTabla({ cobros, cajas = [], onMarkCobrado, onNew, onEdit }
             <option value="hito">Hito</option>
             <option value="mantenimiento">Mantenimiento</option>
             <option value="brick">Brick</option>
+            <option value="diagnostico">Diagnóstico</option>
           </select>
 
           <Button variant="primary" size="sm" onClick={onNew}>

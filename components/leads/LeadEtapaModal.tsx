@@ -48,6 +48,8 @@ export function LeadEtapaModal({
   const [montoNegociadoDesarrollo, setMontoNegociadoDesarrollo] = useState("");
   const [montoNegociadoMensual, setMontoNegociadoMensual] = useState("");
   const [motivoNegociacion, setMotivoNegociacion] = useState("");
+  const [diagnosticoMonto, setDiagnosticoMonto] = useState("");
+  const [diagnosticoFecha, setDiagnosticoFecha] = useState("");
   const [saving, setSaving] = useState(false);
 
   const proposedDevelopment = lead?.monto_propuesto_desarrollo ?? null;
@@ -67,12 +69,43 @@ export function LeadEtapaModal({
     setMontoNegociadoDesarrollo(lead?.monto_negociado_desarrollo?.toString() ?? "");
     setMontoNegociadoMensual(lead?.monto_negociado_mensual?.toString() ?? "");
     setMotivoNegociacion("");
+    setDiagnosticoMonto("");
+    setDiagnosticoFecha(new Date().toISOString().slice(0, 10));
   }, [isOpen, lead, targetEtapa]);
+
+  useEffect(() => {
+    if (!isOpen || targetEtapa !== "diagnostico_pagado") {
+      return;
+    }
+
+    let cancelled = false;
+
+    fetch("/api/config-comisiones", { cache: "no-store" })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((payload) => {
+        if (cancelled || diagnosticoMonto.trim()) {
+          return;
+        }
+
+        const montoConfigurado = payload?.data?.comision_diagnostico_usd;
+        if (typeof montoConfigurado === "number" && montoConfigurado > 0) {
+          setDiagnosticoMonto(String(montoConfigurado));
+        }
+      })
+      .catch(() => {
+        // El monto sigue siendo editable aunque no se pueda traer el default.
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [diagnosticoMonto, isOpen, targetEtapa]);
 
   const isCotizacionValid =
     montoPropuestoDesarrollo.trim().length > 0 && montoPropuestoMensual.trim().length > 0;
   const hasProposal = proposedDevelopment !== null && proposedMonthly !== null;
   const isGanadoValid = mismoMonto ? hasProposal : montoNegociadoDesarrollo.trim().length > 0 && montoNegociadoMensual.trim().length > 0;
+  const isDiagnosticoPagadoValid = diagnosticoMonto.trim().length > 0 && diagnosticoFecha.trim().length > 0;
 
   const confirmDisabled = useMemo(() => {
     if (!targetEtapa) {
@@ -87,8 +120,12 @@ export function LeadEtapaModal({
       return !isGanadoValid;
     }
 
+    if (targetEtapa === "diagnostico_pagado") {
+      return !isDiagnosticoPagadoValid;
+    }
+
     return false;
-  }, [isCotizacionValid, isGanadoValid, targetEtapa]);
+  }, [isCotizacionValid, isDiagnosticoPagadoValid, isGanadoValid, targetEtapa]);
 
   async function handleConfirm() {
     if (!targetEtapa) {
@@ -117,6 +154,19 @@ export function LeadEtapaModal({
         await onConfirm({
           monto_propuesto_desarrollo: Number(montoPropuestoDesarrollo),
           monto_propuesto_mensual: Number(montoPropuestoMensual)
+        });
+        return;
+      }
+
+      if (targetEtapa === "diagnostico_ofrecido") {
+        await onConfirm({});
+        return;
+      }
+
+      if (targetEtapa === "diagnostico_pagado") {
+        await onConfirm({
+          diagnostico_monto: Number(diagnosticoMonto),
+          diagnostico_fecha: diagnosticoFecha
         });
         return;
       }
@@ -202,6 +252,42 @@ export function LeadEtapaModal({
               onChange={(event) => setMontoPropuestoMensual(event.target.value)}
               required
             />
+          </div>
+        ) : null}
+
+        {targetEtapa === "diagnostico_ofrecido" ? (
+          <div className="rounded-card border border-line-soft bg-paper p-4 text-sm text-carbon">
+            <p className="font-label">Confirmar diagnóstico ofrecido</p>
+            <p className="mt-2 text-graphite">
+              Esto registra que el lead ya recibió la propuesta de diagnóstico pago. Todavía no impacta Finanzas hasta que se marque como pagado.
+            </p>
+          </div>
+        ) : null}
+
+        {targetEtapa === "diagnostico_pagado" ? (
+          <div className="space-y-4">
+            <div className="rounded-card border border-success bg-success-light p-4 text-sm text-carbon">
+              <p className="font-label">Registrar pago del diagnóstico</p>
+              <p className="mt-2 text-graphite">
+                Se va a crear un cobro real en Finanzas y, si el lead tiene vendedor asignado, una comisión de diagnóstico pendiente.
+              </p>
+            </div>
+            <div className="grid gap-4 md:grid-cols-2">
+              <Input
+                label="Monto cobrado (USD)"
+                type="number"
+                value={diagnosticoMonto}
+                onChange={(event) => setDiagnosticoMonto(event.target.value)}
+                required
+              />
+              <Input
+                label="Fecha de cobro"
+                type="date"
+                value={diagnosticoFecha}
+                onChange={(event) => setDiagnosticoFecha(event.target.value)}
+                required
+              />
+            </div>
           </div>
         ) : null}
 

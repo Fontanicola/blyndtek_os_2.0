@@ -25,6 +25,8 @@ const LABELS: Record<string, string> = {
   contactado: "Contactado",
   seguimiento: "Seguimiento",
   calificado: "Calificado",
+  diagnostico_ofrecido: "Diagnóstico ofrecido",
+  diagnostico_pagado: "Diagnóstico pagado",
   cotizacion: "Cotización",
   descartado: "Descartado"
 };

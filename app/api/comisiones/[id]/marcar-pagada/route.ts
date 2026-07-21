@@ -47,10 +47,13 @@ export async function POST(_request: NextRequest, context: RouteContext) {
       "id" | "vendedor_id" | "cliente_id" | "estado" | "monto_comision"
     > & { updated_at?: string };
 
-    const [{ data: vendedor }, { data: cliente }] = await Promise.all([
+    const [{ data: vendedor }, clienteResult] = await Promise.all([
       supabase.from("usuarios").select("nombre").eq("id", commissionRow.vendedor_id).maybeSingle(),
-      supabase.from("clientes").select("empresa").eq("id", commissionRow.cliente_id).maybeSingle()
+      commissionRow.cliente_id
+        ? supabase.from("clientes").select("empresa").eq("id", commissionRow.cliente_id).maybeSingle()
+        : Promise.resolve({ data: null })
     ]);
+    const cliente = clienteResult.data;
 
     const concepto = `Comisión — ${vendedor?.nombre ?? "Sin vendedor"} — ${cliente?.empresa ?? "Sin cliente"}`;
     const fechaHoy = todayIsoDate();

@@ -2049,3 +2049,33 @@ $ find . -maxdepth 3 \( -name 'middleware.*' -o -name 'proxy.*' \) -not -path '.
 - La ruta usa service role sólo del lado servidor, valida `nombre` y `email`, guarda `mensaje_inicial`, mapea `utm_source` a `canal_origen` (`meta_ads`, `google_ads`, `organico`, `otro`) y conserva `utm_campaign` en `campana_origen`.
 - Se agregó protección anti-spam con honeypot silencioso, CORS estricto contra `MARKETING_SITE_URL` (`https://blyndtek.com` como placeholder) y rate limiting en memoria de 5 requests por minuto por IP.
 - Se actualizaron `types/leads.ts`, `types/supabase.ts`, `.env.example` y `docs/DATABASE.md` para documentar `mensaje_inicial` y el contrato de integración pública.
+
+## 2026-07-21 — Diagnóstico comercial público desde leads
+
+- Se crearon los endpoints `app/api/leads/[id]/diagnostico/route.ts` y `app/api/diagnostico/[token]/route.ts`: el primero permite a admin/comercial crear o completar un diagnóstico desde un lead autenticado; el segundo expone el formulario público sin login con guardado parcial por token.
+- Se creó `app/diagnostico/[token]/page.tsx` con diseño público limpio, logo real de Blyndtek, preguntas agrupadas por categoría, autosave con debounce y envío final cuando hay una cantidad mínima razonable de respuestas.
+- `LeadModal` ahora incluye la sección `Diagnóstico`: crear diagnóstico, copiar link público para WhatsApp, completar internamente durante una sesión comercial y leer respuestas cuando el cliente ya lo respondió.
+- Se crearon `app/api/modulos-catalogo/route.ts`, `app/api/modulos-catalogo/[id]/route.ts`, `app/(app)/modulos-catalogo/page.tsx` y `components/diagnostico/ModulosCatalogoClient.tsx` para gestionar el catálogo de módulos como admin.
+- Se actualizaron `types/diagnostico.ts` y `types/supabase.ts` con `preguntas_diagnostico`, `diagnosticos` y `modulos_catalogo`.
+
+## 2026-07-21 — Informe de diagnóstico y propuesta pública
+
+- Se creó `app/api/diagnostico/[token]/generar-informe/route.ts`: requiere sesión, permite generar informe sólo a admin o al comercial dueño del lead, toma respuestas + catálogo activo y llama a Claude con salida JSON estricta.
+- Claude sólo genera hallazgos y mapea respuestas cualitativas a `modulos_catalogo` reales por `modulo_id`; si devuelve un módulo inexistente, se descarta y no entra en la propuesta.
+- El precio se calcula en código sumando `precio_ideal`, `precio_minimo` e `incremento_mensual` de los módulos elegidos. Como el esquema tiene un único campo mensual, `precio_ideal_mensual` y `precio_minimo_mensual` usan la misma suma de `incremento_mensual`.
+- Al generar el informe, `diagnosticos.estado` pasa a `informe_generado` y se guardan `informe_hallazgos`, `modulos_sugeridos` con nombres/descripciones resueltos y los 4 campos de precio.
+- El lead queda precargado con `monto_propuesto_desarrollo` y `monto_propuesto_mensual`, preparando la transición posterior a `cotizacion` sin cargar montos a mano.
+- Se creó `app/diagnostico/[token]/informe/page.tsx`: página pública compartible con logo, empresa, hallazgos, módulos sugeridos, precio ideal destacado, mensual si aplica y CTA de WhatsApp. No muestra `precio_minimo`.
+- `LeadDiagnosticoSection` ahora permite generar/regenerar informe desde el lead y abrir el informe público cuando ya existe.
+- Verificación local ejecutada: `npm run lint` y `npm run build` pasan correctamente; el build confirma las rutas `/api/diagnostico/[token]/generar-informe` y `/diagnostico/[token]/informe`.
+
+## 2026-07-21 — Circuito de diagnóstico pago
+
+- Antes de escribir SQL se verificó el esquema real de Supabase vía OpenAPI: `cobros.required` incluía `cliente_id`, confirmando que `cobros.cliente_id` era NOT NULL y no podía representar pagos de leads sin cliente.
+- Se agregó la migración `supabase/migrations/010_diagnostico_pago.sql`: `cobros.cliente_id` nullable, `cobros.lead_id`, `tipo='diagnostico'`, `comisiones.cliente_id` nullable, `comisiones.lead_id`, `comisiones.tipo='diagnostico'` y `contratos.descuento_diagnostico_usd`.
+- El kanban de leads ahora incluye `Diagnóstico ofrecido` y `Diagnóstico pagado` entre `Calificado` y `Cotización`; Dashboard, Mi Panel, Equipo Comercial, Calendario y gráficos del embudo conocen las etapas nuevas.
+- El modal de transición a `diagnostico_ofrecido` sólo confirma intención; el de `diagnostico_pagado` pide monto y fecha, crea un cobro real `tipo='diagnostico'` vinculado al lead y genera comisión pendiente si hay vendedor.
+- `crearOActualizarContrato` recibe o resuelve el `lead_id`, suma diagnósticos cobrados de ese lead, descuenta ese monto antes de calcular adelanto/cuotas y guarda el descuento aplicado en el contrato.
+- El resumen de Contrato en la ficha del cliente muestra `Diagnóstico descontado` para que el saldo final quede trazable.
+- El pipeline ponderado usa pesos progresivos: `diagnostico_ofrecido=0.6` y `diagnostico_pagado=0.68`, entre `calificado=0.5` y `cotizacion=0.75`.
+- Verificación local ejecutada: `npm run lint` OK y `npm run build` OK.

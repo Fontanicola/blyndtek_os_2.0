@@ -999,7 +999,23 @@ Nota: `usuarios` debe existir antes que `leads`, `proyectos`, `features`, `tarea
 - `suscripciones.contrato_id` uuid nullable para vincular la suscripción de mantenimiento al contrato que la originó o la reemplazó.
 - `comisiones` no tiene `proyecto_id`; cualquier referencia de proyecto para reporting debe resolverse vía `cliente_id` / `cotizacion_id` y joins a `proyectos` según contexto.
 - `agentes`, `agente_config` y `agente_analisis` soportan el módulo de Agentes; `agente_analisis` guarda tanto la base determinística como la síntesis en lenguaje natural.
+- `preguntas_diagnostico` guarda las preguntas activas del formulario público de diagnóstico, agrupadas por categoría y orden.
+- `diagnosticos` guarda un diagnóstico por lead con `token_publico`, respuestas JSON, estado, quién lo completó, informe generado, módulos sugeridos y precios calculados para la propuesta.
+- `modulos_catalogo` guarda el catálogo editable de módulos con precios ideal/mínimo e incremento mensual para usar en propuestas.
 
 ### Tabla nueva
 
 - `ai_dev_ejecuciones`: registra cada corrida de AI Dev por fase con modelos usados, estado, PR, tokens, costo estimado, usuario que inició y timestamps de inicio/fin.
+- `preguntas_diagnostico`: banco de preguntas del diagnóstico comercial, filtrable por `activa=true`.
+- `diagnosticos`: instancia de diagnóstico vinculada a `leads.id`, con `token_publico` para formulario e informe sin login, `respuestas` en `jsonb`, `informe_hallazgos`, `modulos_sugeridos`, precios ideal/mínimo de desarrollo y mensual, y estado `pendiente`/`respondido`/`informe_generado`.
+- `modulos_catalogo`: catálogo admin de módulos comerciales con categoría, descripción, precio ideal, precio mínimo, incremento mensual y estado activo.
+
+### Diagnóstico pago
+
+- Esquema real verificado el 2026-07-21 vía OpenAPI de Supabase: `cobros.required` incluía `cliente_id`, por lo que `cobros.cliente_id` era NOT NULL antes de esta unidad.
+- `cobros.cliente_id` pasa a nullable para permitir cobros reales de diagnóstico antes de que el lead exista como cliente formal.
+- `cobros.lead_id` uuid nullable referencia `leads.id` con `ON DELETE SET NULL`; `cobros.tipo` admite también `diagnostico`.
+- `comisiones.cliente_id` pasa a nullable y `comisiones.lead_id` uuid nullable referencia `leads.id` para comisiones generadas por diagnósticos pagos.
+- `comisiones.tipo` admite `diagnostico` además de `venta`.
+- `contratos.descuento_diagnostico_usd` numeric default `0` guarda el monto ya pagado por diagnóstico que se descontó del saldo del contrato final.
+- `config_comisiones.comision_diagnostico_usd` numeric define el monto fijo de comisión pendiente que se genera al registrar un diagnóstico pagado.

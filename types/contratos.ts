@@ -6,6 +6,7 @@ export type Contrato = {
   id: string;
   cliente_id: string;
   valor_total: number;
+  descuento_diagnostico_usd: number;
   adelanto_pct: number;
   fecha_adelanto: string | null;
   cantidad_cuotas: number;
@@ -35,6 +36,7 @@ export type ContratoDetalle = {
 
 export type CreateContratoInput = {
   valor_total: number;
+  lead_id?: string | null;
   adelanto_pct?: number;
   fecha_adelanto?: string | null;
   cantidad_cuotas: number;

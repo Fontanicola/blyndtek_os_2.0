@@ -12,6 +12,8 @@ export type EtapaLead =
   | "contactado"
   | "seguimiento"
   | "calificado"
+  | "diagnostico_ofrecido"
+  | "diagnostico_pagado"
   | "cotizacion"
   | "ganado"
   | "descartado";
@@ -89,6 +91,8 @@ export type LeadStageTransitionInput = {
   monto_negociado_mensual?: number | null;
   motivo_negociacion?: string | null;
   mismo_monto?: boolean;
+  diagnostico_monto?: number | null;
+  diagnostico_fecha?: string | null;
 };
 
 export type CreateLeadInput = Omit<LeadWritableFields, "vendedor_id" | "mensaje_inicial"> & {

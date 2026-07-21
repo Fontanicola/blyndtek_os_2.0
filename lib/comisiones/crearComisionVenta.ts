@@ -10,6 +10,12 @@ type CrearComisionVentaInput = {
   montoVenta: number;
 };
 
+type CrearComisionDiagnosticoInput = {
+  vendedorId: string;
+  leadId: string;
+  montoDiagnostico: number;
+};
+
 async function getActiveConfig(supabase: SupabaseClient<Database>) {
   const { data, error } = await supabase
     .from("config_comisiones")
@@ -42,6 +48,7 @@ export async function crearComisionVenta(
     .insert({
       vendedor_id: input.vendedorId,
       cliente_id: input.clienteId,
+      lead_id: null,
       cotizacion_id: input.cotizacionId ?? null,
       tipo: "venta",
       estado: "pendiente",
@@ -56,6 +63,42 @@ export async function crearComisionVenta(
 
   if (error || !data) {
     throw new Error(error?.message ?? "No se pudo crear la comisión.");
+  }
+
+  return data as Comision;
+}
+
+export async function crearComisionDiagnostico(
+  supabase: SupabaseClient<Database>,
+  input: CrearComisionDiagnosticoInput
+): Promise<Comision | null> {
+  const config = await getActiveConfig(supabase);
+  const montoComision = Number(config.comision_diagnostico_usd ?? 0);
+
+  if (montoComision <= 0) {
+    return null;
+  }
+
+  const { data, error } = await supabase
+    .from("comisiones")
+    .insert({
+      vendedor_id: input.vendedorId,
+      cliente_id: null,
+      lead_id: input.leadId,
+      cotizacion_id: null,
+      tipo: "diagnostico",
+      estado: "pendiente",
+      monto_venta: input.montoDiagnostico,
+      base_comision: input.montoDiagnostico,
+      porcentaje: 0,
+      monto_comision: montoComision,
+      config_comisiones_id: config.id
+    } as never)
+    .select("*")
+    .single();
+
+  if (error || !data) {
+    throw new Error(error?.message ?? "No se pudo crear la comisión de diagnóstico.");
   }
 
   return data as Comision;

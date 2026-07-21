@@ -29,6 +29,8 @@ const STAGE_LABELS: Record<string, string> = {
   contactado: "Contactado",
   seguimiento: "Seguimiento",
   calificado: "Calificado",
+  diagnostico_ofrecido: "Diagnóstico ofrecido",
+  diagnostico_pagado: "Diagnóstico pagado",
   cotizacion: "Cotización",
   ganado: "Ganado",
   descartado: "Descartado"
@@ -39,6 +41,8 @@ const STAGE_COLORS: Record<string, string> = {
   contactado: "#C2CFFF",
   seguimiento: "#9FB2FF",
   calificado: "#718DFF",
+  diagnostico_ofrecido: chartTheme.colors.warning,
+  diagnostico_pagado: "#6B7CFF",
   cotizacion: chartTheme.colors.signal,
   ganado: chartTheme.colors.success,
   descartado: "#F0A6A6"

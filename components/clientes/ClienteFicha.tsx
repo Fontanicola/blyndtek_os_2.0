@@ -1313,10 +1313,19 @@ export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
             <p className="text-sm text-graphite">Cargando contrato...</p>
           ) : contratoActivo ? (
             <div className="space-y-5">
-              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
                 <Card padding="md" className="space-y-1">
                   <p className="text-xs uppercase tracking-[0.08em] text-graphite">Valor total</p>
                   <p className="text-lg font-title text-carbon">{formatUSD(contratoActivo.valor_total)}</p>
+                </Card>
+                <Card padding="md" className="space-y-1">
+                  <p className="text-xs uppercase tracking-[0.08em] text-graphite">Diagnóstico descontado</p>
+                  <p className="text-lg font-title text-carbon">
+                    {formatUSD(contratoActivo.descuento_diagnostico_usd ?? 0)}
+                  </p>
+                  <p className="text-xs text-graphite">
+                    {(contratoActivo.descuento_diagnostico_usd ?? 0) > 0 ? "Aplicado al saldo del contrato" : "Sin descuento previo"}
+                  </p>
                 </Card>
                 <Card padding="md" className="space-y-1">
                   <p className="text-xs uppercase tracking-[0.08em] text-graphite">Adelanto</p>

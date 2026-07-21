@@ -9,6 +9,7 @@ type ContratoRow = {
   id: string;
   cliente_id: string;
   valor_total: number;
+  descuento_diagnostico_usd: number;
   adelanto_pct: number;
   fecha_adelanto: string | null;
   cantidad_cuotas: number;
@@ -27,6 +28,7 @@ type CobroRow = Cobro;
 type ClienteRow = {
   id: string;
   empresa: string;
+  lead_id: string | null;
 };
 
 function toIsoDate(date: Date) {
@@ -78,13 +80,32 @@ async function fetchActiveContrato(supabase: SupabaseClient<Database>, clienteId
 }
 
 async function fetchCliente(supabase: SupabaseClient<Database>, clienteId: string) {
-  const { data, error } = await supabase.from("clientes").select("id, empresa").eq("id", clienteId).single();
+  const { data, error } = await supabase.from("clientes").select("id, empresa, lead_id").eq("id", clienteId).single();
 
   if (error || !data) {
     throw new Error(error?.message ?? "No se pudo cargar el cliente.");
   }
 
   return data as ClienteRow;
+}
+
+async function fetchDescuentoDiagnostico(supabase: SupabaseClient<Database>, leadId: string | null) {
+  if (!leadId) {
+    return 0;
+  }
+
+  const { data, error } = await supabase
+    .from("cobros")
+    .select("monto")
+    .eq("lead_id", leadId)
+    .eq("tipo", "diagnostico")
+    .eq("estado", "cobrado");
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return normalizeMoney((data ?? []).reduce((total, cobro) => total + Number(cobro.monto ?? 0), 0));
 }
 
 function buildAdelantoMonto(valorTotal: number, adelantoPct: number) {
@@ -161,6 +182,9 @@ export async function crearOActualizarContrato(
   try {
     const currentDate = hoyLocalString();
     const cliente = await fetchCliente(supabase, clienteId);
+    const leadId = input.lead_id ?? cliente.lead_id ?? null;
+    const descuentoDiagnostico = Math.min(valorTotal, await fetchDescuentoDiagnostico(supabase, leadId));
+    const valorTotalNeto = normalizeMoney(Math.max(0, valorTotal - descuentoDiagnostico));
     const activeContrato = await fetchActiveContrato(supabase, clienteId);
     oldContrato = activeContrato;
 
@@ -180,7 +204,8 @@ export async function crearOActualizarContrato(
 
     const contratoPayload = {
       cliente_id: clienteId,
-      valor_total: normalizeMoney(valorTotal),
+      valor_total: valorTotalNeto,
+      descuento_diagnostico_usd: normalizeMoney(descuentoDiagnostico),
       adelanto_pct: adelantoPct,
       fecha_adelanto: fechaAdelanto,
       cantidad_cuotas: cantidadCuotas,
@@ -207,12 +232,13 @@ export async function crearOActualizarContrato(
 
     newContratoId = (contratoCreado as ContratoRow).id;
 
-    const montoAdelanto = buildAdelantoMonto(normalizeMoney(valorTotal), adelantoPct);
-    const saldoRestante = normalizeMoney(valorTotal - montoAdelanto);
+    const montoAdelanto = buildAdelantoMonto(valorTotalNeto, adelantoPct);
+    const saldoRestante = normalizeMoney(valorTotalNeto - montoAdelanto);
     const cuotas = buildCuotaMontoDistribucion(saldoRestante, cantidadCuotas);
     const cobrosPayload = [
       {
         cliente_id: clienteId,
+        lead_id: leadId,
         contrato_id: newContratoId,
         proyecto_id: null,
         suscripcion_id: null,
@@ -229,6 +255,7 @@ export async function crearOActualizarContrato(
       },
       ...cuotas.map((monto, index) => ({
         cliente_id: clienteId,
+        lead_id: leadId,
         contrato_id: newContratoId,
         proyecto_id: null,
         suscripcion_id: null,

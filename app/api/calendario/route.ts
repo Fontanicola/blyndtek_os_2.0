@@ -162,7 +162,15 @@ export async function GET(request: NextRequest) {
         .select(
           "id, empresa, responsable_id, llamada_fecha, llamada_hecho, seg1_fecha, seg1_hecho, seg2_fecha, seg2_hecho"
         )
-        .in("etapa", ["por_contactar", "contactado", "seguimiento", "calificado", "cotizacion"])
+        .in("etapa", [
+          "por_contactar",
+          "contactado",
+          "seguimiento",
+          "calificado",
+          "diagnostico_ofrecido",
+          "diagnostico_pagado",
+          "cotizacion"
+        ])
         .order("updated_at", { ascending: false })
     ]);
 

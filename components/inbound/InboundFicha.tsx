@@ -26,11 +26,11 @@ function stageVariant(lead: Lead) {
     return "signal" as const;
   }
 
-  if (lead.etapa === "cotizacion") {
+  if (lead.etapa === "cotizacion" || lead.etapa === "diagnostico_pagado") {
     return "success" as const;
   }
 
-  if (lead.etapa === "seguimiento") {
+  if (lead.etapa === "seguimiento" || lead.etapa === "diagnostico_ofrecido") {
     return "warning" as const;
   }
 

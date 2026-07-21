@@ -95,6 +95,7 @@ export function CobroModal({
               <option value="hito">Hito</option>
               <option value="mantenimiento">Mantenimiento</option>
               <option value="brick">Brick</option>
+              <option value="diagnostico">Diagnóstico</option>
             </select>
           </div>
         </div>

@@ -11,6 +11,7 @@ const DEFAULT_CONFIG: ConfigComisiones = {
   tier_2_pct: 0,
   bono_ventas_mes_umbral: 0,
   bono_monto_usd: 0,
+  comision_diagnostico_usd: 25,
   updated_at: new Date(0).toISOString()
 };
 
@@ -55,6 +56,10 @@ function parseConfigBody(body: Partial<ConfigComisiones>) {
     next.bono_monto_usd = body.bono_monto_usd;
   }
 
+  if (typeof body.comision_diagnostico_usd === "number") {
+    next.comision_diagnostico_usd = body.comision_diagnostico_usd;
+  }
+
   return next;
 }
 
@@ -66,7 +71,7 @@ export async function GET() {
       return NextResponse.json({ error: "No autenticado." }, { status: 401 });
     }
 
-    if (currentUser.rol !== "admin") {
+    if (currentUser.rol !== "admin" && currentUser.rol !== "comercial") {
       return NextResponse.json({ error: "No autorizado." }, { status: 403 });
     }
 
@@ -111,7 +116,8 @@ export async function PATCH(request: NextRequest) {
           tier_2_umbral_usd: updates.tier_2_umbral_usd ?? 0,
           tier_2_pct: updates.tier_2_pct ?? 0,
           bono_ventas_mes_umbral: updates.bono_ventas_mes_umbral ?? 0,
-          bono_monto_usd: updates.bono_monto_usd ?? 0
+          bono_monto_usd: updates.bono_monto_usd ?? 0,
+          comision_diagnostico_usd: updates.comision_diagnostico_usd ?? 25
         } as never)
         .select("*")
         .single();

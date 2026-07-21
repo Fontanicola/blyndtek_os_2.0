@@ -14,6 +14,7 @@ import {
   shouldShowCampanaOrigen
 } from "@/lib/leads";
 import { LeadNegociacionesSection } from "@/components/leads/LeadNegociacionesSection";
+import { LeadDiagnosticoSection } from "@/components/diagnostico/LeadDiagnosticoSection";
 import { cn } from "@/lib/cn";
 import type { CreateLeadInput, Lead, UpdateLeadInput } from "@/types/leads";
 
@@ -314,6 +315,8 @@ export function LeadModal({ lead, isOpen, onClose, onSave, onDelete }: LeadModal
             className={cn(fieldClassName, "min-h-[110px] resize-none")}
           />
         </div>
+
+        {lead ? <LeadDiagnosticoSection lead={lead} /> : null}
 
         {lead ? <LeadNegociacionesSection lead={lead} /> : null}
 

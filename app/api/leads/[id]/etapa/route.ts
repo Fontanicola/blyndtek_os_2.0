@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { getLeadEtapaIndex } from "@/lib/leads";
-import { crearComisionVenta } from "@/lib/comisiones/crearComisionVenta";
+import { crearComisionDiagnostico, crearComisionVenta } from "@/lib/comisiones/crearComisionVenta";
 import { crearOActualizarContrato } from "@/lib/contratos/crearOActualizarContrato";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { crearTareaConAdminClient } from "@/lib/tareas/crearTarea";
@@ -189,6 +189,29 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
       });
     }
 
+    if (body.etapa === "diagnostico_ofrecido") {
+      Object.assign(updatePayload, {
+        notas: appendNote(lead.notas, `[${formatTimestamp(now)}] Diagnóstico pago ofrecido.`)
+      });
+    }
+
+    if (body.etapa === "diagnostico_pagado") {
+      if (typeof body.diagnostico_monto !== "number" || Number.isNaN(body.diagnostico_monto) || body.diagnostico_monto <= 0) {
+        return NextResponse.json({ error: "El monto cobrado del diagnóstico es requerido." }, { status: 400 });
+      }
+
+      if (!body.diagnostico_fecha?.trim()) {
+        return NextResponse.json({ error: "La fecha de cobro del diagnóstico es requerida." }, { status: 400 });
+      }
+
+      Object.assign(updatePayload, {
+        notas: appendNote(
+          lead.notas,
+          `[${formatTimestamp(now)}] Diagnóstico pagado: USD ${body.diagnostico_monto.toLocaleString("en-US")}.`
+        )
+      });
+    }
+
     if (body.etapa === "ganado") {
       const proposedDesarrollo = body.monto_propuesto_desarrollo ?? lead.monto_propuesto_desarrollo;
       const proposedMensual = body.monto_propuesto_mensual ?? lead.monto_propuesto_mensual;
@@ -275,6 +298,65 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
       }
     }
 
+    if (body.etapa === "diagnostico_pagado") {
+      const diagnosticoMonto = Number(body.diagnostico_monto);
+      const diagnosticoFecha = body.diagnostico_fecha?.trim() ?? hoyLocalString();
+      let cobroId: string | null = null;
+      let comisionId: string | null = null;
+
+      try {
+        const { data: cobroCreado, error: cobroError } = await supabase
+          .from("cobros")
+          .insert({
+            cliente_id: null,
+            lead_id: lead.id,
+            contrato_id: null,
+            proyecto_id: null,
+            suscripcion_id: null,
+            cotizacion_id: null,
+            concepto: `Diagnóstico — ${lead.empresa}`,
+            tipo: "diagnostico",
+            monto: diagnosticoMonto,
+            fecha_emision: diagnosticoFecha,
+            fecha_vencimiento: diagnosticoFecha,
+            fecha_cobro: diagnosticoFecha,
+            cuenta_medio: null,
+            tolerancia_dias: 0,
+            estado: "cobrado"
+          } as never)
+          .select("id")
+          .single();
+
+        if (cobroError || !cobroCreado) {
+          throw new Error(cobroError?.message ?? "No se pudo registrar el cobro del diagnóstico.");
+        }
+
+        cobroId = cobroCreado.id;
+
+        if (lead.vendedor_id) {
+          const comision = await crearComisionDiagnostico(supabase, {
+            vendedorId: lead.vendedor_id,
+            leadId: lead.id,
+            montoDiagnostico: diagnosticoMonto
+          });
+          comisionId = comision?.id ?? null;
+        }
+      } catch (error) {
+        if (comisionId) {
+          await supabase.from("comisiones").delete().eq("id", comisionId);
+        }
+
+        if (cobroId) {
+          await supabase.from("cobros").delete().eq("id", cobroId);
+        }
+
+        await rollbackLead(supabase, lead.id, lead);
+
+        const message = error instanceof Error ? error.message : "No se pudo registrar el diagnóstico pagado.";
+        return NextResponse.json({ error: message }, { status: 500 });
+      }
+    }
+
     if (body.etapa === "ganado") {
       let clienteResult: { cliente: { id: string; vendedor_id: string | null }; created: boolean } | null = null;
       let negotiationId: string | null = null;
@@ -333,6 +415,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
 
       await crearOActualizarContrato(supabase, cliente.id, {
         valor_total: montoVenta,
+        lead_id: lead.id,
         cantidad_cuotas: 1,
         dia_pago: diaPago,
         fecha_primera_cuota: hoyLocalString(hoy),
