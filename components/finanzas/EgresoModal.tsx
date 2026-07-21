@@ -30,7 +30,8 @@ const categorias: Array<{ value: CategoriaEgreso; label: string }> = [
   { value: "impuestos_contable", label: "Impuestos/Contable" },
   { value: "sueldos_honorarios", label: "Sueldos/Honorarios" },
   { value: "comisiones", label: "Comisiones" },
-  { value: "otro", label: "Otro" }
+  { value: "otro", label: "Otro" },
+  { value: "transferencia", label: "Transferencia" }
 ];
 
 function getInitialState(egreso: Egreso | null | undefined, defaults: Partial<CreateEgresoInput> | undefined, cajas: Caja[]) {

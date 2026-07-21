@@ -7,6 +7,7 @@ import {
   LandmarkIcon,
   MegaphoneIcon,
   MoreHorizontalIcon,
+  RefreshIcon,
   ServerIcon,
   UsersIcon,
   WalletIcon,
@@ -42,7 +43,8 @@ const categorias: Array<{
   { value: "impuestos_contable", label: "Impuestos/Contable", Icon: LandmarkIcon },
   { value: "sueldos_honorarios", label: "Sueldos/Honorarios", Icon: UsersIcon },
   { value: "comisiones", label: "Comisiones", Icon: WalletIcon },
-  { value: "otro", label: "Otro", Icon: MoreHorizontalIcon }
+  { value: "otro", label: "Otro", Icon: MoreHorizontalIcon },
+  { value: "transferencia", label: "Transferencia", Icon: RefreshIcon }
 ];
 
 function categoryLabel(value: CategoriaEgreso) {

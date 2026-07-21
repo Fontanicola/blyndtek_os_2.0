@@ -8,7 +8,10 @@ export type CategoriaEgreso =
   | "impuestos_contable"
   | "sueldos_honorarios"
   | "comisiones"
-  | "otro";
+  | "otro"
+  | "transferencia";
+
+export type CategoriaEgresoRecurrente = Exclude<CategoriaEgreso, "transferencia">;
 
 export type Egreso = {
   id: string;
@@ -18,6 +21,7 @@ export type Egreso = {
   fecha: string;
   recurrente: boolean;
   recurrente_config_id: string | null;
+  caja_id: string | null;
   cuenta_medio: CuentaMedio | null;
   pagado: boolean;
   fecha_pago: string | null;
@@ -35,6 +39,7 @@ export type CreateEgresoInput = {
   fecha: string;
   recurrente?: boolean;
   recurrente_config_id?: string | null;
+  caja_id?: string | null;
   cuenta_medio?: CuentaMedio | null;
   pagado?: boolean;
   fecha_pago?: string | null;
@@ -49,7 +54,7 @@ export type UpdateEgresoInput = Partial<CreateEgresoInput>;
 export type EgresoRecurrenteConfig = {
   id: string;
   concepto: string;
-  categoria: CategoriaEgreso;
+  categoria: CategoriaEgresoRecurrente;
   monto: number;
   cliente_id: string | null;
   proyecto_id: string | null;

@@ -245,7 +245,8 @@ const egresoCategoriaLabels: Record<Egreso["categoria"], string> = {
   impuestos_contable: "Impuestos / Contable",
   sueldos_honorarios: "Sueldos / Honorarios",
   comisiones: "Comisiones",
-  otro: "Otro"
+  otro: "Otro",
+  transferencia: "Transferencia"
 };
 
 export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {

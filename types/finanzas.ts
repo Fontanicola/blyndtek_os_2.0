@@ -1,5 +1,6 @@
 import type { MonthlyFinancialPoint } from "@/lib/finanzas";
 import type { Cobro } from "@/types/cobros";
+import type { CategoriaEgreso } from "@/types/egresos";
 import type { Egreso } from "@/types/egresos";
 import type { Suscripcion } from "@/types/suscripciones";
 
@@ -36,6 +37,31 @@ export type TesoreriaFinanzas = {
   caja_inicial: number;
   balance_total: number;
   cajas: TesoreriaCajaBalance[];
+};
+
+export type MovimientoCaja = {
+  id: string;
+  tipo: "ingreso" | "egreso";
+  concepto: string;
+  monto: number;
+  fecha: string;
+  estado: string;
+  cliente_nombre: string | null;
+  categoria: CategoriaEgreso | null;
+  cobro_tipo: Cobro["tipo"] | null;
+};
+
+export type ResumenMovimientosCaja = {
+  total_ingresos: number;
+  total_egresos: number;
+  balance_neto_mes: number;
+};
+
+export type CajaMovimientosPayload = {
+  caja_id: string;
+  mes: string;
+  movimientos: MovimientoCaja[];
+  resumen_mes: ResumenMovimientosCaja;
 };
 
 export type MetricasFinanzas = {

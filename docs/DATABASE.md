@@ -430,7 +430,7 @@ Protecciones activas: honeypot silencioso, CORS restringido a `MARKETING_SITE_UR
 | cotizacion_id | uuid | Sí | FK → `cotizaciones` (nullable) |
 | caja_id | uuid | Sí | FK → `cajas`; caja elegida explícitamente para tesorería |
 | concepto | text | No especificado |  |
-| tipo | enum (`one_pay|hito|mantenimiento|brick|diagnostico|otro`) | No especificado | `otro` habilita ingresos genéricos no vinculados |
+| tipo | enum (`one_pay|hito|mantenimiento|brick|diagnostico|otro|transferencia`) | No especificado | `otro` habilita ingresos genéricos no vinculados; `transferencia` representa la pata de ingreso de un movimiento entre cajas |
 | monto | numeric (USD) | No especificado |  |
 | fecha_emision | date | No especificado |  |
 | fecha_vencimiento | date | No especificado |  |
@@ -443,6 +443,9 @@ Protecciones activas: honeypot silencioso, CORS restringido a `MARKETING_SITE_UR
 Notas de verificación:
 - OpenAPI real de Supabase consultado el 2026-07-21 confirmó que `cobros.caja_id` ya existe en la base productiva.
 - En esa misma verificación, `cobros.cliente_id` seguía con `NOT NULL` en producción; la migración `012_ingresos_genericos_cobros.sql` deja el esquema alineado con la app para permitir ingresos genéricos sin cliente vinculado.
+
+Nota operativa:
+- Una transferencia entre cajas no se modela como un ledger paralelo: genera un `egreso` real en la caja origen + un `cobro` real en la caja destino, ambos vinculados por `transferencias_caja`, para que el balance de cada caja siga derivándose únicamente de `cobros` y `egresos`.
 
 ## Tabla: cobros_historial_cambios
 
@@ -468,7 +471,7 @@ Notas de verificación:
 
 **PK:** `id`
 
-**FKs:** `cliente_id` → `clientes.id`; `comision_id` → `comisiones.id`; `recurrente_config_id` → `egresos_recurrentes_config.id`
+**FKs:** `cliente_id` → `clientes.id`; `comision_id` → `comisiones.id`; `recurrente_config_id` → `egresos_recurrentes_config.id`; `caja_id` → `cajas.id`
 
 **RLS esperada:** acceso para `admin` sí; acceso para `miembro` no.
 
@@ -476,10 +479,11 @@ Notas de verificación:
 | --- | --- | --- | --- |
 | id | uuid | No | PK |
 | concepto | text | No especificado |  |
-| categoria | enum (`dominios|hosting_infraestructura|herramientas_software|marketing_ads|impuestos_contable|sueldos_honorarios|comisiones|otro`) | No especificado |  |
+| categoria | enum (`dominios|hosting_infraestructura|herramientas_software|marketing_ads|impuestos_contable|sueldos_honorarios|comisiones|otro|transferencia`) | No especificado | `transferencia` representa la pata de salida de un movimiento entre cajas |
 | monto | numeric (USD) | No especificado |  |
 | fecha | date | No especificado |  |
 | recurrente | bool | No especificado |  |
+| caja_id | uuid | Sí | FK → `cajas`; caja de la que sale el egreso cuando aplica |
 | cuenta_medio | text | No especificado | medio de pago |
 | pagado | bool | No especificado | si el egreso ya fue abonado |
 | fecha_pago | date | No especificado | fecha en que se pagó |
@@ -489,6 +493,27 @@ Notas de verificación:
 | recurrente_config_id | uuid | Sí | FK → `egresos_recurrentes_config`; vincula la instancia mensual real con su plantilla |
 | notas | text | No especificado |  |
 | created_at | timestamptz | No especificado |  |
+
+## Tabla: transferencias_caja
+
+**PK:** `id`
+
+**FKs:** `caja_origen_id` → `cajas.id`; `caja_destino_id` → `cajas.id`; `egreso_id` → `egresos.id`; `cobro_id` → `cobros.id`; `creado_por` → `usuarios.id`
+
+**Uso actual:** trazabilidad explícita de movimientos entre cajas, uniendo la salida (`egresos`) y la entrada (`cobros`) del mismo traslado.
+
+| Campo | Tipo | Nullable | Notas |
+| --- | --- | --- | --- |
+| id | uuid | No | PK, default `gen_random_uuid()` |
+| caja_origen_id | uuid | No | FK → `cajas`; caja que pierde saldo |
+| caja_destino_id | uuid | No | FK → `cajas`; caja que recibe saldo |
+| monto | numeric | No | Monto transferido |
+| fecha | date | No | Fecha efectiva del traslado |
+| nota | text | Sí | Nota opcional del movimiento |
+| egreso_id | uuid | No | FK → `egresos`; registro real de salida |
+| cobro_id | uuid | No | FK → `cobros`; registro real de entrada |
+| creado_por | uuid | Sí | FK → `usuarios` |
+| created_at | timestamptz | No | Default `now()` |
 
 ## Tabla: egresos_recurrentes_config
 

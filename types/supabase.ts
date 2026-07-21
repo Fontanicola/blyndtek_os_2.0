@@ -241,7 +241,7 @@ export type Database = {
           cotizacion_id: string | null;
           caja_id: string | null;
           concepto: string;
-          tipo: "one_pay" | "hito" | "mantenimiento" | "brick" | "diagnostico" | "otro";
+          tipo: "one_pay" | "hito" | "mantenimiento" | "brick" | "diagnostico" | "otro" | "transferencia";
           monto: number;
           fecha_emision: string;
           fecha_vencimiento: string;
@@ -261,7 +261,7 @@ export type Database = {
           cotizacion_id?: string | null;
           caja_id?: string | null;
           concepto: string;
-          tipo: "one_pay" | "hito" | "mantenimiento" | "brick" | "diagnostico" | "otro";
+          tipo: "one_pay" | "hito" | "mantenimiento" | "brick" | "diagnostico" | "otro" | "transferencia";
           monto: number;
           fecha_emision: string;
           fecha_vencimiento: string;
@@ -281,7 +281,7 @@ export type Database = {
           cotizacion_id?: string | null;
           caja_id?: string | null;
           concepto?: string;
-          tipo?: "one_pay" | "hito" | "mantenimiento" | "brick" | "diagnostico" | "otro";
+          tipo?: "one_pay" | "hito" | "mantenimiento" | "brick" | "diagnostico" | "otro" | "transferencia";
           monto?: number;
           fecha_emision?: string;
           fecha_vencimiento?: string;
@@ -1083,10 +1083,12 @@ export type Database = {
             | "impuestos_contable"
             | "sueldos_honorarios"
             | "comisiones"
-            | "otro";
+            | "otro"
+            | "transferencia";
           monto: number;
           fecha: string;
           recurrente: boolean;
+          caja_id: string | null;
           cuenta_medio: string | null;
           pagado: boolean;
           fecha_pago: string | null;
@@ -1108,10 +1110,12 @@ export type Database = {
             | "impuestos_contable"
             | "sueldos_honorarios"
             | "comisiones"
-            | "otro";
+            | "otro"
+            | "transferencia";
           monto: number;
           fecha: string;
           recurrente?: boolean;
+          caja_id?: string | null;
           cuenta_medio?: string | null;
           pagado?: boolean;
           fecha_pago?: string | null;
@@ -1133,10 +1137,12 @@ export type Database = {
             | "impuestos_contable"
             | "sueldos_honorarios"
             | "comisiones"
-            | "otro";
+            | "otro"
+            | "transferencia";
           monto?: number;
           fecha?: string;
           recurrente?: boolean;
+          caja_id?: string | null;
           cuenta_medio?: string | null;
           pagado?: boolean;
           fecha_pago?: string | null;
@@ -1148,6 +1154,13 @@ export type Database = {
           created_at?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: "egresos_caja_id_fkey";
+            columns: ["caja_id"];
+            isOneToOne: false;
+            referencedRelation: "cajas";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "egresos_cliente_id_fkey";
             columns: ["cliente_id"];
@@ -2484,6 +2497,81 @@ export type Database = {
             columns: ["responsable_id"];
             isOneToOne: false;
             referencedRelation: "usuarios";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      transferencias_caja: {
+        Row: {
+          id: string;
+          caja_origen_id: string;
+          caja_destino_id: string;
+          monto: number;
+          fecha: string;
+          nota: string | null;
+          egreso_id: string;
+          cobro_id: string;
+          creado_por: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          caja_origen_id: string;
+          caja_destino_id: string;
+          monto: number;
+          fecha: string;
+          nota?: string | null;
+          egreso_id: string;
+          cobro_id: string;
+          creado_por?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          caja_origen_id?: string;
+          caja_destino_id?: string;
+          monto?: number;
+          fecha?: string;
+          nota?: string | null;
+          egreso_id?: string;
+          cobro_id?: string;
+          creado_por?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "transferencias_caja_caja_destino_id_fkey";
+            columns: ["caja_destino_id"];
+            isOneToOne: false;
+            referencedRelation: "cajas";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "transferencias_caja_caja_origen_id_fkey";
+            columns: ["caja_origen_id"];
+            isOneToOne: false;
+            referencedRelation: "cajas";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "transferencias_caja_cobro_id_fkey";
+            columns: ["cobro_id"];
+            isOneToOne: false;
+            referencedRelation: "cobros";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "transferencias_caja_creado_por_fkey";
+            columns: ["creado_por"];
+            isOneToOne: false;
+            referencedRelation: "usuarios";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "transferencias_caja_egreso_id_fkey";
+            columns: ["egreso_id"];
+            isOneToOne: false;
+            referencedRelation: "egresos";
             referencedColumns: ["id"];
           }
         ];

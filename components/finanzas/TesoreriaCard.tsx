@@ -9,6 +9,7 @@ import { formatFecha, formatUSD } from "@/lib/utils/formatters";
 import type { Caja } from "@/types/cajas";
 import type { TesoreriaCajaBalance, TesoreriaFinanzas } from "@/types/finanzas";
 import { Area, AreaChart, ResponsiveContainer } from "recharts";
+import { CajaDetalleModal } from "./CajaDetalleModal";
 
 type TesoreriaCardProps = {
   data: TesoreriaFinanzas | null;
@@ -35,7 +36,7 @@ function formatMovement(item: TesoreriaCajaBalance) {
   return item.ultimo_movimiento ? formatFecha(item.ultimo_movimiento) : "Sin movimientos";
 }
 
-function CajaCard({ item }: { item: TesoreriaCajaBalance }) {
+function CajaCard({ item, onOpen }: { item: TesoreriaCajaBalance; onOpen?: (item: TesoreriaCajaBalance) => void }) {
   const isInactive = !item.activa && !item.es_sin_asignar;
   const colorTone = getCajaLightBg(item.color);
   const shouldHide = item.es_sin_asignar && item.total_cobrado === 0 && item.total_egresado === 0;
@@ -45,7 +46,11 @@ function CajaCard({ item }: { item: TesoreriaCajaBalance }) {
   }
 
   return (
-    <Card padding="md" className={cn("space-y-4 transition-opacity duration-fast ease-fast", isInactive && "opacity-70")}>
+    <Card
+      padding="md"
+      onClick={onOpen ? () => onOpen(item) : undefined}
+      className={cn("space-y-4 transition-opacity duration-fast ease-fast", isInactive && "opacity-70")}
+    >
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3">
           <span className={cn("h-3 w-3 rounded-full", colorTone)} />
@@ -341,6 +346,7 @@ export function TesoreriaCard({
   showToast
 }: TesoreriaCardProps) {
   const [manageOpen, setManageOpen] = useState(false);
+  const [selectedCaja, setSelectedCaja] = useState<TesoreriaCajaBalance | null>(null);
   const cajasVisibles = useMemo(
     () => (data?.cajas ?? []).filter((item) => !(item.es_sin_asignar && item.total_cobrado === 0 && item.total_egresado === 0)),
     [data?.cajas]
@@ -391,7 +397,7 @@ export function TesoreriaCard({
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {cajasVisibles.map((item) => (
-          <CajaCard key={item.slug} item={item} />
+          <CajaCard key={item.slug} item={item} onOpen={setSelectedCaja} />
         ))}
       </div>
 
@@ -404,6 +410,20 @@ export function TesoreriaCard({
         onDeleteCaja={onDeleteCaja}
         onRefreshData={onRefreshData}
         showToast={showToast}
+      />
+
+      <CajaDetalleModal
+        isOpen={Boolean(selectedCaja)}
+        onClose={() => setSelectedCaja(null)}
+        caja={
+          selectedCaja
+            ? {
+                id: selectedCaja.id ?? "sin_asignar",
+                nombre: selectedCaja.nombre,
+                color: selectedCaja.color
+              }
+            : null
+        }
       />
     </div>
   );

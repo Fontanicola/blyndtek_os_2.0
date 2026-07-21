@@ -2,14 +2,20 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { addMonths, formatMonthKey, formatMonthLabel, startOfMonth } from "@/lib/finanzas";
 import { hoyLocalString } from "@/lib/utils/fechas";
 import type { Caja } from "@/types/cajas";
-import type { CategoriaEgreso, CreateEgresoInput, Egreso, EgresoRecurrenteConfig, UpdateEgresoInput } from "@/types/egresos";
+import type {
+  CategoriaEgresoRecurrente,
+  CreateEgresoInput,
+  Egreso,
+  EgresoRecurrenteConfig,
+  UpdateEgresoInput
+} from "@/types/egresos";
 import type { Database } from "@/types/supabase";
 
 type FinanzasClient = SupabaseClient<Database>;
 
 type RecurrentePayload = {
   concepto: string;
-  categoria: CategoriaEgreso;
+  categoria: CategoriaEgresoRecurrente;
   monto: number;
   fecha: string;
   cliente_id?: string | null;
@@ -302,10 +308,15 @@ export async function syncRecurrenteConfigFromInstance(
     return null;
   }
 
+  const categoria = input.categoria ?? current.categoria;
+  if (categoria === "transferencia") {
+    throw new Error("La categoría transferencia no admite configuración recurrente.");
+  }
+
   if (!current.recurrente_config_id) {
     return createRecurrenteConfig(supabase, {
       concepto: input.concepto ?? current.concepto,
-      categoria: input.categoria ?? current.categoria,
+      categoria,
       monto: input.monto ?? current.monto,
       fecha: input.fecha ?? current.fecha,
       cliente_id: input.cliente_id ?? current.cliente_id,
@@ -316,7 +327,7 @@ export async function syncRecurrenteConfigFromInstance(
 
   return updateRecurrenteConfig(supabase, current.recurrente_config_id, {
     concepto: input.concepto ?? current.concepto,
-    categoria: input.categoria ?? current.categoria,
+    categoria,
     monto: input.monto ?? current.monto,
     fecha: input.fecha ?? current.fecha,
     cliente_id: input.cliente_id ?? current.cliente_id,

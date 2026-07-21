@@ -8,6 +8,57 @@ Fecha de inicio: 2026-06-25
 
 Estado general actual: Fase 0 completa. Cimientos técnicos listos: documentación fundacional, setup del repo, design system, shell de app y sistema de autenticación base. Las fases 1, 2 y 3 del roadmap original quedaron completadas.
 
+## Actualización 2026-07-21
+
+- Se preparó el esquema de base para transferencias entre cajas, sin tocar todavía endpoints ni UI.
+- Archivos creados/modificados:
+  - `supabase/migrations/015_transferencias_caja.sql`
+  - `types/supabase.ts`
+  - `types/egresos.ts`
+  - `types/cobros.ts`
+  - `types/transferencias.ts`
+  - `docs/DATABASE.md`
+  - `docs/PROGRESS.md`
+- La migración agrega `egresos.caja_id` como FK nullable a `cajas`, amplía `cobros.tipo` con `transferencia`, amplía `egresos.categoria` con `transferencia` y crea `transferencias_caja` para vincular la salida (`egreso`) y la entrada (`cobro`) del mismo movimiento.
+- Decisión técnica registrada:
+  - Una transferencia entre cajas se modela como un `egreso` real + un `cobro` real vinculados por `transferencias_caja`, no como un ledger paralelo, para que el balance de cada caja siga dependiendo únicamente de `cobros` y `egresos`.
+  - `egresos.cuenta_medio` no se toca; se mantiene por compatibilidad histórica, igual que en `cobros`.
+
+## Actualización 2026-07-21
+
+- Se creó el endpoint `GET /api/cajas/[id]/movimientos` para devolver el detalle mensual normalizado de movimientos de una caja específica, con `service_role` y guard admin.
+- Archivos creados/modificados:
+  - `app/api/cajas/[id]/movimientos/route.ts`
+  - `lib/hooks/useCajaMovimientos.ts`
+  - `types/finanzas.ts`
+  - `docs/PROGRESS.md`
+- El endpoint unifica `cobros` y `egresos` de la caja en una sola colección ordenada por fecha descendente, usando fechas efectivas con fallback explícito:
+  - ingresos: `fecha_cobro` → `fecha_vencimiento` → `created_at`
+  - egresos: `fecha_pago` → `fecha`
+- Decisiones técnicas tomadas:
+  - El parámetro `mes` se normaliza a `YYYY-MM`; si no se envía, se usa el mes actual.
+  - Todas las fechas del payload se devuelven como strings `YYYY-MM-DD`, apoyándose en `lib/utils/fechas.ts` para evitar parseos inseguros con `new Date("YYYY-MM-DD")`.
+  - El hook `useCajaMovimientos` encapsula navegación `mesAnterior()` / `mesSiguiente()`, loading, error y refetch manual, dejando lista la base para la UI de Tesorería sin implementarla todavía.
+
+## Actualización 2026-07-21
+
+- Se implementó la visualización del detalle mensual de movimientos por caja dentro de la tab `Tesorería` de Finanzas.
+- Archivos creados/modificados:
+  - `components/finanzas/CajaDetalleModal.tsx`
+  - `components/finanzas/TesoreriaCard.tsx`
+  - `app/api/cajas/[id]/movimientos/route.ts`
+  - `docs/PROGRESS.md`
+- Cada card de caja en Tesorería ahora es clickeable y abre un modal con:
+  - navegación mensual `← [Mes Año] →`
+  - KPIs de `Ingresos`, `Egresos` y `Balance neto`
+  - lista unificada de movimientos con ícono, concepto, cliente, fecha y monto coloreado por tipo
+  - `EmptyState` cuando no hay movimientos
+  - `Spinner` durante la carga
+- Decisiones técnicas tomadas:
+  - Se reutilizó `Modal` del design system y el hook `useCajaMovimientos(cajaId)` ya creado, sin agregar nuevos componentes base.
+  - Se extendió el endpoint de movimientos para soportar también la caja virtual `sin_asignar`, usando `caja_id IS NULL` en vez de dejar esa card sin detalle.
+  - El modal mantiene una visualización read-only; no expone todavía transferencias ni alta/edición desde esta vista.
+
 ## Actualización 2026-07-19
 
 - Se implementó la carga manual de imagen de preview para la card “Sistema en vivo” del roadmap público.
@@ -2116,6 +2167,21 @@ $ find . -maxdepth 3 \( -name 'middleware.*' -o -name 'proxy.*' \) -not -path '.
 - Verificación ejecutada:
   - `npm run lint` OK.
   - `npm run build` OK.
+
+## 2026-07-21 — Tesorería: detalle mensual de movimientos por caja
+
+- Se creó `components/finanzas/CajaDetalleModal.tsx` para mostrar el detalle mensual de una caja dentro de `Tesorería`, reutilizando `Modal`, `EmptyState`, `Spinner` y el hook `useCajaMovimientos`.
+- El modal incorpora:
+  - navegación mensual `← [Mes Año] →`,
+  - KPIs de `Ingresos`, `Egresos` y `Balance neto`,
+  - listado unificado de movimientos ordenados por fecha descendente,
+  - iconografía contextual por tipo/categoría,
+  - estado vacío para meses sin actividad.
+- `components/finanzas/TesoreriaCard.tsx` ahora vuelve clickeables las cards de caja y abre el modal de detalle sobre la caja seleccionada.
+- `app/api/cajas/[id]/movimientos/route.ts` se ajustó para soportar también la caja virtual `sin_asignar`, resolviendo movimientos con `caja_id IS NULL` para que esa card también tenga detalle navegable.
+- Decisiones técnicas:
+  - El modal es solo de visualización: no agrega alta/edición de ingresos o egresos desde Tesorería en esta unidad.
+  - Se mantuvo el criterio de fecha efectiva del backend existente y el uso del helper central de fechas para evitar parseos inconsistentes.
   - Inserción temporal contra Supabase intentada para validar un ingreso genérico real: falló por `null value in column "cliente_id" of relation "cobros" violates not-null constraint`, confirmando la causa exacta y justificando la migración agregada.
 
 ## 2026-07-21 — Finanzas: nueva tab Presupuesto

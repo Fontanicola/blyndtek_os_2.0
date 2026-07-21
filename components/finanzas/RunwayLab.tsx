@@ -42,7 +42,8 @@ const categoriaOptions: Array<{ value: CategoriaEgreso; label: string }> = [
   { value: "impuestos_contable", label: "Impuestos/Contable" },
   { value: "sueldos_honorarios", label: "Sueldos/Honorarios" },
   { value: "comisiones", label: "Comisiones" },
-  { value: "otro", label: "Otro" }
+  { value: "otro", label: "Otro" },
+  { value: "transferencia", label: "Transferencia" }
 ];
 
 const monthFormatter = new Intl.DateTimeFormat("es-AR", {

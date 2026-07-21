@@ -1,4 +1,11 @@
-export type TipoCobro = "one_pay" | "hito" | "mantenimiento" | "brick" | "diagnostico" | "otro";
+export type TipoCobro =
+  | "one_pay"
+  | "hito"
+  | "mantenimiento"
+  | "brick"
+  | "diagnostico"
+  | "otro"
+  | "transferencia";
 export type EstadoCobro = "pendiente" | "facturado" | "cobrado" | "vencido";
 export type CuentaMedio = string;
 

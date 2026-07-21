@@ -14,7 +14,8 @@ function parseCategoria(searchParams: URLSearchParams): CategoriaEgreso | null {
     categoria === "impuestos_contable" ||
     categoria === "sueldos_honorarios" ||
     categoria === "comisiones" ||
-    categoria === "otro"
+    categoria === "otro" ||
+    categoria === "transferencia"
   ) {
     return categoria;
   }
@@ -98,11 +99,19 @@ export async function POST(request: NextRequest) {
       recurrente: body.recurrente ?? false
     };
 
+    if (payload.recurrente && payload.categoria === "transferencia") {
+      return NextResponse.json(
+        { error: "transferencia is not a valid categoria for recurrente config" },
+        { status: 400 }
+      );
+    }
+
     let recurrenteConfigId = payload.recurrente_config_id ?? null;
     if (payload.recurrente && !recurrenteConfigId) {
+      const categoriaRecurrente = payload.categoria as Exclude<CategoriaEgreso, "transferencia">;
       const config = await createRecurrenteConfig(supabase, {
         concepto: payload.concepto,
-        categoria: payload.categoria,
+        categoria: categoriaRecurrente,
         monto: payload.monto,
         fecha: payload.fecha,
         cliente_id: payload.cliente_id ?? null,
