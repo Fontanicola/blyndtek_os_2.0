@@ -80,7 +80,7 @@ export function KanbanColumn({
             onDragStart={onDragStartLead}
             onDragEnd={onDragEndLead}
             isDragging={draggedLeadId === lead.id}
-            responsableUsuario={getResponsableUsuario(lead.responsable_id)}
+            responsableUsuario={getResponsableUsuario(lead.vendedor_id ?? lead.responsable_id)}
             isAdmin={isAdmin}
           />
         ))}

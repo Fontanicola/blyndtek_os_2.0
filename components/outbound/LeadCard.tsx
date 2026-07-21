@@ -214,11 +214,6 @@ export function LeadCard({
           </div>
 
           <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
-            {isAdmin ? (
-              <Badge variant="default" className="text-[10px]">
-                {lead.vendedor_nombre ?? "Sin asignar"}
-              </Badge>
-            ) : null}
             <Badge variant={lead.canal === "outbound" ? "signal" : "warning"} className="text-[10px]">
               {lead.canal === "outbound" ? "Outbound" : "Inbound"}
             </Badge>
@@ -249,7 +244,7 @@ export function LeadCard({
           </div>
 
           <UserAvatar
-            name={responsableUsuario?.nombre ?? lead.responsable_id}
+            name={responsableUsuario?.nombre ?? lead.vendedor_nombre ?? "Sin asignar"}
             fotoUrl={responsableUsuario?.foto_url ?? null}
             size="xs"
             className="shrink-0"
