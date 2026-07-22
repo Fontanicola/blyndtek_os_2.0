@@ -1,10 +1,10 @@
 "use client";
 
-import { useMemo } from "react";
-import { Area, Bar, CartesianGrid, ComposedChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { useId, useMemo } from "react";
+import { Area, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import type { TooltipContentProps } from "recharts/types/component/Tooltip";
 import { Card } from "@/components/ui";
-import { chartTheme, formatCompactCurrencyTick } from "@/lib/charts/chartTheme";
+import { chartTheme, formatCompactCurrencyTick, getChartActiveDot, getConservativeCurveType } from "@/lib/charts/chartTheme";
 import { formatUSD } from "@/lib/utils/formatters";
 import type { MonthlyFinancialPoint } from "@/lib/finanzas";
 
@@ -13,6 +13,8 @@ type PLChartProps = {
 };
 
 export function PLChart({ data }: PLChartProps) {
+  const ingresosGradientId = useId();
+  const egresosGradientId = useId();
   const averageMargin = useMemo(() => {
     const totalIngresos = data.reduce((total, point) => total + point.ingresos, 0);
     const totalEgresos = data.reduce((total, point) => total + point.egresos, 0);
@@ -23,6 +25,17 @@ export function PLChart({ data }: PLChartProps) {
 
     return ((totalIngresos - totalEgresos) / totalIngresos) * 100;
   }, [data]);
+  const incomeCurveType = useMemo(() => getConservativeCurveType(data.map((point) => point.ingresos)), [data]);
+  const expenseCurveType = useMemo(() => getConservativeCurveType(data.map((point) => point.egresos)), [data]);
+  const marginCurveType = useMemo(() => getConservativeCurveType(data.map((point) => point.margen)), [data]);
+  const minSeriesValue = useMemo(
+    () => Math.min(0, ...data.map((point) => Math.min(point.ingresos, point.egresos, point.margen))),
+    [data]
+  );
+  const peakActiveClients = useMemo(
+    () => data.reduce((max, point) => Math.max(max, point.clientes_activos), 0),
+    [data]
+  );
 
   return (
     <Card padding="md" className="overflow-hidden bg-white">
@@ -31,21 +44,21 @@ export function PLChart({ data }: PLChartProps) {
           <div>
             <h3 className="text-base font-title text-carbon">P&amp;L mensual</h3>
             <p className="text-sm text-graphite">Ingresos vs egresos de los ultimos 12 meses.</p>
-            <p className="mt-1 text-xs text-graphite">
+            <p className="mt-1 text-xs font-base text-graphite">
               Margen promedio (12 meses): {averageMargin == null ? "Sin datos" : `${averageMargin.toFixed(1)}%`}
+            </p>
+            <p className="mt-2 inline-flex items-center gap-2 rounded-pill border border-line-soft bg-paper px-2.5 py-1 text-[11px] font-label tracking-[0.01em] text-graphite">
+              <span className="h-2 w-2 rounded-full" style={{ backgroundColor: chartTheme.secondarySeries.stroke }} />
+              Pico de clientes activos: {peakActiveClients}
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {[
               { label: "Ingresos", color: chartTheme.colors.signal },
               { label: "Egresos", color: chartTheme.colors.danger },
-              { label: "Margen", color: chartTheme.colors.success },
-              { label: "Clientes", color: chartTheme.colors.graphite }
+              { label: "Margen", color: chartTheme.colors.success }
             ].map((item) => (
-              <span
-                key={item.label}
-                className="inline-flex items-center gap-2 rounded-pill bg-paper px-3 py-1 text-xs font-label text-graphite"
-              >
+              <span key={item.label} className={chartTheme.legend.pillClassName}>
                 <span className="h-2 w-2 rounded-full" style={{ backgroundColor: item.color }} />
                 {item.label}
               </span>
@@ -56,6 +69,18 @@ export function PLChart({ data }: PLChartProps) {
         <div className="w-full">
           <ResponsiveContainer width="100%" height={420}>
             <ComposedChart data={data} margin={{ top: 24, right: 28, left: 14, bottom: 14 }}>
+              <defs>
+                <linearGradient id={ingresosGradientId} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={chartTheme.colors.signal} stopOpacity={0.14} />
+                  <stop offset="72%" stopColor={chartTheme.colors.signal} stopOpacity={0.04} />
+                  <stop offset="100%" stopColor={chartTheme.colors.signal} stopOpacity={0} />
+                </linearGradient>
+                <linearGradient id={egresosGradientId} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={chartTheme.colors.danger} stopOpacity={0.12} />
+                  <stop offset="72%" stopColor={chartTheme.colors.danger} stopOpacity={0.035} />
+                  <stop offset="100%" stopColor={chartTheme.colors.danger} stopOpacity={0} />
+                </linearGradient>
+              </defs>
               <CartesianGrid
                 strokeDasharray={chartTheme.grid.strokeDasharray}
                 stroke={chartTheme.grid.stroke}
@@ -66,6 +91,7 @@ export function PLChart({ data }: PLChartProps) {
                 tick={chartTheme.axis.tick}
                 axisLine={chartTheme.axis.axisLine}
                 tickLine={chartTheme.axis.tickLine}
+                tickMargin={chartTheme.axis.tickMargin}
                 interval={0}
               />
               <YAxis
@@ -74,18 +100,14 @@ export function PLChart({ data }: PLChartProps) {
                 tick={chartTheme.axis.tick}
                 axisLine={chartTheme.axis.axisLine}
                 tickLine={chartTheme.axis.tickLine}
-                domain={[0, (dataMax: number) => Math.ceil(dataMax * 1.15)]}
-              />
-              <YAxis
-                yAxisId="right"
-                orientation="right"
-                allowDecimals={false}
-                tick={chartTheme.axis.tick}
-                axisLine={chartTheme.axis.axisLine}
-                tickLine={chartTheme.axis.tickLine}
-                domain={[0, (dataMax: number) => Math.max(dataMax * 2.5, 5)]}
+                tickMargin={chartTheme.axis.tickMargin}
+                domain={[
+                  (dataMin: number) => (minSeriesValue < 0 ? Math.floor(Math.min(dataMin, minSeriesValue) * 1.08) : 0),
+                  (dataMax: number) => Math.ceil(dataMax * 1.12)
+                ]}
               />
               <Tooltip
+                cursor={{ stroke: chartTheme.colors.line, strokeWidth: 1, strokeDasharray: "3 6" }}
                 content={({ active, payload, label }: TooltipContentProps<number, string>) => {
                   const point = payload?.[0]?.payload as MonthlyFinancialPoint | undefined;
 
@@ -95,68 +117,68 @@ export function PLChart({ data }: PLChartProps) {
 
                   return (
                     <div className={chartTheme.tooltip.className}>
-                      <p className="mb-2 font-label text-carbon">{label}</p>
-                      <div className="space-y-1.5">
-                        <p className="text-xs" style={{ color: chartTheme.colors.signal }}>
-                          Ingresos: {formatUSD(point.ingresos)}
-                        </p>
-                        <p className="text-xs" style={{ color: chartTheme.colors.danger }}>
-                          Egresos: {formatUSD(point.egresos)}
-                        </p>
-                        <p className="text-xs" style={{ color: chartTheme.colors.success }}>
-                          Margen: {formatUSD(point.margen)}
-                        </p>
-                        <p className="text-xs" style={{ color: chartTheme.colors.graphite }}>
-                          Clientes activos: {point.clientes_activos.toLocaleString("en-US")}
-                        </p>
+                      <p className={chartTheme.tooltip.titleClassName}>{label}</p>
+                      <div className={chartTheme.tooltip.bodyClassName}>
+                        <div className={chartTheme.tooltip.rowClassName}>
+                          <span className={chartTheme.tooltip.labelClassName} style={{ color: chartTheme.colors.signal }}>
+                            Ingresos
+                          </span>
+                          <span className={chartTheme.tooltip.valueClassName}>{formatUSD(point.ingresos)}</span>
+                        </div>
+                        <div className={chartTheme.tooltip.rowClassName}>
+                          <span className={chartTheme.tooltip.labelClassName} style={{ color: chartTheme.colors.danger }}>
+                            Egresos
+                          </span>
+                          <span className={chartTheme.tooltip.valueClassName}>{formatUSD(point.egresos)}</span>
+                        </div>
+                        <div className={chartTheme.tooltip.rowClassName}>
+                          <span className={chartTheme.tooltip.labelClassName} style={{ color: chartTheme.colors.success }}>
+                            Margen
+                          </span>
+                          <span className={chartTheme.tooltip.valueClassName}>{formatUSD(point.margen)}</span>
+                        </div>
+                        <div className={chartTheme.tooltip.rowClassName}>
+                          <span className={chartTheme.tooltip.labelClassName}>Clientes activos</span>
+                          <span className={chartTheme.tooltip.valueClassName}>
+                            {point.clientes_activos.toLocaleString("en-US")}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   );
                 }}
-              />
-              <Bar
-                yAxisId="right"
-                dataKey="clientes_activos"
-                name="Clientes activos"
-                fill={chartTheme.colors.muted}
-                radius={chartTheme.bar.radius}
-                barSize={10}
               />
               <Area
                 yAxisId="left"
                 dataKey="ingresos"
                 name="Ingresos"
                 stroke={chartTheme.colors.signal}
-                strokeWidth={2.8}
-                fill={chartTheme.colors.signal}
-                fillOpacity={0.08}
+                strokeWidth={chartTheme.area.strokeWidth}
+                fill={`url(#${ingresosGradientId})`}
                 dot={false}
-                activeDot={{ r: 4, fill: "#FFFFFF", stroke: chartTheme.colors.signal, strokeWidth: 2.5 }}
-                type="monotone"
-              />
-              <Area
-                yAxisId="left"
-                dataKey="margen"
-                name="Margen"
-                stroke={chartTheme.colors.success}
-                strokeWidth={2.4}
-                fill={chartTheme.colors.success}
-                fillOpacity={0.06}
-                dot={false}
-                activeDot={{ r: 4, fill: "#FFFFFF", stroke: chartTheme.colors.success, strokeWidth: 2.5 }}
-                type="monotone"
+                activeDot={getChartActiveDot(chartTheme.colors.signal)}
+                type={incomeCurveType}
               />
               <Area
                 yAxisId="left"
                 dataKey="egresos"
                 name="Egresos"
                 stroke={chartTheme.colors.danger}
-                strokeWidth={2.4}
-                fill={chartTheme.colors.danger}
-                fillOpacity={0.05}
+                strokeWidth={chartTheme.area.strokeWidth}
+                fill={`url(#${egresosGradientId})`}
                 dot={false}
-                activeDot={{ r: 4, fill: "#FFFFFF", stroke: chartTheme.colors.danger, strokeWidth: 2.5 }}
-                type="monotone"
+                activeDot={getChartActiveDot(chartTheme.colors.danger)}
+                type={expenseCurveType}
+              />
+              <Line
+                yAxisId="left"
+                dataKey="margen"
+                name="Margen"
+                stroke={chartTheme.colors.success}
+                strokeWidth={chartTheme.line.strokeWidth}
+                dot={false}
+                activeDot={getChartActiveDot(chartTheme.colors.success)}
+                type={marginCurveType}
               />
             </ComposedChart>
           </ResponsiveContainer>

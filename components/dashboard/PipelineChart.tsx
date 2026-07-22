@@ -43,11 +43,13 @@ export function PipelineChart({ data }: PipelineChartProps) {
               tick={chartTheme.axis.tick}
               axisLine={chartTheme.axis.axisLine}
               tickLine={chartTheme.axis.tickLine}
+              tickMargin={chartTheme.axis.tickMargin}
             />
             <YAxis
               tick={chartTheme.axis.tick}
               axisLine={chartTheme.axis.axisLine}
               tickLine={chartTheme.axis.tickLine}
+              tickMargin={chartTheme.axis.tickMargin}
               tickFormatter={formatCompactCurrencyTick}
             />
             <Tooltip
@@ -58,8 +60,17 @@ export function PipelineChart({ data }: PipelineChartProps) {
 
                 return (
                   <div className={chartTheme.tooltip.className}>
-                    <p className="mb-1 font-label text-carbon">{label}</p>
-                    <p className="text-xs text-signal">Valor ponderado: {formatUSD(Number(payload[0]?.value ?? 0))}</p>
+                    <p className={chartTheme.tooltip.titleClassName}>{label}</p>
+                    <div className={chartTheme.tooltip.bodyClassName}>
+                      <div className={chartTheme.tooltip.rowClassName}>
+                        <span className={chartTheme.tooltip.labelClassName} style={{ color: chartTheme.colors.signal }}>
+                          Valor ponderado
+                        </span>
+                        <span className={chartTheme.tooltip.valueClassName}>
+                          {formatUSD(Number(payload[0]?.value ?? 0))}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 );
               }}

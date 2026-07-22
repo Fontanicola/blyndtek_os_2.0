@@ -132,10 +132,10 @@ function CajaCard({ item, onOpen }: { item: TesoreriaCajaBalance; onOpen?: (item
                 <XAxis
                   dataKey="mes"
                   tickFormatter={formatSparklineMonth}
-                  tick={{ ...chartTheme.axis.tick, fontSize: 9 }}
+                  tick={chartTheme.sparkline.xTick}
                   axisLine={false}
                   tickLine={false}
-                  tickMargin={6}
+                  tickMargin={chartTheme.axis.tickMargin}
                   minTickGap={18}
                   interval="preserveStartEnd"
                 />
@@ -143,16 +143,16 @@ function CajaCard({ item, onOpen }: { item: TesoreriaCajaBalance; onOpen?: (item
                 <Line
                   dataKey="cobrado"
                   stroke={chartTheme.colors.success}
-                  strokeWidth={2}
+                  strokeWidth={chartTheme.sparkline.strokeWidth}
                   dot={false}
-                  type="monotone"
+                  type={chartTheme.sparkline.type}
                 />
                 <Line
                   dataKey="egresado"
                   stroke={chartTheme.colors.danger}
-                  strokeWidth={2}
+                  strokeWidth={chartTheme.sparkline.strokeWidth}
                   dot={false}
-                  type="monotone"
+                  type={chartTheme.sparkline.type}
                 />
               </LineChart>
             </ResponsiveContainer>

@@ -129,12 +129,24 @@ export function CarteraClientesChart({ data }: CarteraClientesChartProps) {
                 className={`pointer-events-none absolute z-10 w-64 ${chartTheme.tooltip.className}`}
                 style={{ left: `${tooltipPosition.x}px`, top: `${tooltipPosition.y}px` }}
               >
-                <p className="mb-1 font-label text-carbon">{activeItem.empresa}</p>
-                <p className="text-xs text-success">Cobrado: {formatUSD(activeItem.total_cobrado)}</p>
-                <p className="text-xs text-warning">Pendiente: {formatUSD(activeItem.total_pendiente)}</p>
-                <p className="mt-1 text-xs text-graphite">
-                  Total: {formatUSD(activeItem.total_contrato)} ({activeItem.pct_cobrado.toFixed(0)}% cobrado)
-                </p>
+                <p className={chartTheme.tooltip.titleClassName}>{activeItem.empresa}</p>
+                <div className={chartTheme.tooltip.bodyClassName}>
+                  <div className={chartTheme.tooltip.rowClassName}>
+                    <span className={chartTheme.tooltip.labelClassName} style={{ color: chartTheme.colors.success }}>
+                      Cobrado
+                    </span>
+                    <span className={chartTheme.tooltip.valueClassName}>{formatUSD(activeItem.total_cobrado)}</span>
+                  </div>
+                  <div className={chartTheme.tooltip.rowClassName}>
+                    <span className={chartTheme.tooltip.labelClassName} style={{ color: chartTheme.colors.warning }}>
+                      Pendiente
+                    </span>
+                    <span className={chartTheme.tooltip.valueClassName}>{formatUSD(activeItem.total_pendiente)}</span>
+                  </div>
+                  <p className={chartTheme.tooltip.metaClassName}>
+                    Total: {formatUSD(activeItem.total_contrato)} ({activeItem.pct_cobrado.toFixed(0)}% cobrado)
+                  </p>
+                </div>
               </div>
             ) : null}
           </div>

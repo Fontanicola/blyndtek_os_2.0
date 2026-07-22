@@ -14,7 +14,7 @@ import {
 import type { TooltipContentProps } from "recharts/types/component/Tooltip";
 import { Card } from "@/components/ui";
 import { AlertTriangleIcon } from "@/components/ui/icons";
-import { chartTheme, formatCompactCurrencyTick } from "@/lib/charts/chartTheme";
+import { chartTheme, formatCompactCurrencyTick, getChartActiveDot, getConservativeCurveType } from "@/lib/charts/chartTheme";
 import { formatUSD } from "@/lib/utils/formatters";
 import type { RunwayProjectionMonth } from "@/lib/finanzas/runwayProjection";
 
@@ -119,6 +119,14 @@ export function RunwayChart({
 }: RunwayChartProps) {
   const chartData = useMemo(() => data.map(toChartRenderDatum), [data]);
   const scenarioStroke = useMemo(() => getScenarioStroke(chartData), [chartData]);
+  const currentCashCurveType = useMemo(
+    () => getConservativeCurveType(chartData.map((point) => point.caja_acumulada_actual)),
+    [chartData]
+  );
+  const scenarioCashCurveType = useMemo(
+    () => getConservativeCurveType(chartData.map((point) => point.caja_acumulada_escenario)),
+    [chartData]
+  );
   const actualExhaustion = useMemo(
     () => getExhaustionPoint(chartData, mesAgotamientoActual, "caja_acumulada_actual"),
     [chartData, mesAgotamientoActual]
@@ -172,6 +180,7 @@ export function RunwayChart({
               tick={chartTheme.axis.tick}
               axisLine={chartTheme.axis.axisLine}
               tickLine={chartTheme.axis.tickLine}
+              tickMargin={chartTheme.axis.tickMargin}
             />
             <YAxis
               yAxisId="flow"
@@ -180,6 +189,7 @@ export function RunwayChart({
               domain={[0, "dataMax"]}
               axisLine={chartTheme.axis.axisLine}
               tickLine={chartTheme.axis.tickLine}
+              tickMargin={chartTheme.axis.tickMargin}
             />
             <YAxis
               yAxisId="cash"
@@ -188,6 +198,7 @@ export function RunwayChart({
               tickFormatter={formatCompactCurrencyTick}
               axisLine={chartTheme.axis.axisLine}
               tickLine={chartTheme.axis.tickLine}
+              tickMargin={chartTheme.axis.tickMargin}
             />
             <Tooltip
               cursor={{ fill: "rgba(31, 68, 255, 0.04)" }}
@@ -205,44 +216,59 @@ export function RunwayChart({
 
                 return (
                   <div className={`min-w-[250px] ${chartTheme.tooltip.className}`}>
-                    <p className="mb-3 font-label text-carbon">{label}</p>
-                    <div className="space-y-1.5 text-xs">
-                      <div className="flex items-center justify-between gap-4 text-success">
-                        <span>Ingresos</span>
-                        <span className="font-label">{formatUSD(row.ingresos)}</span>
+                    <p className={chartTheme.tooltip.titleClassName}>{label}</p>
+                    <div className={chartTheme.tooltip.bodyClassName}>
+                      <div className={chartTheme.tooltip.rowClassName}>
+                        <span className={chartTheme.tooltip.labelClassName} style={{ color: chartTheme.colors.success }}>
+                          Ingresos
+                        </span>
+                        <span className={chartTheme.tooltip.valueClassName}>{formatUSD(row.ingresos)}</span>
                       </div>
-                      <div className="flex items-center justify-between gap-4 text-danger">
-                        <span>Costos fijos</span>
-                        <span className="font-label">{formatUSD(row.costos_fijos)}</span>
+                      <div className={chartTheme.tooltip.rowClassName}>
+                        <span className={chartTheme.tooltip.labelClassName} style={{ color: chartTheme.colors.danger }}>
+                          Costos fijos
+                        </span>
+                        <span className={chartTheme.tooltip.valueClassName}>{formatUSD(row.costos_fijos)}</span>
                       </div>
                       {hypothesisDetails.length > 0 ? (
-                        <div className="space-y-1 border-t border-line-soft pt-2 text-warning">
+                        <div className="space-y-1 border-t border-line-soft pt-2">
                           {hypothesisDetails.map((detail) => (
-                            <div key={`${row.month}-${detail.nombre}`} className="flex items-center justify-between gap-4">
-                              <span className="max-w-[150px] truncate">{detail.nombre}</span>
-                              <span className="font-label">{formatUSD(detail.monto)}</span>
+                            <div key={`${row.month}-${detail.nombre}`} className={chartTheme.tooltip.rowClassName}>
+                              <span
+                                className={`${chartTheme.tooltip.labelClassName} max-w-[150px] truncate`}
+                                style={{ color: chartTheme.colors.warning }}
+                              >
+                                {detail.nombre}
+                              </span>
+                              <span className={chartTheme.tooltip.valueClassName}>{formatUSD(detail.monto)}</span>
                             </div>
                           ))}
                         </div>
                       ) : null}
                       {row.costos_hipotesis > 0 ? (
-                        <div className="flex items-center justify-between gap-4 text-warning">
-                          <span>Costos de hipótesis</span>
-                          <span className="font-label">{formatUSD(row.costos_hipotesis)}</span>
+                        <div className={chartTheme.tooltip.rowClassName}>
+                          <span className={chartTheme.tooltip.labelClassName} style={{ color: chartTheme.colors.warning }}>
+                            Costos de hipótesis
+                          </span>
+                          <span className={chartTheme.tooltip.valueClassName}>{formatUSD(row.costos_hipotesis)}</span>
                         </div>
                       ) : null}
-                      <div className="flex items-center justify-between gap-4 border-t border-line-soft pt-2 text-carbon">
-                        <span>Margen</span>
-                        <span className="font-label">{formatUSD(row.margen_usd)}</span>
+                      <div className={`${chartTheme.tooltip.rowClassName} border-t border-line-soft pt-2`}>
+                        <span className={chartTheme.tooltip.labelClassName}>Margen</span>
+                        <span className={chartTheme.tooltip.valueClassName}>{formatUSD(row.margen_usd)}</span>
                       </div>
-                      <div className="flex items-center justify-between gap-4 text-signal">
-                        <span>Caja acumulada actual</span>
-                        <span className="font-label">{formatUSD(row.caja_acumulada_actual)}</span>
+                      <div className={chartTheme.tooltip.rowClassName}>
+                        <span className={chartTheme.tooltip.labelClassName} style={{ color: chartTheme.colors.signal }}>
+                          Caja acumulada actual
+                        </span>
+                        <span className={chartTheme.tooltip.valueClassName}>{formatUSD(row.caja_acumulada_actual)}</span>
                       </div>
                       {hasScenario ? (
-                        <div className="flex items-center justify-between gap-4" style={{ color: scenarioStroke }}>
-                          <span>Caja con escenario</span>
-                          <span className="font-label">{formatUSD(row.caja_acumulada_escenario)}</span>
+                        <div className={chartTheme.tooltip.rowClassName}>
+                          <span className={chartTheme.tooltip.labelClassName} style={{ color: scenarioStroke }}>
+                            Caja con escenario
+                          </span>
+                          <span className={chartTheme.tooltip.valueClassName}>{formatUSD(row.caja_acumulada_escenario)}</span>
                         </div>
                       ) : null}
                     </div>
@@ -284,10 +310,10 @@ export function RunwayChart({
               dataKey="caja_acumulada_actual"
               name="Caja actual"
               stroke={chartTheme.colors.signal}
-              strokeWidth={2}
-              dot={{ r: 3.5, fill: "#FFFFFF", stroke: chartTheme.colors.signal, strokeWidth: 1.5 }}
-              activeDot={{ r: 5, fill: "#FFFFFF", stroke: chartTheme.colors.signal, strokeWidth: 2 }}
-              type="monotone"
+              strokeWidth={chartTheme.line.strokeWidth}
+              dot={false}
+              activeDot={getChartActiveDot(chartTheme.colors.signal)}
+              type={currentCashCurveType}
             />
             {hasScenario ? (
               <Line
@@ -295,11 +321,11 @@ export function RunwayChart({
                 dataKey="caja_acumulada_escenario"
                 name="Caja con escenario"
                 stroke={scenarioStroke}
-                strokeWidth={2}
+                strokeWidth={chartTheme.line.strokeWidth}
                 strokeDasharray="5 5"
-                dot={{ r: 3.5, fill: "#FFFFFF", stroke: scenarioStroke, strokeWidth: 1.5 }}
-                activeDot={{ r: 5, fill: "#FFFFFF", stroke: scenarioStroke, strokeWidth: 2 }}
-                type="monotone"
+                dot={false}
+                activeDot={getChartActiveDot(scenarioStroke)}
+                type={scenarioCashCurveType}
               />
             ) : null}
             <Line

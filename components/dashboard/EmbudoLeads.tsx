@@ -79,6 +79,7 @@ export function EmbudoLeads({ data }: EmbudoLeadsProps) {
                 tick={chartTheme.axis.tick}
                 axisLine={chartTheme.axis.axisLine}
                 tickLine={chartTheme.axis.tickLine}
+                tickMargin={chartTheme.axis.tickMargin}
                 allowDecimals={false}
                 domain={[0, Math.max(1, Math.ceil(maxValue * 1.1))]}
               />
@@ -103,8 +104,15 @@ export function EmbudoLeads({ data }: EmbudoLeadsProps) {
 
                   return (
                     <div className={chartTheme.tooltip.className}>
-                      <p className="mb-1 font-label text-carbon">{d.etiqueta}</p>
-                      <p className="text-xs text-signal">Leads: {d.cantidad}</p>
+                      <p className={chartTheme.tooltip.titleClassName}>{d.etiqueta}</p>
+                      <div className={chartTheme.tooltip.bodyClassName}>
+                        <div className={chartTheme.tooltip.rowClassName}>
+                          <span className={chartTheme.tooltip.labelClassName} style={{ color: chartTheme.colors.signal }}>
+                            Leads
+                          </span>
+                          <span className={chartTheme.tooltip.valueClassName}>{d.cantidad}</span>
+                        </div>
+                      </div>
                     </div>
                   );
                 }}

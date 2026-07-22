@@ -10,7 +10,7 @@ import {
   YAxis
 } from "recharts";
 import { Card } from "@/components/ui";
-import { chartTheme, formatCompactCurrencyTick } from "@/lib/charts/chartTheme";
+import { chartTheme, formatCompactCurrencyTick, getChartActiveDot, getConservativeCurveType } from "@/lib/charts/chartTheme";
 import { formatUSD } from "@/lib/utils/formatters";
 import type { DashboardRunwayPoint } from "@/types/dashboard";
 import type { TooltipContentProps } from "recharts/types/component/Tooltip";
@@ -20,6 +20,8 @@ type RunwayProyectadoProps = {
 };
 
 export function RunwayProyectado({ data }: RunwayProyectadoProps) {
+  const curveType = getConservativeCurveType(data.map((point) => point.caja));
+
   return (
     <Card padding="md" className="space-y-5 overflow-hidden bg-white">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -43,11 +45,13 @@ export function RunwayProyectado({ data }: RunwayProyectadoProps) {
               tick={chartTheme.axis.tick}
               axisLine={chartTheme.axis.axisLine}
               tickLine={chartTheme.axis.tickLine}
+              tickMargin={chartTheme.axis.tickMargin}
             />
             <YAxis
               tick={chartTheme.axis.tick}
               axisLine={chartTheme.axis.axisLine}
               tickLine={chartTheme.axis.tickLine}
+              tickMargin={chartTheme.axis.tickMargin}
               tickFormatter={formatCompactCurrencyTick}
             />
             <Tooltip
@@ -58,8 +62,17 @@ export function RunwayProyectado({ data }: RunwayProyectadoProps) {
 
                 return (
                   <div className={chartTheme.tooltip.className}>
-                    <p className="mb-1 font-label text-carbon">{label}</p>
-                    <p className="text-xs text-signal">Caja: {formatUSD(Number(payload[0]?.value ?? 0))}</p>
+                    <p className={chartTheme.tooltip.titleClassName}>{label}</p>
+                    <div className={chartTheme.tooltip.bodyClassName}>
+                      <div className={chartTheme.tooltip.rowClassName}>
+                        <span className={chartTheme.tooltip.labelClassName} style={{ color: chartTheme.colors.signal }}>
+                          Caja
+                        </span>
+                        <span className={chartTheme.tooltip.valueClassName}>
+                          {formatUSD(Number(payload[0]?.value ?? 0))}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 );
               }}
@@ -68,12 +81,12 @@ export function RunwayProyectado({ data }: RunwayProyectadoProps) {
               dataKey="caja"
               name="Caja"
               stroke={chartTheme.colors.signal}
-              strokeWidth={2.8}
+              strokeWidth={chartTheme.area.strokeWidth}
               fill={chartTheme.colors.signal}
-              fillOpacity={0.08}
+              fillOpacity={chartTheme.area.fillOpacity}
               dot={false}
-              activeDot={{ r: 4, fill: "#FFFFFF", stroke: chartTheme.colors.signal, strokeWidth: 2.5 }}
-              type="monotone"
+              activeDot={getChartActiveDot(chartTheme.colors.signal)}
+              type={curveType}
             />
           </ComposedChart>
         </ResponsiveContainer>

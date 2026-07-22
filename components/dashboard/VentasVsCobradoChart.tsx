@@ -46,11 +46,13 @@ export function VentasVsCobradoChart({ data }: VentasVsCobradoChartProps) {
                   tick={chartTheme.axis.tick}
                   axisLine={chartTheme.axis.axisLine}
                   tickLine={chartTheme.axis.tickLine}
+                  tickMargin={chartTheme.axis.tickMargin}
                 />
                 <YAxis
                   tick={chartTheme.axis.tick}
                   axisLine={chartTheme.axis.axisLine}
                   tickLine={chartTheme.axis.tickLine}
+                  tickMargin={chartTheme.axis.tickMargin}
                   tickFormatter={formatCompactCurrencyTick}
                 />
                 <Tooltip
@@ -66,14 +68,20 @@ export function VentasVsCobradoChart({ data }: VentasVsCobradoChartProps) {
 
                     return (
                       <div className={chartTheme.tooltip.className}>
-                        <p className="mb-2 font-label text-carbon">{label}</p>
-                        <div className="space-y-1.5">
-                          <p className="text-xs" style={{ color: chartTheme.colors.signal }}>
-                            Ventas: {formatUSD(point.ventas)}
-                          </p>
-                          <p className="text-xs" style={{ color: chartTheme.colors.success }}>
-                            Cobrado: {formatUSD(point.cobrado)}
-                          </p>
+                        <p className={chartTheme.tooltip.titleClassName}>{label}</p>
+                        <div className={chartTheme.tooltip.bodyClassName}>
+                          <div className={chartTheme.tooltip.rowClassName}>
+                            <span className={chartTheme.tooltip.labelClassName} style={{ color: chartTheme.colors.signal }}>
+                              Ventas
+                            </span>
+                            <span className={chartTheme.tooltip.valueClassName}>{formatUSD(point.ventas)}</span>
+                          </div>
+                          <div className={chartTheme.tooltip.rowClassName}>
+                            <span className={chartTheme.tooltip.labelClassName} style={{ color: chartTheme.colors.success }}>
+                              Cobrado
+                            </span>
+                            <span className={chartTheme.tooltip.valueClassName}>{formatUSD(point.cobrado)}</span>
+                          </div>
                         </div>
                       </div>
                     );

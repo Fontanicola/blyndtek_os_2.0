@@ -8,6 +8,60 @@ Fecha de inicio: 2026-06-25
 
 Estado general actual: Fase 0 completa. Cimientos técnicos listos: documentación fundacional, setup del repo, design system, shell de app y sistema de autenticación base. Las fases 1, 2 y 3 del roadmap original quedaron completadas.
 
+## Actualización 2026-07-22
+
+- Se hizo un rediseño visual transversal de los gráficos financieros y de negocio que consumen `lib/charts/chartTheme.ts`, elevando el lenguaje visual a un estándar más sobrio y técnico.
+- Archivos modificados:
+  - `lib/charts/chartTheme.ts`
+  - `components/finanzas/PLChart.tsx`
+  - `components/finanzas/RunwayChart.tsx`
+  - `components/saas/MRRChart.tsx`
+  - `components/finanzas/CarteraClientesChart.tsx`
+  - `components/dashboard/VentasVsCobradoChart.tsx`
+  - `components/dashboard/EmbudoLeads.tsx`
+  - `components/dashboard/WinRateChart.tsx`
+  - `components/dashboard/PipelineChart.tsx`
+  - `components/dashboard/RunwayProyectado.tsx`
+  - `components/clientes/ClienteRentabilidadChart.tsx`
+  - `components/mi-panel/VentasChart.tsx`
+  - `components/ai-hub/AiHubCostoChart.tsx`
+  - `components/dashboard/LeadsPorEtapaChart.tsx`
+  - `components/finanzas/TesoreriaCard.tsx`
+  - `docs/PROGRESS.md`
+- Cambios aplicados en `chartTheme.ts`:
+  - grilla más limpia (`stroke` más suave y dash más largo), solo horizontal;
+  - ticks de ejes más chicos y con mejor contraste;
+  - strokes más finos para líneas y áreas;
+  - tooltips unificados con mayor jerarquía visual, padding más cuidado y sombra de overlay real;
+  - pills de leyenda unificadas;
+  - nuevo helper `getConservativeCurveType()`:
+    - usa `linear` cuando la serie es escasa o intermitente;
+    - recién habilita `monotoneX` cuando hay al menos 4 puntos consecutivos con datos reales activos.
+- Causa exacta del bug de interpolación corregido:
+  - `components/finanzas/PLChart.tsx` usaba `type="monotone"` por default para la línea/área de margen;
+  - en una serie mensual con muchos meses vacíos o casi planos, ese spline podía exagerar la transición entre puntos y dar la sensación de un valle visual “inventado” entre meses;
+  - la corrección fue pasar el margen (y el resto de series comparables) a una interpolación conservadora derivada de `getConservativeCurveType()`, que en este caso cae a `linear`, eliminando cualquier overshoot entre puntos.
+- Rediseño específico de `PLChart.tsx`:
+  - `Clientes activos` dejó de competir como segundo eje numérico dentro del chart;
+  - se movió a un indicador sutil fuera del gráfico: `Pico de clientes activos`;
+  - `Ingresos` y `Egresos` quedaron con áreas más sobrias y gradiente liviano;
+  - `Margen` quedó como línea principal, sin spline agresiva;
+  - el tooltip ahora presenta fecha, valores alineados y mejor jerarquía tipográfica.
+- Verificación visual real ejecutada el miércoles 22 de julio de 2026:
+  - se levantó un preview temporal local del `PLChart` con la serie real usada por la app y se inspeccionó visualmente en browser;
+  - la serie validada alrededor del tramo sensible fue:
+    - mayo 2026: margen `612.51`
+    - junio 2026: margen `-587.49`
+    - julio 2026: margen `3246.79`
+  - conclusión importante:
+    - junio 2026 sí es realmente negativo en los datos;
+    - el fix no “eliminó una caída real”, sino que eliminó la posibilidad de que la curva spline exagerara el trayecto entre mayo y junio más allá del punto real de junio;
+  - además se confirmó en DOM renderizado que la leyenda visible del chart quedó solo con `Ingresos`, `Egresos` y `Margen`, y que `Clientes` ya no aparece como serie dominante dentro del gráfico.
+- Decisiones técnicas:
+  - la fuente única de estilo para charts sigue siendo `lib/charts/chartTheme.ts`;
+  - el criterio nuevo es: charts compactos o con series financieras discontinuas priorizan fidelidad del dato sobre “suavidad decorativa”;
+  - el sparkline de Tesorería también pasó a línea más fina y sin spline agresiva, alineado al mismo estándar.
+
 ## Actualización 2026-07-21
 
 - Se corrigió por fin el bug real de responsive en las cards de caja de Finanzas → Tesorería cuando el sidebar está expandido.

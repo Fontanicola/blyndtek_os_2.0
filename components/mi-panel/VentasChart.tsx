@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import { Area, Bar, CartesianGrid, ComposedChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import type { TooltipContentProps } from "recharts/types/component/Tooltip";
 import { Card } from "@/components/ui";
-import { chartTheme, formatCompactCurrencyTick } from "@/lib/charts/chartTheme";
+import { chartTheme, formatCompactCurrencyTick, getChartActiveDot, getConservativeCurveType } from "@/lib/charts/chartTheme";
 import { formatUSD } from "@/lib/utils/formatters";
 
 type VentasChartPoint = {
@@ -20,6 +20,10 @@ type VentasChartProps = {
 export function VentasChart({ data }: VentasChartProps) {
   const hasData = useMemo(
     () => data.some((point) => point.cantidad_ventas > 0 || point.monto_total_usd > 0),
+    [data]
+  );
+  const amountCurveType = useMemo(
+    () => getConservativeCurveType(data.map((point) => point.monto_total_usd)),
     [data]
   );
 
@@ -52,6 +56,7 @@ export function VentasChart({ data }: VentasChartProps) {
                   tick={chartTheme.axis.tick}
                   axisLine={chartTheme.axis.axisLine}
                   tickLine={chartTheme.axis.tickLine}
+                  tickMargin={chartTheme.axis.tickMargin}
                   interval={0}
                 />
                 <YAxis
@@ -60,6 +65,7 @@ export function VentasChart({ data }: VentasChartProps) {
                   tick={chartTheme.axis.tick}
                   axisLine={chartTheme.axis.axisLine}
                   tickLine={chartTheme.axis.tickLine}
+                  tickMargin={chartTheme.axis.tickMargin}
                 />
                 <YAxis
                   yAxisId="right"
@@ -68,6 +74,7 @@ export function VentasChart({ data }: VentasChartProps) {
                   tick={chartTheme.axis.tick}
                   axisLine={chartTheme.axis.axisLine}
                   tickLine={chartTheme.axis.tickLine}
+                  tickMargin={chartTheme.axis.tickMargin}
                   domain={[0, (dataMax: number) => Math.max(dataMax * 2.5, 5)]}
                 />
                 <Tooltip
@@ -83,9 +90,19 @@ export function VentasChart({ data }: VentasChartProps) {
 
                     return (
                       <div className={chartTheme.tooltip.className}>
-                        <p className="mb-2 font-label text-carbon">{label}</p>
-                        <p className="text-xs text-signal">Monto: {formatUSD(point.monto_total_usd)}</p>
-                        <p className="text-xs text-graphite">Ventas: {point.cantidad_ventas}</p>
+                        <p className={chartTheme.tooltip.titleClassName}>{label}</p>
+                        <div className={chartTheme.tooltip.bodyClassName}>
+                          <div className={chartTheme.tooltip.rowClassName}>
+                            <span className={chartTheme.tooltip.labelClassName} style={{ color: chartTheme.colors.signal }}>
+                              Monto
+                            </span>
+                            <span className={chartTheme.tooltip.valueClassName}>{formatUSD(point.monto_total_usd)}</span>
+                          </div>
+                          <div className={chartTheme.tooltip.rowClassName}>
+                            <span className={chartTheme.tooltip.labelClassName}>Ventas</span>
+                            <span className={chartTheme.tooltip.valueClassName}>{point.cantidad_ventas}</span>
+                          </div>
+                        </div>
                       </div>
                     );
                   }}
@@ -103,12 +120,12 @@ export function VentasChart({ data }: VentasChartProps) {
                   dataKey="monto_total_usd"
                   name="Monto"
                   stroke={chartTheme.colors.signal}
-                  strokeWidth={2.8}
+                  strokeWidth={chartTheme.area.strokeWidth}
                   fill={chartTheme.colors.signal}
-                  fillOpacity={0.08}
+                  fillOpacity={chartTheme.area.fillOpacity}
                   dot={false}
-                  activeDot={{ r: 4, fill: "#FFFFFF", stroke: chartTheme.colors.signal, strokeWidth: 2.5 }}
-                  type="monotone"
+                  activeDot={getChartActiveDot(chartTheme.colors.signal)}
+                  type={amountCurveType}
                 />
               </ComposedChart>
             </ResponsiveContainer>

@@ -77,11 +77,13 @@ export function WinRateChart({ outbound, inbound }: WinRateChartProps) {
                   tick={chartTheme.axis.tick}
                   axisLine={chartTheme.axis.axisLine}
                   tickLine={chartTheme.axis.tickLine}
+                  tickMargin={chartTheme.axis.tickMargin}
                 />
                 <YAxis
                   tick={chartTheme.axis.tick}
                   axisLine={chartTheme.axis.axisLine}
                   tickLine={chartTheme.axis.tickLine}
+                  tickMargin={chartTheme.axis.tickMargin}
                   domain={[0, 100]}
                   tickFormatter={formatPercent}
                 />
@@ -98,11 +100,18 @@ export function WinRateChart({ outbound, inbound }: WinRateChartProps) {
 
                     return (
                       <div className={chartTheme.tooltip.className}>
-                        <p className="mb-1 font-label text-carbon">{d.canal}</p>
-                        <p className="text-xs text-signal">Conversión: {formatPercent(d.porcentaje)}</p>
-                        <p className="text-xs text-graphite">
-                          {d.clientes} clientes de {d.leads} leads
-                        </p>
+                        <p className={chartTheme.tooltip.titleClassName}>{d.canal}</p>
+                        <div className={chartTheme.tooltip.bodyClassName}>
+                          <div className={chartTheme.tooltip.rowClassName}>
+                            <span className={chartTheme.tooltip.labelClassName} style={{ color: chartTheme.colors.signal }}>
+                              Conversión
+                            </span>
+                            <span className={chartTheme.tooltip.valueClassName}>{formatPercent(d.porcentaje)}</span>
+                          </div>
+                          <p className={chartTheme.tooltip.metaClassName}>
+                            {d.clientes} clientes de {d.leads} leads
+                          </p>
+                        </div>
                       </div>
                     );
                   }}

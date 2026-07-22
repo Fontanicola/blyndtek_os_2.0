@@ -12,7 +12,7 @@ import {
   YAxis
 } from "recharts";
 import { Card } from "@/components/ui";
-import { chartTheme, formatCompactCurrencyTick } from "@/lib/charts/chartTheme";
+import { chartTheme, formatCompactCurrencyTick, getChartActiveDot, getConservativeCurveType } from "@/lib/charts/chartTheme";
 import { formatUSD } from "@/lib/utils/formatters";
 
 export type ClienteRentabilidadPoint = {
@@ -27,6 +27,7 @@ type ClienteRentabilidadChartProps = {
 };
 
 export function ClienteRentabilidadChart({ data }: ClienteRentabilidadChartProps) {
+  const marginCurveType = useMemo(() => getConservativeCurveType(data.map((point) => point.margen)), [data]);
   const maxAbsValue = useMemo(
     () => Math.max(1, ...data.map((point) => Math.max(Math.abs(point.ingresos), Math.abs(point.costos), Math.abs(point.margen)))),
     [data]
@@ -70,6 +71,7 @@ export function ClienteRentabilidadChart({ data }: ClienteRentabilidadChartProps
                 tick={chartTheme.axis.tick}
                 axisLine={chartTheme.axis.axisLine}
                 tickLine={chartTheme.axis.tickLine}
+                tickMargin={chartTheme.axis.tickMargin}
                 interval={0}
               />
               <YAxis
@@ -77,6 +79,7 @@ export function ClienteRentabilidadChart({ data }: ClienteRentabilidadChartProps
                 tick={chartTheme.axis.tick}
                 axisLine={chartTheme.axis.axisLine}
                 tickLine={chartTheme.axis.tickLine}
+                tickMargin={chartTheme.axis.tickMargin}
                 domain={[Math.min(0, -maxAbsValue * 1.15), Math.max(0, maxAbsValue * 1.15)]}
               />
               <Tooltip
@@ -97,17 +100,26 @@ export function ClienteRentabilidadChart({ data }: ClienteRentabilidadChartProps
 
                   return (
                     <div className={chartTheme.tooltip.className}>
-                      <p className="mb-2 font-label text-carbon">{label}</p>
-                      <div className="space-y-1.5">
-                        <p className="text-xs" style={{ color: chartTheme.colors.signal }}>
-                          Ingresos: {formatUSD(point.ingresos)}
-                        </p>
-                        <p className="text-xs" style={{ color: chartTheme.colors.danger }}>
-                          Costos: {formatUSD(point.costos)}
-                        </p>
-                        <p className="text-xs" style={{ color: chartTheme.colors.success }}>
-                          Margen: {formatUSD(point.margen)}
-                        </p>
+                      <p className={chartTheme.tooltip.titleClassName}>{label}</p>
+                      <div className={chartTheme.tooltip.bodyClassName}>
+                        <div className={chartTheme.tooltip.rowClassName}>
+                          <span className={chartTheme.tooltip.labelClassName} style={{ color: chartTheme.colors.signal }}>
+                            Ingresos
+                          </span>
+                          <span className={chartTheme.tooltip.valueClassName}>{formatUSD(point.ingresos)}</span>
+                        </div>
+                        <div className={chartTheme.tooltip.rowClassName}>
+                          <span className={chartTheme.tooltip.labelClassName} style={{ color: chartTheme.colors.danger }}>
+                            Costos
+                          </span>
+                          <span className={chartTheme.tooltip.valueClassName}>{formatUSD(point.costos)}</span>
+                        </div>
+                        <div className={chartTheme.tooltip.rowClassName}>
+                          <span className={chartTheme.tooltip.labelClassName} style={{ color: chartTheme.colors.success }}>
+                            Margen
+                          </span>
+                          <span className={chartTheme.tooltip.valueClassName}>{formatUSD(point.margen)}</span>
+                        </div>
                       </div>
                     </div>
                   );
@@ -128,13 +140,13 @@ export function ClienteRentabilidadChart({ data }: ClienteRentabilidadChartProps
                 barSize={chartTheme.bar.barSize}
               />
               <Line
-                type="monotone"
+                type={marginCurveType}
                 dataKey="margen"
                 name="Margen"
                 stroke={chartTheme.colors.success}
-                strokeWidth={2.5}
-                dot={{ r: 3.5, fill: "#FFFFFF", stroke: chartTheme.colors.success, strokeWidth: 2 }}
-                activeDot={{ r: 5, fill: "#FFFFFF", stroke: chartTheme.colors.success, strokeWidth: 2.5 }}
+                strokeWidth={chartTheme.line.strokeWidth}
+                dot={false}
+                activeDot={getChartActiveDot(chartTheme.colors.success)}
               />
             </ComposedChart>
           </ResponsiveContainer>

@@ -47,11 +47,13 @@ export function AiHubCostoChart({ data, series }: AiHubCostoChartProps) {
                   tick={chartTheme.axis.tick}
                   axisLine={chartTheme.axis.axisLine}
                   tickLine={chartTheme.axis.tickLine}
+                  tickMargin={chartTheme.axis.tickMargin}
                 />
                 <YAxis
                   tick={chartTheme.axis.tick}
                   axisLine={chartTheme.axis.axisLine}
                   tickLine={chartTheme.axis.tickLine}
+                  tickMargin={chartTheme.axis.tickMargin}
                   tickFormatter={formatCompactCurrencyTick}
                 />
                 <Tooltip
@@ -67,14 +69,17 @@ export function AiHubCostoChart({ data, series }: AiHubCostoChartProps) {
 
                     return (
                       <div className={chartTheme.tooltip.className}>
-                        <p className="mb-2 font-label text-carbon">{label}</p>
-                        <div className="space-y-1.5">
+                        <p className={chartTheme.tooltip.titleClassName}>{label}</p>
+                        <div className={chartTheme.tooltip.bodyClassName}>
                           {series.map((serie) => {
                             const amount = Number(point[serie.slug] ?? 0);
                             return (
-                              <p key={serie.slug} className="text-xs" style={{ color: serie.color }}>
-                                {serie.label}: {formatUSD(amount)}
-                              </p>
+                              <div key={serie.slug} className={chartTheme.tooltip.rowClassName}>
+                                <span className={chartTheme.tooltip.labelClassName} style={{ color: serie.color }}>
+                                  {serie.label}
+                                </span>
+                                <span className={chartTheme.tooltip.valueClassName}>{formatUSD(amount)}</span>
+                              </div>
                             );
                           })}
                         </div>
