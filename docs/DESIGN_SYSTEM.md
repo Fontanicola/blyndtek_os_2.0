@@ -260,7 +260,7 @@ Este archivo consolida el estado actual real del código y reemplaza como refere
 - gradientes sobrios permitidos solo dentro de gráficos
 - sombras SVG suaves permitidas solo dentro de gráficos
 - series semánticas consistentes
-- Las áreas deben sentirse orgánicas: usar curvas suaves para series positivas y evitar cierres verticales duros con gradientes de desvanecimiento visual en los bordes. Nunca se agregan puntos falsos a una serie financiera para resolver un problema estético.
+- Las áreas deben sentirse orgánicas: usar curvas suaves para series positivas y evitar cierres verticales duros con máscaras/gradientes de desvanecimiento visual en los bordes. Nunca se agregan puntos falsos a una serie financiera para resolver un problema estético.
 - Regla de superficie:
 - la UI estructural sigue plana; los gradientes no salen del dominio chart
 - La grilla estándar usa líneas horizontales sutiles; no se reintroducen grids verticales salvo justificación analítica concreta.

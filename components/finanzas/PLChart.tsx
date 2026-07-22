@@ -11,7 +11,9 @@ import {
   getChartActiveDot,
   getChartDot,
   getChartGradientFill,
-  renderChartEdgeFadeGradient
+  renderChartAreaMask,
+  renderChartEdgeFadeMask,
+  renderChartGradient
 } from "@/lib/charts/chartTheme";
 import { formatUSD } from "@/lib/utils/formatters";
 import type { MonthlyFinancialPoint } from "@/lib/finanzas";
@@ -23,6 +25,10 @@ type PLChartProps = {
 export function PLChart({ data }: PLChartProps) {
   const ingresosGradientId = useId();
   const egresosGradientId = useId();
+  const ingresosEdgeMaskGradientId = useId();
+  const egresosEdgeMaskGradientId = useId();
+  const ingresosAreaMaskId = useId();
+  const egresosAreaMaskId = useId();
   const averageMargin = useMemo(() => {
     const totalIngresos = data.reduce((total, point) => total + point.ingresos, 0);
     const totalEgresos = data.reduce((total, point) => total + point.egresos, 0);
@@ -76,8 +82,12 @@ export function PLChart({ data }: PLChartProps) {
           <ResponsiveContainer width="100%" height={420}>
             <ComposedChart data={data} margin={{ top: 24, right: 28, left: 14, bottom: 14 }}>
               <defs>
-                {renderChartEdgeFadeGradient(ingresosGradientId, "signal")}
-                {renderChartEdgeFadeGradient(egresosGradientId, "danger")}
+                {renderChartGradient(ingresosGradientId, "signal")}
+                {renderChartGradient(egresosGradientId, "danger")}
+                {renderChartEdgeFadeMask(ingresosEdgeMaskGradientId)}
+                {renderChartEdgeFadeMask(egresosEdgeMaskGradientId)}
+                {renderChartAreaMask(ingresosAreaMaskId, ingresosEdgeMaskGradientId)}
+                {renderChartAreaMask(egresosAreaMaskId, egresosEdgeMaskGradientId)}
               </defs>
               <CartesianGrid
                 strokeDasharray={chartTheme.grid.strokeDasharray}
@@ -148,6 +158,7 @@ export function PLChart({ data }: PLChartProps) {
                 stroke={chartTheme.colors.signal}
                 strokeWidth={chartTheme.area.strokeWidth}
                 fill={getChartGradientFill(ingresosGradientId)}
+                mask={`url(#${ingresosAreaMaskId})`}
                 dot={getChartDot(chartTheme.colors.signal)}
                 activeDot={getChartActiveDot(chartTheme.colors.signal)}
                 isAnimationActive={false}
@@ -159,6 +170,7 @@ export function PLChart({ data }: PLChartProps) {
                 stroke={chartTheme.colors.danger}
                 strokeWidth={chartTheme.area.strokeWidth}
                 fill={getChartGradientFill(egresosGradientId)}
+                mask={`url(#${egresosAreaMaskId})`}
                 dot={getChartDot(chartTheme.colors.danger)}
                 activeDot={getChartActiveDot(chartTheme.colors.danger)}
                 isAnimationActive={false}
