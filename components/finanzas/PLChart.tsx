@@ -11,17 +11,13 @@ import {
   getChartActiveDot,
   getChartDot,
   getChartGradientFill,
-  renderChartGradient
+  renderChartEdgeFadeGradient
 } from "@/lib/charts/chartTheme";
 import { formatUSD } from "@/lib/utils/formatters";
 import type { MonthlyFinancialPoint } from "@/lib/finanzas";
 
 type PLChartProps = {
   data: MonthlyFinancialPoint[];
-};
-
-type PLChartVisualPoint = MonthlyFinancialPoint & {
-  paddingPoint?: number;
 };
 
 export function PLChart({ data }: PLChartProps) {
@@ -37,32 +33,8 @@ export function PLChart({ data }: PLChartProps) {
 
     return ((totalIngresos - totalEgresos) / totalIngresos) * 100;
   }, [data]);
-  const chartData = useMemo<PLChartVisualPoint[]>(() => {
-    if (data.length === 0) {
-      return [];
-    }
-
-    const first = data[0]!;
-    const last = data[data.length - 1]!;
-    const startPadding: PLChartVisualPoint = {
-      ...first,
-      label: "",
-      ingresos: 0,
-      egresos: 0,
-      paddingPoint: 1
-    };
-    const endPadding: PLChartVisualPoint = {
-      ...last,
-      label: "",
-      ingresos: 0,
-      egresos: 0,
-      paddingPoint: 1
-    };
-
-    return [startPadding, ...data, endPadding];
-  }, [data]);
-  const incomeCurveType = useMemo(() => getAreaCurveType(chartData.map((point) => point.ingresos)), [chartData]);
-  const expenseCurveType = useMemo(() => getAreaCurveType(chartData.map((point) => point.egresos)), [chartData]);
+  const incomeCurveType = useMemo(() => getAreaCurveType(data.map((point) => point.ingresos)), [data]);
+  const expenseCurveType = useMemo(() => getAreaCurveType(data.map((point) => point.egresos)), [data]);
   const minUsdSeriesValue = useMemo(() => {
     if (data.length === 0) {
       return 0;
@@ -102,10 +74,10 @@ export function PLChart({ data }: PLChartProps) {
 
         <div className="w-full">
           <ResponsiveContainer width="100%" height={420}>
-            <ComposedChart data={chartData} margin={{ top: 24, right: 28, left: 14, bottom: 14 }}>
+            <ComposedChart data={data} margin={{ top: 24, right: 28, left: 14, bottom: 14 }}>
               <defs>
-                {renderChartGradient(ingresosGradientId, "signal")}
-                {renderChartGradient(egresosGradientId, "danger")}
+                {renderChartEdgeFadeGradient(ingresosGradientId, "signal")}
+                {renderChartEdgeFadeGradient(egresosGradientId, "danger")}
               </defs>
               <CartesianGrid
                 strokeDasharray={chartTheme.grid.strokeDasharray}
@@ -131,9 +103,9 @@ export function PLChart({ data }: PLChartProps) {
               <Tooltip
                 cursor={{ stroke: chartTheme.colors.line, strokeWidth: 1, strokeDasharray: "3 6" }}
                 content={({ active, payload, label }: TooltipContentProps<number, string>) => {
-                  const point = payload?.[0]?.payload as PLChartVisualPoint | undefined;
+                  const point = payload?.[0]?.payload as MonthlyFinancialPoint | undefined;
 
-                  if (!active || !point || point.paddingPoint) {
+                  if (!active || !point) {
                     return null;
                   }
 

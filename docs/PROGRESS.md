@@ -13,8 +13,10 @@ Estado general actual: Fase 0 completa. Cimientos técnicos listos: documentaci�
 - Se ajustó `P&L mensual` en Finanzas:
   - se quitó `Margen` como serie visual del gráfico; el margen queda disponible como texto de resumen y dentro del tooltip del mes, pero ya no genera línea/área ni afecta la escala del eje USD;
   - se eliminó el badge de `Margen negativo más bajo` del chart para evitar que el gráfico vuelva a leerse como una alerta de margen;
-  - `Ingresos` y `Egresos` ahora usan puntos de padding visual en cero antes y después de la serie real, logrando que las áreas nazcan y se desvanezcan sin paredes verticales en los bordes;
-  - `chartTheme.ts` suma `getAreaCurveType`, usando curva suave para áreas positivas y preservando el criterio conservador cuando existen valores negativos reales.
+  - corrección posterior: el primer intento de suavizar bordes agregaba puntos de padding en cero dentro de la serie, lo que falseaba el último mes real; se eliminó ese padding de datos y `PLChart` vuelve a graficar exactamente el array real recibido;
+  - `Ingresos` y `Egresos` usan curvas suaves (`monotoneX` para series positivas) mediante `getAreaCurveType`, por lo que ya no quedan segmentos rectos por defecto;
+  - el cierre visual del área se resuelve con `renderChartEdgeFadeGradient`, un gradiente horizontal que desvanece el relleno en los bordes sin alterar ningún punto financiero real;
+  - el tooltip queda activo sobre cada mes real con Ingresos, Egresos, Margen y Clientes activos.
 - Archivos modificados para `P&L mensual`:
   - `components/finanzas/PLChart.tsx`
   - `docs/DESIGN_SYSTEM.md`

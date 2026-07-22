@@ -130,6 +130,22 @@ export function renderChartGradient(id: string, colorKey: ChartColorKey) {
   );
 }
 
+export function renderChartEdgeFadeGradient(id: string, colorKey: ChartColorKey) {
+  const gradient = chartTheme.gradients[colorKey];
+  const color = chartTheme.colors[colorKey];
+
+  return React.createElement(
+    "linearGradient",
+    { id, x1: "0", y1: "0", x2: "1", y2: "0", key: `${id}-${colorKey}-edge-fade` },
+    React.createElement("stop", { offset: "0%", stopColor: color, stopOpacity: 0 }),
+    React.createElement("stop", { offset: "10%", stopColor: color, stopOpacity: gradient.topOpacity * 0.55 }),
+    React.createElement("stop", { offset: "22%", stopColor: color, stopOpacity: gradient.topOpacity }),
+    React.createElement("stop", { offset: "78%", stopColor: color, stopOpacity: gradient.topOpacity }),
+    React.createElement("stop", { offset: "90%", stopColor: color, stopOpacity: gradient.topOpacity * 0.55 }),
+    React.createElement("stop", { offset: "100%", stopColor: color, stopOpacity: 0 })
+  );
+}
+
 export function getChartGradientFill(id: string) {
   return `url(#${id})`;
 }
