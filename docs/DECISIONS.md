@@ -615,6 +615,12 @@
 - El visitante nunca necesita autenticarse: la ruta usa service role únicamente en servidor para insertar el lead como `canal='inbound'`, `etapa='por_contactar'` y `vendedor_id=null`, dejando la asignación comercial para el equipo dentro del OS.
 - La atribución inicial se deriva de UTM: `utm_source` define `canal_origen` y `utm_campaign` queda como `campana_origen`, para conectar el formulario web con la vista de Marketing/Atribución sin depender todavía de integraciones publicitarias externas.
 
+## 2026-07-22 — AI Hub con branding fijo de Blyndtek en navegación
+
+- El item padre `AI Hub` del sidebar usa el isotipo real de Blyndtek como branding fijo del producto, en lugar de un ícono genérico de librería.
+- Esta marca debe permanecer visible aunque el hub evolucione a oferta comercial para clientes: el producto sigue siendo Blyndtek AI Hub, no una sección neutra sin identidad.
+- Los subitems mantienen iconografía de `lucide-react` con trazo unificado, pero el acceso padre conserva la excepción cromática violeta y el sello de marca propio.
+
 ## 2026-07-21 — Precio de propuesta calculado por catálogo, no por IA
 
 - El precio de una propuesta nunca lo genera la IA directamente. Claude sólo interpreta respuestas cualitativas del diagnóstico y selecciona módulos existentes de `modulos_catalogo` por `modulo_id`.

@@ -13,14 +13,13 @@ import {
   LayersIcon,
   MegaphoneIcon,
   OutboundIcon,
-  GridIcon,
-  RefreshIcon,
   SaasIcon,
   NotasIcon,
   WalletIcon,
   WikiIcon,
   ProyectosIcon,
-  TareasIcon
+  TareasIcon,
+  ZapIcon
 } from "@/components/ui/icons";
 import type { NavItem } from "@/types/navigation";
 
@@ -41,7 +40,7 @@ export const navigationItems: NavItem[] = [
   },
   {
     label: "AI Hub",
-    icon: createElement(BrainIcon),
+    icon: createElement(DashboardIcon),
     iconClassName: "text-[#7C3AED]",
     roles: ["admin"],
     section: "top-level",
@@ -49,21 +48,22 @@ export const navigationItems: NavItem[] = [
       {
         label: "Centro IA",
         href: "/ai-hub",
-        icon: createElement(GridIcon),
+        icon: createElement(DashboardIcon),
         roles: ["admin"],
-        section: "top-level"
+        section: "top-level",
+        exact: true
       },
       {
         label: "Agentes",
         href: "/ai-hub/agentes",
-        icon: createElement(BotIcon),
+        icon: createElement(BrainIcon),
         roles: ["admin"],
         section: "top-level"
       },
       {
         label: "Workflows",
         href: "/ai-hub/automatizaciones",
-        icon: createElement(RefreshIcon),
+        icon: createElement(ZapIcon),
         roles: ["admin"],
         section: "top-level"
       }

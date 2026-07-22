@@ -10,6 +10,17 @@ Estado general actual: Fase 0 completa. Cimientos técnicos listos: documentaci�
 
 ## Actualización 2026-07-22
 
+- Se corrigió el comportamiento visual de `AI Hub` en el sidebar:
+  - `Centro IA` ahora solo se marca activo con coincidencia exacta en `/ai-hub`, así deja de verse presionado al navegar por `/ai-hub/agentes` o `/ai-hub/automatizaciones`;
+  - los subitems cambiaron a iconografía consistente con el producto: `Centro IA` usa dashboard, `Agentes` usa cerebro y `Workflows` usa rayo;
+  - el item padre `AI Hub` ahora renderiza el isotipo real de Blyndtek (`/Logo_Blyndtek_isotipo.svg`) como branding fijo del producto dentro de la fila violeta permanente.
+- Archivos modificados en esta unidad del sidebar:
+  - `components/layout/Sidebar.tsx`
+  - `components/ui/icons.tsx`
+  - `docs/DECISIONS.md`
+  - `docs/PROGRESS.md`
+  - `lib/navigation.ts`
+  - `types/navigation.ts`
 - Se eliminó el uso de texto en mayúsculas de la interfaz en toda la app, tanto por clase Tailwind (`uppercase`) como en varios labels visibles que dependían de ese tratamiento.
 - Archivos modificados en esta unidad: `46`.
 - Archivos modificados:

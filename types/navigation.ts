@@ -8,4 +8,5 @@ export type NavItem = {
   section: "top-level" | "comercial" | "entrega" | "control";
   children?: NavItem[];
   iconClassName?: string;
+  exact?: boolean;
 };

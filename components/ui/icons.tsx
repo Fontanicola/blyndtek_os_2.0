@@ -68,6 +68,7 @@ import {
   Users,
   Wallet,
   Wrench,
+  Zap,
   X
 } from "lucide-react";
 
@@ -151,6 +152,7 @@ export const UserIcon = createIcon(User);
 export const UsersIcon = createIcon(Users);
 export const WalletIcon = createIcon(Wallet);
 export const WrenchIcon = createIcon(Wrench);
+export const ZapIcon = createIcon(Zap);
 export const XIcon = createIcon(X);
 
 // Legacy semantic aliases used throughout the app

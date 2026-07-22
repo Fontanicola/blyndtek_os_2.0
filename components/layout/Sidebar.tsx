@@ -45,8 +45,20 @@ function isActivePath(pathname: string, href?: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
+function isNavItemActive(pathname: string, item: NavItem) {
+  if (!item.href) {
+    return false;
+  }
+
+  if (item.exact) {
+    return pathname === item.href;
+  }
+
+  return isActivePath(pathname, item.href);
+}
+
 function hasActiveItem(pathname: string, items: NavItem[]): boolean {
-  return items.some((item) => isActivePath(pathname, item.href) || (item.children ? hasActiveItem(pathname, item.children) : false));
+  return items.some((item) => isNavItemActive(pathname, item) || (item.children ? hasActiveItem(pathname, item.children) : false));
 }
 
 type NavigationRowProps = {
@@ -74,8 +86,8 @@ function NavigationRow({
     return null;
   }
 
-  const isParentActive = hasChildren && item.children?.some((child) => isActivePath(pathname, child.href));
-  const isActive = isActivePath(pathname, item.href) || isParentActive;
+  const isParentActive = hasChildren && item.children?.some((child) => isNavItemActive(pathname, child));
+  const isActive = isNavItemActive(pathname, item) || isParentActive;
 
   return (
     <Link
@@ -162,6 +174,7 @@ function NavigationGroup({
 }: NavigationGroupProps) {
   const isActive = hasActiveItem(pathname, items);
   const showChildren = !collapsed && expanded;
+  const showAiHubLogo = tone === "ai-hub" && label === "AI Hub";
 
   return (
     <div>
@@ -186,16 +199,28 @@ function NavigationGroup({
       >
         <span
           className={cn(
-            "transition-colors duration-fast ease-fast",
+            "flex h-5 w-5 items-center justify-center transition-colors duration-fast ease-fast",
             tone === "ai-hub"
               ? "text-[#7C3AED]"
               : isActive
                 ? "text-carbon"
                 : "text-graphite group-hover:text-carbon",
-            iconClassName
+            iconClassName,
+            showAiHubLogo && "overflow-hidden"
           )}
         >
-          {icon}
+          {showAiHubLogo ? (
+            <Image
+              src="/Logo_Blyndtek_isotipo.svg"
+              alt="Blyndtek"
+              width={22}
+              height={22}
+              className="h-[22px] w-[22px] shrink-0 object-contain"
+              priority
+            />
+          ) : (
+            icon
+          )}
         </span>
         {collapsed ? null : (
           <span
