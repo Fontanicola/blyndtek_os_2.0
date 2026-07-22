@@ -13,7 +13,7 @@ Estado general actual: Fase 0 completa. Cimientos técnicos listos: documentaci�
 - Se corrigió el comportamiento visual de `AI Hub` en el sidebar:
   - `Centro IA` ahora solo se marca activo con coincidencia exacta en `/ai-hub`, así deja de verse presionado al navegar por `/ai-hub/agentes` o `/ai-hub/automatizaciones`;
   - los subitems cambiaron a iconografía consistente con el producto: `Centro IA` usa dashboard, `Agentes` usa cerebro y `Workflows` usa rayo;
-  - el item padre `AI Hub` ahora usa el logo real de Blyndtek desde el asset SVG del proyecto (`/Logo_Blyndtek_plataforma_negro.svg`) como branding fijo del producto dentro de la fila violeta permanente, teñido en violeta vía máscara SVG.
+  - el item padre `AI Hub` ahora usa el símbolo hexagonal real de Blyndtek como branding fijo del producto dentro de la fila violeta permanente, renderizado como SVG inline para tomar el mismo violeta del texto.
 - Archivos modificados en esta unidad del sidebar:
   - `components/layout/Sidebar.tsx`
   - `components/ui/icons.tsx`

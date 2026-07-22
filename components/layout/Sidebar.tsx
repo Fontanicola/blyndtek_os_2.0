@@ -2,10 +2,10 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import type { CSSProperties, ReactNode } from "react";
+import type { ReactNode } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { UserAvatar } from "@/components/ui";
-import { ChevronDownIcon, LogoutIcon } from "@/components/ui/icons";
+import { BlyndtekIsotipoIcon, ChevronDownIcon, LogoutIcon } from "@/components/ui/icons";
 import { cn } from "@/lib/cn";
 import { createClient } from "@/lib/supabase/client";
 import { navigationItems, navigationSections } from "@/lib/navigation";
@@ -59,17 +59,6 @@ function isNavItemActive(pathname: string, item: NavItem) {
 function hasActiveItem(pathname: string, items: NavItem[]): boolean {
   return items.some((item) => isNavItemActive(pathname, item) || (item.children ? hasActiveItem(pathname, item.children) : false));
 }
-
-const blyndtekLogoMaskStyle: CSSProperties = {
-  WebkitMaskImage: "url('/Logo_Blyndtek_plataforma_negro.svg')",
-  maskImage: "url('/Logo_Blyndtek_plataforma_negro.svg')",
-  WebkitMaskRepeat: "no-repeat",
-  maskRepeat: "no-repeat",
-  WebkitMaskPosition: "center",
-  maskPosition: "center",
-  WebkitMaskSize: "contain",
-  maskSize: "contain"
-};
 
 type NavigationRowProps = {
   item: NavItem;
@@ -220,13 +209,9 @@ function NavigationGroup({
           )}
         >
           {showAiHubLogo ? (
-            <span
-              aria-hidden="true"
-              style={blyndtekLogoMaskStyle}
-              className={cn(
-                "block shrink-0 bg-[#7C3AED]",
-                collapsed ? "h-[9px] w-[44px]" : "h-[10px] w-[56px]"
-              )}
+            <BlyndtekIsotipoIcon
+              size={24}
+              className="h-6 w-6 shrink-0 text-[#7C3AED]"
             />
           ) : (
             icon
