@@ -1,12 +1,11 @@
 "use client";
-
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { UserAvatar } from "@/components/ui";
-import { ChevronDownIcon, LogoutIcon } from "@/components/ui/icons";
+import { BlyndtekIsotipoIcon, ChevronDownIcon, LogoutIcon } from "@/components/ui/icons";
 import { cn } from "@/lib/cn";
 import { createClient } from "@/lib/supabase/client";
 import { navigationItems, navigationSections } from "@/lib/navigation";
@@ -210,13 +209,9 @@ function NavigationGroup({
           )}
         >
           {showAiHubLogo ? (
-            <Image
-              src="/Logo_Blyndtek_isotipo.svg"
-              alt="Blyndtek"
-              width={22}
-              height={22}
-              className="h-[22px] w-[22px] shrink-0 object-contain"
-              priority
+            <BlyndtekIsotipoIcon
+              size={22}
+              className="h-[22px] w-[22px] shrink-0 text-[#7C3AED]"
             />
           ) : (
             icon
