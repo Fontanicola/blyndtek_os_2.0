@@ -1,10 +1,18 @@
 "use client";
 
 import { useId, useMemo } from "react";
-import { Area, CartesianGrid, ComposedChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Area, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import type { TooltipContentProps } from "recharts/types/component/Tooltip";
 import { Card } from "@/components/ui";
-import { chartTheme, formatCompactCurrencyTick, getChartActiveDot, getConservativeCurveType } from "@/lib/charts/chartTheme";
+import {
+  chartTheme,
+  formatCompactCurrencyTick,
+  getChartActiveDot,
+  getChartDot,
+  getChartGradientFill,
+  getConservativeCurveType,
+  renderChartGradient
+} from "@/lib/charts/chartTheme";
 import { formatUSD } from "@/lib/utils/formatters";
 import type { MonthlyFinancialPoint } from "@/lib/finanzas";
 
@@ -28,6 +36,13 @@ export function PLChart({ data }: PLChartProps) {
   const incomeCurveType = useMemo(() => getConservativeCurveType(data.map((point) => point.ingresos)), [data]);
   const expenseCurveType = useMemo(() => getConservativeCurveType(data.map((point) => point.egresos)), [data]);
   const marginCurveType = useMemo(() => getConservativeCurveType(data.map((point) => point.margen)), [data]);
+  const lowestMarginPoint = useMemo(() => {
+    if (data.length === 0) {
+      return null;
+    }
+
+    return data.reduce((lowest, point) => (point.margen < lowest.margen ? point : lowest), data[0]!);
+  }, [data]);
   const minUsdSeriesValue = useMemo(() => {
     if (data.length === 0) {
       return 0;
@@ -51,6 +66,11 @@ export function PLChart({ data }: PLChartProps) {
             <p className="mt-1 text-xs font-base text-graphite">
               Margen promedio (12 meses): {averageMargin == null ? "Sin datos" : `${averageMargin.toFixed(1)}%`}
             </p>
+            {lowestMarginPoint && lowestMarginPoint.margen < 0 ? (
+              <p className="mt-2 inline-flex items-center gap-2 rounded-pill border border-danger/20 bg-danger/5 px-2.5 py-1 text-[11px] font-label text-danger">
+                Margen negativo más bajo: {lowestMarginPoint.label} · {formatUSD(lowestMarginPoint.margen)}
+              </p>
+            ) : null}
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {[
@@ -70,16 +90,8 @@ export function PLChart({ data }: PLChartProps) {
           <ResponsiveContainer width="100%" height={420}>
             <ComposedChart data={data} margin={{ top: 24, right: 28, left: 14, bottom: 14 }}>
               <defs>
-                <linearGradient id={ingresosGradientId} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={chartTheme.colors.signal} stopOpacity={0.14} />
-                  <stop offset="72%" stopColor={chartTheme.colors.signal} stopOpacity={0.04} />
-                  <stop offset="100%" stopColor={chartTheme.colors.signal} stopOpacity={0} />
-                </linearGradient>
-                <linearGradient id={egresosGradientId} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={chartTheme.colors.danger} stopOpacity={0.12} />
-                  <stop offset="72%" stopColor={chartTheme.colors.danger} stopOpacity={0.035} />
-                  <stop offset="100%" stopColor={chartTheme.colors.danger} stopOpacity={0} />
-                </linearGradient>
+                {renderChartGradient(ingresosGradientId, "signal")}
+                {renderChartGradient(egresosGradientId, "danger")}
               </defs>
               <CartesianGrid
                 strokeDasharray={chartTheme.grid.strokeDasharray}
@@ -149,8 +161,8 @@ export function PLChart({ data }: PLChartProps) {
                 name="Ingresos"
                 stroke={chartTheme.colors.signal}
                 strokeWidth={chartTheme.area.strokeWidth}
-                fill={`url(#${ingresosGradientId})`}
-                dot={false}
+                fill={getChartGradientFill(ingresosGradientId)}
+                dot={getChartDot(chartTheme.colors.signal)}
                 activeDot={getChartActiveDot(chartTheme.colors.signal)}
                 type={incomeCurveType}
               />
@@ -159,18 +171,17 @@ export function PLChart({ data }: PLChartProps) {
                 name="Egresos"
                 stroke={chartTheme.colors.danger}
                 strokeWidth={chartTheme.area.strokeWidth}
-                fill={`url(#${egresosGradientId})`}
-                dot={false}
+                fill={getChartGradientFill(egresosGradientId)}
+                dot={getChartDot(chartTheme.colors.danger)}
                 activeDot={getChartActiveDot(chartTheme.colors.danger)}
                 type={expenseCurveType}
               />
-              <Area
+              <Line
                 dataKey="margen"
                 name="Margen"
                 stroke={chartTheme.colors.success}
                 strokeWidth={chartTheme.line.strokeWidth}
-                fill="none"
-                dot={false}
+                dot={getChartDot(chartTheme.colors.success)}
                 activeDot={getChartActiveDot(chartTheme.colors.success)}
                 type={marginCurveType}
               />

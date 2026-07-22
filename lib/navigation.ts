@@ -10,11 +10,14 @@ import {
   ArchivosIcon,
   FileTextIcon,
   FinanzasIcon,
+  LayersIcon,
+  MegaphoneIcon,
   OutboundIcon,
   GridIcon,
   RefreshIcon,
   SaasIcon,
   NotasIcon,
+  WalletIcon,
   WikiIcon,
   ProyectosIcon,
   TareasIcon
@@ -167,9 +170,9 @@ export const navigationItems: NavItem[] = [
 ];
 
 export const navigationSections = [
-  { key: "comercial", label: "Comercial" },
-  { key: "entrega", label: "Entrega" },
-  { key: "control", label: "Control" }
+  { key: "comercial", label: "Comercial", icon: createElement(MegaphoneIcon) },
+  { key: "entrega", label: "Entrega", icon: createElement(LayersIcon) },
+  { key: "control", label: "Control", icon: createElement(WalletIcon) }
 ] as const;
 
 export function getPageLabel(pathname: string) {

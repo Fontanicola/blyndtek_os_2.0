@@ -10,6 +10,122 @@ Estado general actual: Fase 0 completa. Cimientos técnicos listos: documentaci�
 
 ## Actualización 2026-07-22
 
+- Se creó `docs/DESIGN_SYSTEM.md` como documento canónico único del sistema de diseño de Blyndtek OS.
+- El nuevo documento consolida el estado visual vigente del código y reemplaza como referencia operativa las decisiones sueltas de UI que estaban dispersas en `docs/DECISIONS.md`, sin borrar esa bitácora histórica.
+- Quedaron cubiertas y unificadas 17 áreas:
+  - filosofía general,
+  - tipografía,
+  - geometría y radios,
+  - elevación y sombras,
+  - paleta de colores,
+  - iconografía,
+  - sidebar y navegación,
+  - topbar y shell general,
+  - listas vs cards,
+  - estados vacíos y guardado,
+  - prioridad y codificación visual de estado,
+  - formularios y selección de entidades,
+  - tablas,
+  - gráficos de datos,
+  - modales y overlays,
+  - animaciones y transiciones,
+  - responsividad.
+- La consolidación se cruzó contra `docs/SPEC.md`, `docs/DATABASE.md`, `docs/DECISIONS.md`, `tailwind.config.ts`, `lib/charts/chartTheme.ts` y los componentes compartidos reales (`Sidebar`, `Topbar`, `AppShell`, `Modal`, `Card`, `EmptyState`, `SavingIndicator`, `EntitySelect`, `EntityMultiSelect`) para resolver contradicciones viejas y dejar solo la versión vigente.
+
+- Se completó una nueva pasada visual del sistema de gráficos para unificar el lenguaje de líneas, áreas, barras y tooltips bajo una referencia más premium y menos saturada.
+- Archivos modificados en esta unidad:
+  - `lib/charts/chartTheme.ts`
+  - `components/finanzas/PLChart.tsx`
+  - `components/finanzas/RunwayChart.tsx`
+  - `components/saas/MRRChart.tsx`
+  - `components/dashboard/RunwayProyectado.tsx`
+  - `components/clientes/ClienteRentabilidadChart.tsx`
+  - `components/mi-panel/VentasChart.tsx`
+  - `docs/PROGRESS.md`
+- Cambios aplicados:
+  - paleta general suavizada en `chartTheme.ts`, pasando de colores tipo semáforo duros a tonos más sobrios y armónicos;
+  - grilla horizontal casi invisible, ejes con tipografía más chica y menos peso visual;
+  - tooltips unificados con card blanca de mayor jerarquía, borde fino, blur sutil y sombra de overlay real;
+  - helpers nuevos para gradientes verticales reutilizables y dots con halo, usados por las series de línea/área;
+  - líneas y áreas afinadas para que se vean más técnicas y menos “default de librería”;
+  - protección adicional en `getConservativeCurveType()`:
+    - si una serie mezcla valores positivos y negativos, fuerza `linear`;
+    - `monotoneX` solo se usa cuando hay suficientes puntos consecutivos reales y sin cruce de signo.
+- Causa exacta del ajuste de interpolación:
+  - el problema ya no era un `yAxisId` incorrecto sino la posibilidad de que una curva suavizada exagerara transiciones en series financieras con quiebres bruscos o cambio de signo;
+  - por eso se endureció el criterio global de interpolación para que, ante cruce positivo/negativo, la lectura priorice fidelidad del dato antes que suavidad decorativa.
+- Verificación visual real realizada:
+  - se levantó un preview local temporal solo para revisión visual y luego se eliminó;
+  - se revisó `PLChart` con la serie real y se confirmó que el mínimo visible coincide con el dato real más bajo (`jun 2026 = -$587.49 USD`), sin overshoot adicional inventado por la curva;
+  - se revisó `RunwayChart` confirmando barras más limpias, línea de caja con área suave y dots consistentes;
+  - se revisó `WinRateChart` para validar que la paleta, radios de barra, grilla y tooltip ya responden al mismo sistema visual.
+- Limpieza final:
+  - se eliminó la ruta temporal de preview de charts para no dejar superficie de debugging en la app.
+
+- Se rediseñó la navegación lateral para que el sidebar soporte agrupaciones colapsables como patrón general, no solo en `AI Hub`, y para que el shell flotante principal se separe mejor visualmente del canvas y del propio sidebar.
+- Archivos modificados:
+  - `components/layout/Sidebar.tsx`
+  - `components/layout/AppShell.tsx`
+  - `lib/navigation.ts`
+  - `docs/PROGRESS.md`
+- Cambios aplicados:
+  - `AppShell.tsx` ahora usa una sombra más perceptible y elegante sobre el panel blanco principal, con énfasis sutil en el borde izquierdo para reforzar la separación entre sidebar y contenido;
+  - `Sidebar.tsx` dejó de tratar `AI Hub` como un caso aislado y pasó a usar un patrón general de grupos colapsables:
+    - padre clickeable con ícono, label y chevron,
+    - contenedor interno con fondo suave y borde fino,
+    - transición animada de expand/collapse con la misma familia de timing del sistema;
+  - las secciones `Comercial`, `Entrega` y `Control` volvieron a existir como grupos reales de navegación, pero ahora como acordeones reutilizables en vez de simples títulos estáticos;
+  - `AI Hub` mantiene su excepción cromática violeta permanente, pero ahora usa exactamente la misma infraestructura de grupo expandible que cualquier otra sección;
+  - se normalizó visualmente el render de íconos del sidebar con tamaño uniforme por CSS (`[&_svg]:h-5 [&_svg]:w-5`) sobre el set centralizado de `lucide-react`, manteniendo stroke consistente en toda la navegación.
+- Decisiones sobre íconos:
+  - se agregaron íconos explícitos para los padres de sección en `lib/navigation.ts`:
+    - `Comercial` → `MegaphoneIcon`
+    - `Entrega` → `LayersIcon`
+    - `Control` → `WalletIcon`
+  - los íconos de los módulos hoja ya existentes se auditaron y se mantuvieron donde seguían siendo claros; el refinamiento principal fue unificar tamaño, trazo y comportamiento visual dentro del sidebar en vez de mezclar escalas distintas.
+- Verificación técnica local:
+  - `npm run lint` OK
+  - `npm run build` OK
+
+## Actualización 2026-07-22
+
+- Se volvió a auditar `PLChart.tsx` contrastándolo contra los valores reales de `historico_pl` calculados desde Supabase con la misma lógica de `app/api/finanzas/metricas/route.ts`.
+- Archivos modificados:
+  - `components/finanzas/PLChart.tsx`
+  - `docs/PROGRESS.md`
+- Valores reales verificados de margen para los últimos 12 meses:
+  - `ago 2025`: `-10`
+  - `sept 2025`: `-30`
+  - `oct 2025`: `-97.62`
+  - `nov 2025`: `302.38`
+  - `dic 2025`: `288.94`
+  - `ene 2026`: `282.45`
+  - `feb 2026`: `265.95`
+  - `mar 2026`: `265.95`
+  - `abr 2026`: `225.95`
+  - `may 2026`: `612.51`
+  - `jun 2026`: `-587.49`
+  - `jul 2026`: `3246.79`
+- Causa raíz exacta encontrada esta vez:
+  - el valle de `Margen` en `jun 2026` no era un artefacto del frontend; el valor negativo existe realmente en el dataset que consume Finanzas;
+  - la confusión vino de reconstruir manualmente el histórico con `fecha_pago` de egresos, mientras que el endpoint real usa `calcularEgresosPeriodo()` y ese helper toma `egresos.fecha` como fecha contable del P&L mensual;
+  - por eso el intento anterior buscó corregir un supuesto `yAxisId` equivocado cuando el gráfico, en ese punto concreto, sí estaba reflejando un dato real.
+- Corrección aplicada:
+  - se mantuvo el dominio del eje alineado al mínimo real de la serie cuando existe margen negativo;
+  - se agregó un indicador contextual en el header del chart con el peor mes de margen (`jun 2026 · -$587.49 USD`) para que la caída no se lea como ruido visual sin explicación;
+  - la serie `Margen` quedó renderizada como `Line` en vez de `Area fill="none"`, evitando que Recharts cerrara un polígono hasta la base del chart y dibujara una geometría engañosa por debajo del tramo real.
+- Por qué el intento anterior no se había aplicado:
+  - porque atacaba el síntoma equivocado;
+  - el gráfico seguía mostrando `-588` después del cambio simplemente porque `-587.49` es el valor real que llega desde `/api/finanzas/metricas`.
+  - además, durante esa iteración se había introducido un render visual confuso tratando `Margen` como un área sin relleno; la verificación final del SVG confirmó que el fix correcto era dejarla como línea simple sobre el eje monetario.
+- Verificación visual final:
+  - se levantó un preview local temporal del chart y se inspeccionó el SVG renderizado con la serie real;
+  - el eje izquierdo quedó con mínimo visible `-$588`, alineado al valor real más bajo (`jun 2026 = -$587.49`);
+  - la línea de `Margen` ya no muestra ninguna cola ni piso artificial por debajo de ese mínimo real;
+  - el preview temporal se eliminó después de la validación para no dejar rutas de debugging en el repo.
+
+## Actualización 2026-07-22
+
 - Se refinó visualmente la subnavegación especial de `AI Hub` en el sidebar para que se lea como un grupo de navegación terminado y no como una zona provisional.
 - Archivos modificados:
   - `components/layout/Sidebar.tsx`

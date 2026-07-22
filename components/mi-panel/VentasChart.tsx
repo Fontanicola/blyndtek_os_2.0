@@ -1,10 +1,18 @@
 "use client";
 
-import { useMemo } from "react";
+import { useId, useMemo } from "react";
 import { Area, Bar, CartesianGrid, ComposedChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import type { TooltipContentProps } from "recharts/types/component/Tooltip";
 import { Card } from "@/components/ui";
-import { chartTheme, formatCompactCurrencyTick, getChartActiveDot, getConservativeCurveType } from "@/lib/charts/chartTheme";
+import {
+  chartTheme,
+  formatCompactCurrencyTick,
+  getChartActiveDot,
+  getChartDot,
+  getChartGradientFill,
+  getConservativeCurveType,
+  renderChartGradient
+} from "@/lib/charts/chartTheme";
 import { formatUSD } from "@/lib/utils/formatters";
 
 type VentasChartPoint = {
@@ -18,6 +26,7 @@ type VentasChartProps = {
 };
 
 export function VentasChart({ data }: VentasChartProps) {
+  const gradientId = useId();
   const hasData = useMemo(
     () => data.some((point) => point.cantidad_ventas > 0 || point.monto_total_usd > 0),
     [data]
@@ -46,6 +55,7 @@ export function VentasChart({ data }: VentasChartProps) {
           <div className="w-full">
             <ResponsiveContainer width="100%" height={360}>
               <ComposedChart data={data} margin={{ top: 20, right: 24, left: 12, bottom: 12 }}>
+                <defs>{renderChartGradient(gradientId, "signal")}</defs>
                 <CartesianGrid
                   strokeDasharray={chartTheme.grid.strokeDasharray}
                   stroke={chartTheme.grid.stroke}
@@ -121,9 +131,9 @@ export function VentasChart({ data }: VentasChartProps) {
                   name="Monto"
                   stroke={chartTheme.colors.signal}
                   strokeWidth={chartTheme.area.strokeWidth}
-                  fill={chartTheme.colors.signal}
+                  fill={getChartGradientFill(gradientId)}
                   fillOpacity={chartTheme.area.fillOpacity}
-                  dot={false}
+                  dot={getChartDot(chartTheme.colors.signal)}
                   activeDot={getChartActiveDot(chartTheme.colors.signal)}
                   type={amountCurveType}
                 />

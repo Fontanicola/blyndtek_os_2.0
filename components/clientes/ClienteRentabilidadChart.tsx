@@ -12,7 +12,7 @@ import {
   YAxis
 } from "recharts";
 import { Card } from "@/components/ui";
-import { chartTheme, formatCompactCurrencyTick, getChartActiveDot, getConservativeCurveType } from "@/lib/charts/chartTheme";
+import { chartTheme, formatCompactCurrencyTick, getChartActiveDot, getChartDot, getConservativeCurveType } from "@/lib/charts/chartTheme";
 import { formatUSD } from "@/lib/utils/formatters";
 
 export type ClienteRentabilidadPoint = {
@@ -145,7 +145,7 @@ export function ClienteRentabilidadChart({ data }: ClienteRentabilidadChartProps
                 name="Margen"
                 stroke={chartTheme.colors.success}
                 strokeWidth={chartTheme.line.strokeWidth}
-                dot={false}
+                dot={getChartDot(chartTheme.colors.success)}
                 activeDot={getChartActiveDot(chartTheme.colors.success)}
               />
             </ComposedChart>

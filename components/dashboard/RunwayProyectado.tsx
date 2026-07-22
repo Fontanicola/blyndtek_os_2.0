@@ -1,5 +1,6 @@
 "use client";
 
+import { useId } from "react";
 import {
   Area,
   ComposedChart,
@@ -10,7 +11,15 @@ import {
   YAxis
 } from "recharts";
 import { Card } from "@/components/ui";
-import { chartTheme, formatCompactCurrencyTick, getChartActiveDot, getConservativeCurveType } from "@/lib/charts/chartTheme";
+import {
+  chartTheme,
+  formatCompactCurrencyTick,
+  getChartActiveDot,
+  getChartDot,
+  getChartGradientFill,
+  getConservativeCurveType,
+  renderChartGradient
+} from "@/lib/charts/chartTheme";
 import { formatUSD } from "@/lib/utils/formatters";
 import type { DashboardRunwayPoint } from "@/types/dashboard";
 import type { TooltipContentProps } from "recharts/types/component/Tooltip";
@@ -20,6 +29,7 @@ type RunwayProyectadoProps = {
 };
 
 export function RunwayProyectado({ data }: RunwayProyectadoProps) {
+  const gradientId = useId();
   const curveType = getConservativeCurveType(data.map((point) => point.caja));
 
   return (
@@ -35,6 +45,7 @@ export function RunwayProyectado({ data }: RunwayProyectadoProps) {
       <div className="h-[320px]">
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={data} margin={{ top: 16, right: 18, bottom: 8, left: 8 }}>
+            <defs>{renderChartGradient(gradientId, "signal")}</defs>
             <CartesianGrid
               stroke={chartTheme.grid.stroke}
               strokeDasharray={chartTheme.grid.strokeDasharray}
@@ -82,9 +93,9 @@ export function RunwayProyectado({ data }: RunwayProyectadoProps) {
               name="Caja"
               stroke={chartTheme.colors.signal}
               strokeWidth={chartTheme.area.strokeWidth}
-              fill={chartTheme.colors.signal}
+              fill={getChartGradientFill(gradientId)}
               fillOpacity={chartTheme.area.fillOpacity}
-              dot={false}
+              dot={getChartDot(chartTheme.colors.signal)}
               activeDot={getChartActiveDot(chartTheme.colors.signal)}
               type={curveType}
             />

@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo } from "react";
+import { useId, useMemo } from "react";
 import {
+  Area,
   Bar,
   CartesianGrid,
   ComposedChart,
@@ -14,7 +15,15 @@ import {
 import type { TooltipContentProps } from "recharts/types/component/Tooltip";
 import { Card } from "@/components/ui";
 import { AlertTriangleIcon } from "@/components/ui/icons";
-import { chartTheme, formatCompactCurrencyTick, getChartActiveDot, getConservativeCurveType } from "@/lib/charts/chartTheme";
+import {
+  chartTheme,
+  formatCompactCurrencyTick,
+  getChartActiveDot,
+  getChartDot,
+  getChartGradientFill,
+  getConservativeCurveType,
+  renderChartGradient
+} from "@/lib/charts/chartTheme";
 import { formatUSD } from "@/lib/utils/formatters";
 import type { RunwayProjectionMonth } from "@/lib/finanzas/runwayProjection";
 
@@ -117,6 +126,8 @@ export function RunwayChart({
   mesAgotamientoActual,
   mesAgotamientoEscenario
 }: RunwayChartProps) {
+  const actualGradientId = useId();
+  const scenarioGradientId = useId();
   const chartData = useMemo(() => data.map(toChartRenderDatum), [data]);
   const scenarioStroke = useMemo(() => getScenarioStroke(chartData), [chartData]);
   const currentCashCurveType = useMemo(
@@ -170,6 +181,10 @@ export function RunwayChart({
       <div className="h-[430px] w-full">
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={chartData} margin={{ top: 28, right: 28, bottom: 12, left: 4 }}>
+            <defs>
+              {renderChartGradient(actualGradientId, "signal")}
+              {renderChartGradient(scenarioGradientId, "warning")}
+            </defs>
             <CartesianGrid
               stroke={chartTheme.grid.stroke}
               strokeDasharray={chartTheme.grid.strokeDasharray}
@@ -305,28 +320,54 @@ export function RunwayChart({
               type="linear"
               isAnimationActive={false}
             />
+            <Area
+              yAxisId="cash"
+              dataKey="caja_acumulada_actual"
+              name="Área caja actual"
+              stroke="none"
+              fill={getChartGradientFill(actualGradientId)}
+              fillOpacity={0.18}
+              dot={false}
+              activeDot={false}
+              type={currentCashCurveType}
+              isAnimationActive={false}
+            />
             <Line
               yAxisId="cash"
               dataKey="caja_acumulada_actual"
               name="Caja actual"
               stroke={chartTheme.colors.signal}
               strokeWidth={chartTheme.line.strokeWidth}
-              dot={false}
+              dot={getChartDot(chartTheme.colors.signal)}
               activeDot={getChartActiveDot(chartTheme.colors.signal)}
               type={currentCashCurveType}
             />
             {hasScenario ? (
-              <Line
-                yAxisId="cash"
-                dataKey="caja_acumulada_escenario"
-                name="Caja con escenario"
-                stroke={scenarioStroke}
-                strokeWidth={chartTheme.line.strokeWidth}
-                strokeDasharray="5 5"
-                dot={false}
-                activeDot={getChartActiveDot(scenarioStroke)}
-                type={scenarioCashCurveType}
-              />
+              <>
+                <Area
+                  yAxisId="cash"
+                  dataKey="caja_acumulada_escenario"
+                  name="Área caja con escenario"
+                  stroke="none"
+                  fill={getChartGradientFill(scenarioGradientId)}
+                  fillOpacity={0.14}
+                  dot={false}
+                  activeDot={false}
+                  type={scenarioCashCurveType}
+                  isAnimationActive={false}
+                />
+                <Line
+                  yAxisId="cash"
+                  dataKey="caja_acumulada_escenario"
+                  name="Caja con escenario"
+                  stroke={scenarioStroke}
+                  strokeWidth={chartTheme.line.strokeWidth}
+                  strokeDasharray="5 5"
+                  dot={getChartDot(scenarioStroke)}
+                  activeDot={getChartActiveDot(scenarioStroke)}
+                  type={scenarioCashCurveType}
+                />
+              </>
             ) : null}
             <Line
               yAxisId="cash"

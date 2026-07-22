@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import type { ReactNode } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { UserAvatar } from "@/components/ui";
 import { ChevronDownIcon, LogoutIcon } from "@/components/ui/icons";
@@ -44,6 +45,20 @@ function isActivePath(pathname: string, href?: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
+function hasActiveItem(pathname: string, items: NavItem[]): boolean {
+  return items.some((item) => isActivePath(pathname, item.href) || (item.children ? hasActiveItem(pathname, item.children) : false));
+}
+
+type NavigationRowProps = {
+  item: NavItem;
+  pathname: string;
+  collapsed: boolean;
+  mobile: boolean;
+  onClose?: () => void;
+  level?: number;
+  tone?: "default" | "ai-hub";
+};
+
 function NavigationRow({
   item,
   pathname,
@@ -51,112 +66,16 @@ function NavigationRow({
   mobile,
   onClose,
   level = 0,
-  expanded,
-  onToggleExpanded
-}: {
-  item: NavItem;
-  pathname: string;
-  collapsed: boolean;
-  mobile: boolean;
-  onClose?: () => void;
-  level?: number;
-  expanded: boolean;
-  onToggleExpanded: () => void;
-}) {
+  tone = "default"
+}: NavigationRowProps) {
   const hasChildren = Boolean(item.children?.length);
-  const isParentActive = hasChildren && item.children?.some((child) => isActivePath(pathname, child.href));
-  const isActive = isActivePath(pathname, item.href) || isParentActive;
-  const isAiHubParent = item.label === "AI Hub" && hasChildren && !item.href && level === 0;
-  const isAiHubChild = level > 0;
-
-  if (hasChildren && !item.href) {
-    return (
-      <div>
-        <button
-          type="button"
-          onClick={onToggleExpanded}
-          title={collapsed ? item.label : undefined}
-          aria-expanded={expanded}
-          className={cn(
-            "group mx-2 flex w-[calc(100%-1rem)] items-center gap-3 rounded-component px-3 py-2 text-left no-underline transition-colors duration-fast ease-fast",
-            collapsed && "justify-center px-0",
-            isAiHubParent
-              ? isParentActive
-                ? "bg-[#EDE9FE] text-[#4C1D95] hover:bg-[#DDD6FE]"
-                : "bg-[#7C3AED]/10 text-[#5B21B6] hover:bg-[#7C3AED]/15"
-              : isParentActive
-                ? "bg-white/80 text-carbon"
-                : "hover:bg-white/70"
-          )}
-        >
-          <span
-            className={cn(
-              "transition-colors duration-fast ease-fast",
-              isAiHubParent
-                ? "text-[#7C3AED]"
-                : isParentActive
-                  ? "text-signal"
-                  : "text-graphite group-hover:text-carbon",
-              item.iconClassName
-            )}
-          >
-            {item.icon}
-          </span>
-          {collapsed ? null : (
-            <span
-              className={cn(
-                "text-sm font-label transition-colors duration-fast ease-fast",
-                isAiHubParent
-                  ? "text-[#5B21B6]"
-                  : isParentActive
-                    ? "text-carbon"
-                    : "text-graphite group-hover:text-carbon"
-              )}
-            >
-              {item.label}
-            </span>
-          )}
-          {!collapsed ? (
-            <ChevronDownIcon
-              className={cn(
-                "ml-auto h-4 w-4 shrink-0 transition-transform duration-fast ease-fast",
-                isAiHubParent ? "text-[#7C3AED]" : "text-graphite",
-                expanded ? "rotate-180" : "rotate-0"
-              )}
-            />
-          ) : null}
-        </button>
-
-        {expanded && !collapsed ? (
-          <div
-            className={cn(
-              "mx-2 mt-1 space-y-1 rounded-card px-2 py-2",
-              isAiHubParent &&
-                "border border-[#7C3AED]/15 bg-[#7C3AED]/[0.055]"
-            )}
-          >
-            {item.children?.map((child) => (
-              <NavigationRow
-                key={child.href ?? child.label}
-                item={child}
-                pathname={pathname}
-                collapsed={collapsed}
-                mobile={mobile}
-                onClose={onClose}
-                level={level + 1}
-                expanded={false}
-                onToggleExpanded={() => undefined}
-              />
-            ))}
-          </div>
-        ) : null}
-      </div>
-    );
-  }
 
   if (!item.href) {
     return null;
   }
+
+  const isParentActive = hasChildren && item.children?.some((child) => isActivePath(pathname, child.href));
+  const isActive = isActivePath(pathname, item.href) || isParentActive;
 
   return (
     <Link
@@ -165,9 +84,10 @@ function NavigationRow({
       title={collapsed ? item.label : undefined}
       className={cn(
         "group mx-2 flex items-center gap-3 rounded-component px-3 py-2 no-underline transition-colors duration-fast ease-fast",
+        "[&_svg]:h-5 [&_svg]:w-5",
         collapsed && "justify-center px-0",
         level > 0 && !collapsed && "ml-4 w-[calc(100%-1.75rem)]",
-        isAiHubChild
+        tone === "ai-hub"
           ? isActive
             ? "bg-white text-carbon"
             : "bg-white/55 text-carbon hover:bg-white/80"
@@ -179,7 +99,7 @@ function NavigationRow({
       <span
         className={cn(
           "transition-colors duration-fast ease-fast",
-          isAiHubChild
+          tone === "ai-hub"
             ? isActive
               ? "text-[#5B21B6]"
               : "text-[#667085] group-hover:text-[#4C1D95]"
@@ -195,7 +115,7 @@ function NavigationRow({
         <span
           className={cn(
             "text-sm font-label transition-colors duration-fast ease-fast",
-            isAiHubChild
+            tone === "ai-hub"
               ? isActive
                 ? "text-[#2E1065]"
                 : "text-[#475467] group-hover:text-[#2E1065]"
@@ -208,6 +128,132 @@ function NavigationRow({
         </span>
       )}
     </Link>
+  );
+}
+
+type NavigationGroupProps = {
+  groupKey: string;
+  label: string;
+  icon: ReactNode;
+  items: NavItem[];
+  pathname: string;
+  collapsed: boolean;
+  mobile: boolean;
+  onClose?: () => void;
+  expanded: boolean;
+  onToggleExpanded: () => void;
+  tone?: "default" | "ai-hub";
+  iconClassName?: string;
+};
+
+function NavigationGroup({
+  groupKey,
+  label,
+  icon,
+  items,
+  pathname,
+  collapsed,
+  mobile,
+  onClose,
+  expanded,
+  onToggleExpanded,
+  tone = "default",
+  iconClassName
+}: NavigationGroupProps) {
+  const isActive = hasActiveItem(pathname, items);
+  const showChildren = !collapsed && expanded;
+
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={onToggleExpanded}
+        title={collapsed ? label : undefined}
+        aria-expanded={expanded}
+        aria-controls={`${groupKey}-panel`}
+        className={cn(
+          "group mx-2 flex w-[calc(100%-1rem)] items-center gap-3 rounded-component px-3 py-2 text-left transition-colors duration-fast ease-fast",
+          "[&_svg]:h-5 [&_svg]:w-5",
+          collapsed && "justify-center px-0",
+          tone === "ai-hub"
+            ? isActive
+              ? "bg-[#EDE9FE] text-[#4C1D95] hover:bg-[#DDD6FE]"
+              : "bg-[#7C3AED]/10 text-[#5B21B6] hover:bg-[#7C3AED]/15"
+            : isActive
+              ? "bg-white/80 text-carbon"
+              : "hover:bg-white/70"
+        )}
+      >
+        <span
+          className={cn(
+            "transition-colors duration-fast ease-fast",
+            tone === "ai-hub"
+              ? "text-[#7C3AED]"
+              : isActive
+                ? "text-carbon"
+                : "text-graphite group-hover:text-carbon",
+            iconClassName
+          )}
+        >
+          {icon}
+        </span>
+        {collapsed ? null : (
+          <span
+            className={cn(
+              "text-sm font-label transition-colors duration-fast ease-fast",
+              tone === "ai-hub"
+                ? "text-[#5B21B6]"
+                : isActive
+                  ? "text-carbon"
+                  : "text-graphite group-hover:text-carbon"
+            )}
+          >
+            {label}
+          </span>
+        )}
+        {!collapsed ? (
+          <ChevronDownIcon
+            className={cn(
+              "ml-auto h-4 w-4 shrink-0 transition-transform duration-normal ease-normal",
+              tone === "ai-hub" ? "text-[#7C3AED]" : "text-graphite",
+              expanded ? "rotate-180" : "rotate-0"
+            )}
+          />
+        ) : null}
+      </button>
+
+      <div
+        id={`${groupKey}-panel`}
+        className={cn(
+          "grid transition-[grid-template-rows,opacity,margin] duration-normal ease-normal",
+          showChildren ? "mt-1 grid-rows-[1fr] opacity-100" : "mt-0 grid-rows-[0fr] opacity-0"
+        )}
+      >
+        <div className="min-h-0 overflow-hidden">
+          <div
+            className={cn(
+              "mx-2 space-y-1 rounded-card px-2 py-2",
+              tone === "ai-hub"
+                ? "border border-[#7C3AED]/15 bg-[#7C3AED]/[0.055]"
+                : "border border-line-soft/80 bg-white/45"
+            )}
+          >
+            {items.map((item) => (
+              <NavigationRow
+                key={item.href ?? item.label}
+                item={item}
+                pathname={pathname}
+                collapsed={collapsed}
+                mobile={mobile}
+                onClose={onClose}
+                level={1}
+                tone={tone}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -226,7 +272,10 @@ export function Sidebar({
   const menuRef = useRef<HTMLDivElement | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [expandedParents, setExpandedParents] = useState<Record<string, boolean>>({
-    "AI Hub": pathname.startsWith("/ai-hub")
+    "AI Hub": true,
+    comercial: true,
+    entrega: true,
+    control: true
   });
   const visibleItems = useMemo(
     () => filterItems(navigationItems, usuario?.rol ?? null),
@@ -256,6 +305,16 @@ export function Sidebar({
       setExpandedParents((current) => ({ ...current, "AI Hub": true }));
     }
   }, [pathname]);
+
+  useEffect(() => {
+    const activeSection = navigationSections.find((section) =>
+      visibleItems.some((item) => item.section === section.key && (isActivePath(pathname, item.href) || (item.children ? hasActiveItem(pathname, item.children) : false)))
+    );
+
+    if (activeSection) {
+      setExpandedParents((current) => ({ ...current, [activeSection.key]: true }));
+    }
+  }, [pathname, visibleItems]);
 
   async function handleLogout() {
     if (!usuario) {
@@ -320,21 +379,37 @@ export function Sidebar({
           {topLevelItems.length > 0 ? (
             <div className="space-y-1">
               {topLevelItems.map((item) => (
-                <NavigationRow
-                  key={item.href ?? item.label}
-                  item={item}
-                  pathname={pathname}
-                  collapsed={collapsed}
-                  mobile={mobile}
-                  onClose={onClose}
-                  expanded={expandedParents[item.label] ?? false}
-                  onToggleExpanded={() =>
-                    setExpandedParents((current) => ({
-                      ...current,
-                      [item.label]: !current[item.label]
-                    }))
-                  }
-                />
+                item.children?.length ? (
+                  <NavigationGroup
+                    key={item.label}
+                    groupKey={item.label}
+                    label={item.label}
+                    icon={item.icon}
+                    items={item.children}
+                    pathname={pathname}
+                    collapsed={collapsed}
+                    mobile={mobile}
+                    onClose={onClose}
+                    expanded={expandedParents[item.label] ?? false}
+                    onToggleExpanded={() =>
+                      setExpandedParents((current) => ({
+                        ...current,
+                        [item.label]: !current[item.label]
+                      }))
+                    }
+                    tone="ai-hub"
+                    iconClassName={item.iconClassName}
+                  />
+                ) : (
+                  <NavigationRow
+                    key={item.href ?? item.label}
+                    item={item}
+                    pathname={pathname}
+                    collapsed={collapsed}
+                    mobile={mobile}
+                    onClose={onClose}
+                  />
+                )
               ))}
             </div>
           ) : null}
@@ -349,26 +424,23 @@ export function Sidebar({
             return (
               <div key={section.key}>
                 {!collapsed ? <div className={topLevelItems.length > 0 || index > 0 ? "pt-3" : "pt-1"} /> : null}
-
-                <div className="space-y-1">
-                  {sectionItems.map((item) => (
-                    <NavigationRow
-                      key={item.href ?? item.label}
-                      item={item}
-                      pathname={pathname}
-                      collapsed={collapsed}
-                      mobile={mobile}
-                      onClose={onClose}
-                      expanded={expandedParents[item.label] ?? false}
-                      onToggleExpanded={() =>
-                        setExpandedParents((current) => ({
-                          ...current,
-                          [item.label]: !current[item.label]
-                        }))
-                      }
-                    />
-                  ))}
-                </div>
+                <NavigationGroup
+                  groupKey={section.key}
+                  label={section.label}
+                  icon={section.icon}
+                  items={sectionItems}
+                  pathname={pathname}
+                  collapsed={collapsed}
+                  mobile={mobile}
+                  onClose={onClose}
+                  expanded={expandedParents[section.key] ?? true}
+                  onToggleExpanded={() =>
+                    setExpandedParents((current) => ({
+                      ...current,
+                      [section.key]: !current[section.key]
+                    }))
+                  }
+                />
               </div>
             );
           })}

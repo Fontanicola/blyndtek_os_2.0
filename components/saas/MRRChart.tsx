@@ -1,10 +1,18 @@
 "use client";
 
-import { useMemo } from "react";
+import { useId, useMemo } from "react";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import type { TooltipContentProps } from "recharts/types/component/Tooltip";
 import { Card } from "@/components/ui";
-import { chartTheme, formatCompactCurrencyTick, getChartActiveDot, getConservativeCurveType } from "@/lib/charts/chartTheme";
+import {
+  chartTheme,
+  formatCompactCurrencyTick,
+  getChartActiveDot,
+  getChartDot,
+  getChartGradientFill,
+  getConservativeCurveType,
+  renderChartGradient
+} from "@/lib/charts/chartTheme";
 import { formatUSD } from "@/lib/utils/formatters";
 import type { ProductoHistoricoMRRPoint } from "@/types/productos";
 
@@ -26,6 +34,7 @@ function ChartSkeleton() {
 }
 
 export function MRRChart({ data, loading = false }: MRRChartProps) {
+  const gradientId = useId();
   const hasData = data.some((point) => point.mrr > 0);
   const curveType = useMemo(() => getConservativeCurveType(data.map((point) => point.mrr)), [data]);
 
@@ -60,6 +69,7 @@ export function MRRChart({ data, loading = false }: MRRChartProps) {
         <div className="h-[320px]">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={chartData} margin={{ top: 16, right: 24, bottom: 8, left: 8 }}>
+              <defs>{renderChartGradient(gradientId, "signal")}</defs>
               <CartesianGrid
                 stroke={chartTheme.grid.stroke}
                 strokeDasharray={chartTheme.grid.strokeDasharray}
@@ -113,9 +123,9 @@ export function MRRChart({ data, loading = false }: MRRChartProps) {
                 type={curveType}
                 stroke={chartTheme.colors.signal}
                 strokeWidth={chartTheme.area.strokeWidth}
-                fill={chartTheme.colors.signal}
+                fill={getChartGradientFill(gradientId)}
                 fillOpacity={chartTheme.area.fillOpacity}
-                dot={false}
+                dot={getChartDot(chartTheme.colors.signal)}
                 activeDot={getChartActiveDot(chartTheme.colors.signal)}
               />
             </AreaChart>
