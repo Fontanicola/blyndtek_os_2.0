@@ -10,6 +10,34 @@ Estado general actual: Fase 0 completa. Cimientos técnicos listos: documentaci�
 
 ## Actualización 2026-07-22
 
+- Se corrigió el nuevo desvío visual introducido en `components/finanzas/PLChart.tsx` después del rediseño anterior del sistema de charts.
+- Archivos modificados:
+  - `components/finanzas/PLChart.tsx`
+  - `docs/PROGRESS.md`
+- Causa raíz exacta del bug:
+  - la serie `Margen` estaba quedando visualmente asociada a una escala secundaria dentro de `PLChart`, lo que la hacía comportarse como si estuviera atada al eje incorrecto;
+  - en la práctica eso inflaba la lectura de la línea verde y generaba picos/caídas que no correspondían a la magnitud real en USD de cada mes;
+  - además, el intento anterior había dejado un badge auxiliar (`Pico de clientes activos`) y un eje secundario fantasma a la derecha que seguían ensuciando la lectura del P&L.
+- Corrección aplicada:
+  - `PLChart.tsx` quedó colapsado a un único eje monetario visible para `Ingresos`, `Egresos` y `Margen`;
+  - se mantuvo el dominio inferior anclado en `0` cuando no hace falta bajar más, y en el mínimo real redondeado solo cuando existe un valor negativo genuino;
+  - `Margen` pasó a renderizarse con la misma familia de serie que el resto del chart, sin depender de un eje secundario ni de un badge aparte;
+  - se eliminó el badge `Pico de clientes activos`;
+  - se ocultó el residuo de ticks del eje secundario fantasma para que el gráfico final quede limpio y estrictamente financiero.
+- Verificación visual real ejecutada:
+  - se levantó un preview local temporal con los datos reales del P&L y se inspeccionó visualmente el gráfico resultante;
+  - se contrastó contra la tabla del mismo preview para validar meses concretos, incluyendo:
+    - febrero 2026 → ingresos `400`, egresos `134.05`, margen `265.95`;
+    - mayo 2026 → margen `612.51`;
+    - junio 2026 → margen `-587.49`;
+    - julio 2026 → margen `3246.79`;
+  - confirmación explícita:
+    - la línea de `Margen` ya no se dispara a valores de miles fuera de escala por error visual;
+    - el valle de junio 2026 ahora corresponde al valor negativo real del dataset;
+    - no quedó ningún eje derecho visible compitiendo con la lectura en USD.
+
+## Actualización 2026-07-22
+
 - Se hizo un rediseño visual transversal de los gráficos financieros y de negocio que consumen `lib/charts/chartTheme.ts`, elevando el lenguaje visual a un estándar más sobrio y técnico.
 - Archivos modificados:
   - `lib/charts/chartTheme.ts`

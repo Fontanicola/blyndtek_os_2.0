@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useMemo } from "react";
-import { Area, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Area, CartesianGrid, ComposedChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import type { TooltipContentProps } from "recharts/types/component/Tooltip";
 import { Card } from "@/components/ui";
 import { chartTheme, formatCompactCurrencyTick, getChartActiveDot, getConservativeCurveType } from "@/lib/charts/chartTheme";
@@ -28,17 +28,21 @@ export function PLChart({ data }: PLChartProps) {
   const incomeCurveType = useMemo(() => getConservativeCurveType(data.map((point) => point.ingresos)), [data]);
   const expenseCurveType = useMemo(() => getConservativeCurveType(data.map((point) => point.egresos)), [data]);
   const marginCurveType = useMemo(() => getConservativeCurveType(data.map((point) => point.margen)), [data]);
-  const minSeriesValue = useMemo(
-    () => Math.min(0, ...data.map((point) => Math.min(point.ingresos, point.egresos, point.margen))),
-    [data]
-  );
-  const peakActiveClients = useMemo(
-    () => data.reduce((max, point) => Math.max(max, point.clientes_activos), 0),
-    [data]
-  );
+  const minUsdSeriesValue = useMemo(() => {
+    if (data.length === 0) {
+      return 0;
+    }
 
+    return data.reduce(
+      (min, point) => Math.min(min, point.ingresos, point.egresos, point.margen),
+      Number.POSITIVE_INFINITY
+    );
+  }, [data]);
   return (
-    <Card padding="md" className="overflow-hidden bg-white">
+    <Card
+      padding="md"
+      className="overflow-hidden bg-white [&_svg_text[text-anchor='start']]:hidden"
+    >
       <div className="space-y-5">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
@@ -46,10 +50,6 @@ export function PLChart({ data }: PLChartProps) {
             <p className="text-sm text-graphite">Ingresos vs egresos de los ultimos 12 meses.</p>
             <p className="mt-1 text-xs font-base text-graphite">
               Margen promedio (12 meses): {averageMargin == null ? "Sin datos" : `${averageMargin.toFixed(1)}%`}
-            </p>
-            <p className="mt-2 inline-flex items-center gap-2 rounded-pill border border-line-soft bg-paper px-2.5 py-1 text-[11px] font-label tracking-[0.01em] text-graphite">
-              <span className="h-2 w-2 rounded-full" style={{ backgroundColor: chartTheme.secondarySeries.stroke }} />
-              Pico de clientes activos: {peakActiveClients}
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -95,16 +95,12 @@ export function PLChart({ data }: PLChartProps) {
                 interval={0}
               />
               <YAxis
-                yAxisId="left"
                 tickFormatter={formatCompactCurrencyTick}
                 tick={chartTheme.axis.tick}
                 axisLine={chartTheme.axis.axisLine}
                 tickLine={chartTheme.axis.tickLine}
                 tickMargin={chartTheme.axis.tickMargin}
-                domain={[
-                  (dataMin: number) => (minSeriesValue < 0 ? Math.floor(Math.min(dataMin, minSeriesValue) * 1.08) : 0),
-                  (dataMax: number) => Math.ceil(dataMax * 1.12)
-                ]}
+                domain={[minUsdSeriesValue < 0 ? Math.floor(minUsdSeriesValue) : 0, "auto"]}
               />
               <Tooltip
                 cursor={{ stroke: chartTheme.colors.line, strokeWidth: 1, strokeDasharray: "3 6" }}
@@ -149,7 +145,6 @@ export function PLChart({ data }: PLChartProps) {
                 }}
               />
               <Area
-                yAxisId="left"
                 dataKey="ingresos"
                 name="Ingresos"
                 stroke={chartTheme.colors.signal}
@@ -160,7 +155,6 @@ export function PLChart({ data }: PLChartProps) {
                 type={incomeCurveType}
               />
               <Area
-                yAxisId="left"
                 dataKey="egresos"
                 name="Egresos"
                 stroke={chartTheme.colors.danger}
@@ -170,12 +164,12 @@ export function PLChart({ data }: PLChartProps) {
                 activeDot={getChartActiveDot(chartTheme.colors.danger)}
                 type={expenseCurveType}
               />
-              <Line
-                yAxisId="left"
+              <Area
                 dataKey="margen"
                 name="Margen"
                 stroke={chartTheme.colors.success}
                 strokeWidth={chartTheme.line.strokeWidth}
+                fill="none"
                 dot={false}
                 activeDot={getChartActiveDot(chartTheme.colors.success)}
                 type={marginCurveType}
