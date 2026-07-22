@@ -260,6 +260,7 @@ Este archivo consolida el estado actual real del código y reemplaza como refere
 - gradientes sobrios permitidos solo dentro de gráficos
 - sombras SVG suaves permitidas solo dentro de gráficos
 - series semánticas consistentes
+- Las áreas deben sentirse orgánicas: usar curvas suaves para series positivas y, cuando el primer/último punto real produciría un cierre vertical duro, agregar padding visual a cero fuera del rango visible sin alterar los datos reales ni el tooltip.
 - Regla de superficie:
 - la UI estructural sigue plana; los gradientes no salen del dominio chart
 - La grilla estándar usa líneas horizontales sutiles; no se reintroducen grids verticales salvo justificación analítica concreta.

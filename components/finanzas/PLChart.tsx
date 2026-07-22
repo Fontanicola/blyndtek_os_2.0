@@ -1,16 +1,16 @@
 "use client";
 
 import { useId, useMemo } from "react";
-import { Area, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Area, CartesianGrid, ComposedChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import type { TooltipContentProps } from "recharts/types/component/Tooltip";
 import { Card } from "@/components/ui";
 import {
   chartTheme,
   formatCompactCurrencyTick,
+  getAreaCurveType,
   getChartActiveDot,
   getChartDot,
   getChartGradientFill,
-  getConservativeCurveType,
   renderChartGradient
 } from "@/lib/charts/chartTheme";
 import { formatUSD } from "@/lib/utils/formatters";
@@ -18,6 +18,10 @@ import type { MonthlyFinancialPoint } from "@/lib/finanzas";
 
 type PLChartProps = {
   data: MonthlyFinancialPoint[];
+};
+
+type PLChartVisualPoint = MonthlyFinancialPoint & {
+  paddingPoint?: number;
 };
 
 export function PLChart({ data }: PLChartProps) {
@@ -33,23 +37,39 @@ export function PLChart({ data }: PLChartProps) {
 
     return ((totalIngresos - totalEgresos) / totalIngresos) * 100;
   }, [data]);
-  const incomeCurveType = useMemo(() => getConservativeCurveType(data.map((point) => point.ingresos)), [data]);
-  const expenseCurveType = useMemo(() => getConservativeCurveType(data.map((point) => point.egresos)), [data]);
-  const marginCurveType = useMemo(() => getConservativeCurveType(data.map((point) => point.margen)), [data]);
-  const lowestMarginPoint = useMemo(() => {
+  const chartData = useMemo<PLChartVisualPoint[]>(() => {
     if (data.length === 0) {
-      return null;
+      return [];
     }
 
-    return data.reduce((lowest, point) => (point.margen < lowest.margen ? point : lowest), data[0]!);
+    const first = data[0]!;
+    const last = data[data.length - 1]!;
+    const startPadding: PLChartVisualPoint = {
+      ...first,
+      label: "",
+      ingresos: 0,
+      egresos: 0,
+      paddingPoint: 1
+    };
+    const endPadding: PLChartVisualPoint = {
+      ...last,
+      label: "",
+      ingresos: 0,
+      egresos: 0,
+      paddingPoint: 1
+    };
+
+    return [startPadding, ...data, endPadding];
   }, [data]);
+  const incomeCurveType = useMemo(() => getAreaCurveType(chartData.map((point) => point.ingresos)), [chartData]);
+  const expenseCurveType = useMemo(() => getAreaCurveType(chartData.map((point) => point.egresos)), [chartData]);
   const minUsdSeriesValue = useMemo(() => {
     if (data.length === 0) {
       return 0;
     }
 
     return data.reduce(
-      (min, point) => Math.min(min, point.ingresos, point.egresos, point.margen),
+      (min, point) => Math.min(min, point.ingresos, point.egresos),
       Number.POSITIVE_INFINITY
     );
   }, [data]);
@@ -66,17 +86,11 @@ export function PLChart({ data }: PLChartProps) {
             <p className="mt-1 text-xs font-base text-graphite">
               Margen promedio (12 meses): {averageMargin == null ? "Sin datos" : `${averageMargin.toFixed(1)}%`}
             </p>
-            {lowestMarginPoint && lowestMarginPoint.margen < 0 ? (
-              <p className="mt-2 inline-flex items-center gap-2 rounded-pill border border-danger/20 bg-danger/5 px-2.5 py-1 text-[11px] font-label text-danger">
-                Margen negativo más bajo: {lowestMarginPoint.label} · {formatUSD(lowestMarginPoint.margen)}
-              </p>
-            ) : null}
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {[
               { label: "Ingresos", color: chartTheme.colors.signal },
-              { label: "Egresos", color: chartTheme.colors.danger },
-              { label: "Margen", color: chartTheme.colors.success }
+              { label: "Egresos", color: chartTheme.colors.danger }
             ].map((item) => (
               <span key={item.label} className={chartTheme.legend.pillClassName}>
                 <span className="h-2 w-2 rounded-full" style={{ backgroundColor: item.color }} />
@@ -88,7 +102,7 @@ export function PLChart({ data }: PLChartProps) {
 
         <div className="w-full">
           <ResponsiveContainer width="100%" height={420}>
-            <ComposedChart data={data} margin={{ top: 24, right: 28, left: 14, bottom: 14 }}>
+            <ComposedChart data={chartData} margin={{ top: 24, right: 28, left: 14, bottom: 14 }}>
               <defs>
                 {renderChartGradient(ingresosGradientId, "signal")}
                 {renderChartGradient(egresosGradientId, "danger")}
@@ -117,9 +131,9 @@ export function PLChart({ data }: PLChartProps) {
               <Tooltip
                 cursor={{ stroke: chartTheme.colors.line, strokeWidth: 1, strokeDasharray: "3 6" }}
                 content={({ active, payload, label }: TooltipContentProps<number, string>) => {
-                  const point = payload?.[0]?.payload as MonthlyFinancialPoint | undefined;
+                  const point = payload?.[0]?.payload as PLChartVisualPoint | undefined;
 
-                  if (!active || !point) {
+                  if (!active || !point || point.paddingPoint) {
                     return null;
                   }
 
@@ -164,6 +178,7 @@ export function PLChart({ data }: PLChartProps) {
                 fill={getChartGradientFill(ingresosGradientId)}
                 dot={getChartDot(chartTheme.colors.signal)}
                 activeDot={getChartActiveDot(chartTheme.colors.signal)}
+                isAnimationActive={false}
                 type={incomeCurveType}
               />
               <Area
@@ -174,16 +189,8 @@ export function PLChart({ data }: PLChartProps) {
                 fill={getChartGradientFill(egresosGradientId)}
                 dot={getChartDot(chartTheme.colors.danger)}
                 activeDot={getChartActiveDot(chartTheme.colors.danger)}
+                isAnimationActive={false}
                 type={expenseCurveType}
-              />
-              <Line
-                dataKey="margen"
-                name="Margen"
-                stroke={chartTheme.colors.success}
-                strokeWidth={chartTheme.line.strokeWidth}
-                dot={getChartDot(chartTheme.colors.success)}
-                activeDot={getChartActiveDot(chartTheme.colors.success)}
-                type={marginCurveType}
               />
             </ComposedChart>
           </ResponsiveContainer>

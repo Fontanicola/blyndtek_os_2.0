@@ -10,6 +10,21 @@ Estado general actual: Fase 0 completa. Cimientos técnicos listos: documentaci�
 
 ## Actualización 2026-07-22
 
+- Se ajustó `P&L mensual` en Finanzas:
+  - se quitó `Margen` como serie visual del gráfico; el margen queda disponible como texto de resumen y dentro del tooltip del mes, pero ya no genera línea/área ni afecta la escala del eje USD;
+  - se eliminó el badge de `Margen negativo más bajo` del chart para evitar que el gráfico vuelva a leerse como una alerta de margen;
+  - `Ingresos` y `Egresos` ahora usan puntos de padding visual en cero antes y después de la serie real, logrando que las áreas nazcan y se desvanezcan sin paredes verticales en los bordes;
+  - `chartTheme.ts` suma `getAreaCurveType`, usando curva suave para áreas positivas y preservando el criterio conservador cuando existen valores negativos reales.
+- Archivos modificados para `P&L mensual`:
+  - `components/finanzas/PLChart.tsx`
+  - `docs/DESIGN_SYSTEM.md`
+  - `docs/PROGRESS.md`
+  - `lib/charts/chartTheme.ts`
+- Verificación ejecutada:
+  - `npm run lint` OK;
+  - `npm run build` OK;
+  - búsqueda en `PLChart.tsx` confirmó cero renders activos de `dataKey="margen"`, `<Line>` o badge `Margen negativo más bajo`;
+  - inspección visual local intentada en `http://localhost:3100/finanzas`, bloqueada por redirección a `/login` al no haber sesión admin en el navegador headless.
 - Se corrigió el comportamiento visual de `AI Hub` en el sidebar:
   - `Centro IA` ahora solo se marca activo con coincidencia exacta en `/ai-hub`, así deja de verse presionado al navegar por `/ai-hub/agentes` o `/ai-hub/automatizaciones`;
   - los subitems cambiaron a iconografía consistente con el producto: `Centro IA` usa dashboard, `Agentes` usa cerebro y `Workflows` usa rayo;

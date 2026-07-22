@@ -80,7 +80,7 @@ export const chartTheme = {
   },
   area: {
     strokeWidth: 1.7,
-    type: "linear" as const,
+    type: "monotoneX" as const,
     fillOpacity: 0.24
   },
   sparkline: {
@@ -181,6 +181,12 @@ export function getConservativeCurveType(values: Array<number | null | undefined
 
   const curveType: ConservativeCurveType = maxConsecutiveActivePoints >= 4 ? "monotoneX" : "linear";
   return curveType;
+}
+
+export function getAreaCurveType(values: Array<number | null | undefined>) {
+  const hasNegative = values.some((value) => typeof value === "number" && Number.isFinite(value) && value < 0);
+
+  return hasNegative ? getConservativeCurveType(values) : chartTheme.area.type;
 }
 
 export function formatCompactCurrencyTick(value: number | string) {
