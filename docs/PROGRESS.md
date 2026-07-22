@@ -10,6 +10,30 @@ Estado general actual: Fase 0 completa. Cimientos técnicos listos: documentaci�
 
 ## Actualización 2026-07-22
 
+- Se refinó visualmente la subnavegación especial de `AI Hub` en el sidebar para que se lea como un grupo de navegación terminado y no como una zona provisional.
+- Archivos modificados:
+  - `components/layout/Sidebar.tsx`
+  - `lib/navigation.ts`
+  - `docs/PROGRESS.md`
+- Cambios aplicados:
+  - el contenedor de subitems (`Centro IA`, `Agentes`, `Workflows`) dejó de usar borde punteado;
+  - ahora usa un bloque violeta suave con borde fino sólido, coherente con el design system vigente y con el tratamiento cromático especial ya definido para `AI Hub`;
+  - los tres subitems pasaron a compartir exactamente el mismo comportamiento visual:
+    - misma base de fondo suave,
+    - mismo fondo blanco al estar activos,
+    - mismo padding,
+    - misma transición de hover;
+  - se unificó también el lenguaje de íconos de la subnavegación:
+    - `Centro IA` ahora usa `GridIcon`,
+    - `Agentes` mantiene `BotIcon`,
+    - `Workflows` ahora usa `RefreshIcon`;
+  - los tres quedan dentro de la misma familia `lucide-react`, con el mismo trazo y grosor, eliminando la mezcla anterior entre símbolos que se sentían de estilos distintos.
+- Decisión técnica:
+  - se mantuvo intacta la excepción cromática del padre `AI Hub` documentada en `DECISIONS.md`;
+  - el ajuste se concentró únicamente en pulir la ejecución visual del grupo interno y sus hijos, sin tocar la lógica de navegación ni el comportamiento del resto del sidebar.
+
+## Actualización 2026-07-22
+
 - Se corrigió el nuevo desvío visual introducido en `components/finanzas/PLChart.tsx` después del rediseño anterior del sistema de charts.
 - Archivos modificados:
   - `components/finanzas/PLChart.tsx`

@@ -11,10 +11,10 @@ import {
   FileTextIcon,
   FinanzasIcon,
   OutboundIcon,
-  SparklesIcon,
+  GridIcon,
+  RefreshIcon,
   SaasIcon,
   NotasIcon,
-  PlayIcon,
   WikiIcon,
   ProyectosIcon,
   TareasIcon
@@ -46,7 +46,7 @@ export const navigationItems: NavItem[] = [
       {
         label: "Centro IA",
         href: "/ai-hub",
-        icon: createElement(SparklesIcon),
+        icon: createElement(GridIcon),
         roles: ["admin"],
         section: "top-level"
       },
@@ -60,7 +60,7 @@ export const navigationItems: NavItem[] = [
       {
         label: "Workflows",
         href: "/ai-hub/automatizaciones",
-        icon: createElement(PlayIcon),
+        icon: createElement(RefreshIcon),
         roles: ["admin"],
         section: "top-level"
       }

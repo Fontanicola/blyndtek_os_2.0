@@ -67,6 +67,7 @@ function NavigationRow({
   const isParentActive = hasChildren && item.children?.some((child) => isActivePath(pathname, child.href));
   const isActive = isActivePath(pathname, item.href) || isParentActive;
   const isAiHubParent = item.label === "AI Hub" && hasChildren && !item.href && level === 0;
+  const isAiHubChild = level > 0;
 
   if (hasChildren && !item.href) {
     return (
@@ -129,9 +130,9 @@ function NavigationRow({
         {expanded && !collapsed ? (
           <div
             className={cn(
-              "mt-1 space-y-1",
+              "mx-2 mt-1 space-y-1 rounded-card px-2 py-2",
               isAiHubParent &&
-                "mx-2 rounded-card border border-dashed border-[#7C3AED]/30 bg-[#7C3AED]/[0.035] px-2 py-2"
+                "border border-[#7C3AED]/15 bg-[#7C3AED]/[0.055]"
             )}
           >
             {item.children?.map((child) => (
@@ -166,13 +167,25 @@ function NavigationRow({
         "group mx-2 flex items-center gap-3 rounded-component px-3 py-2 no-underline transition-colors duration-fast ease-fast",
         collapsed && "justify-center px-0",
         level > 0 && !collapsed && "ml-4 w-[calc(100%-1.75rem)]",
-        isActive ? "bg-white/80 text-carbon" : "hover:bg-white/70"
+        isAiHubChild
+          ? isActive
+            ? "bg-white text-carbon"
+            : "bg-white/55 text-carbon hover:bg-white/80"
+          : isActive
+            ? "bg-white/80 text-carbon"
+            : "hover:bg-white/70"
       )}
     >
       <span
         className={cn(
           "transition-colors duration-fast ease-fast",
-          isActive ? "text-signal" : "text-graphite group-hover:text-carbon",
+          isAiHubChild
+            ? isActive
+              ? "text-[#5B21B6]"
+              : "text-[#667085] group-hover:text-[#4C1D95]"
+            : isActive
+              ? "text-signal"
+              : "text-graphite group-hover:text-carbon",
           item.iconClassName
         )}
       >
@@ -182,7 +195,13 @@ function NavigationRow({
         <span
           className={cn(
             "text-sm font-label transition-colors duration-fast ease-fast",
-            isActive ? "text-carbon" : "text-graphite group-hover:text-carbon"
+            isAiHubChild
+              ? isActive
+                ? "text-[#2E1065]"
+                : "text-[#475467] group-hover:text-[#2E1065]"
+              : isActive
+                ? "text-carbon"
+                : "text-graphite group-hover:text-carbon"
           )}
         >
           {item.label}
