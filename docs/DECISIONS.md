@@ -617,7 +617,7 @@
 
 ## 2026-07-22 — AI Hub con branding fijo de Blyndtek en navegación
 
-- El item padre `AI Hub` del sidebar usa el isotipo real de Blyndtek como branding fijo del producto, en lugar de un ícono genérico de librería.
+- El item padre `AI Hub` del sidebar usa el logo real de Blyndtek como branding fijo del producto, en lugar de un ícono genérico de librería.
 - Esta marca debe permanecer visible aunque el hub evolucione a oferta comercial para clientes: el producto sigue siendo Blyndtek AI Hub, no una sección neutra sin identidad.
 - Los subitems mantienen iconografía de `lucide-react` con trazo unificado, pero el acceso padre conserva la excepción cromática violeta y el sello de marca propio.
 
