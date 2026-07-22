@@ -72,7 +72,7 @@ function EditableText({
 
   return (
     <div className={className}>
-      <p className="mb-1 text-xs font-label uppercase tracking-[0.08em] text-graphite">{label}</p>
+      <p className="mb-1 text-xs font-label text-graphite">{label}</p>
       {isEditing ? (
         multiline ? (
           <textarea
@@ -125,7 +125,7 @@ function EditableNumber({
 
   return (
     <div>
-      <p className="mb-1 text-xs font-label uppercase tracking-[0.08em] text-graphite">{label}</p>
+      <p className="mb-1 text-xs font-label text-graphite">{label}</p>
       {isEditing ? (
         <Input
           type="number"
@@ -197,7 +197,7 @@ export function InboundFicha({ lead, onUpdate, onPasarACotizacion }: InboundFich
                 onSave={(value) => void onUpdate({ ubicacion: value })}
               />
               <div>
-                <p className="mb-1 text-xs font-label uppercase tracking-[0.08em] text-graphite">
+                <p className="mb-1 text-xs font-label text-graphite">
                   Web
                 </p>
                 {lead.web ? (

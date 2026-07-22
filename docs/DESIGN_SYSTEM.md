@@ -32,6 +32,7 @@ Este archivo consolida el estado actual real del código y reemplaza como refere
 - cuerpo y texto corrido en regular
 - labels, pills, metadatos y énfasis medio con `font-label`
 - títulos, nombres de bloques y métricas principales con `font-title`
+- Prohibido el uso de texto en mayúsculas (`uppercase`) en cualquier parte de la interfaz. El énfasis se logra con tamaño, peso semántico o color, nunca con transformación de mayúsculas.
 - No se deben introducir `font-bold`, `font-semibold` o `font-medium` sueltos como convención de producto.
 - Aclaración de nomenclatura: en decisiones viejas aparece `font-base`; la regla canónica actual es interpretarlo como cuerpo regular. El token configurado en Tailwind es `font-body`, pero el sistema operativo visualmente usa tres niveles: regular, `font-label` y `font-title`.
 - Excepción explícita: Content Studio renderiza piezas generadas con `DM Sans`; eso no cambia la tipografía de la plataforma.
@@ -234,7 +235,7 @@ Este archivo consolida el estado actual real del código y reemplaza como refere
 - wrapper con `overflow-x-auto`
 - contenedor blanco con borde `line-soft`
 - `thead` con fondo `paper`
-- headers en `text-xs`, `font-label`, uppercase y tracking suave
+- headers en `text-xs`, `font-label` y `text-graphite`, sin transformación a mayúsculas
 - `tbody` blanco con divisores `line-soft`
 - No se usan tablas con sombras protagonistas.
 - Cuando la tabla vive dentro de un bloque reusable, ese bloque puede ir dentro de una `Card` con `padding="none"` y overflow oculto.

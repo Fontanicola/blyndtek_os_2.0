@@ -115,13 +115,13 @@ function ReelCard({ pieza }: { pieza: PiezaContenido }) {
       </div>
       {guion.hook ? (
         <div>
-          <p className="text-xs font-label uppercase tracking-[0.18em] text-graphite">Hook</p>
+          <p className="text-xs font-label text-graphite">Hook</p>
           <p className="mt-1 text-base font-label text-carbon">{guion.hook}</p>
         </div>
       ) : null}
       {Array.isArray(guion.puntos) && guion.puntos.length > 0 ? (
         <div>
-          <p className="text-xs font-label uppercase tracking-[0.18em] text-graphite">Puntos</p>
+          <p className="text-xs font-label text-graphite">Puntos</p>
           <ul className="mt-2 space-y-2 text-sm leading-relaxed text-graphite">
             {guion.puntos.map((punto) => (
               <li key={punto} className="flex gap-2">
@@ -135,7 +135,7 @@ function ReelCard({ pieza }: { pieza: PiezaContenido }) {
       <div className="grid gap-3 sm:grid-cols-2">
         {guion.cta ? (
           <div className="rounded-component border border-line-soft bg-paper p-3">
-            <p className="text-xs font-label text-graphite">CTA</p>
+            <p className="text-xs font-label text-graphite">Cierre</p>
             <p className="mt-1 text-sm text-carbon">{guion.cta}</p>
           </div>
         ) : null}

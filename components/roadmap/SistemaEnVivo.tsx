@@ -35,7 +35,7 @@ export function SistemaEnVivo({ urlSistema, imagenPreviewUrl }: SistemaEnVivoPro
         <div className="p-6">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="text-xs font-label uppercase tracking-[0.16em] text-graphite">Sistema en vivo</p>
+              <p className="text-xs font-label text-graphite">Sistema en vivo</p>
               <h2 className="mt-1 text-xl font-title text-carbon">Abrir sistema</h2>
               <p className="mt-2 text-sm text-graphite">{domain}</p>
             </div>

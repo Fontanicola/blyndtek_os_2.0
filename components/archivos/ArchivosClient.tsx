@@ -1238,7 +1238,7 @@ export function ArchivosClient() {
   function renderListItems() {
     return (
       <div className="overflow-hidden rounded-card border border-line-soft bg-white">
-        <div className="grid grid-cols-[minmax(0,1.7fr)_120px_120px_150px_56px] border-b border-line-soft bg-paper px-4 py-3 text-xs font-label uppercase tracking-[0.16em] text-graphite">
+        <div className="grid grid-cols-[minmax(0,1.7fr)_120px_120px_150px_56px] border-b border-line-soft bg-paper px-4 py-3 text-xs font-label text-graphite">
           <span>Nombre</span>
           <span>Tipo</span>
           <span>Tamaño</span>

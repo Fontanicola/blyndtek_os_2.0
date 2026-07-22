@@ -111,7 +111,7 @@ export function EgresosTabla({
           <div className="min-h-0 flex-1 overflow-y-auto overflow-x-auto">
             <table className="min-w-full table-fixed divide-y divide-line-soft">
               <thead className="sticky top-0 z-10 bg-paper">
-                <tr className="text-left text-xs font-label uppercase tracking-[0.08em] text-graphite">
+                <tr className="text-left text-xs font-label text-graphite">
                   <th className={cn("px-4 py-3", showRecurrenteColumn ? "w-[19%]" : "w-[21%]")}>Concepto</th>
                   <th className="w-[18%] px-4 py-3">Categoría</th>
                   <th className="w-[12%] px-4 py-3">Estado</th>

@@ -143,7 +143,7 @@ function TarjetaCard({
           <div className="flex items-end justify-between gap-3">
             <div className="min-w-0 space-y-1">
               <p className="truncate text-sm text-white/80">{tarjeta.banco ?? "Banco no informado"}</p>
-              <p className="text-sm font-label uppercase tracking-[0.08em] text-white/80">{tipoLabels[tarjeta.tipo]}</p>
+              <p className="text-sm font-label text-white/80">{tipoLabels[tarjeta.tipo]}</p>
             </div>
 
             <p className="text-sm font-label tracking-[0.08em] text-white/90">{formatTarjetaDisplayValue(tarjeta.vencimiento)}</p>
@@ -153,15 +153,15 @@ function TarjetaCard({
             <div className="mt-4 rounded-card border border-white/15 bg-white/10 p-4 backdrop-blur-sm">
               <div className="grid gap-3 text-sm text-white/90">
                 <div>
-                  <span className="block text-xs uppercase tracking-[0.08em] text-white/60">Titular</span>
+                  <span className="block text-xs font-label text-white/60">Titular</span>
                   <span className="block font-label">{tarjeta.titular ?? "Sin titular"}</span>
                 </div>
                 <div>
-                  <span className="block text-xs uppercase tracking-[0.08em] text-white/60">Uso habitual</span>
+                  <span className="block text-xs font-label text-white/60">Uso habitual</span>
                   <span className="block">{tarjeta.uso_habitual ?? "Sin uso habitual"}</span>
                 </div>
                 <div>
-                  <span className="block text-xs uppercase tracking-[0.08em] text-white/60">Notas</span>
+                  <span className="block text-xs font-label text-white/60">Notas</span>
                   <span className="block">{tarjeta.notas ?? "Sin notas"}</span>
                 </div>
               </div>
@@ -367,7 +367,7 @@ export function TarjetasSeccion({ showToast }: TarjetasSeccionProps) {
             <Input
               label="Vencimiento"
               value={formState.vencimiento}
-              placeholder="MM/AA"
+              placeholder="mm/aa"
               maxLength={5}
               onChange={(event) =>
                 setFormState((current) => ({

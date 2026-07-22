@@ -48,7 +48,7 @@ export function MetricaCard({
     <div className={cn("rounded-card border border-line-soft bg-white p-5 shadow-soft", className)}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <p className="text-xs font-label uppercase tracking-[0.08em] text-graphite">{label}</p>
+          <p className="text-xs font-label text-graphite">{label}</p>
           <p className={cn("mt-2 font-title text-carbon", isLongText ? "text-lg leading-tight" : "text-2xl")}>
             {displayValue}
           </p>

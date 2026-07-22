@@ -127,7 +127,7 @@ export function NotasSidebar({
 
           <section className="space-y-3">
             <div className="flex items-center justify-between gap-3">
-              <h3 className="text-xs font-label uppercase tracking-[0.16em] text-graphite">Etiquetas</h3>
+              <h3 className="text-xs font-label text-graphite">Etiquetas</h3>
               <Button variant="ghost" size="sm" onClick={() => onSelectTag(null)}>
                 Todas
               </Button>

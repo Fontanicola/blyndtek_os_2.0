@@ -28,11 +28,11 @@ export function CalendarioSemana({ currentDate, items, onEventClick }: Calendari
 
   return (
     <div className="rounded-card bg-white p-4 shadow-card">
-      <div className="grid grid-cols-[72px_repeat(7,minmax(0,1fr))] border-b border-line-soft pb-3 text-xs font-label uppercase tracking-widest text-graphite">
+      <div className="grid grid-cols-[72px_repeat(7,minmax(0,1fr))] border-b border-line-soft pb-3 text-xs font-label text-graphite">
         <div />
         {days.map((day) => (
           <div key={day.toISOString()} className={cn("px-2", isSameDay(day, new Date()) && "text-signal")}>
-            <div className="text-sm uppercase tracking-normal text-carbon">
+            <div className="text-sm text-carbon">
               {day.toLocaleDateString("es-AR", { weekday: "short" })}
             </div>
             <div className="text-xs normal-case text-graphite">{day.getDate()}</div>

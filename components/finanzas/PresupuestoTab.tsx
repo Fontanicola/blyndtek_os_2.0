@@ -384,7 +384,7 @@ export function PresupuestoTab() {
     <div className="flex flex-col gap-6">
       <Card padding="md" className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <p className="text-sm font-label uppercase tracking-[0.08em] text-graphite">Mes seleccionado</p>
+          <p className="text-sm font-label text-graphite">Mes seleccionado</p>
           <h3 className="text-xl font-title text-carbon">{monthLabel}</h3>
         </div>
         <div className="flex items-center gap-2">

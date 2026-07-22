@@ -125,7 +125,7 @@ function KpiMiniCard({
 }) {
   return (
     <Card padding="sm" className="space-y-2">
-      <p className="text-xs font-label uppercase tracking-[0.08em] text-graphite">{label}</p>
+      <p className="text-xs font-label text-graphite">{label}</p>
       <p
         className={cn(
           "text-xl font-title",

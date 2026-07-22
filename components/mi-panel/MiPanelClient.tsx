@@ -199,7 +199,7 @@ export function MiPanelClient() {
             <Card padding="md" className="space-y-3">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <div className="text-xs font-label uppercase tracking-[0.08em] text-graphite">
+                  <div className="text-xs font-label text-graphite">
                     Bono por ventas
                   </div>
                   <div className="mt-2 text-2xl font-title text-carbon">
@@ -270,7 +270,7 @@ export function MiPanelClient() {
                 <div className="overflow-hidden rounded-card border border-line-soft">
                   <table className="min-w-full divide-y divide-line-soft text-sm">
                     <thead className="bg-paper">
-                      <tr className="text-left text-xs font-label uppercase tracking-[0.08em] text-graphite">
+                      <tr className="text-left text-xs font-label text-graphite">
                         <th className="px-3 py-2">Cliente</th>
                         <th className="px-3 py-2">Venta</th>
                         <th className="px-3 py-2">% aplicado</th>

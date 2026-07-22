@@ -294,7 +294,7 @@ export function LeadEtapaModal({
         {targetEtapa === "ganado" ? (
           <div className="space-y-4">
             <div className="rounded-card border border-line-soft bg-paper p-4 text-sm text-carbon">
-              <p className="text-xs font-label uppercase tracking-[0.08em] text-graphite">Monto propuesto</p>
+              <p className="text-xs font-label text-graphite">Monto propuesto</p>
               <p className="mt-2">
                 Desarrollo: <span className="font-label">{formatUSD(proposedDevelopment)}</span>
               </p>

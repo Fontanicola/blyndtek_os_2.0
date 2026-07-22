@@ -443,11 +443,11 @@ export function AgentesClient({ agentes, feed, costoActualMes }: AgentesClientPr
                   <div className="space-y-4">
                     <div className="grid gap-3 md:grid-cols-3">
                       <div className="rounded-component bg-paper px-4 py-3">
-                        <p className="text-xs font-label uppercase tracking-[0.08em] text-graphite">Tipo</p>
+                        <p className="text-xs font-label text-graphite">Tipo</p>
                         <p className="mt-1 font-title text-carbon">{typeLabel(selectedAgent.tipo)}</p>
                       </div>
                       <div className="rounded-component bg-paper px-4 py-3">
-                        <p className="text-xs font-label uppercase tracking-[0.08em] text-graphite">Actividad reciente</p>
+                        <p className="text-xs font-label text-graphite">Actividad reciente</p>
                         <p className="mt-1 font-title text-carbon">
                           {latestActivityBySlug.get(selectedAgent.slug)
                             ? formatAgentesRelativeTime(latestActivityBySlug.get(selectedAgent.slug)!.fecha)
@@ -455,7 +455,7 @@ export function AgentesClient({ agentes, feed, costoActualMes }: AgentesClientPr
                         </p>
                       </div>
                       <div className="rounded-component bg-paper px-4 py-3">
-                        <p className="text-xs font-label uppercase tracking-[0.08em] text-graphite">Estado</p>
+                        <p className="text-xs font-label text-graphite">Estado</p>
                         <p className="mt-1 font-title text-carbon">{selectedAgent.activo ? "Activo" : "Inactivo"}</p>
                       </div>
                     </div>

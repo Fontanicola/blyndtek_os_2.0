@@ -20,12 +20,12 @@ export function MetricaGrande({
   emptyState,
   className
 }: MetricaGrandeProps) {
-  const showEmpty = value.trim().length === 0 || value === "N/A";
+  const showEmpty = value.trim().length === 0 || value === "N/A" || value === "No disponible";
 
   return (
     <Card padding="lg" className={cn("space-y-3", className)}>
       <div className="flex items-start justify-between gap-3">
-        <p className="text-xs font-label uppercase tracking-[0.1em] text-graphite">{label}</p>
+        <p className="text-xs font-label text-graphite">{label}</p>
         {comparison ? (
           <span
             className={cn(
@@ -41,4 +41,3 @@ export function MetricaGrande({
     </Card>
   );
 }
-

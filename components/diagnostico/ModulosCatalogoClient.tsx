@@ -266,7 +266,7 @@ export function ModulosCatalogoClient() {
 
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div>
-                    <p className="text-xs font-label uppercase tracking-[0.08em] text-graphite">Categoría</p>
+                    <p className="text-xs font-label text-graphite">Categoría</p>
                     <input
                       value={modulo.categoria ?? ""}
                       onChange={(event) => updateModulo(modulo.id, { categoria: event.target.value || null })}
@@ -274,7 +274,7 @@ export function ModulosCatalogoClient() {
                     />
                   </div>
                   <div>
-                    <p className="text-xs font-label uppercase tracking-[0.08em] text-graphite">Mensual</p>
+                    <p className="text-xs font-label text-graphite">Mensual</p>
                     <input
                       type="number"
                       value={modulo.incremento_mensual ?? 0}

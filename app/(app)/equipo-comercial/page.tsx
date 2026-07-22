@@ -206,7 +206,7 @@ export default async function EquipoComercialPage() {
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-card border border-line-soft bg-paper p-4">
-      <p className="text-xs font-label uppercase tracking-[0.08em] text-graphite">{label}</p>
+      <p className="text-xs font-label text-graphite">{label}</p>
       <p className="mt-2 text-lg font-title text-carbon">{value}</p>
     </div>
   );

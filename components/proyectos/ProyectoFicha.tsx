@@ -97,7 +97,7 @@ function InlineField({
   if (!editing) {
     return (
       <div className="space-y-1">
-        <p className="text-xs font-label uppercase tracking-[0.08em] text-graphite">{label}</p>
+        <p className="text-xs font-label text-graphite">{label}</p>
         <button
           type="button"
           onClick={() => setEditing(true)}
@@ -111,7 +111,7 @@ function InlineField({
 
   return (
     <div className="space-y-1">
-      <p className="text-xs font-label uppercase tracking-[0.08em] text-graphite">{label}</p>
+      <p className="text-xs font-label text-graphite">{label}</p>
       <Input
         autoFocus
         type={type}
@@ -157,7 +157,7 @@ function TextareaField({
 
   return (
     <div className="space-y-2">
-      <p className="text-xs font-label uppercase tracking-[0.08em] text-graphite">{label}</p>
+      <p className="text-xs font-label text-graphite">{label}</p>
       {editing ? (
         <textarea
           autoFocus
@@ -583,12 +583,12 @@ export function ProyectoFicha({
                   <h3 className="text-sm font-title text-carbon">General</h3>
                   <div className="grid gap-3 md:grid-cols-2">
                     <div className="space-y-1">
-                      <p className="text-xs font-label uppercase tracking-[0.08em] text-graphite">Cliente</p>
+                      <p className="text-xs font-label text-graphite">Cliente</p>
                       <p className="rounded-component bg-paper px-3 py-2 text-sm text-carbon">{clienteNombre}</p>
                     </div>
 
                     <div className="space-y-1">
-                      <p className="text-xs font-label uppercase tracking-[0.08em] text-graphite">Estado</p>
+                      <p className="text-xs font-label text-graphite">Estado</p>
                       <select
                         value={proyecto.estado}
                         onChange={async (event) => {
@@ -680,7 +680,7 @@ export function ProyectoFicha({
 
                 <section className="space-y-3">
                   <div className="space-y-1">
-                    <p className="text-xs font-label uppercase tracking-[0.08em] text-graphite">
+                    <p className="text-xs font-label text-graphite">
                       Repositorio de GitHub
                     </p>
                     <p className="text-xs text-graphite">Necesario para usar AI Dev en las fases de este proyecto.</p>
@@ -717,7 +717,7 @@ export function ProyectoFicha({
                       </p>
                     </div>
                     <div className="rounded-card bg-paper px-4 py-3 text-right">
-                      <p className="text-xs font-label uppercase tracking-[0.08em] text-graphite">Total</p>
+                      <p className="text-xs font-label text-graphite">Total</p>
                       <p className="text-lg font-title text-carbon">{formatDurationHours(tiempoProyectoVisual.total_segundos)}</p>
                       <p className="text-xs text-graphite">{formatDurationShort(tiempoProyectoVisual.total_segundos)}</p>
                     </div>
@@ -761,7 +761,7 @@ export function ProyectoFicha({
 
                   {tiempoPorUsuarioVisible.length > 1 ? (
                     <Card padding="sm" className="space-y-3">
-                      <p className="text-xs font-label uppercase tracking-[0.08em] text-graphite">Por usuario</p>
+                      <p className="text-xs font-label text-graphite">Por usuario</p>
                       <div className="flex flex-wrap gap-2">
                         {tiempoPorUsuarioVisible.map((usuario) => (
                           <Badge key={usuario.usuario_id} variant="default">
@@ -792,7 +792,7 @@ export function ProyectoFicha({
                 />
 
                 <div className="space-y-2 rounded-card bg-paper p-4">
-                  <p className="text-xs font-label uppercase tracking-[0.08em] text-graphite">Resumen</p>
+                  <p className="text-xs font-label text-graphite">Resumen</p>
                   <p className="text-sm text-carbon">
                     Precio total: {proyecto.valor_total !== null ? formatUSD(proyecto.valor_total) : "Sin definir"}
                   </p>
@@ -924,7 +924,7 @@ export function ProyectoFicha({
                 <div className="space-y-3 rounded-card border border-line-soft bg-white p-4">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="space-y-1">
-                      <p className="text-xs font-label uppercase tracking-[0.08em] text-graphite">
+                      <p className="text-xs font-label text-graphite">
                         Imagen de preview del sistema
                       </p>
                       <p className="text-sm text-graphite">
@@ -1036,7 +1036,7 @@ export function ProyectoFicha({
                       placeholder="••••••••"
                     />
                     <div className="space-y-1">
-                      <p className="text-xs font-label uppercase tracking-[0.08em] text-graphite">Notas</p>
+                      <p className="text-xs font-label text-graphite">Notas</p>
                       <textarea
                         value={roadmapConfigDraft.credenciales_cliente.notas}
                         onChange={(event) =>
@@ -1080,7 +1080,7 @@ export function ProyectoFicha({
                 </div>
 
                 <div className="space-y-2">
-                  <p className="text-xs font-label uppercase tracking-[0.08em] text-graphite">Link público</p>
+                  <p className="text-xs font-label text-graphite">Link público</p>
                   <div className="flex flex-col gap-3 sm:flex-row">
                     <Input value={roadmapUrl} readOnly className="flex-1" />
                     <Button

@@ -222,17 +222,17 @@ export function AsesorFinancieroTab({ analisisReciente, showToast }: AsesorFinan
 
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           <div className="rounded-component bg-paper px-4 py-3">
-            <p className="text-xs font-label uppercase tracking-wide text-graphite">Caja actual</p>
+            <p className="text-xs font-label text-graphite">Caja actual</p>
             <p className="mt-1 text-lg font-title text-carbon">{formatUSD(metricas.caja_actual_usd ?? 0)}</p>
             <p className="mt-1 text-sm text-graphite">Quema mensual: {formatUSD(metricas.quema_mensual_usd ?? 0)}</p>
           </div>
           <div className="rounded-component bg-paper px-4 py-3">
-            <p className="text-xs font-label uppercase tracking-wide text-graphite">MRR actual</p>
+            <p className="text-xs font-label text-graphite">Ingreso recurrente actual</p>
             <p className="mt-1 text-lg font-title text-carbon">{formatUSD(metricas.mrr_actual_usd ?? 0)}</p>
             <p className="mt-1 text-sm text-graphite">Costo mensual: {formatUSD(metricas.costo_mensual_usd ?? 0)}</p>
           </div>
           <div className="rounded-component bg-paper px-4 py-3">
-            <p className="text-xs font-label uppercase tracking-wide text-graphite">Pipeline ponderado</p>
+            <p className="text-xs font-label text-graphite">Pipeline ponderado</p>
             <p className="mt-1 text-lg font-title text-carbon">{formatUSD(metricas.pipeline_ponderado_usd ?? 0)}</p>
             <p className="mt-1 text-sm text-graphite">
               Meta Ads: {metricas.meta_ads_disponible ? "Disponible" : "No conectada"}

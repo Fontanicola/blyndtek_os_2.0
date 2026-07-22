@@ -105,7 +105,7 @@ export function AiHubActividadClient({
 
         <div className="grid gap-3 md:grid-cols-[minmax(220px,1fr)_minmax(220px,1fr)_auto_auto]">
           <label className="space-y-2">
-            <span className="text-xs font-label uppercase tracking-widest text-graphite">Agente</span>
+            <span className="text-xs font-label text-graphite">Agente</span>
             <select
               value={agentSlug}
               onChange={(event) => setAgentSlug(event.target.value)}
@@ -121,7 +121,7 @@ export function AiHubActividadClient({
           </label>
 
           <div className="space-y-2">
-            <span className="text-xs font-label uppercase tracking-widest text-graphite">Tipo</span>
+            <span className="text-xs font-label text-graphite">Tipo</span>
             <div className="flex flex-wrap gap-2">
               {tipoOptions.map((option) => {
                 const active = types.includes(option.value);
@@ -144,12 +144,12 @@ export function AiHubActividadClient({
           </div>
 
           <label className="space-y-2">
-            <span className="text-xs font-label uppercase tracking-widest text-graphite">Desde</span>
+            <span className="text-xs font-label text-graphite">Desde</span>
             <Input type="date" value={fromDate} onChange={(event) => setFromDate(event.target.value)} />
           </label>
 
           <label className="space-y-2">
-            <span className="text-xs font-label uppercase tracking-widest text-graphite">Hasta</span>
+            <span className="text-xs font-label text-graphite">Hasta</span>
             <Input type="date" value={toDate} onChange={(event) => setToDate(event.target.value)} />
           </label>
         </div>

@@ -18,7 +18,7 @@ export function CalendarioMes({ currentDate, items, onEventClick }: CalendarioMe
 
   return (
     <div className="rounded-card bg-white p-4 shadow-card">
-      <div className="grid grid-cols-7 gap-2 border-b border-line-soft pb-3 text-xs font-label uppercase tracking-widest text-graphite">
+      <div className="grid grid-cols-7 gap-2 border-b border-line-soft pb-3 text-xs font-label text-graphite">
         {weekdayNames.map((day) => (
           <div key={day} className="px-2">
             {day}

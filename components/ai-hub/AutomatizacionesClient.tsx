@@ -197,7 +197,7 @@ export function AutomatizacionesClient({ initialAutomatizaciones }: Automatizaci
             {isEditing ? (
               <div className="grid gap-3 rounded-card border border-line-soft bg-paper/40 p-4 md:grid-cols-4">
                 <label className="space-y-2">
-                  <span className="text-xs font-label uppercase tracking-widest text-graphite">Frecuencia</span>
+                  <span className="text-xs font-label text-graphite">Frecuencia</span>
                   <select
                     value={draft.frecuencia}
                     onChange={(event) =>
@@ -221,7 +221,7 @@ export function AutomatizacionesClient({ initialAutomatizaciones }: Automatizaci
 
                 {draft.frecuencia === "semanal" ? (
                   <label className="space-y-2">
-                    <span className="text-xs font-label uppercase tracking-widest text-graphite">Día semana</span>
+                    <span className="text-xs font-label text-graphite">Día semana</span>
                     <select
                       value={draft.dia_semana ?? 1}
                       onChange={(event) =>
@@ -246,7 +246,7 @@ export function AutomatizacionesClient({ initialAutomatizaciones }: Automatizaci
 
                 {draft.frecuencia === "mensual" ? (
                   <label className="space-y-2">
-                    <span className="text-xs font-label uppercase tracking-widest text-graphite">Día mes</span>
+                    <span className="text-xs font-label text-graphite">Día mes</span>
                     <Input
                       type="number"
                       value={String(draft.dia_mes ?? 1)}
@@ -264,7 +264,7 @@ export function AutomatizacionesClient({ initialAutomatizaciones }: Automatizaci
                 ) : null}
 
                 <label className="space-y-2">
-                  <span className="text-xs font-label uppercase tracking-widest text-graphite">Hora</span>
+                  <span className="text-xs font-label text-graphite">Hora</span>
                   <Input
                     type="time"
                     value={normalizeAutomationTime(draft.hora)}

@@ -122,7 +122,7 @@ export function ComisionesTabla({ comisiones, vendedores, onMarkPagada }: Comisi
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-line-soft">
             <thead className="bg-paper">
-              <tr className="text-left text-xs font-label uppercase tracking-[0.08em] text-graphite">
+              <tr className="text-left text-xs font-label text-graphite">
                 <th className="px-4 py-3">Vendedor</th>
                 <th className="px-4 py-3">Origen</th>
                 <th className="px-4 py-3">Venta</th>

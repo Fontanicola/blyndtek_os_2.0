@@ -437,7 +437,7 @@ export function FinanzasClient({ cotizaciones, asesorFinancieroAnalisis, cierres
 
   const metricCards: MetricCardData[] = [
     {
-      label: "MRR actual",
+      label: "Ingreso recurrente actual",
       value: formatUSD(metricas?.mrr ?? 0),
       icono: <FinanzasIcon />,
       colorIcono: "signal",
@@ -452,7 +452,7 @@ export function FinanzasClient({ cotizaciones, asesorFinancieroAnalisis, cierres
           : metricas?.runway_estado === "agotado"
             ? "Caja agotada"
               : metricas?.runway_meses == null
-                ? "N/A"
+                ? "No disponible"
                 : `${metricas.runway_meses.toFixed(1)} ${metricas.runway_meses === 1 ? "mes" : "meses"}`,
       icono: <DashboardIcon />,
       colorIcono:
@@ -483,7 +483,7 @@ export function FinanzasClient({ cotizaciones, asesorFinancieroAnalisis, cierres
       direction: undefined
     },
     {
-      label: "P&L del mes",
+      label: "Resultado del mes",
       value: formatUSD(metricas?.pl_mes ?? 0),
       icono: <FinanzasIcon />,
       colorIcono: "signal",
@@ -526,7 +526,7 @@ export function FinanzasClient({ cotizaciones, asesorFinancieroAnalisis, cierres
             </Button>
           ) : null}
           <Button variant="secondary" size="sm" onClick={() => void exportPLToExcel()}>
-            Exportar P&L a Excel
+            Exportar resultado a Excel
           </Button>
           <Button variant="ghost" size="sm" onClick={() => void refreshAll()}>
             Refrescar
@@ -581,7 +581,7 @@ export function FinanzasClient({ cotizaciones, asesorFinancieroAnalisis, cierres
         <div className="flex flex-col gap-6">
           <Card padding="md" className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="text-sm font-label uppercase tracking-[0.08em] text-graphite">Mes seleccionado</p>
+              <p className="text-sm font-label text-graphite">Mes seleccionado</p>
               <h3 className="text-xl font-title text-carbon">{ingresosMonthLabel}</h3>
             </div>
             <div className="flex items-center gap-2">
@@ -633,7 +633,7 @@ export function FinanzasClient({ cotizaciones, asesorFinancieroAnalisis, cierres
         <div className="flex flex-col gap-6">
           <Card padding="md" className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="text-sm font-label uppercase tracking-[0.08em] text-graphite">Mes seleccionado</p>
+              <p className="text-sm font-label text-graphite">Mes seleccionado</p>
               <h3 className="text-xl font-title text-carbon">{egresosMonthLabel}</h3>
             </div>
             <div className="flex items-center gap-2">

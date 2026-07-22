@@ -488,7 +488,7 @@ export function PerfilClient({ usuario }: PerfilClientProps) {
 
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-1">
-              <p className="text-xs font-label uppercase tracking-[0.08em] text-graphite">Email</p>
+              <p className="text-xs font-label text-graphite">Email</p>
               <div className="rounded-component bg-paper px-3 py-2 text-sm text-carbon">
                 {profile.email}
               </div>
@@ -496,7 +496,7 @@ export function PerfilClient({ usuario }: PerfilClientProps) {
             </div>
 
             <div className="space-y-1">
-              <p className="text-xs font-label uppercase tracking-[0.08em] text-graphite">Rol</p>
+              <p className="text-xs font-label text-graphite">Rol</p>
               <Badge variant={profile.rol === "admin" ? "signal" : "default"} className="w-fit">
                 {profile.rol}
               </Badge>

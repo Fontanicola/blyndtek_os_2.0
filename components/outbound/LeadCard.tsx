@@ -186,7 +186,7 @@ export function LeadCard({
           <div className="min-w-0 space-y-1">
             {valueSnapshot.hasValue ? (
               <div className="space-y-1">
-                <p className="text-xs font-label uppercase tracking-[0.08em] text-graphite">
+                <p className="text-xs font-label text-graphite">
                   Valor del lead
                 </p>
                 <div className="flex flex-wrap items-center gap-2">
@@ -256,7 +256,7 @@ export function LeadCard({
           <div className="space-y-4 border-t border-line-soft pt-4" onClick={(event) => event.stopPropagation()}>
             {touchpoints.length > 0 ? (
               <section className="space-y-2">
-                <p className="text-xs font-label uppercase tracking-[0.08em] text-graphite">Touch points</p>
+                <p className="text-xs font-label text-graphite">Touch points</p>
                 <div className="flex flex-wrap gap-2">
                   {touchpoints.map((item) => (
                     <div
@@ -275,7 +275,7 @@ export function LeadCard({
               <p className="text-xs text-graphite">Cargando seguimiento...</p>
             ) : seguimientoTask ? (
               <section className="space-y-2">
-                <p className="text-xs font-label uppercase tracking-[0.08em] text-graphite">
+                <p className="text-xs font-label text-graphite">
                   Próximo seguimiento
                 </p>
                 <button
@@ -296,7 +296,7 @@ export function LeadCard({
 
             {lead.notas?.trim() ? (
               <section className="space-y-2">
-                <p className="text-xs font-label uppercase tracking-[0.08em] text-graphite">
+                <p className="text-xs font-label text-graphite">
                   Notas de calificación
                 </p>
                 <div className="rounded-component border border-line-soft bg-paper px-3 py-2 text-sm text-carbon">
@@ -321,7 +321,7 @@ export function LeadCard({
 
             {valueSnapshot.hasValue ? (
               <section className="space-y-2">
-                <p className="text-xs font-label uppercase tracking-[0.08em] text-graphite">Monto capturado</p>
+                <p className="text-xs font-label text-graphite">Monto capturado</p>
                 <div className="rounded-component border border-line-soft bg-paper px-3 py-2 text-sm text-carbon">
                   <p>
                     Desarrollo: <span className="font-label">{formatUSD(valueSnapshot.finalDevelopment ?? 0)}</span>

@@ -72,7 +72,7 @@ export default async function DiagnosticoPage({ params }: DiagnosticoPageProps) 
           />
 
           <div className="mt-8 space-y-3">
-            <p className="text-sm font-label uppercase tracking-[0.08em] text-graphite">
+            <p className="text-sm font-label text-graphite">
               Diagnóstico operativo
             </p>
             <h1 className="text-2xl font-title text-carbon sm:text-3xl">

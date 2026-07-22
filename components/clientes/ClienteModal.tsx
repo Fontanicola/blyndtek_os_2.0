@@ -111,7 +111,7 @@ export function ClienteModal({ isOpen, onClose, onSave, leadOptions }: ClienteMo
           onChange={(id) => setForm((current) => ({ ...current, lead_id: id }))}
         />
         <Input
-          label="CUIT"
+          label="Cuit"
           value={form.datos_facturacion?.cuit ?? ""}
           onChange={(event) =>
             setForm((current) => ({

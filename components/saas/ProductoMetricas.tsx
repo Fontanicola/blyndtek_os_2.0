@@ -37,7 +37,7 @@ export function ProductoMetricas({ metricas, loading = false }: ProductoMetricas
 
   return (
     <div className="grid gap-4 lg:grid-cols-4">
-      <MetricaCard label="MRR" value={metricas.mrr} icono={<FinanzasIcon />} colorIcono="signal" />
+      <MetricaCard label="Ingreso recurrente" value={metricas.mrr} icono={<FinanzasIcon />} colorIcono="signal" />
       <MetricaCard
         label="Suscriptores activos"
         value={`${metricas.suscriptores_activos}`}

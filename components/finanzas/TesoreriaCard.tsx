@@ -443,7 +443,7 @@ export function TesoreriaCard({
 
         <div className="grid gap-4 md:grid-cols-2">
           <Card padding="md" className="space-y-3 bg-paper">
-            <p className="text-xs font-label uppercase tracking-[0.08em] text-graphite">Balance total</p>
+            <p className="text-xs font-label text-graphite">Balance total</p>
             <p className={cn("text-3xl font-title", (data?.balance_total ?? 0) >= 0 ? "text-signal" : "text-danger")}>
               {formatUSD(data?.balance_total ?? 0)}
             </p>
@@ -451,7 +451,7 @@ export function TesoreriaCard({
           </Card>
 
           <Card padding="md" className="space-y-3">
-            <p className="text-xs font-label uppercase tracking-[0.08em] text-graphite">Caja inicial</p>
+            <p className="text-xs font-label text-graphite">Caja inicial</p>
             <div className="flex flex-wrap items-end gap-3">
               <Input
                 label="Caja inicial"

@@ -96,7 +96,7 @@ export function AiDevSection({ fase, githubRepo, onRefresh }: AiDevSectionProps)
   return (
     <Card padding="sm" className="space-y-1.5 border border-line-soft bg-paper/60">
       <div className="flex items-center justify-between gap-3">
-        <p className="text-xs font-label uppercase tracking-[0.12em] text-graphite">AI Dev</p>
+        <p className="text-xs font-label text-graphite">Desarrollo IA</p>
 
         {state === "planificando" || state === "codeando" ? (
           <span className="inline-flex items-center gap-2 rounded-pill border border-line-soft bg-white px-3 py-1 text-xs font-label text-carbon shadow-soft">
@@ -141,7 +141,7 @@ export function AiDevSection({ fase, githubRepo, onRefresh }: AiDevSectionProps)
           {showSql ? (
             <div className="space-y-2 rounded-component border border-line-soft bg-white p-3">
               <div className="flex items-center justify-between gap-2">
-                <p className="text-xs font-label uppercase tracking-[0.08em] text-graphite">SQL pendiente</p>
+                <p className="text-xs font-label text-graphite">Cambios SQL pendientes</p>
                 <Button type="button" variant="ghost" size="sm" onClick={() => void copySql()}>
                   <CopyIcon />
                   {copied ? "Copiado" : "Copiar"}

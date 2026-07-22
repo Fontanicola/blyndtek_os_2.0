@@ -58,7 +58,7 @@ export function RoadmapHeader({ roadmap }: RoadmapHeaderProps) {
         </div>
 
         <div className="min-w-[180px] rounded-card bg-paper px-5 py-4">
-          <p className="text-xs font-label uppercase tracking-[0.08em] text-graphite">Avance</p>
+          <p className="text-xs font-label text-graphite">Avance</p>
           <p className="mt-2 text-3xl font-title text-carbon">{roadmap.avance_pct}%</p>
         </div>
       </div>

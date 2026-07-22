@@ -50,13 +50,13 @@ export function CapacidadEntrega({ activos, capacidadMaxima }: CapacidadEntregaP
       <div className="rounded-card border border-line-soft bg-paper p-4">
         <div className="flex items-end justify-between gap-4">
           <div>
-            <p className="text-xs font-label uppercase tracking-[0.08em] text-graphite">Ocupación</p>
+            <p className="text-xs font-label text-graphite">Ocupación</p>
             <p className="text-3xl font-title text-carbon">
               {activos}/{capacidadMaxima}
             </p>
           </div>
           <div className="text-right">
-            <p className="text-xs font-label uppercase tracking-[0.08em] text-graphite">Carga actual</p>
+            <p className="text-xs font-label text-graphite">Carga actual</p>
             <p className="text-lg font-title text-carbon">{Math.round(ratio)}%</p>
           </div>
         </div>

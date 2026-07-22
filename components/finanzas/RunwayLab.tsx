@@ -630,7 +630,7 @@ export function RunwayLab({
 
             <div className="space-y-4">
               <div>
-                <p className="mb-2 text-xs font-label uppercase tracking-[0.08em] text-graphite">Meses a afectar</p>
+                <p className="mb-2 text-xs font-label text-graphite">Meses a afectar</p>
                 <div className="flex flex-wrap gap-2">
                   {monthOptions.map((option) => {
                     const isSelected = selectedMonths.includes(option.value);

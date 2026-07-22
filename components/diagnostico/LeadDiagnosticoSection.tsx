@@ -216,7 +216,7 @@ export function LeadDiagnosticoSection({ lead }: LeadDiagnosticoSectionProps) {
       ) : diagnostico.estado === "pendiente" ? (
         <div className="space-y-3">
           <div className="rounded-component border border-line-soft bg-paper px-4 py-3">
-            <p className="text-xs font-label uppercase tracking-[0.08em] text-graphite">Link público</p>
+            <p className="text-xs font-label text-graphite">Link público</p>
             <div className="mt-2 flex flex-wrap items-center gap-2">
               <a
                 href={publicPath ?? "#"}

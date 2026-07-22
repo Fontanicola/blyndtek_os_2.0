@@ -147,7 +147,7 @@ export default function MarketingPage() {
         {!error && !loading && attributionRows.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="min-w-[980px] w-full border-collapse text-left">
-              <thead className="bg-paper text-xs font-label uppercase tracking-[0.12em] text-graphite">
+              <thead className="bg-paper text-xs font-label text-graphite">
                 <tr>
                   <th className="px-6 py-4">Canal</th>
                   <th className="px-6 py-4">Campaña</th>

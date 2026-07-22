@@ -10,6 +10,74 @@ Estado general actual: Fase 0 completa. Cimientos técnicos listos: documentaci�
 
 ## Actualización 2026-07-22
 
+- Se eliminó el uso de texto en mayúsculas de la interfaz en toda la app, tanto por clase Tailwind (`uppercase`) como en varios labels visibles que dependían de ese tratamiento.
+- Archivos modificados en esta unidad: `46`.
+- Archivos modificados:
+  - `app/(app)/equipo-comercial/page.tsx`
+  - `app/(app)/marketing/page.tsx`
+  - `app/diagnostico/[token]/informe/page.tsx`
+  - `app/diagnostico/[token]/page.tsx`
+  - `components/agentes/AgentesClient.tsx`
+  - `components/ai-hub/AiHubActividadClient.tsx`
+  - `components/ai-hub/AutomatizacionesClient.tsx`
+  - `components/archivos/ArchivosClient.tsx`
+  - `components/calendario/CalendarioMes.tsx`
+  - `components/calendario/CalendarioSemana.tsx`
+  - `components/clientes/ClienteFicha.tsx`
+  - `components/clientes/ClienteModal.tsx`
+  - `components/contenido/PlanSemanalView.tsx`
+  - `components/dashboard/CapacidadEntrega.tsx`
+  - `components/dashboard/DashboardClient.tsx`
+  - `components/dashboard/MetricaGrande.tsx`
+  - `components/diagnostico/LeadDiagnosticoSection.tsx`
+  - `components/diagnostico/ModulosCatalogoClient.tsx`
+  - `components/finanzas/AsesorFinancieroTab.tsx`
+  - `components/finanzas/CajaDetalleModal.tsx`
+  - `components/finanzas/CobrosTabla.tsx`
+  - `components/finanzas/ComisionesTabla.tsx`
+  - `components/finanzas/EgresosTabla.tsx`
+  - `components/finanzas/FinanzasClient.tsx`
+  - `components/finanzas/MetricaCard.tsx`
+  - `components/finanzas/PresupuestoTab.tsx`
+  - `components/finanzas/RunwayLab.tsx`
+  - `components/finanzas/TarjetasSeccion.tsx`
+  - `components/finanzas/TesoreriaCard.tsx`
+  - `components/inbound/InboundFicha.tsx`
+  - `components/leads/LeadEtapaModal.tsx`
+  - `components/leads/LeadNegociacionesSection.tsx`
+  - `components/mi-panel/MiPanelClient.tsx`
+  - `components/notas/NotasSidebar.tsx`
+  - `components/outbound/LeadCard.tsx`
+  - `components/perfil/PerfilClient.tsx`
+  - `components/proyectos/ProyectoFicha.tsx`
+  - `components/proyectos/features-kanban/AiDevSection.tsx`
+  - `components/proyectos/lab/FaseColumn.tsx`
+  - `components/roadmap/CredencialesGate.tsx`
+  - `components/roadmap/ResumenPagos.tsx`
+  - `components/roadmap/RoadmapHeader.tsx`
+  - `components/roadmap/SistemaEnVivo.tsx`
+  - `components/saas/ProductoMetricas.tsx`
+  - `components/wiki/WikiEditor.tsx`
+  - `components/wiki/WikiSidebar.tsx`
+  - `docs/DESIGN_SYSTEM.md`
+  - `docs/PROGRESS.md`
+- Cambios aplicados:
+  - se eliminaron todas las clases `uppercase` de `app/`, `components/` y `lib/`;
+  - los labels que usaban mayúsculas como recurso visual quedaron apoyados en `text-xs`, `font-label` y `text-graphite`, sin transformación de texto;
+  - se corrigieron varios textos visibles hardcodeados para dejarlos en capitalización normal, por ejemplo:
+    - `CUIT` → `Cuit`
+    - `CTA` → `Cierre`
+    - `MRR actual` → `Ingreso recurrente actual`
+    - `MRR` → `Ingreso recurrente`
+    - `P&L del mes` → `Resultado del mes`
+    - `Exportar P&L a Excel` → `Exportar resultado a Excel`
+    - `MM/AA` → `mm/aa`
+    - `AI Dev` → `Desarrollo IA`
+    - `SQL pendiente` → `Cambios SQL pendientes`
+- Verificación final:
+  - grep ejecutado: `rg -n "\\buppercase\\b" app components lib`
+  - resultado: `0` coincidencias activas en JSX/TSX/CSS de `app/`, `components/` y `lib/`.
+
 - Se creó `docs/DESIGN_SYSTEM.md` como documento canónico único del sistema de diseño de Blyndtek OS.
 - El nuevo documento consolida el estado visual vigente del código y reemplaza como referencia operativa las decisiones sueltas de UI que estaban dispersas en `docs/DECISIONS.md`, sin borrar esa bitácora histórica.
 - Quedaron cubiertas y unificadas 17 áreas:

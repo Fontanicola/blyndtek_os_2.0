@@ -79,7 +79,7 @@ export function WikiEditor({
             />
 
             <div className="space-y-1">
-              <label className="block text-xs font-label uppercase tracking-[0.16em] text-graphite">Categoría</label>
+              <label className="block text-xs font-label text-graphite">Categoría</label>
               <select
                 value={articulo.categoria_id ?? ""}
                 onChange={(event) => {

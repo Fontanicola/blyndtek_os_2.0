@@ -21,7 +21,7 @@ function CredentialValue({ label, value }: { label: string; value: string | null
     <div className="rounded-card border border-line-soft bg-white p-3">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-xs font-label uppercase tracking-[0.08em] text-graphite">{label}</p>
+          <p className="text-xs font-label text-graphite">{label}</p>
           <p className="mt-1 break-words text-sm text-carbon">{value ?? "Sin dato"}</p>
         </div>
         <Button variant="ghost" size="sm" onClick={() => void copyValue()} disabled={!value}>
@@ -72,7 +72,7 @@ export function CredencialesGate({ slug }: CredencialesGateProps) {
     return (
       <Card padding="lg" className="space-y-3 border border-line-soft">
         <div className="space-y-1">
-          <p className="text-xs font-label uppercase tracking-[0.16em] text-graphite">Acceso restringido</p>
+          <p className="text-xs font-label text-graphite">Acceso restringido</p>
           <h2 className="text-xl font-title text-carbon">Credenciales del cliente</h2>
         </div>
         <p className="text-sm text-graphite">
@@ -88,7 +88,7 @@ export function CredencialesGate({ slug }: CredencialesGateProps) {
   return (
     <Card padding="lg" className="space-y-4 border border-line-soft">
       <div className="space-y-1">
-        <p className="text-xs font-label uppercase tracking-[0.16em] text-graphite">Acceso restringido</p>
+        <p className="text-xs font-label text-graphite">Acceso restringido</p>
         <h2 className="text-xl font-title text-carbon">Credenciales del cliente</h2>
       </div>
 
@@ -123,7 +123,7 @@ export function CredencialesGate({ slug }: CredencialesGateProps) {
           <CredentialValue label="Usuario" value={credenciales.usuario} />
           <CredentialValue label="Contraseña" value={credenciales.contraseña} />
           <div className="rounded-card border border-line-soft bg-paper p-3">
-            <p className="text-xs font-label uppercase tracking-[0.08em] text-graphite">Notas</p>
+            <p className="text-xs font-label text-graphite">Notas</p>
             <p className="mt-1 whitespace-pre-wrap text-sm text-carbon">{credenciales.notas ?? "Sin notas"}</p>
           </div>
           <div className="flex justify-end">

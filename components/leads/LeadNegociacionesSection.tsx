@@ -78,7 +78,7 @@ export function LeadNegociacionesSection({ lead }: LeadNegociacionesSectionProps
 
     return (
       <Card padding="md" className="space-y-2">
-        <p className="text-xs font-label uppercase tracking-[0.08em] text-graphite">
+        <p className="text-xs font-label text-graphite">
           Monto propuesto original
         </p>
         <div className="text-sm text-carbon">
@@ -95,7 +95,7 @@ export function LeadNegociacionesSection({ lead }: LeadNegociacionesSectionProps
       <div className="space-y-3">
         {hasProposal ? (
           <Card padding="md" className="space-y-2">
-            <p className="text-xs font-label uppercase tracking-[0.08em] text-graphite">
+            <p className="text-xs font-label text-graphite">
               Monto propuesto original
             </p>
             <div className="text-sm text-carbon">

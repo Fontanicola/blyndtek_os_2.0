@@ -165,7 +165,7 @@ function InlineText({
 
   return (
     <div>
-      <p className="mb-1 text-xs font-label uppercase tracking-[0.08em] text-graphite">{label}</p>
+      <p className="mb-1 text-xs font-label text-graphite">{label}</p>
       {editing ? (
         multiline ? (
           <textarea
@@ -1234,7 +1234,7 @@ export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
             <section className="space-y-3">
               <h3 className="text-sm font-title text-carbon">Datos de facturación</h3>
               <InlineText
-                label="CUIT"
+                label="Cuit"
                 value={cliente.datos_facturacion?.cuit ?? null}
                 onSave={(value) => updateFacturacion("cuit", value)}
               />
@@ -1272,7 +1272,7 @@ export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
           />
 
           <div className="space-y-2 pt-2">
-            <p className="text-xs font-label uppercase tracking-[0.08em] text-graphite">Estado</p>
+            <p className="text-xs font-label text-graphite">Estado</p>
               <select
                 value={cliente.estado}
                 onChange={(event) => void onUpdate({ estado: event.target.value as EstadoCliente })}
@@ -1316,11 +1316,11 @@ export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
             <div className="space-y-5">
               <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
                 <Card padding="md" className="space-y-1">
-                  <p className="text-xs uppercase tracking-[0.08em] text-graphite">Valor total</p>
+                  <p className="text-xs font-label text-graphite">Valor total</p>
                   <p className="text-lg font-title text-carbon">{formatUSD(contratoActivo.valor_total)}</p>
                 </Card>
                 <Card padding="md" className="space-y-1">
-                  <p className="text-xs uppercase tracking-[0.08em] text-graphite">Diagnóstico descontado</p>
+                  <p className="text-xs font-label text-graphite">Diagnóstico descontado</p>
                   <p className="text-lg font-title text-carbon">
                     {formatUSD(contratoActivo.descuento_diagnostico_usd ?? 0)}
                   </p>
@@ -1329,7 +1329,7 @@ export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
                   </p>
                 </Card>
                 <Card padding="md" className="space-y-1">
-                  <p className="text-xs uppercase tracking-[0.08em] text-graphite">Adelanto</p>
+                  <p className="text-xs font-label text-graphite">Adelanto</p>
                   <p className="text-lg font-title text-carbon">
                     {formatUSD(contratoAdelantoMonto)} ({contratoActivo.adelanto_pct}%)
                   </p>
@@ -1338,7 +1338,7 @@ export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
                   </p>
                 </Card>
                 <Card padding="md" className="space-y-1">
-                  <p className="text-xs uppercase tracking-[0.08em] text-graphite">Cuotas</p>
+                  <p className="text-xs font-label text-graphite">Cuotas</p>
                   <p className="text-lg font-title text-carbon">
                     {contratoActivo.cantidad_cuotas} de {formatUSD(contratoCuotaBaseMonto)} cada una
                   </p>
@@ -1347,7 +1347,7 @@ export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
                   </p>
                 </Card>
                 <Card padding="md" className="space-y-1">
-                  <p className="text-xs uppercase tracking-[0.08em] text-graphite">Mantenimiento</p>
+                  <p className="text-xs font-label text-graphite">Mantenimiento</p>
                   <p className="text-lg font-title text-carbon">
                     {contratoActivo.valor_mantenimiento_mensual != null
                       ? formatUSD(contratoActivo.valor_mantenimiento_mensual)
@@ -1362,7 +1362,7 @@ export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
               </div>
 
               <div className="space-y-2">
-                <div className="flex items-center justify-between gap-3 text-xs font-label uppercase tracking-[0.08em] text-graphite">
+                <div className="flex items-center justify-between gap-3 text-xs font-label text-graphite">
                   <span>Avance del plan</span>
                   <span>{contratoProgresoPct}%</span>
                 </div>
@@ -1423,15 +1423,15 @@ export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
             <div className="space-y-4">
               <div className="grid gap-3 md:grid-cols-3">
                 <Card padding="md" className="space-y-1">
-                  <p className="text-xs uppercase tracking-[0.08em] text-graphite">Cobrado</p>
+                  <p className="text-xs font-label text-graphite">Cobrado</p>
                   <p className="text-lg font-title text-carbon">{formatUSD(cobrosResumen.cobrado)}</p>
                 </Card>
                 <Card padding="md" className="space-y-1">
-                  <p className="text-xs uppercase tracking-[0.08em] text-graphite">Pendiente</p>
+                  <p className="text-xs font-label text-graphite">Pendiente</p>
                   <p className="text-lg font-title text-carbon">{formatUSD(cobrosResumen.pendiente)}</p>
                 </Card>
                 <Card padding="md" className="space-y-1">
-                  <p className="text-xs uppercase tracking-[0.08em] text-graphite">Vencido</p>
+                  <p className="text-xs font-label text-graphite">Vencido</p>
                   <p className="text-lg font-title text-carbon">{formatUSD(cobrosResumen.vencido)}</p>
                 </Card>
               </div>
@@ -1439,7 +1439,7 @@ export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
               <div className="overflow-hidden rounded-card border border-line-soft">
                 <div className="overflow-x-auto">
                   <div className="min-w-[1080px]">
-                    <div className="grid grid-cols-[minmax(280px,1.7fr)_92px_170px_170px_130px_140px_190px] gap-3 border-b border-line-soft bg-paper px-4 py-3 text-xs font-label uppercase tracking-[0.08em] text-graphite">
+                    <div className="grid grid-cols-[minmax(280px,1.7fr)_92px_170px_170px_130px_140px_190px] gap-3 border-b border-line-soft bg-paper px-4 py-3 text-xs font-label text-graphite">
                       <span>Concepto</span>
                       <span>Tipo</span>
                       <span>Emisión</span>
@@ -1603,7 +1603,7 @@ export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
 
             {costosCargados ? (
               <div className="overflow-hidden rounded-card border border-line-soft">
-                <div className="grid grid-cols-[minmax(0,2fr)_auto_auto_auto_auto] gap-3 border-b border-line-soft bg-paper px-4 py-3 text-xs font-label uppercase tracking-[0.08em] text-graphite">
+                <div className="grid grid-cols-[minmax(0,2fr)_auto_auto_auto_auto] gap-3 border-b border-line-soft bg-paper px-4 py-3 text-xs font-label text-graphite">
                   <span>Concepto</span>
                   <span>Categoría</span>
                   <span>Monto</span>
@@ -1640,38 +1640,38 @@ export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
             <div className="space-y-4">
               <div className="grid gap-4 md:grid-cols-2">
                 <Card padding="md" className="space-y-1">
-                  <p className="text-xs uppercase tracking-[0.08em] text-graphite">Producto / plan</p>
+                  <p className="text-xs font-label text-graphite">Producto / plan</p>
                   <p className="text-sm font-label text-carbon">
                     {suscripcionProducto?.nombre ?? (suscripcion.producto_id ? "Producto SaaS" : "Sin producto")}
                     {suscripcion.producto_id ? ` · ${suscripcionPlan?.nombre ?? "Personalizado"}` : ""}
                   </p>
                 </Card>
                 <Card padding="md" className="space-y-1">
-                  <p className="text-xs uppercase tracking-[0.08em] text-graphite">Tipo</p>
+                  <p className="text-xs font-label text-graphite">Tipo</p>
                   <p className="text-sm font-label text-carbon">{suscripcion.tipo}</p>
                 </Card>
                 <Card padding="md" className="space-y-1">
-                  <p className="text-xs uppercase tracking-[0.08em] text-graphite">Monto mensual</p>
+                  <p className="text-xs font-label text-graphite">Monto mensual</p>
                   <p className="text-sm font-label text-carbon">{formatUSD(suscripcion.monto_mensual)}</p>
                 </Card>
                 <Card padding="md" className="space-y-1">
-                  <p className="text-xs uppercase tracking-[0.08em] text-graphite">Ciclo</p>
+                  <p className="text-xs font-label text-graphite">Ciclo</p>
                   <p className="text-sm font-label text-carbon">{suscripcion.ciclo}</p>
                 </Card>
                 <Card padding="md" className="space-y-1">
-                  <p className="text-xs uppercase tracking-[0.08em] text-graphite">Estado</p>
+                  <p className="text-xs font-label text-graphite">Estado</p>
                   <div>
                     <SuscripcionBadge estado={suscripcion.estado} />
                   </div>
                 </Card>
                 <Card padding="md" className="space-y-1">
-                  <p className="text-xs uppercase tracking-[0.08em] text-graphite">Fecha de inicio</p>
+                  <p className="text-xs font-label text-graphite">Fecha de inicio</p>
                   <p className="text-sm font-label text-carbon">
                     {suscripcion.fecha_inicio ? formatFecha(suscripcion.fecha_inicio) : "Sin fecha"}
                   </p>
                 </Card>
                 <Card padding="md" className="space-y-1">
-                  <p className="text-xs uppercase tracking-[0.08em] text-graphite">Próxima cobro</p>
+                  <p className="text-xs font-label text-graphite">Próximo cobro</p>
                   <p className="text-sm font-label text-carbon">
                     {suscripcion.proxima_cobro ? formatFecha(suscripcion.proxima_cobro) : "Sin fecha"}
                   </p>
@@ -1770,7 +1770,7 @@ export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
               </div>
 
               <Card padding="md" className="space-y-2 border border-line-soft bg-paper">
-                <p className="text-xs font-label uppercase tracking-[0.08em] text-graphite">Resumen</p>
+                <p className="text-xs font-label text-graphite">Resumen</p>
                 <p className="text-sm text-carbon">
                   {formSelectedProducto ? formSelectedProducto.nombre : "Sin producto"}{" "}
                   {formSelectedPlan ? `· ${formSelectedPlan.nombre}` : "· Personalizado"}

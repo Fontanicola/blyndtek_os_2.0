@@ -146,7 +146,7 @@ export default async function DiagnosticoInformePage({ params }: InformePageProp
 
           <div className="mt-10 grid gap-6 lg:grid-cols-[1.2fr_0.8fr] lg:items-end">
             <div>
-              <p className="text-sm font-label uppercase tracking-[0.08em] text-graphite">
+              <p className="text-sm font-label text-graphite">
                 Informe de diagnóstico
               </p>
               <h1 className="mt-3 text-3xl font-title text-carbon sm:text-4xl">
@@ -173,7 +173,7 @@ export default async function DiagnosticoInformePage({ params }: InformePageProp
 
         <section className="rounded-card border border-line-soft bg-white p-6 sm:p-8">
           <div className="max-w-2xl">
-            <p className="text-sm font-label uppercase tracking-[0.08em] text-graphite">
+            <p className="text-sm font-label text-graphite">
               Lo que encontramos
             </p>
             <h2 className="mt-2 text-2xl font-title text-carbon">Hallazgos principales</h2>
@@ -182,7 +182,7 @@ export default async function DiagnosticoInformePage({ params }: InformePageProp
           <div className="mt-6 grid gap-4 md:grid-cols-2">
             {hallazgos.map((hallazgo, index) => (
               <article key={`${hallazgo.hallazgo}-${index}`} className="rounded-card border border-line-soft p-5">
-                <p className="text-xs font-label uppercase tracking-[0.08em] text-graphite">
+                <p className="text-xs font-label text-graphite">
                   Hallazgo {index + 1}
                 </p>
                 <h3 className="mt-3 text-lg font-title text-carbon">{hallazgo.hallazgo}</h3>
@@ -197,7 +197,7 @@ export default async function DiagnosticoInformePage({ params }: InformePageProp
 
         <section className="rounded-card border border-line-soft bg-white p-6 sm:p-8">
           <div className="max-w-2xl">
-            <p className="text-sm font-label uppercase tracking-[0.08em] text-graphite">
+            <p className="text-sm font-label text-graphite">
               Nuestra propuesta
             </p>
             <h2 className="mt-2 text-2xl font-title text-carbon">Módulos sugeridos</h2>

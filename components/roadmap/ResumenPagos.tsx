@@ -45,7 +45,7 @@ export function ResumenPagos({ pagos }: ResumenPagosProps) {
     <div className="space-y-5 rounded-card bg-white p-6 shadow-card">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-xs font-label uppercase tracking-[0.16em] text-graphite">Resumen de pagos</p>
+          <p className="text-xs font-label text-graphite">Resumen de pagos</p>
           <h2 className="mt-1 text-xl font-title text-carbon">Contrato y hitos</h2>
         </div>
         <Badge variant={progress >= 100 ? "success" : "signal"}>{progress}% cobrado</Badge>
@@ -53,19 +53,19 @@ export function ResumenPagos({ pagos }: ResumenPagosProps) {
 
       <div className="grid gap-3 sm:grid-cols-3">
         <div className="rounded-card bg-paper p-4">
-          <p className="text-xs font-label uppercase tracking-[0.08em] text-graphite">Total contrato</p>
+          <p className="text-xs font-label text-graphite">Total contrato</p>
           <p className="mt-2 text-2xl font-title text-carbon">
             USD {pagos.total_contrato.toLocaleString()}
           </p>
         </div>
         <div className="rounded-card bg-paper p-4">
-          <p className="text-xs font-label uppercase tracking-[0.08em] text-graphite">Pagado</p>
+          <p className="text-xs font-label text-graphite">Pagado</p>
           <p className="mt-2 text-2xl font-title text-carbon">
             USD {pagos.total_pagado.toLocaleString()}
           </p>
         </div>
         <div className="rounded-card bg-paper p-4">
-          <p className="text-xs font-label uppercase tracking-[0.08em] text-graphite">Pendiente</p>
+          <p className="text-xs font-label text-graphite">Pendiente</p>
           <p className="mt-2 text-2xl font-title text-carbon">
             USD {pagos.total_pendiente.toLocaleString()}
           </p>

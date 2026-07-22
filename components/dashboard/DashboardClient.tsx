@@ -184,7 +184,7 @@ export function DashboardClient() {
 
     return [
       {
-        label: "MRR actual",
+        label: "Ingreso recurrente actual",
         value: fin.mrr_actual,
         icono: <FinanzasIcon />,
         colorIcono: "signal",
@@ -217,7 +217,7 @@ export function DashboardClient() {
         colorIcono: "danger"
       },
       {
-        label: "P&L del mes",
+        label: "Resultado del mes",
         value: fin.pl_mes_actual,
         icono: <FinanzasIcon />,
         colorIcono: "signal",

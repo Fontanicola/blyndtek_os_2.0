@@ -265,7 +265,7 @@ export function FaseColumn({
         {isEditingHeader ? (
           <div className="space-y-3 rounded-card border border-line-soft bg-paper p-3">
             <div className="space-y-1">
-              <p className="text-xs font-label uppercase tracking-[0.08em] text-graphite">Descripción</p>
+              <p className="text-xs font-label text-graphite">Descripción</p>
               <textarea
                 value={draftDescripcion}
                 onChange={(event) => setDraftDescripcion(event.target.value)}

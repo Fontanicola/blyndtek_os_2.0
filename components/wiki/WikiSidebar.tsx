@@ -39,7 +39,7 @@ export function WikiSidebar({
       <div className="min-h-0 flex-1 space-y-5 overflow-y-auto p-4">
         <section className="space-y-3">
           <div className="flex items-center justify-between gap-3">
-            <h3 className="text-xs font-label uppercase tracking-[0.16em] text-graphite">Categorías</h3>
+            <h3 className="text-xs font-label text-graphite">Categorías</h3>
             <Button variant="secondary" size="sm" onClick={onCreateCategory}>
               + Categoría
             </Button>
