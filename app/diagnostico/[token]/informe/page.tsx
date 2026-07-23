@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import { notFound } from "next/navigation";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { DownloadIcon } from "@/components/ui/icons";
+import { fetchDiagnosticoInforme, formatInformeCurrency } from "@/lib/diagnostico/informe";
 
 type InformePageProps = {
   params: {
@@ -9,123 +10,22 @@ type InformePageProps = {
   };
 };
 
-type DiagnosticoInformeRecord = {
-  id: string;
-  token_publico: string;
-  informe_hallazgos: unknown;
-  modulos_sugeridos: unknown;
-  precio_ideal_desarrollo: number | null;
-  precio_ideal_mensual: number | null;
-  estado: string;
-  lead?: {
-    empresa: string;
-    contacto_1_nombre: string | null;
-  } | null;
-};
-
-type HallazgoInforme = {
-  hallazgo: string;
-  impacto: string;
-  que_resolveria: string;
-};
-
-type ModuloInforme = {
-  nombre: string;
-  descripcion: string | null;
-  justificacion: string;
-};
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
-}
-
-function parseHallazgos(value: unknown): HallazgoInforme[] {
-  if (!Array.isArray(value)) {
-    return [];
-  }
-
-  return value.flatMap((item) => {
-    if (!isRecord(item)) {
-      return [];
-    }
-
-    const hallazgo = typeof item.hallazgo === "string" ? item.hallazgo : "";
-    const impacto = typeof item.impacto === "string" ? item.impacto : "";
-    const queResolveria = typeof item.que_resolveria === "string" ? item.que_resolveria : "";
-
-    if (!hallazgo || !impacto || !queResolveria) {
-      return [];
-    }
-
-    return [{ hallazgo, impacto, que_resolveria: queResolveria }];
-  });
-}
-
-function parseModulos(value: unknown): ModuloInforme[] {
-  if (!Array.isArray(value)) {
-    return [];
-  }
-
-  return value.flatMap((item) => {
-    if (!isRecord(item)) {
-      return [];
-    }
-
-    const nombre = typeof item.nombre === "string" ? item.nombre : "";
-    const descripcion = typeof item.descripcion === "string" ? item.descripcion : null;
-    const justificacion = typeof item.justificacion === "string" ? item.justificacion : "";
-
-    if (!nombre) {
-      return [];
-    }
-
-    return [{ nombre, descripcion, justificacion }];
-  });
-}
-
-function formatCurrency(value: number | null) {
-  return `$${Number(value ?? 0).toLocaleString("en-US", {
-    maximumFractionDigits: 0
-  })} USD`;
-}
-
-async function fetchInforme(token: string) {
-  const supabase = createAdminClient();
-  const { data, error } = await supabase
-    .from("diagnosticos")
-    .select("id, token_publico, informe_hallazgos, modulos_sugeridos, precio_ideal_desarrollo, precio_ideal_mensual, estado, lead:leads(empresa, contacto_1_nombre)")
-    .eq("token_publico", token)
-    .maybeSingle<DiagnosticoInformeRecord>();
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  if (!data || data.estado !== "informe_generado") {
-    return null;
-  }
-
-  return data;
-}
-
 export async function generateMetadata({ params }: InformePageProps): Promise<Metadata> {
-  const informe = await fetchInforme(params.token).catch(() => null);
+  const informe = await fetchDiagnosticoInforme(params.token).catch(() => null);
 
   return {
-    title: informe ? `Informe diagnóstico · ${informe.lead?.empresa ?? "Blyndtek"}` : "Informe no disponible"
+    title: informe ? `Informe diagnóstico · ${informe.empresa}` : "Informe no disponible"
   };
 }
 
 export default async function DiagnosticoInformePage({ params }: InformePageProps) {
-  const informe = await fetchInforme(params.token);
+  const informe = await fetchDiagnosticoInforme(params.token);
 
   if (!informe) {
     notFound();
   }
 
-  const hallazgos = parseHallazgos(informe.informe_hallazgos);
-  const modulos = parseModulos(informe.modulos_sugeridos);
-  const empresa = informe.lead?.empresa ?? "tu operación";
+  const { empresa, hallazgos, modulos } = informe;
   const whatsappText = encodeURIComponent(
     `Hola Blyndtek, revisé la propuesta para ${empresa} y quiero avanzar con el próximo paso.`
   );
@@ -133,18 +33,29 @@ export default async function DiagnosticoInformePage({ params }: InformePageProp
   return (
     <main className="min-h-screen bg-paper px-4 py-6 sm:px-6 sm:py-10">
       <div className="mx-auto max-w-5xl space-y-6">
-        <header className="rounded-card border border-line-soft bg-white p-6 sm:p-8">
-          <Image
-            src="/Logo_Blyndtek_plataforma_negro.svg"
-            alt="Blyndtek"
-            width={148}
-            height={32}
-            className="object-contain"
-            style={{ width: "auto", height: "32px" }}
-            priority
-          />
+        <header className="overflow-hidden rounded-card border border-line-soft bg-white">
+          <div className="border-b border-line-soft bg-white px-6 py-5 sm:px-8">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <Image
+                src="/Logo_Blyndtek_plataforma_negro.svg"
+                alt="Blyndtek"
+                width={148}
+                height={32}
+                className="object-contain"
+                style={{ width: "auto", height: "32px" }}
+                priority
+              />
+              <a
+                href={`/api/diagnostico/${params.token}/informe/pdf`}
+                className="inline-flex items-center justify-center gap-2 rounded-component border border-line bg-white px-4 py-2 text-sm font-label text-carbon transition-colors duration-fast hover:bg-paper"
+              >
+                <DownloadIcon size={16} aria-hidden="true" />
+                Descargar PDF
+              </a>
+            </div>
+          </div>
 
-          <div className="mt-10 grid gap-6 lg:grid-cols-[1.2fr_0.8fr] lg:items-end">
+          <div className="grid gap-6 p-6 sm:p-8 lg:grid-cols-[1.2fr_0.8fr] lg:items-end">
             <div>
               <p className="text-sm font-label text-graphite">
                 Informe de diagnóstico
@@ -153,23 +64,38 @@ export default async function DiagnosticoInformePage({ params }: InformePageProp
                 Propuesta de sistema para {empresa}
               </h1>
               <p className="mt-4 max-w-2xl text-sm leading-6 text-graphite">
-                A partir de las respuestas del diagnóstico, armamos una lectura concreta de los puntos de fricción y una propuesta de módulos para ordenar la operación.
+                A partir de las respuestas del diagnóstico, armamos una lectura concreta de los puntos de fricción, los módulos recomendados y la inversión estimada para ordenar la operación.
               </p>
             </div>
 
             <div className="rounded-card border border-signal/20 bg-signal-light p-5">
               <p className="text-sm font-label text-signal">Inversión estimada</p>
               <p className="mt-2 text-3xl font-title text-carbon">
-                {formatCurrency(informe.precio_ideal_desarrollo)}
+                {formatInformeCurrency(informe.precio_ideal_desarrollo)}
               </p>
-              {Number(informe.precio_ideal_mensual ?? 0) > 0 ? (
+              {informe.precio_ideal_mensual > 0 ? (
                 <p className="mt-2 text-sm text-graphite">
-                  + {formatCurrency(informe.precio_ideal_mensual)} mensuales
+                  + {formatInformeCurrency(informe.precio_ideal_mensual)} mensuales
                 </p>
               ) : null}
             </div>
           </div>
         </header>
+
+        <section className="grid gap-4 md:grid-cols-3">
+          <div className="rounded-card border border-line-soft bg-white p-5">
+            <p className="text-sm font-label text-graphite">Hallazgos detectados</p>
+            <p className="mt-2 text-3xl font-title text-carbon">{hallazgos.length}</p>
+          </div>
+          <div className="rounded-card border border-line-soft bg-white p-5">
+            <p className="text-sm font-label text-graphite">Módulos propuestos</p>
+            <p className="mt-2 text-3xl font-title text-carbon">{modulos.length}</p>
+          </div>
+          <div className="rounded-card border border-line-soft bg-white p-5">
+            <p className="text-sm font-label text-graphite">Modalidad</p>
+            <p className="mt-2 text-lg font-title text-carbon">Sistema a medida</p>
+          </div>
+        </section>
 
         <section className="rounded-card border border-line-soft bg-white p-6 sm:p-8">
           <div className="max-w-2xl">
@@ -209,7 +135,14 @@ export default async function DiagnosticoInformePage({ params }: InformePageProp
           <div className="mt-6 divide-y divide-line-soft rounded-card border border-line-soft">
             {modulos.map((modulo) => (
               <article key={modulo.nombre} className="p-5">
-                <h3 className="text-lg font-title text-carbon">{modulo.nombre}</h3>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h3 className="text-lg font-title text-carbon">{modulo.nombre}</h3>
+                  {modulo.categoria ? (
+                    <span className="rounded-pill bg-paper px-2 py-1 text-xs font-label text-graphite">
+                      {modulo.categoria}
+                    </span>
+                  ) : null}
+                </div>
                 {modulo.descripcion ? (
                   <p className="mt-2 text-sm leading-6 text-graphite">{modulo.descripcion}</p>
                 ) : null}
@@ -239,6 +172,10 @@ export default async function DiagnosticoInformePage({ params }: InformePageProp
             </a>
           </div>
         </section>
+
+        <p className="text-center text-xs text-graphite">
+          Propuesta generada por Blyndtek OS a partir del diagnóstico operativo completado por el cliente.
+        </p>
       </div>
     </main>
   );

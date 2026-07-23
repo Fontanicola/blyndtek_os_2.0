@@ -8,6 +8,32 @@ Fecha de inicio: 2026-06-25
 
 Estado general actual: Fase 0 completa. Cimientos técnicos listos: documentación fundacional, setup del repo, design system, shell de app y sistema de autenticación base. Las fases 1, 2 y 3 del roadmap original quedaron completadas.
 
+## Actualización 2026-07-23
+
+- Se corrigió el flujo de `Generar informe y propuesta` del diagnóstico comercial:
+  - causa real confirmada contra Supabase: el diagnóstico de prueba tenía 14 respuestas cargadas, pero `modulos_catalogo` tenía 0 módulos activos y 0 módulos totales; por eso el endpoint devolvía `400` antes de llamar correctamente a la IA/propuesta;
+  - se creó la migración idempotente `019_seed_modulos_catalogo_defaults.sql` con 8 módulos base y precios de referencia;
+  - se aplicó el seed en la base real: `8` módulos insertados, `8` activos;
+  - `POST /api/diagnostico/[token]/generar-informe` ahora inicializa el catálogo base si detecta la tabla vacía y tiene fallback de módulos reales si Claude devuelve una selección incompleta;
+  - la página pública del informe se rediseñó como propuesta profesional con KPIs, hallazgos, módulos, inversión estimada y CTA;
+  - se agregó `GET /api/diagnostico/[token]/informe/pdf` para descargar un PDF real generado server-side con `pdfkit`;
+  - la ficha del lead ahora muestra estado `Informe generado`, botón para ver la propuesta pública y botón para descargar PDF.
+- Archivos creados/modificados en esta unidad:
+  - `app/api/diagnostico/[token]/generar-informe/route.ts`
+  - `app/api/diagnostico/[token]/informe/pdf/route.ts`
+  - `app/diagnostico/[token]/informe/page.tsx`
+  - `components/diagnostico/LeadDiagnosticoSection.tsx`
+  - `lib/diagnostico/informe.ts`
+  - `supabase/migrations/019_seed_modulos_catalogo_defaults.sql`
+  - `docs/DATABASE.md`
+  - `docs/PROGRESS.md`
+  - `package.json`
+  - `package-lock.json`
+- Verificación ejecutada para informe/propuesta:
+  - `npm run lint` OK;
+  - `npm run build` OK;
+  - consulta directa a Supabase confirmó el seed aplicado en la base real.
+
 ## Actualización 2026-07-22
 
 - Se ajustó `P&L mensual` en Finanzas:

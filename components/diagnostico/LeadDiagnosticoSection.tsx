@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Badge, Button, Modal } from "@/components/ui";
 import { DiagnosticoForm } from "@/components/diagnostico/DiagnosticoForm";
-import { CopyIcon, LinkIcon } from "@/components/ui/icons";
+import { CopyIcon, DownloadIcon, LinkIcon } from "@/components/ui/icons";
 import type { Diagnostico, DiagnosticoPublicPayload } from "@/types/diagnostico";
 import type { Lead } from "@/types/leads";
 
@@ -63,6 +63,7 @@ export function LeadDiagnosticoSection({ lead }: LeadDiagnosticoSectionProps) {
 
   const publicPath = diagnostico?.token_publico ? `/diagnostico/${diagnostico.token_publico}` : null;
   const informePath = diagnostico?.token_publico ? `/diagnostico/${diagnostico.token_publico}/informe` : null;
+  const informePdfPath = diagnostico?.token_publico ? `/api/diagnostico/${diagnostico.token_publico}/informe/pdf` : null;
   const publicUrl = useMemo(() => {
     if (!publicPath || typeof window === "undefined") {
       return publicPath;
@@ -192,8 +193,12 @@ export function LeadDiagnosticoSection({ lead }: LeadDiagnosticoSectionProps) {
           </p>
         </div>
         {diagnostico ? (
-          <Badge variant={diagnostico.estado === "respondido" ? "success" : "warning"}>
-            {diagnostico.estado === "respondido" ? "Respondido" : "Pendiente"}
+          <Badge variant={diagnostico.estado === "informe_generado" ? "signal" : diagnostico.estado === "respondido" ? "success" : "warning"}>
+            {diagnostico.estado === "informe_generado"
+              ? "Informe generado"
+              : diagnostico.estado === "respondido"
+                ? "Respondido"
+                : "Pendiente"}
           </Badge>
         ) : null}
       </div>
@@ -263,6 +268,15 @@ export function LeadDiagnosticoSection({ lead }: LeadDiagnosticoSectionProps) {
               <Button size="sm" variant="secondary" onClick={() => window.open(informePath, "_blank")}>
                 Ver informe público
               </Button>
+            ) : null}
+            {diagnostico.estado === "informe_generado" && informePdfPath ? (
+              <a
+                href={informePdfPath}
+                className="inline-flex items-center justify-center gap-2 rounded-component border border-line bg-white px-3 py-1.5 text-sm font-label text-carbon transition-colors duration-fast hover:bg-paper"
+              >
+                <DownloadIcon size={15} aria-hidden="true" />
+                Descargar PDF
+              </a>
             ) : null}
             <Button
               size="sm"
