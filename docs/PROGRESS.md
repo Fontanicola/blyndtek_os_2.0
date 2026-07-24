@@ -3003,3 +3003,17 @@ $ find . -maxdepth 3 \( -name 'middleware.*' -o -name 'proxy.*' \) -not -path '.
   - `docs/PROGRESS.md`
   - `docs/DECISIONS.md`
 - Nota técnica: se evaluó generar PDFs imprimiendo la misma página pública con navegador headless para tener equivalencia pixel-perfect, pero la instalación de Chromium quedó colgada sin modificar el repo. En esta unidad se dejó web/PDF con la misma estructura y contenido; una futura mejora puede reemplazar PDFKit por render HTML-to-PDF si se incorpora un runtime de navegador confiable en deploy.
+
+## 2026-07-24 — Hotfix generación de informe: parser tolerante a JSON de Claude
+
+- Se confirmó la causa del error visible `Claude no devolvió un informe JSON válido`: después de ampliar el prompt con `antes_despues` y `mapa_areas`, el parser de `app/api/diagnostico/[token]/generar-informe/route.ts` quedó demasiado estricto y sólo aceptaba una forma exacta de JSON con `hallazgos` y `modulos_elegidos` en la raíz.
+- El endpoint ahora normaliza respuestas alternativas antes de validar:
+  - acepta `informe_hallazgos.hallazgos`,
+  - acepta `modulos_sugeridos.modulos`,
+  - acepta aliases simples como `diagnostico` / `propuesta`,
+  - conserva `antes_despues` y `mapa_areas` si vienen anidados.
+- Si Claude igual devuelve algo incompleto o no parseable, el flujo ya no se rompe: se registra una advertencia server-side y se usa fallback determinístico basado en respuestas reales + catálogo real de módulos.
+- Se aumentó `max_tokens` de 5000 a 9000 para reducir el riesgo de JSON cortado por longitud, ya que el informe/propuesta ahora es más completo.
+- Verificación ejecutada:
+  - `npm run lint` OK.
+  - `npm run build` OK.

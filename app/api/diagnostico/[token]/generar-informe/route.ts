@@ -27,6 +27,7 @@ type AnthropicResponse = {
   error?: {
     message?: string;
   };
+  stop_reason?: string;
 };
 
 type DiagnosticoConLead = Diagnostico & {
@@ -214,6 +215,46 @@ function isClaudeInformePayload(value: unknown): value is ClaudeInformePayload {
   return Array.isArray(payload.hallazgos) && Array.isArray(payload.modulos_elegidos);
 }
 
+function getRecord(value: unknown): Record<string, unknown> | null {
+  return typeof value === "object" && value !== null && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
+}
+
+function getArray(value: unknown): unknown[] {
+  return Array.isArray(value) ? value : [];
+}
+
+function normalizeParsedPayload(value: unknown): ClaudeInformePayload {
+  const root = getRecord(value);
+
+  if (!root) {
+    return { hallazgos: [], modulos_elegidos: [] };
+  }
+
+  const informeHallazgos = getRecord(root.informe_hallazgos);
+  const modulosSugeridos = getRecord(root.modulos_sugeridos);
+  const diagnosticoEmpresa =
+    getRecord(root.diagnostico_empresa) ??
+    getRecord(informeHallazgos?.diagnostico_empresa) ??
+    getRecord(root.diagnostico) ??
+    undefined;
+  const propuestaSoftware =
+    getRecord(root.propuesta_software) ??
+    getRecord(modulosSugeridos?.propuesta_software) ??
+    getRecord(root.propuesta) ??
+    undefined;
+
+  return {
+    diagnostico_empresa: diagnosticoEmpresa as ClaudeInformePayload["diagnostico_empresa"],
+    antes_despues: getArray(root.antes_despues ?? informeHallazgos?.antes_despues) as ClaudeInformePayload["antes_despues"],
+    mapa_areas: getArray(root.mapa_areas ?? informeHallazgos?.mapa_areas) as ClaudeInformePayload["mapa_areas"],
+    hallazgos: getArray(root.hallazgos ?? informeHallazgos?.hallazgos) as ClaudeHallazgo[],
+    modulos_elegidos: getArray(
+      root.modulos_elegidos ?? root.modulos ?? modulosSugeridos?.modulos ?? modulosSugeridos?.modulos_elegidos
+    ) as ClaudeModulo[],
+    propuesta_software: propuestaSoftware as ClaudeInformePayload["propuesta_software"]
+  };
+}
+
 function parseClaudeInforme(rawText: string): ClaudeInformePayload {
   const attempts = [cleanClaudeJson(rawText), extractJsonBetweenBraces(rawText)].filter(
     (attempt): attempt is string => Boolean(attempt)
@@ -222,10 +263,11 @@ function parseClaudeInforme(rawText: string): ClaudeInformePayload {
   for (const attempt of attempts) {
     try {
       const parsed = JSON.parse(attempt) as unknown;
+      const normalized = normalizeParsedPayload(parsed);
 
-      if (isClaudeInformePayload(parsed)) {
+      if (isClaudeInformePayload(normalized)) {
         return {
-          hallazgos: parsed.hallazgos
+          hallazgos: normalized.hallazgos
             .map((hallazgo) => ({
               hallazgo: typeof hallazgo.hallazgo === "string" ? hallazgo.hallazgo.trim() : "",
               impacto: typeof hallazgo.impacto === "string" ? hallazgo.impacto.trim() : "",
@@ -236,7 +278,7 @@ function parseClaudeInforme(rawText: string): ClaudeInformePayload {
             }))
             .filter((hallazgo) => hallazgo.hallazgo && hallazgo.impacto && hallazgo.que_resolveria)
             .slice(0, 5),
-          modulos_elegidos: parsed.modulos_elegidos
+          modulos_elegidos: normalized.modulos_elegidos
             .map((modulo) => ({
               modulo_id: typeof modulo.modulo_id === "string" ? modulo.modulo_id.trim() : "",
               justificacion: typeof modulo.justificacion === "string" ? modulo.justificacion.trim() : "",
@@ -254,10 +296,10 @@ function parseClaudeInforme(rawText: string): ClaudeInformePayload {
               prioridad: typeof modulo.prioridad === "string" ? modulo.prioridad.trim() : ""
             }))
             .filter((modulo) => modulo.modulo_id && modulo.justificacion),
-          diagnostico_empresa: parsed.diagnostico_empresa,
-          antes_despues: Array.isArray(parsed.antes_despues) ? parsed.antes_despues : [],
-          mapa_areas: Array.isArray(parsed.mapa_areas) ? parsed.mapa_areas : [],
-          propuesta_software: parsed.propuesta_software
+          diagnostico_empresa: normalized.diagnostico_empresa,
+          antes_despues: Array.isArray(normalized.antes_despues) ? normalized.antes_despues : [],
+          mapa_areas: Array.isArray(normalized.mapa_areas) ? normalized.mapa_areas : [],
+          propuesta_software: normalized.propuesta_software
         };
       }
     } catch {
@@ -265,7 +307,9 @@ function parseClaudeInforme(rawText: string): ClaudeInformePayload {
     }
   }
 
-  throw new Error("Claude no devolvió un informe JSON válido.");
+  console.warn("Claude no devolvió JSON con la estructura esperada. Se usará fallback determinístico.");
+
+  return { hallazgos: [], modulos_elegidos: [] };
 }
 
 function buildSystemPrompt() {
@@ -585,7 +629,7 @@ export async function POST(_request: NextRequest, { params }: RouteContext) {
       },
       body: JSON.stringify({
         model: "claude-sonnet-4-6",
-        max_tokens: 5000,
+        max_tokens: 9000,
         temperature: 0.2,
         system: buildSystemPrompt(),
         messages: [
