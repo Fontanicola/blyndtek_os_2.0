@@ -110,34 +110,34 @@ export default async function DiagnosticoInformePage({ params, searchParams }: I
 
         <div className="space-y-6">
             <section className="grid gap-4 md:grid-cols-3">
-              <div className="rounded-card border border-line-soft bg-white p-5">
+              <div className="print-card rounded-card border border-line-soft bg-white p-5">
                 <p className="text-sm font-label text-graphite">Problemas detectados</p>
                 <p className="mt-2 text-3xl font-title text-carbon">{hallazgos.length}</p>
               </div>
-              <div className="rounded-card border border-line-soft bg-white p-5">
+              <div className="print-card rounded-card border border-line-soft bg-white p-5">
                 <p className="text-sm font-label text-graphite">Oportunidades de mejora</p>
                 <p className="mt-2 text-3xl font-title text-carbon">{diagnosticoEmpresa.oportunidades_mejora.length}</p>
               </div>
-              <div className="rounded-card border border-line-soft bg-white p-5">
+              <div className="print-card rounded-card border border-line-soft bg-white p-5">
                 <p className="text-sm font-label text-graphite">Tipo de análisis</p>
                 <p className="mt-2 text-lg font-title text-carbon">Diagnóstico operativo</p>
               </div>
             </section>
 
-            <section id="lectura" className="scroll-mt-8 space-y-5 rounded-card border border-line-soft bg-white p-6 sm:p-8">
+            <section id="lectura" className="print-card scroll-mt-8 space-y-5 rounded-card border border-line-soft bg-white p-6 sm:p-8">
               <SectionLabel>Informe diagnóstico</SectionLabel>
               <div>
                 <h2 className="text-2xl font-title text-carbon">Lectura ejecutiva</h2>
                 <p className="mt-4 text-base leading-7 text-graphite">{diagnosticoEmpresa.resumen_ejecutivo}</p>
               </div>
-              <div className="rounded-card border border-line-soft bg-paper/60 p-5">
+              <div className="print-card rounded-card border border-line-soft bg-paper/60 p-5">
                 <h3 className="text-lg font-title text-carbon">Cómo opera hoy</h3>
                 <p className="mt-3 text-sm leading-7 text-graphite">{diagnosticoEmpresa.operativa_actual}</p>
               </div>
             </section>
 
             <section id="hallazgos" className="scroll-mt-8 rounded-card border border-line-soft bg-white p-6 sm:p-8">
-              <div className="max-w-3xl">
+              <div className="print-heading-group max-w-3xl">
                 <SectionLabel>Problemas detectados</SectionLabel>
                 <h2 className="mt-2 text-2xl font-title text-carbon">Dónde la operación pierde control, tiempo o trazabilidad</h2>
                 <p className="mt-3 text-sm leading-6 text-graphite">
@@ -147,7 +147,7 @@ export default async function DiagnosticoInformePage({ params, searchParams }: I
 
               <div className="mt-6 space-y-4">
                 {hallazgos.map((hallazgo, index) => (
-                  <article key={`${hallazgo.hallazgo}-${index}`} className="rounded-card border border-line-soft p-5">
+                  <article key={`${hallazgo.hallazgo}-${index}`} className="print-card rounded-card border border-line-soft p-5">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <p className="text-sm font-label text-graphite">Hallazgo {index + 1}</p>
                       {hallazgo.severidad ? (
@@ -169,13 +169,13 @@ export default async function DiagnosticoInformePage({ params, searchParams }: I
               </div>
             </section>
 
-            <section id="costo" className="scroll-mt-8 rounded-card border border-line-soft bg-white p-6 sm:p-8">
+            <section id="costo" className="print-card scroll-mt-8 rounded-card border border-line-soft bg-white p-6 sm:p-8">
               <SectionLabel>Costo de no cambiar</SectionLabel>
               <h2 className="mt-2 text-2xl font-title text-carbon">Lo que sigue pasando si no se ordena</h2>
               <p className="mt-4 text-sm leading-7 text-graphite">{diagnosticoEmpresa.costo_de_no_cambiar}</p>
             </section>
 
-            <section id="oportunidades" className="scroll-mt-8 rounded-card border border-line-soft bg-white p-6 sm:p-8">
+            <section id="oportunidades" className="print-card scroll-mt-8 rounded-card border border-line-soft bg-white p-6 sm:p-8">
               <SectionLabel>Oportunidades</SectionLabel>
               <h2 className="mt-2 text-2xl font-title text-carbon">Qué se puede mejorar</h2>
               <div className="mt-4">
@@ -184,7 +184,7 @@ export default async function DiagnosticoInformePage({ params, searchParams }: I
             </section>
 
             <section id="antes-despues" className="scroll-mt-8 rounded-card border border-line-soft bg-white p-6 sm:p-8">
-              <div className="max-w-3xl">
+              <div className="print-heading-group max-w-3xl">
                 <SectionLabel>Antes y después</SectionLabel>
                 <h2 className="mt-2 text-2xl font-title text-carbon">Qué cambia en la operación si se digitaliza</h2>
                 <p className="mt-3 text-sm leading-6 text-graphite">
@@ -194,7 +194,7 @@ export default async function DiagnosticoInformePage({ params, searchParams }: I
 
               <div className="mt-6 space-y-3">
                 {antesDespues.map((item) => (
-                  <article key={`${item.area}-${item.metrica}`} className="rounded-card border border-line-soft p-4">
+                  <article key={`${item.area}-${item.metrica}`} className="print-card rounded-card border border-line-soft p-4">
                     <p className="font-title text-carbon">{item.area}</p>
                     <div className="mt-3 space-y-3">
                       <p className="text-sm leading-6 text-graphite">Antes: {item.antes}</p>
@@ -208,7 +208,7 @@ export default async function DiagnosticoInformePage({ params, searchParams }: I
 
             <section id="mapa" className="scroll-mt-8 rounded-card border border-line-soft bg-white p-6 sm:p-8">
               <div className="flex flex-wrap items-end justify-between gap-4">
-                <div className="max-w-3xl">
+                <div className="print-heading-group max-w-3xl">
                   <SectionLabel>Mapa de calor operativo</SectionLabel>
                   <h2 className="mt-2 text-2xl font-title text-carbon">Áreas con más fricción y potencial de mejora</h2>
                   <p className="mt-3 text-sm leading-6 text-graphite">
@@ -228,7 +228,7 @@ export default async function DiagnosticoInformePage({ params, searchParams }: I
                 {mapaAreas.map((area) => (
                   <article
                     key={area.area}
-                    className="rounded-card border p-4"
+                    className="print-card rounded-card border p-4"
                     style={heatmapStyles(area.nivel)}
                   >
                     <div className="flex flex-wrap items-center justify-between gap-3">
@@ -242,7 +242,7 @@ export default async function DiagnosticoInformePage({ params, searchParams }: I
               </div>
             </section>
 
-            <section id="conclusion" className="scroll-mt-8 rounded-card border border-line-soft bg-white p-6 sm:p-8">
+            <section id="conclusion" className="print-card scroll-mt-8 rounded-card border border-line-soft bg-white p-6 sm:p-8">
               <SectionLabel>Conclusión</SectionLabel>
               <h2 className="mt-2 text-2xl font-title text-carbon">Lectura final del diagnóstico</h2>
               <p className="mt-4 text-base leading-7 text-graphite">{diagnosticoEmpresa.conclusion_diagnostico}</p>

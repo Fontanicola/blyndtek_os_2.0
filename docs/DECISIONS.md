@@ -1,5 +1,11 @@
 # Decisions
 
+## 2026-07-24 — Paginación segura del informe impreso
+
+- El PDF del diagnóstico se sigue generando desde la misma página HTML pública, pero el modo de impresión aplica reglas específicas de paginación.
+- Las tarjetas, KPIs y bloques de contenido se mantienen juntos con `break-inside: avoid` y los encabezados se mantienen vinculados a su contenido; si un bloque completo no entra, comienza en la página siguiente.
+- Esta decisión evita que una impresión conserve todos los datos pero los entregue partidos visualmente entre páginas, sin duplicar el diseño ni alterar la experiencia pública.
+
 ## 2026-07-24 — Propuesta comercial con alcance verificable
 
 - La propuesta de software no se limita a módulos, beneficios y precio: debe explicar cómo se implementa, qué se entrega, cómo se acepta cada fase, qué participación requiere el cliente y qué queda fuera del alcance.

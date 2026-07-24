@@ -10,6 +10,18 @@ Estado general actual: Fase 0 completa. Cimientos técnicos listos: documentaci�
 
 ## Actualización 2026-07-24
 
+- Se corrigió la paginación del PDF del informe diagnóstico público:
+  - causa exacta: la impresión nativa podía partir tarjetas, bloques de contenido y encabezados entre páginas aunque el HTML público estuviera completo;
+  - se agregaron reglas exclusivas de impresión para mantener tarjetas, KPIs, la lectura ejecutiva y los bloques del mapa de calor juntos, además de conservar los encabezados con su contenido;
+  - no se cambió el layout público ni se creó una versión alternativa del documento: el PDF sigue saliendo del mismo informe HTML.
+- Verificación visual realizada con el diagnóstico real de Panificadora Esquel S.R.L.: se regeneraron y revisaron las 8 páginas del PDF; no quedan tarjetas, textos o métricas cortados, y los bloques que no entran completos pasan a la página siguiente.
+- Archivos modificados:
+  - `app/diagnostico/[token]/informe/page.tsx`
+  - `app/globals.css`
+  - `docs/PROGRESS.md`
+  - `docs/DECISIONS.md`
+- Verificación ejecutada: `npm run lint`, `npm run build` y revisión visual del PDF generado.
+
 - Se profesionalizó la propuesta pública de software para que no sea sólo una lista de módulos y precios:
   - la IA ahora debe generar modelo operativo, entregables, criterios de aceptación por fase, participación requerida del cliente, criterios de éxito, fuera de alcance y condiciones de propiedad, soporte, cambios y migración;
   - cada fase del roadmap conserva subtareas accionables y suma entregables verificables, criterio de aceptación y responsabilidad del cliente;
