@@ -137,7 +137,9 @@ export function LeadDiagnosticoSection({ lead }: LeadDiagnosticoSectionProps) {
   const publicPath = diagnostico?.token_publico ? `/diagnostico/${diagnostico.token_publico}` : null;
   const informePath = diagnostico?.token_publico ? `/diagnostico/${diagnostico.token_publico}/informe` : null;
   const propuestaPath = diagnostico?.token_publico ? `/diagnostico/${diagnostico.token_publico}/propuesta` : null;
-  const informePdfPath = diagnostico?.token_publico ? `/api/diagnostico/${diagnostico.token_publico}/informe/pdf` : null;
+  const informePdfPath = diagnostico?.token_publico
+    ? `/diagnostico/${diagnostico.token_publico}/informe?print=1`
+    : null;
   const propuestaPdfPath = diagnostico?.token_publico
     ? `/api/diagnostico/${diagnostico.token_publico}/propuesta/pdf`
     : null;

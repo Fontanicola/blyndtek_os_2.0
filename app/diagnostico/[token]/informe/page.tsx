@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import Image from "next/image";
 import { notFound } from "next/navigation";
-import { DownloadIcon } from "@/components/ui/icons";
+import { PrintOnLoad, PrintPdfButton } from "@/components/diagnostico/PrintPdfButton";
 import { fetchDiagnosticoInforme } from "@/lib/diagnostico/informe";
 
 export const dynamic = "force-dynamic";
@@ -11,6 +11,9 @@ export const revalidate = 0;
 type InformePageProps = {
   params: {
     token: string;
+  };
+  searchParams?: {
+    print?: string;
   };
 };
 
@@ -59,7 +62,7 @@ export async function generateMetadata({ params }: InformePageProps): Promise<Me
   };
 }
 
-export default async function DiagnosticoInformePage({ params }: InformePageProps) {
+export default async function DiagnosticoInformePage({ params, searchParams }: InformePageProps) {
   const informe = await fetchDiagnosticoInforme(params.token);
 
   if (!informe) {
@@ -82,13 +85,7 @@ export default async function DiagnosticoInformePage({ params }: InformePageProp
                 style={{ width: "auto", height: "32px" }}
                 priority
               />
-              <a
-                href={`/api/diagnostico/${params.token}/informe/pdf`}
-                className="inline-flex items-center justify-center gap-2 rounded-component border border-line bg-white px-4 py-2 text-sm font-label text-carbon transition-colors duration-fast hover:bg-paper"
-              >
-                <DownloadIcon size={16} aria-hidden="true" />
-                Descargar PDF
-              </a>
+              <PrintPdfButton />
             </div>
           </div>
 
@@ -256,6 +253,7 @@ export default async function DiagnosticoInformePage({ params }: InformePageProp
           Informe generado por Blyndtek LLC para {empresa}
         </p>
       </div>
+      {searchParams?.print === "1" ? <PrintOnLoad /> : null}
     </main>
   );
 }

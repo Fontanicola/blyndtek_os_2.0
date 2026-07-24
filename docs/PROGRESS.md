@@ -10,6 +10,25 @@ Estado general actual: Fase 0 completa. Cimientos técnicos listos: documentaci�
 
 ## Actualización 2026-07-24
 
+- Se unificó la descarga del informe diagnóstico con su vista pública:
+  - la página HTML pública es ahora la única fuente de verdad para layout, colores, tipografía, radios y componentes;
+  - `Descargar PDF` usa la impresión nativa del navegador sobre ese mismo DOM, esperando fuentes e imágenes antes de abrir la vista de guardado;
+  - el acceso desde la ficha del lead abre el mismo informe en modo impresión (`?print=1`), por lo que no existe una maqueta PDF alternativa que pueda desalinearse;
+  - se corrigieron las reglas globales de impresión: dejaron de ocultar todo el documento buscando un contenedor inexistente y ahora conservan fondos, tipografía y layout, ocultando únicamente controles marcados como `no-print`;
+  - la ruta histórica `/api/diagnostico/[token]/informe/pdf` redirige al informe público en modo impresión para mantener compatibilidad con enlaces existentes.
+- Archivos creados/modificados en esta corrección:
+  - `components/diagnostico/PrintPdfButton.tsx`
+  - `app/diagnostico/[token]/informe/page.tsx`
+  - `components/diagnostico/LeadDiagnosticoSection.tsx`
+  - `app/api/diagnostico/[token]/informe/pdf/route.ts`
+  - `app/globals.css`
+  - `docs/DECISIONS.md`
+  - `docs/PROGRESS.md`
+- Verificación ejecutada:
+  - `npm run lint` OK;
+  - `npm run build` OK;
+  - el flujo de PDF queda basado en la misma página pública, sin renderizador paralelo ni fuentes distintas.
+
 - Se rediseñó el flujo de `Generar informe y propuesta` para que sea una pieza comercial completa y no un resumen corto:
   - Claude ahora recibe las respuestas del formulario, el catálogo real de módulos y un campo extra de contexto comercial/reunión (`respuestas.__contexto_adicional`);
   - el JSON generado separa `Informe diagnóstico` (`diagnostico_empresa` + `hallazgos`) de `Propuesta de software` (`propuesta_software` + `modulos`);

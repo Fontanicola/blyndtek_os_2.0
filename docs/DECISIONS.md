@@ -1,5 +1,12 @@
 # Decisions
 
+## 2026-07-24 — El informe público es la fuente única del PDF
+
+- El informe diagnóstico se diseña y mantiene una sola vez, en la página pública HTML que ve el cliente.
+- La descarga usa la impresión nativa del navegador sobre ese mismo DOM, con los mismos estilos, fuentes, colores, radios, espaciado y componentes; no se mantiene una segunda composición con PDFKit.
+- El modo `?print=1` oculta únicamente controles de interacción y espera la carga de fuentes e imágenes antes de abrir la vista de impresión, para que el archivo guardado como PDF sea visualmente idéntico al informe público.
+- La ruta histórica `/api/diagnostico/[token]/informe/pdf` redirige al modo de impresión para conservar enlaces existentes sin volver a introducir una maqueta visual divergente.
+
 ## 2026-07-19 — Plan semanal de contenido conectado
 
 - El contenido de Blyndtek se genera semanalmente como un plan narrativamente conectado, no como piezas sueltas aisladas.
