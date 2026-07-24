@@ -174,17 +174,22 @@ async function renderPdf(token: string) {
     "Esta propuesta toma el diagnóstico operativo como base y define una solución concreta: módulos, alcance funcional, beneficios esperados, tiempos de implementación, inversión y próximos pasos."
   );
 
+  const condiciones = informe.condicionesComerciales;
+  const adelantoMonto = (condiciones.precio_desarrollo_usd * condiciones.adelanto_pct) / 100;
+  const saldoFinanciado = Math.max(0, condiciones.precio_desarrollo_usd - adelantoMonto);
+  const valorCuota = saldoFinanciado / Math.max(condiciones.cantidad_cuotas, 1);
+
   doc.moveDown(1.2);
   const summaryY = doc.y;
   doc.roundedRect(PAGE_MARGIN, summaryY, 152, 82, 8).fillAndStroke("#E8EEFF", "#D8DBE3");
   doc.roundedRect(222, summaryY, 152, 82, 8).fillAndStroke("#FFFFFF", "#EAECF0");
   doc.roundedRect(388, summaryY, 152, 82, 8).fillAndStroke("#FFFFFF", "#EAECF0");
-  writeKeyValue(doc, "Inversión desarrollo", formatInformeCurrency(informe.precio_ideal_desarrollo), 72, summaryY + 16, 120);
+  writeKeyValue(doc, "Inversión desarrollo", formatInformeCurrency(condiciones.precio_desarrollo_usd), 72, summaryY + 16, 120);
   writeKeyValue(doc, "Módulos", informe.modulos.length.toString(), 238, summaryY + 16, 120);
   writeKeyValue(
     doc,
     "Mensual",
-    informe.precio_ideal_mensual > 0 ? formatInformeCurrency(informe.precio_ideal_mensual) : "No aplica",
+    condiciones.mantenimiento_mensual_usd > 0 ? formatInformeCurrency(condiciones.mantenimiento_mensual_usd) : "No aplica",
     404,
     summaryY + 16,
     120
@@ -223,13 +228,29 @@ async function renderPdf(token: string) {
 
   writeSectionTitle(doc, "Roadmap", "Cómo avanzaríamos");
   informe.propuestaSoftware.roadmap_implementacion.forEach((etapa, index) => {
-    ensureSpace(doc, 80);
+    ensureSpace(doc, 120);
     doc.font("DMSansBold").fontSize(11).fillColor("#0B0E14").text(`${index + 1}. ${etapa.etapa}`);
     doc.font("DMSans").fontSize(9).fillColor("#5A6373").text(etapa.duracion_estimada);
     doc.moveDown(0.2);
     writeParagraph(doc, etapa.descripcion);
+    if (etapa.subtareas.length > 0) {
+      doc.moveDown(0.25);
+      doc.font("DMSansBold").fontSize(9.5).fillColor("#0B0E14").text("Subtareas");
+      doc.moveDown(0.15);
+      writeBulletList(doc, etapa.subtareas.slice(0, 8));
+    }
     doc.moveDown(0.6);
   });
+
+  writeSectionTitle(doc, "Datos comerciales", "Forma de pago propuesta");
+  writeBulletList(doc, [
+    `Desarrollo: ${formatInformeCurrency(condiciones.precio_desarrollo_usd)}`,
+    `Adelanto: ${condiciones.adelanto_pct}% (${formatInformeCurrency(adelantoMonto)})`,
+    `Saldo: ${condiciones.cantidad_cuotas} cuota(s) de ${formatInformeCurrency(valorCuota)} con día de pago ${condiciones.dia_pago}`,
+    condiciones.mantenimiento_mensual_usd > 0
+      ? `Mantenimiento mensual: ${formatInformeCurrency(condiciones.mantenimiento_mensual_usd)}`
+      : "Mantenimiento mensual: no aplica"
+  ]);
 
   if (informe.propuestaSoftware.supuestos.length > 0) {
     writeSectionTitle(doc, "Supuestos", "Condiciones consideradas");

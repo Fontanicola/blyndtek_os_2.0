@@ -67,6 +67,15 @@ export default async function DiagnosticoInformePage({ params }: InformePageProp
   }
 
   const { empresa, hallazgos, diagnosticoEmpresa, antesDespues, mapaAreas } = informe;
+  const secciones = [
+    { id: "lectura", label: "Lectura ejecutiva" },
+    { id: "hallazgos", label: "Problemas detectados" },
+    { id: "costo", label: "Costo de no cambiar" },
+    { id: "oportunidades", label: "Oportunidades" },
+    { id: "antes-despues", label: "Antes y después" },
+    { id: "mapa", label: "Mapa operativo" },
+    { id: "conclusion", label: "Conclusión" }
+  ];
 
   return (
     <main className="min-h-screen bg-paper px-4 py-6 sm:px-6 sm:py-10">
@@ -112,150 +121,161 @@ export default async function DiagnosticoInformePage({ params }: InformePageProp
           </div>
         </header>
 
-        <section className="grid gap-4 md:grid-cols-3">
-          <div className="rounded-card border border-line-soft bg-white p-5">
-            <p className="text-sm font-label text-graphite">Problemas detectados</p>
-            <p className="mt-2 text-3xl font-title text-carbon">{hallazgos.length}</p>
-          </div>
-          <div className="rounded-card border border-line-soft bg-white p-5">
-            <p className="text-sm font-label text-graphite">Oportunidades de mejora</p>
-            <p className="mt-2 text-3xl font-title text-carbon">{diagnosticoEmpresa.oportunidades_mejora.length}</p>
-          </div>
-          <div className="rounded-card border border-line-soft bg-white p-5">
-            <p className="text-sm font-label text-graphite">Tipo de análisis</p>
-            <p className="mt-2 text-lg font-title text-carbon">Diagnóstico operativo</p>
-          </div>
-        </section>
-
-        <section className="rounded-card border border-line-soft bg-white p-6 sm:p-8">
-          <SectionLabel>Informe diagnóstico</SectionLabel>
-          <div className="mt-2 grid gap-8 lg:grid-cols-[0.9fr_1.1fr]">
-            <div>
-              <h2 className="text-2xl font-title text-carbon">Lectura ejecutiva</h2>
-              <p className="mt-4 text-base leading-7 text-graphite">{diagnosticoEmpresa.resumen_ejecutivo}</p>
-            </div>
-            <div className="rounded-card border border-line-soft bg-paper/60 p-5">
-              <h3 className="text-lg font-title text-carbon">Cómo opera hoy</h3>
-              <p className="mt-3 text-sm leading-7 text-graphite">{diagnosticoEmpresa.operativa_actual}</p>
-            </div>
-          </div>
-        </section>
-
-        <section className="rounded-card border border-line-soft bg-white p-6 sm:p-8">
-          <div className="max-w-3xl">
-            <SectionLabel>Problemas detectados</SectionLabel>
-            <h2 className="mt-2 text-2xl font-title text-carbon">Dónde la operación pierde control, tiempo o trazabilidad</h2>
-            <p className="mt-3 text-sm leading-6 text-graphite">
-              Estos hallazgos salen de las respuestas del diagnóstico y del contexto adicional cargado por Blyndtek. La intención no es marcar errores, sino identificar dónde conviene instalar “maquinaria digital” para que la empresa dependa menos de memoria, mensajes sueltos y seguimiento manual.
-            </p>
-          </div>
-
-          <div className="mt-6 grid gap-4 md:grid-cols-2">
-            {hallazgos.map((hallazgo, index) => (
-              <article key={`${hallazgo.hallazgo}-${index}`} className="rounded-card border border-line-soft p-5">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="text-sm font-label text-graphite">Hallazgo {index + 1}</p>
-                  {hallazgo.severidad ? (
-                    <span className="rounded-pill bg-paper px-2 py-1 text-xs font-label text-graphite">
-                      Severidad {hallazgo.severidad}
-                    </span>
-                  ) : null}
-                </div>
-                <h3 className="mt-3 text-lg font-title text-carbon">{hallazgo.hallazgo}</h3>
-                {hallazgo.evidencia ? (
-                  <p className="mt-3 text-sm leading-6 text-graphite">Evidencia: {hallazgo.evidencia}</p>
-                ) : null}
-                <p className="mt-3 text-sm leading-6 text-graphite">Impacto: {hallazgo.impacto}</p>
-                <div className="mt-4 rounded-component bg-signal-light px-3 py-2 text-sm font-label text-carbon">
-                  {hallazgo.que_resolveria}
-                </div>
-              </article>
-            ))}
-          </div>
-        </section>
-
-        <section className="grid gap-4 lg:grid-cols-2">
-          <div className="rounded-card border border-line-soft bg-white p-6 sm:p-8">
-            <SectionLabel>Costo de no cambiar</SectionLabel>
-            <h2 className="mt-2 text-2xl font-title text-carbon">Lo que sigue pasando si no se ordena</h2>
-            <p className="mt-4 text-sm leading-7 text-graphite">{diagnosticoEmpresa.costo_de_no_cambiar}</p>
-          </div>
-          <div className="rounded-card border border-line-soft bg-white p-6 sm:p-8">
-            <SectionLabel>Oportunidades</SectionLabel>
-            <h2 className="mt-2 text-2xl font-title text-carbon">Qué se puede mejorar</h2>
-            <div className="mt-4">
-              <Bullets items={diagnosticoEmpresa.oportunidades_mejora} />
-            </div>
-          </div>
-        </section>
-
-        <section className="rounded-card border border-line-soft bg-white p-6 sm:p-8">
-          <div className="max-w-3xl">
-            <SectionLabel>Antes y después</SectionLabel>
-            <h2 className="mt-2 text-2xl font-title text-carbon">Qué cambia en la operación si se digitaliza</h2>
-            <p className="mt-3 text-sm leading-6 text-graphite">
-              La comparación ordena el salto esperado: pasar de seguimiento manual, memoria y mensajes sueltos a procesos visibles, medibles y delegables.
-            </p>
-          </div>
-
-          <div className="mt-6 overflow-hidden rounded-card border border-line-soft">
-            <div className="grid grid-cols-[0.7fr_1fr_1fr_0.9fr] gap-0 border-b border-line-soft bg-paper px-4 py-3 text-sm font-label text-carbon">
-              <span>Área</span>
-              <span>Antes</span>
-              <span>Después</span>
-              <span>Métrica de impacto</span>
-            </div>
-            {antesDespues.map((item) => (
-              <div
-                key={`${item.area}-${item.metrica}`}
-                className="grid grid-cols-1 gap-3 border-b border-line-soft px-4 py-4 last:border-b-0 md:grid-cols-[0.7fr_1fr_1fr_0.9fr]"
-              >
-                <p className="font-label text-carbon">{item.area}</p>
-                <p className="text-sm leading-6 text-graphite">{item.antes}</p>
-                <p className="text-sm leading-6 text-carbon">{item.despues}</p>
-                <p className="text-sm font-label leading-6 text-signal">{item.metrica}</p>
+        <div className="grid gap-6 lg:grid-cols-[220px_1fr] lg:items-start">
+          <aside className="hidden lg:block">
+            <nav className="sticky top-6 rounded-card border border-line-soft bg-white p-4">
+              <p className="text-sm font-label text-carbon">Temario</p>
+              <div className="mt-4 space-y-1 border-l border-line-soft pl-3">
+                {secciones.map((seccion) => (
+                  <a
+                    key={seccion.id}
+                    href={`#${seccion.id}`}
+                    className="block rounded-component px-2 py-1.5 text-sm text-graphite transition-colors duration-fast hover:bg-paper hover:text-carbon"
+                  >
+                    {seccion.label}
+                  </a>
+                ))}
               </div>
-            ))}
-          </div>
-        </section>
+            </nav>
+          </aside>
 
-        <section className="rounded-card border border-line-soft bg-white p-6 sm:p-8">
-          <div className="flex flex-wrap items-end justify-between gap-4">
-            <div className="max-w-3xl">
-              <SectionLabel>Mapa de calor operativo</SectionLabel>
-              <h2 className="mt-2 text-2xl font-title text-carbon">Áreas con más fricción y potencial de mejora</h2>
-              <p className="mt-3 text-sm leading-6 text-graphite">
-                Escala 1 a 5: cuanto más alto el nivel, más fricción operativa aparece en esa parte del negocio.
-              </p>
-            </div>
-            <div className="flex items-center gap-2 text-xs font-label text-graphite">
-              <span>Saludable</span>
-              <span className="h-2 w-12 rounded-pill bg-success-light" />
-              <span className="h-2 w-12 rounded-pill bg-warning-light" />
-              <span className="h-2 w-12 rounded-pill bg-danger-light" />
-              <span>Crítico</span>
-            </div>
-          </div>
+          <div className="space-y-6">
+            <section className="grid gap-4 md:grid-cols-3">
+              <div className="rounded-card border border-line-soft bg-white p-5">
+                <p className="text-sm font-label text-graphite">Problemas detectados</p>
+                <p className="mt-2 text-3xl font-title text-carbon">{hallazgos.length}</p>
+              </div>
+              <div className="rounded-card border border-line-soft bg-white p-5">
+                <p className="text-sm font-label text-graphite">Oportunidades de mejora</p>
+                <p className="mt-2 text-3xl font-title text-carbon">{diagnosticoEmpresa.oportunidades_mejora.length}</p>
+              </div>
+              <div className="rounded-card border border-line-soft bg-white p-5">
+                <p className="text-sm font-label text-graphite">Tipo de análisis</p>
+                <p className="mt-2 text-lg font-title text-carbon">Diagnóstico operativo</p>
+              </div>
+            </section>
 
-          <div className="mt-6 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-            {mapaAreas.map((area) => (
-              <article key={area.area} className={`rounded-card border p-4 ${heatmapTone(area.nivel)}`}>
-                <div className="flex items-center justify-between gap-3">
-                  <h3 className="font-title text-carbon">{area.area}</h3>
-                  <span className="rounded-pill bg-white/70 px-2 py-1 text-xs font-label">Nivel {area.nivel}/5</span>
+            <section id="lectura" className="scroll-mt-8 space-y-5 rounded-card border border-line-soft bg-white p-6 sm:p-8">
+              <SectionLabel>Informe diagnóstico</SectionLabel>
+              <div>
+                <h2 className="text-2xl font-title text-carbon">Lectura ejecutiva</h2>
+                <p className="mt-4 text-base leading-7 text-graphite">{diagnosticoEmpresa.resumen_ejecutivo}</p>
+              </div>
+              <div className="rounded-card border border-line-soft bg-paper/60 p-5">
+                <h3 className="text-lg font-title text-carbon">Cómo opera hoy</h3>
+                <p className="mt-3 text-sm leading-7 text-graphite">{diagnosticoEmpresa.operativa_actual}</p>
+              </div>
+            </section>
+
+            <section id="hallazgos" className="scroll-mt-8 rounded-card border border-line-soft bg-white p-6 sm:p-8">
+              <div className="max-w-3xl">
+                <SectionLabel>Problemas detectados</SectionLabel>
+                <h2 className="mt-2 text-2xl font-title text-carbon">Dónde la operación pierde control, tiempo o trazabilidad</h2>
+                <p className="mt-3 text-sm leading-6 text-graphite">
+                  Estos hallazgos salen de las respuestas del diagnóstico y del contexto adicional cargado por Blyndtek. La intención no es marcar errores, sino identificar dónde conviene instalar “maquinaria digital” para que la empresa dependa menos de memoria, mensajes sueltos y seguimiento manual.
+                </p>
+              </div>
+
+              <div className="mt-6 space-y-4">
+                {hallazgos.map((hallazgo, index) => (
+                  <article key={`${hallazgo.hallazgo}-${index}`} className="rounded-card border border-line-soft p-5">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="text-sm font-label text-graphite">Hallazgo {index + 1}</p>
+                      {hallazgo.severidad ? (
+                        <span className="rounded-pill bg-paper px-2 py-1 text-xs font-label text-graphite">
+                          Severidad {hallazgo.severidad}
+                        </span>
+                      ) : null}
+                    </div>
+                    <h3 className="mt-3 text-lg font-title text-carbon">{hallazgo.hallazgo}</h3>
+                    {hallazgo.evidencia ? (
+                      <p className="mt-3 text-sm leading-6 text-graphite">Evidencia: {hallazgo.evidencia}</p>
+                    ) : null}
+                    <p className="mt-3 text-sm leading-6 text-graphite">Impacto: {hallazgo.impacto}</p>
+                    <div className="mt-4 rounded-component bg-signal-light px-3 py-2 text-sm font-label text-carbon">
+                      {hallazgo.que_resolveria}
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </section>
+
+            <section id="costo" className="scroll-mt-8 rounded-card border border-line-soft bg-white p-6 sm:p-8">
+              <SectionLabel>Costo de no cambiar</SectionLabel>
+              <h2 className="mt-2 text-2xl font-title text-carbon">Lo que sigue pasando si no se ordena</h2>
+              <p className="mt-4 text-sm leading-7 text-graphite">{diagnosticoEmpresa.costo_de_no_cambiar}</p>
+            </section>
+
+            <section id="oportunidades" className="scroll-mt-8 rounded-card border border-line-soft bg-white p-6 sm:p-8">
+              <SectionLabel>Oportunidades</SectionLabel>
+              <h2 className="mt-2 text-2xl font-title text-carbon">Qué se puede mejorar</h2>
+              <div className="mt-4">
+                <Bullets items={diagnosticoEmpresa.oportunidades_mejora} />
+              </div>
+            </section>
+
+            <section id="antes-despues" className="scroll-mt-8 rounded-card border border-line-soft bg-white p-6 sm:p-8">
+              <div className="max-w-3xl">
+                <SectionLabel>Antes y después</SectionLabel>
+                <h2 className="mt-2 text-2xl font-title text-carbon">Qué cambia en la operación si se digitaliza</h2>
+                <p className="mt-3 text-sm leading-6 text-graphite">
+                  La comparación ordena el salto esperado: pasar de seguimiento manual, memoria y mensajes sueltos a procesos visibles, medibles y delegables.
+                </p>
+              </div>
+
+              <div className="mt-6 space-y-3">
+                {antesDespues.map((item) => (
+                  <article key={`${item.area}-${item.metrica}`} className="rounded-card border border-line-soft p-4">
+                    <p className="font-title text-carbon">{item.area}</p>
+                    <div className="mt-3 space-y-3">
+                      <p className="text-sm leading-6 text-graphite">Antes: {item.antes}</p>
+                      <p className="text-sm leading-6 text-carbon">Después: {item.despues}</p>
+                      <p className="text-sm font-label leading-6 text-signal">Métrica de impacto: {item.metrica}</p>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </section>
+
+            <section id="mapa" className="scroll-mt-8 rounded-card border border-line-soft bg-white p-6 sm:p-8">
+              <div className="flex flex-wrap items-end justify-between gap-4">
+                <div className="max-w-3xl">
+                  <SectionLabel>Mapa de calor operativo</SectionLabel>
+                  <h2 className="mt-2 text-2xl font-title text-carbon">Áreas con más fricción y potencial de mejora</h2>
+                  <p className="mt-3 text-sm leading-6 text-graphite">
+                    Escala 1 a 5: cuanto más alto el nivel, más fricción operativa aparece en esa parte del negocio.
+                  </p>
                 </div>
-                <p className="mt-3 text-sm leading-6 text-graphite">{area.diagnostico}</p>
-                <p className="mt-3 text-sm font-label leading-6 text-carbon">{area.oportunidad}</p>
-              </article>
-            ))}
-          </div>
-        </section>
+                <div className="flex items-center gap-2 text-xs font-label text-graphite">
+                  <span>Saludable</span>
+                  <span className="h-2 w-12 rounded-pill bg-success-light" />
+                  <span className="h-2 w-12 rounded-pill bg-warning-light" />
+                  <span className="h-2 w-12 rounded-pill bg-danger-light" />
+                  <span>Crítico</span>
+                </div>
+              </div>
 
-        <section className="rounded-card border border-line-soft bg-white p-6 sm:p-8">
-          <SectionLabel>Conclusión</SectionLabel>
-          <h2 className="mt-2 text-2xl font-title text-carbon">Lectura final del diagnóstico</h2>
-          <p className="mt-4 text-base leading-7 text-graphite">{diagnosticoEmpresa.conclusion_diagnostico}</p>
-        </section>
+              <div className="mt-6 space-y-3">
+                {mapaAreas.map((area) => (
+                  <article key={area.area} className={`rounded-card border p-4 ${heatmapTone(area.nivel)}`}>
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <h3 className="font-title text-carbon">{area.area}</h3>
+                      <span className="rounded-pill bg-white/70 px-2 py-1 text-xs font-label">Nivel {area.nivel}/5</span>
+                    </div>
+                    <p className="mt-3 text-sm leading-6 text-graphite">{area.diagnostico}</p>
+                    <p className="mt-3 text-sm font-label leading-6 text-carbon">{area.oportunidad}</p>
+                  </article>
+                ))}
+              </div>
+            </section>
+
+            <section id="conclusion" className="scroll-mt-8 rounded-card border border-line-soft bg-white p-6 sm:p-8">
+              <SectionLabel>Conclusión</SectionLabel>
+              <h2 className="mt-2 text-2xl font-title text-carbon">Lectura final del diagnóstico</h2>
+              <p className="mt-4 text-base leading-7 text-graphite">{diagnosticoEmpresa.conclusion_diagnostico}</p>
+            </section>
+          </div>
+        </div>
 
         <p className="text-center text-xs text-graphite">
           Informe generado por Blyndtek LLC para {empresa}

@@ -88,6 +88,7 @@ type ClaudeInformePayload = {
       etapa?: string;
       descripcion?: string;
       duracion_estimada?: string;
+      subtareas?: string[];
     }>;
     supuestos?: string[];
     proximos_pasos?: string[];
@@ -354,16 +355,17 @@ function buildPrompt({
   return [
     "Analizá estas respuestas de un diagnóstico operativo y generá DOS piezas conectadas:",
     "A. Informe de diagnóstico de empresa: descripción de operativa actual, problemas, costo de no cambiar, oportunidades de mejora y conclusión.",
-    "B. Propuesta de software: visión del sistema recomendado, módulos, impacto de cada módulo, funcionalidades, prioridad, tiempos estimados y roadmap.",
+    "B. Propuesta de software: visión del sistema recomendado, módulos, impacto de cada módulo, funcionalidades, prioridad, tiempos estimados y roadmap completo.",
     "Los textos tienen que ser suficientemente detallados para que el cliente se reconozca en el diagnóstico y entienda por qué necesita digitalizarse.",
     "No uses frases genéricas tipo 'mejorar eficiencia' sin explicar qué cambiaría concretamente en su operación.",
     "Hallazgos: entre 4 y 7, cada uno con { hallazgo, evidencia, impacto, severidad, que_resolveria }.",
     "Antes/después: entre 4 y 6 filas con { area, antes, despues, metrica }. La métrica debe expresar tiempo perdido, riesgo, reproceso, dependencia manual, velocidad de respuesta o trazabilidad. Si no hay números reales, usá estimaciones cualitativas honestas como 'alto', 'medio', 'bajo' o 'horas semanales a validar'.",
     "Mapa de áreas: entre 5 y 8 áreas del negocio con { area, nivel, diagnostico, oportunidad }. nivel es 1 a 5, donde 1 = saludable y 5 = crítico. Usalo como heatmap de madurez/fricción operativa.",
     "Módulos: elegí ÚNICAMENTE del catálogo real. Para cada módulo devolvé modulo_id, justificacion, problema_resuelve, impacto_esperado, funcionalidades (4 a 7 bullets), tiempo_estimado_semanas y prioridad.",
+    "Roadmap: generá entre 3 y 6 fases concretas. Cada fase debe tener descripcion, duracion_estimada y subtareas (4 a 8 subtareas accionables). Estas fases y subtareas se van a convertir luego en /proyectos como fases y features reales, así que no escribas frases vagas.",
     "Priorizá módulos que resuelvan dolores repetidos, pérdidas de seguimiento, desorden operativo, errores manuales, falta de trazabilidad, cobranzas o stock.",
     "NO inventes módulos que no estén en la lista dada.",
-    'Respondé SOLO con JSON: { "diagnostico_empresa": { "resumen_ejecutivo": "...", "operativa_actual": "...", "problemas_principales": ["..."], "costo_de_no_cambiar": "...", "oportunidades_mejora": ["..."], "conclusion_diagnostico": "..." }, "antes_despues": [{ "area": "...", "antes": "...", "despues": "...", "metrica": "..." }], "mapa_areas": [{ "area": "...", "nivel": 4, "diagnostico": "...", "oportunidad": "..." }], "hallazgos": [...], "modulos_elegidos": [{ "modulo_id": "...", "justificacion": "...", "problema_resuelve": "...", "impacto_esperado": "...", "funcionalidades": ["..."], "tiempo_estimado_semanas": 2, "prioridad": "Alta" }], "propuesta_software": { "vision_sistema": "...", "alcance_general": "...", "beneficios_esperados": ["..."], "roadmap_implementacion": [{ "etapa": "...", "descripcion": "...", "duracion_estimada": "..." }], "supuestos": ["..."], "proximos_pasos": ["..."] } }',
+    'Respondé SOLO con JSON: { "diagnostico_empresa": { "resumen_ejecutivo": "...", "operativa_actual": "...", "problemas_principales": ["..."], "costo_de_no_cambiar": "...", "oportunidades_mejora": ["..."], "conclusion_diagnostico": "..." }, "antes_despues": [{ "area": "...", "antes": "...", "despues": "...", "metrica": "..." }], "mapa_areas": [{ "area": "...", "nivel": 4, "diagnostico": "...", "oportunidad": "..." }], "hallazgos": [...], "modulos_elegidos": [{ "modulo_id": "...", "justificacion": "...", "problema_resuelve": "...", "impacto_esperado": "...", "funcionalidades": ["..."], "tiempo_estimado_semanas": 2, "prioridad": "Alta" }], "propuesta_software": { "vision_sistema": "...", "alcance_general": "...", "beneficios_esperados": ["..."], "roadmap_implementacion": [{ "etapa": "...", "descripcion": "...", "duracion_estimada": "...", "subtareas": ["..."] }], "supuestos": ["..."], "proximos_pasos": ["..."] } }',
     `Empresa: ${empresa ?? "Sin empresa cargada"}`,
     `Contexto adicional escrito por Blyndtek para orientar a la IA:\n${contextoAdicional || "- Sin contexto adicional"}`,
     `Respuestas:\n${respuestasTexto || "- Sin respuestas con contenido"}`,
@@ -702,21 +704,49 @@ export async function POST(_request: NextRequest, { params }: RouteContext) {
           {
             etapa: "Relevamiento y diseño funcional",
             descripcion: "Aterrizar flujos reales, roles, pantallas y prioridades.",
-            duracion_estimada: "1 semana"
+            duracion_estimada: "1 semana",
+            subtareas: [
+              "Mapear procesos actuales con responsables",
+              "Definir entidades y permisos",
+              "Priorizar módulos del MVP",
+              "Cerrar alcance funcional validado"
+            ]
           },
           {
             etapa: "Construcción del sistema",
             descripcion: "Desarrollar los módulos principales y validar con datos reales.",
-            duracion_estimada: "4 a 7 semanas"
+            duracion_estimada: "4 a 7 semanas",
+            subtareas: [
+              "Construir módulos priorizados",
+              "Crear flujos de estados y responsables",
+              "Implementar tableros de control",
+              "Probar con casos reales"
+            ]
           },
           {
             etapa: "Implementación",
             descripcion: "Capacitar al equipo, ajustar fricciones y dejar el sistema operando.",
-            duracion_estimada: "1 a 2 semanas"
+            duracion_estimada: "1 a 2 semanas",
+            subtareas: [
+              "Capacitar usuarios clave",
+              "Migrar datos iniciales necesarios",
+              "Ajustar fricciones de uso",
+              "Dejar próximos pasos operativos"
+            ]
           }
         ],
         supuestos: ["El alcance final se confirma antes del inicio del desarrollo."],
         proximos_pasos: ["Revisar informe", "Validar módulos", "Cerrar alcance e iniciar proyecto"]
+      },
+      condiciones_comerciales: {
+        precio_desarrollo_usd: precioIdealDesarrollo,
+        adelanto_pct: 25,
+        fecha_adelanto: null,
+        cantidad_cuotas: 1,
+        dia_pago: 10,
+        fecha_primera_cuota: null,
+        mantenimiento_mensual_usd: precioMensual,
+        dia_facturacion_mantenimiento: precioMensual > 0 ? 10 : null
       },
       modulos: modulosSugeridos
     };

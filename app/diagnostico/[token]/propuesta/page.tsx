@@ -50,7 +50,11 @@ export default async function DiagnosticoPropuestaPage({ params }: PropuestaPage
     notFound();
   }
 
-  const { empresa, modulos, propuestaSoftware, antesDespues } = informe;
+  const { empresa, modulos, propuestaSoftware, antesDespues, condicionesComerciales } = informe;
+  const adelantoMonto =
+    (condicionesComerciales.precio_desarrollo_usd * condicionesComerciales.adelanto_pct) / 100;
+  const saldoFinanciado = Math.max(0, condicionesComerciales.precio_desarrollo_usd - adelantoMonto);
+  const valorCuota = saldoFinanciado / Math.max(condicionesComerciales.cantidad_cuotas, 1);
   const whatsappText = encodeURIComponent(
     `Hola Blyndtek, revisé la propuesta de software para ${empresa}. Quiero avanzar con el próximo paso.`
   );
@@ -93,10 +97,12 @@ export default async function DiagnosticoPropuestaPage({ params }: PropuestaPage
 
             <div className="rounded-card border border-white/10 bg-white/10 p-5">
               <p className="text-sm font-label text-white/70">Inversión estimada</p>
-              <p className="mt-2 text-4xl font-title">{formatInformeCurrency(informe.precio_ideal_desarrollo)}</p>
-              {informe.precio_ideal_mensual > 0 ? (
+              <p className="mt-2 text-4xl font-title">
+                {formatInformeCurrency(condicionesComerciales.precio_desarrollo_usd)}
+              </p>
+              {condicionesComerciales.mantenimiento_mensual_usd > 0 ? (
                 <p className="mt-2 text-sm text-white/70">
-                  + {formatInformeCurrency(informe.precio_ideal_mensual)} mensuales
+                  + {formatInformeCurrency(condicionesComerciales.mantenimiento_mensual_usd)} mensuales
                 </p>
               ) : null}
             </div>
@@ -219,31 +225,53 @@ export default async function DiagnosticoPropuestaPage({ params }: PropuestaPage
           </div>
         </section>
 
-        <section className="grid gap-4 lg:grid-cols-2">
-          <div className="rounded-card border border-line-soft bg-white p-6 sm:p-8">
-            <SectionLabel>Beneficios esperados</SectionLabel>
-            <h2 className="mt-2 text-2xl font-title text-carbon">Qué cambia al implementar</h2>
-            <div className="mt-4">
-              <Bullets items={propuestaSoftware.beneficios_esperados} />
-            </div>
+        <section className="rounded-card border border-line-soft bg-white p-6 sm:p-8">
+          <SectionLabel>Beneficios esperados</SectionLabel>
+          <h2 className="mt-2 text-2xl font-title text-carbon">Qué cambia al implementar</h2>
+          <div className="mt-4">
+            <Bullets items={propuestaSoftware.beneficios_esperados} />
           </div>
+        </section>
 
-          <div className="rounded-card border border-line-soft bg-white p-6 sm:p-8">
+        <section className="rounded-card border border-line-soft bg-white p-6 sm:p-8">
+          <div className="max-w-3xl">
             <SectionLabel>Roadmap</SectionLabel>
             <h2 className="mt-2 text-2xl font-title text-carbon">Plan de implementación sugerido</h2>
-            <div className="mt-5 space-y-4">
-              {propuestaSoftware.roadmap_implementacion.map((etapa, index) => (
-                <div key={`${etapa.etapa}-${index}`} className="border-l-2 border-signal pl-4">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="font-title text-carbon">{etapa.etapa}</p>
-                    <span className="rounded-pill bg-paper px-2 py-1 text-xs font-label text-graphite">
-                      {etapa.duracion_estimada}
-                    </span>
+            <p className="mt-3 text-sm leading-6 text-graphite">
+              Este roadmap no es decorativo: al aprobar la propuesta se convierte en el proyecto interno de Blyndtek,
+              con fases y subtareas visibles en el tablero de entrega.
+            </p>
+          </div>
+          <div className="mt-6 space-y-5">
+            {propuestaSoftware.roadmap_implementacion.map((etapa, index) => (
+              <article key={`${etapa.etapa}-${index}`} className="rounded-card border border-line-soft p-5">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-label text-signal">Fase {index + 1}</p>
+                    <h3 className="mt-1 text-xl font-title text-carbon">{etapa.etapa}</h3>
                   </div>
-                  <p className="mt-2 text-sm leading-6 text-graphite">{etapa.descripcion}</p>
+                  <span className="rounded-pill bg-paper px-3 py-1 text-sm font-label text-graphite">
+                    {etapa.duracion_estimada}
+                  </span>
                 </div>
-              ))}
-            </div>
+                <p className="mt-4 text-sm leading-6 text-graphite">{etapa.descripcion}</p>
+                {etapa.subtareas.length > 0 ? (
+                  <div className="mt-5">
+                    <p className="text-sm font-label text-carbon">Subtareas de implementación</p>
+                    <div className="mt-3 grid gap-2">
+                      {etapa.subtareas.map((subtarea, subtareaIndex) => (
+                        <div
+                          key={`${subtarea}-${subtareaIndex}`}
+                          className="rounded-component border border-line-soft px-3 py-2 text-sm text-graphite"
+                        >
+                          {subtarea}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+              </article>
+            ))}
           </div>
         </section>
 
@@ -252,21 +280,52 @@ export default async function DiagnosticoPropuestaPage({ params }: PropuestaPage
             <div className="rounded-card border border-signal/20 bg-signal-light p-5">
               <p className="text-sm font-label text-signal">Inversión de desarrollo</p>
               <p className="mt-2 text-4xl font-title text-carbon">
-                {formatInformeCurrency(informe.precio_ideal_desarrollo)}
+                {formatInformeCurrency(condicionesComerciales.precio_desarrollo_usd)}
               </p>
-              {informe.precio_ideal_mensual > 0 ? (
+              {condicionesComerciales.mantenimiento_mensual_usd > 0 ? (
                 <p className="mt-3 text-sm text-graphite">
-                  Mantenimiento mensual: {formatInformeCurrency(informe.precio_ideal_mensual)}
+                  Mantenimiento mensual: {formatInformeCurrency(condicionesComerciales.mantenimiento_mensual_usd)}
                 </p>
               ) : null}
             </div>
             <div>
-              <SectionLabel>Próximos pasos</SectionLabel>
-              <h2 className="mt-2 text-2xl font-title text-carbon">Cómo avanzar</h2>
-              <div className="mt-4">
-                <Bullets items={propuestaSoftware.proximos_pasos} />
+              <SectionLabel>Datos comerciales</SectionLabel>
+              <h2 className="mt-2 text-2xl font-title text-carbon">Forma de pago propuesta</h2>
+              <div className="mt-4 grid gap-3 md:grid-cols-2">
+                <div className="rounded-component border border-line-soft p-3">
+                  <p className="text-sm font-label text-graphite">Adelanto</p>
+                  <p className="mt-1 text-lg font-title text-carbon">
+                    {condicionesComerciales.adelanto_pct}% · {formatInformeCurrency(adelantoMonto)}
+                  </p>
+                </div>
+                <div className="rounded-component border border-line-soft p-3">
+                  <p className="text-sm font-label text-graphite">Saldo en cuotas</p>
+                  <p className="mt-1 text-lg font-title text-carbon">
+                    {condicionesComerciales.cantidad_cuotas} x {formatInformeCurrency(valorCuota)}
+                  </p>
+                </div>
+                <div className="rounded-component border border-line-soft p-3">
+                  <p className="text-sm font-label text-graphite">Día de pago</p>
+                  <p className="mt-1 text-lg font-title text-carbon">Día {condicionesComerciales.dia_pago}</p>
+                </div>
+                <div className="rounded-component border border-line-soft p-3">
+                  <p className="text-sm font-label text-graphite">Mantenimiento</p>
+                  <p className="mt-1 text-lg font-title text-carbon">
+                    {condicionesComerciales.mantenimiento_mensual_usd > 0
+                      ? formatInformeCurrency(condicionesComerciales.mantenimiento_mensual_usd)
+                      : "No aplica"}
+                  </p>
+                </div>
               </div>
             </div>
+          </div>
+        </section>
+
+        <section className="rounded-card border border-line-soft bg-white p-6 sm:p-8">
+          <SectionLabel>Próximos pasos</SectionLabel>
+          <h2 className="mt-2 text-2xl font-title text-carbon">Cómo avanzar</h2>
+          <div className="mt-4">
+            <Bullets items={propuestaSoftware.proximos_pasos} />
           </div>
         </section>
 

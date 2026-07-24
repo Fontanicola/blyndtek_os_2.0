@@ -3017,3 +3017,41 @@ $ find . -maxdepth 3 \( -name 'middleware.*' -o -name 'proxy.*' \) -not -path '.
 - Verificación ejecutada:
   - `npm run lint` OK.
   - `npm run build` OK.
+
+## 2026-07-24 — Propuesta con roadmap operativo y condiciones de contrato
+
+- Se reordenó visualmente el informe público de diagnóstico para lectura ejecutiva vertical: las secciones principales ya no quedan lado a lado en grillas grandes, sino en filas apiladas, con un temario lateral fijo para navegar el documento como informe profesional.
+- El prompt de generación de diagnóstico/propuesta ahora exige un roadmap de implementación completo con fases y `subtareas` accionables. Estas subtareas no son texto decorativo: se guardan dentro de la propuesta y se muestran en la página pública y el PDF.
+- La propuesta pública ahora muestra un plan de implementación detallado por fase, con duración estimada, descripción y subtareas de entrega.
+- Los datos comerciales editables de la propuesta se ampliaron para cuadrar con contratos:
+  - precio de desarrollo,
+  - porcentaje de adelanto,
+  - fecha de adelanto,
+  - cantidad de cuotas,
+  - día de pago,
+  - fecha de primera cuota,
+  - mantenimiento mensual,
+  - día de facturación de mantenimiento.
+- El endpoint `PATCH /api/diagnostico/[token]/propuesta` guarda esas condiciones dentro de `diagnosticos.modulos_sugeridos.condiciones_comerciales`, preservando el resto del JSON de módulos/propuesta.
+- Al mover un lead a `ganado`, el sistema ahora toma las condiciones comerciales del diagnóstico, crea/actualiza el contrato con desarrollo como `valor_total`, mantenimiento por separado, adelanto y cuotas reales, y materializa la propuesta como cotización aceptada + proyecto.
+- La propuesta aceptada crea automáticamente:
+  - una `cotizacion` aceptada,
+  - un `proyecto` con roadmap público activo,
+  - fases en `fases_proyecto`,
+  - features/subtareas en `features`,
+  - tareas vinculadas a cada feature.
+- Archivos creados/modificados:
+  - `lib/diagnostico/materializarPropuesta.ts`
+  - `lib/diagnostico/informe.ts`
+  - `app/api/diagnostico/[token]/generar-informe/route.ts`
+  - `app/api/diagnostico/[token]/propuesta/route.ts`
+  - `app/api/diagnostico/[token]/propuesta/pdf/route.ts`
+  - `app/api/leads/[id]/etapa/route.ts`
+  - `app/diagnostico/[token]/informe/page.tsx`
+  - `app/diagnostico/[token]/propuesta/page.tsx`
+  - `components/diagnostico/LeadDiagnosticoSection.tsx`
+  - `types/leads.ts`
+- Decisión técnica: la aprobación comercial no crea un roadmap paralelo; convierte el roadmap de la propuesta en las mismas tablas operativas que usa `/proyectos`, para que venta y entrega compartan una sola fuente de verdad.
+- Verificación ejecutada:
+  - `npm run lint` OK.
+  - `npm run build` OK.

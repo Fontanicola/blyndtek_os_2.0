@@ -37,9 +37,21 @@ export type PropuestaSoftware = {
     etapa: string;
     descripcion: string;
     duracion_estimada: string;
+    subtareas: string[];
   }>;
   supuestos: string[];
   proximos_pasos: string[];
+};
+
+export type CondicionesComercialesPropuesta = {
+  precio_desarrollo_usd: number;
+  adelanto_pct: number;
+  fecha_adelanto: string | null;
+  cantidad_cuotas: number;
+  dia_pago: number;
+  fecha_primera_cuota: string | null;
+  mantenimiento_mensual_usd: number;
+  dia_facturacion_mantenimiento: number | null;
 };
 
 export type AntesDespuesMetrica = {
@@ -79,6 +91,7 @@ export type DiagnosticoInformeView = {
   modulos: ModuloInforme[];
   diagnosticoEmpresa: DiagnosticoEmpresa;
   propuestaSoftware: PropuestaSoftware;
+  condicionesComerciales: CondicionesComercialesPropuesta;
   antesDespues: AntesDespuesMetrica[];
   mapaAreas: AreaHeatmap[];
   precio_ideal_desarrollo: number;
@@ -215,17 +228,32 @@ export function parsePropuestaSoftware(value: unknown, modulos: ModuloInforme[])
         {
           etapa: "Relevamiento y diseño funcional",
           descripcion: "Aterrizar el flujo real, roles, pantallas y prioridades del sistema.",
-          duracion_estimada: "1 semana"
+          duracion_estimada: "1 semana",
+          subtareas: [
+            "Relevar flujos actuales con responsables",
+            "Definir entidades, permisos y pantallas críticas",
+            "Cerrar alcance funcional antes de construir"
+          ]
         },
         {
           etapa: "Construcción del MVP operativo",
           descripcion: "Desarrollar los módulos principales y validar el uso con datos reales.",
-          duracion_estimada: "3 a 5 semanas"
+          duracion_estimada: "3 a 5 semanas",
+          subtareas: [
+            "Construir módulos priorizados",
+            "Conectar registros, estados y tableros",
+            "Probar con casos reales de la operación"
+          ]
         },
         {
           etapa: "Implementación y ajustes",
           descripcion: "Capacitar al equipo, ajustar fricciones y dejar el sistema listo para operar.",
-          duracion_estimada: "1 a 2 semanas"
+          duracion_estimada: "1 a 2 semanas",
+          subtareas: [
+            "Capacitar usuarios clave",
+            "Ajustar fricciones detectadas en uso real",
+            "Dejar tablero de seguimiento y próximos pasos"
+          ]
         }
       ],
       supuestos: ["El alcance final se confirma en una reunión de cierre antes de iniciar el desarrollo."],
@@ -252,12 +280,40 @@ export function parsePropuestaSoftware(value: unknown, modulos: ModuloInforme[])
           const etapa = typeof item.etapa === "string" ? item.etapa : "";
           const descripcion = typeof item.descripcion === "string" ? item.descripcion : "";
           const duracion = typeof item.duracion_estimada === "string" ? item.duracion_estimada : "";
+          const subtareas = parseStringArray(item.subtareas);
 
-          return etapa && descripcion ? [{ etapa, descripcion, duracion_estimada: duracion || "A definir" }] : [];
+          return etapa && descripcion
+            ? [{ etapa, descripcion, duracion_estimada: duracion || "A definir", subtareas }]
+            : [];
         })
       : [],
     supuestos: parseStringArray(value.supuestos),
     proximos_pasos: parseStringArray(value.proximos_pasos)
+  };
+}
+
+export function parseCondicionesComerciales(
+  value: unknown,
+  precioDesarrollo: number,
+  precioMensual: number
+): CondicionesComercialesPropuesta {
+  const record = isRecord(value) ? value : {};
+  const adelantoPct = Number(record.adelanto_pct ?? 25);
+  const cantidadCuotas = Number(record.cantidad_cuotas ?? 1);
+  const diaPago = Number(record.dia_pago ?? 10);
+  const mantenimientoMensual = Number(record.mantenimiento_mensual_usd ?? precioMensual ?? 0);
+  const diaFacturacion = record.dia_facturacion_mantenimiento == null ? null : Number(record.dia_facturacion_mantenimiento);
+
+  return {
+    precio_desarrollo_usd: Number(record.precio_desarrollo_usd ?? precioDesarrollo ?? 0),
+    adelanto_pct: Number.isFinite(adelantoPct) ? Math.min(100, Math.max(0, adelantoPct)) : 25,
+    fecha_adelanto: typeof record.fecha_adelanto === "string" ? record.fecha_adelanto : null,
+    cantidad_cuotas: Number.isInteger(cantidadCuotas) && cantidadCuotas > 0 ? cantidadCuotas : 1,
+    dia_pago: Number.isInteger(diaPago) ? Math.min(28, Math.max(1, diaPago)) : 10,
+    fecha_primera_cuota: typeof record.fecha_primera_cuota === "string" ? record.fecha_primera_cuota : null,
+    mantenimiento_mensual_usd: Number.isFinite(mantenimientoMensual) && mantenimientoMensual > 0 ? mantenimientoMensual : 0,
+    dia_facturacion_mantenimiento:
+      Number.isInteger(diaFacturacion) && diaFacturacion ? Math.min(28, Math.max(1, diaFacturacion)) : null
   };
 }
 
@@ -380,6 +436,11 @@ export async function fetchDiagnosticoInforme(token: string): Promise<Diagnostic
     propuestaSoftware: parsePropuestaSoftware(
       isRecord(data.modulos_sugeridos) ? data.modulos_sugeridos.propuesta_software : null,
       modulos
+    ),
+    condicionesComerciales: parseCondicionesComerciales(
+      isRecord(data.modulos_sugeridos) ? data.modulos_sugeridos.condiciones_comerciales : null,
+      Number(data.precio_ideal_desarrollo ?? 0),
+      Number(data.precio_ideal_mensual ?? 0)
     ),
     antesDespues: parseAntesDespues(informeHallazgos ? informeHallazgos.antes_despues : null, hallazgos),
     mapaAreas: parseMapaAreas(informeHallazgos ? informeHallazgos.mapa_areas : null, hallazgos),

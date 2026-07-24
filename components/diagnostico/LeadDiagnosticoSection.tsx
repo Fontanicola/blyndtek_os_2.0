@@ -44,6 +44,15 @@ type ChatResponse = {
   error?: string;
 };
 
+type CondicionesComerciales = {
+  adelanto_pct: number;
+  fecha_adelanto: string;
+  cantidad_cuotas: number;
+  dia_pago: number;
+  fecha_primera_cuota: string;
+  dia_facturacion_mantenimiento: number;
+};
+
 function groupRespuestas(payload: DiagnosticoPublicPayload) {
   return payload.preguntas.reduce<Array<{ categoria: string; respuestas: Array<{ pregunta: string; respuesta: string }> }>>(
     (groups, pregunta) => {
@@ -70,6 +79,39 @@ function getContextoAdicional(payload: DiagnosticoPublicPayload | null) {
   return payload?.diagnostico.respuestas?.[DIAGNOSTICO_CONTEXTO_KEY]?.trim() ?? "";
 }
 
+function getCondicionesComerciales(diagnostico: Diagnostico | null): CondicionesComerciales {
+  const root =
+    typeof diagnostico?.modulos_sugeridos === "object" &&
+    diagnostico.modulos_sugeridos !== null &&
+    !Array.isArray(diagnostico.modulos_sugeridos)
+      ? (diagnostico.modulos_sugeridos as Record<string, unknown>)
+      : {};
+  const condiciones =
+    typeof root.condiciones_comerciales === "object" &&
+    root.condiciones_comerciales !== null &&
+    !Array.isArray(root.condiciones_comerciales)
+      ? (root.condiciones_comerciales as Record<string, unknown>)
+      : {};
+
+  const toNumber = (value: unknown, fallback: number) => {
+    const parsed = Number(value ?? fallback);
+    return Number.isFinite(parsed) ? parsed : fallback;
+  };
+  const toString = (value: unknown) => (typeof value === "string" ? value : "");
+
+  return {
+    adelanto_pct: toNumber(condiciones.adelanto_pct, 25),
+    fecha_adelanto: toString(condiciones.fecha_adelanto),
+    cantidad_cuotas: Math.max(1, Math.round(toNumber(condiciones.cantidad_cuotas, 1))),
+    dia_pago: Math.min(28, Math.max(1, Math.round(toNumber(condiciones.dia_pago, 10)))),
+    fecha_primera_cuota: toString(condiciones.fecha_primera_cuota),
+    dia_facturacion_mantenimiento: Math.min(
+      28,
+      Math.max(1, Math.round(toNumber(condiciones.dia_facturacion_mantenimiento, 10)))
+    )
+  };
+}
+
 export function LeadDiagnosticoSection({ lead }: LeadDiagnosticoSectionProps) {
   const [diagnostico, setDiagnostico] = useState<Diagnostico | null>(null);
   const [payload, setPayload] = useState<DiagnosticoPublicPayload | null>(null);
@@ -81,6 +123,12 @@ export function LeadDiagnosticoSection({ lead }: LeadDiagnosticoSectionProps) {
   const [empresaEditable, setEmpresaEditable] = useState(lead.empresa ?? "");
   const [precioDesarrolloEditable, setPrecioDesarrolloEditable] = useState("");
   const [precioMensualEditable, setPrecioMensualEditable] = useState("");
+  const [adelantoPctEditable, setAdelantoPctEditable] = useState("25");
+  const [fechaAdelantoEditable, setFechaAdelantoEditable] = useState("");
+  const [cantidadCuotasEditable, setCantidadCuotasEditable] = useState("1");
+  const [diaPagoEditable, setDiaPagoEditable] = useState("10");
+  const [fechaPrimeraCuotaEditable, setFechaPrimeraCuotaEditable] = useState("");
+  const [diaFacturacionMantenimientoEditable, setDiaFacturacionMantenimientoEditable] = useState("10");
   const [chatMensaje, setChatMensaje] = useState("");
   const [copied, setCopied] = useState(false);
   const [adminModalOpen, setAdminModalOpen] = useState(false);
@@ -114,7 +162,14 @@ export function LeadDiagnosticoSection({ lead }: LeadDiagnosticoSectionProps) {
     setPrecioMensualEditable(
       diagnostico?.precio_ideal_mensual == null ? "" : String(diagnostico.precio_ideal_mensual)
     );
-  }, [diagnostico?.precio_ideal_desarrollo, diagnostico?.precio_ideal_mensual]);
+    const condiciones = getCondicionesComerciales(diagnostico);
+    setAdelantoPctEditable(String(condiciones.adelanto_pct));
+    setFechaAdelantoEditable(condiciones.fecha_adelanto);
+    setCantidadCuotasEditable(String(condiciones.cantidad_cuotas));
+    setDiaPagoEditable(String(condiciones.dia_pago));
+    setFechaPrimeraCuotaEditable(condiciones.fecha_primera_cuota);
+    setDiaFacturacionMantenimientoEditable(String(condiciones.dia_facturacion_mantenimiento));
+  }, [diagnostico]);
 
   async function fetchDiagnostico() {
     setLoading(true);
@@ -238,7 +293,13 @@ export function LeadDiagnosticoSection({ lead }: LeadDiagnosticoSectionProps) {
         body: JSON.stringify({
           empresa: empresaEditable,
           precio_ideal_desarrollo: Number(precioDesarrolloEditable || 0),
-          precio_ideal_mensual: Number(precioMensualEditable || 0)
+          precio_ideal_mensual: Number(precioMensualEditable || 0),
+          adelanto_pct: Number(adelantoPctEditable || 0),
+          fecha_adelanto: fechaAdelantoEditable || null,
+          cantidad_cuotas: Number(cantidadCuotasEditable || 1),
+          dia_pago: Number(diaPagoEditable || 10),
+          fecha_primera_cuota: fechaPrimeraCuotaEditable || null,
+          dia_facturacion_mantenimiento: Number(diaFacturacionMantenimientoEditable || 10)
         })
       });
       const result = (await response.json()) as PropuestaUpdateResponse;
@@ -445,12 +506,74 @@ export function LeadDiagnosticoSection({ lead }: LeadDiagnosticoSectionProps) {
                   />
                 </label>
                 <label className="space-y-1">
-                  <span className="text-sm font-label text-carbon">Mensual USD</span>
+                  <span className="text-sm font-label text-carbon">Mantenimiento mensual USD</span>
                   <input
                     value={precioMensualEditable}
                     onChange={(event) => setPrecioMensualEditable(event.target.value)}
                     type="number"
                     min="0"
+                    className="w-full rounded-component border border-line bg-white px-3 py-2 text-sm text-carbon focus:border-signal focus:outline-none focus:ring-2 focus:ring-signal/20"
+                  />
+                </label>
+                <label className="space-y-1">
+                  <span className="text-sm font-label text-carbon">Adelanto %</span>
+                  <input
+                    value={adelantoPctEditable}
+                    onChange={(event) => setAdelantoPctEditable(event.target.value)}
+                    type="number"
+                    min="0"
+                    max="100"
+                    className="w-full rounded-component border border-line bg-white px-3 py-2 text-sm text-carbon focus:border-signal focus:outline-none focus:ring-2 focus:ring-signal/20"
+                  />
+                </label>
+                <label className="space-y-1">
+                  <span className="text-sm font-label text-carbon">Fecha de adelanto</span>
+                  <input
+                    value={fechaAdelantoEditable}
+                    onChange={(event) => setFechaAdelantoEditable(event.target.value)}
+                    type="date"
+                    className="w-full rounded-component border border-line bg-white px-3 py-2 text-sm text-carbon focus:border-signal focus:outline-none focus:ring-2 focus:ring-signal/20"
+                  />
+                </label>
+                <label className="space-y-1">
+                  <span className="text-sm font-label text-carbon">Cantidad de cuotas</span>
+                  <input
+                    value={cantidadCuotasEditable}
+                    onChange={(event) => setCantidadCuotasEditable(event.target.value)}
+                    type="number"
+                    min="1"
+                    max="48"
+                    className="w-full rounded-component border border-line bg-white px-3 py-2 text-sm text-carbon focus:border-signal focus:outline-none focus:ring-2 focus:ring-signal/20"
+                  />
+                </label>
+                <label className="space-y-1">
+                  <span className="text-sm font-label text-carbon">Día de pago de cuotas</span>
+                  <input
+                    value={diaPagoEditable}
+                    onChange={(event) => setDiaPagoEditable(event.target.value)}
+                    type="number"
+                    min="1"
+                    max="28"
+                    className="w-full rounded-component border border-line bg-white px-3 py-2 text-sm text-carbon focus:border-signal focus:outline-none focus:ring-2 focus:ring-signal/20"
+                  />
+                </label>
+                <label className="space-y-1">
+                  <span className="text-sm font-label text-carbon">Fecha primera cuota</span>
+                  <input
+                    value={fechaPrimeraCuotaEditable}
+                    onChange={(event) => setFechaPrimeraCuotaEditable(event.target.value)}
+                    type="date"
+                    className="w-full rounded-component border border-line bg-white px-3 py-2 text-sm text-carbon focus:border-signal focus:outline-none focus:ring-2 focus:ring-signal/20"
+                  />
+                </label>
+                <label className="space-y-1">
+                  <span className="text-sm font-label text-carbon">Día mantenimiento</span>
+                  <input
+                    value={diaFacturacionMantenimientoEditable}
+                    onChange={(event) => setDiaFacturacionMantenimientoEditable(event.target.value)}
+                    type="number"
+                    min="1"
+                    max="28"
                     className="w-full rounded-component border border-line bg-white px-3 py-2 text-sm text-carbon focus:border-signal focus:outline-none focus:ring-2 focus:ring-signal/20"
                   />
                 </label>

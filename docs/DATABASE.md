@@ -205,8 +205,8 @@ Protecciones activas: honeypot silencioso, CORS restringido a `MARKETING_SITE_UR
 | precio_total | numeric (USD) | No especificado |  |
 | mantenimiento_mensual | numeric (USD) | No especificado |  |
 | plazo_semanas | int | No especificado |  |
-| hitos | jsonb | No especificado | array `[{nombre,pct,monto}]` |
-| modulos | jsonb | No especificado | array `[{nombre,descripcion,features[]}]` |
+| hitos | jsonb | No especificado | array `[{nombre,pct,monto}]`; en propuestas de diagnóstico también guarda fases con `subtareas` |
+| modulos | jsonb | No especificado | array `[{nombre,descripcion,features[]}]`; en propuestas de diagnóstico guarda módulos resueltos desde `modulos_catalogo` |
 | contexto_chat | jsonb | No especificado | historial del chat |
 | adjuntos | jsonb | No especificado | metadata de archivos |
 | entendimiento | text | No especificado |  |
@@ -215,7 +215,7 @@ Protecciones activas: honeypot silencioso, CORS restringido a `MARKETING_SITE_UR
 | justificacion_precio | text | No especificado |  |
 | mantenimiento_detalle | jsonb | No especificado | detalle de qué incluye / no incluye |
 | supuestos | jsonb | No especificado | supuestos comerciales y técnicos |
-| condiciones_comerciales | jsonb | No especificado | condiciones típicas de la propuesta |
+| condiciones_comerciales | jsonb | No especificado | condiciones típicas de la propuesta; en diagnóstico incluye desarrollo, adelanto, cuotas, fechas de pago y mantenimiento mensual |
 | datos_propuesta | jsonb | No especificado | portada y datos de contacto de la propuesta |
 | resumen_ejecutivo | text | No especificado | generado por IA |
 | estado | enum (`borrador|enviada|aceptada|rechazada`) | No especificado |  |
@@ -246,7 +246,7 @@ Protecciones activas: honeypot silencioso, CORS restringido a `MARKETING_SITE_UR
 | entrega_real | date | No especificado |  |
 | avance_pct | int | No especificado | calculado desde features |
 | valor_total | numeric | No especificado |  |
-| notas_arquitectura | text | No especificado |  |
+| notas_arquitectura | text | No especificado | En proyectos creados desde diagnóstico guarda el alcance general de la propuesta |
 | roadmap_token | text | No especificado | único, generado al crear |
 | roadmap_slug | text | Sí | único, generado al crear a partir del cliente |
 | url_sistema | text | Sí | URL pública o staging del sistema del cliente |
@@ -1157,7 +1157,7 @@ Nota: `usuarios` debe existir antes que `leads`, `proyectos`, `features`, `tarea
 
 - `ai_dev_ejecuciones`: registra cada corrida de AI Dev por fase con modelos usados, estado, PR, tokens, costo estimado, usuario que inició y timestamps de inicio/fin.
 - `preguntas_diagnostico`: banco de preguntas del diagnóstico comercial, filtrable por `activa=true`.
-- `diagnosticos`: instancia de diagnóstico vinculada a `leads.id`, con `token_publico` para formulario e informe sin login, `respuestas` en `jsonb`, `informe_hallazgos`, `modulos_sugeridos`, precios ideal/mínimo de desarrollo y mensual, y estado `pendiente`/`respondido`/`informe_generado`. Desde 2026-07-24, `informe_hallazgos` puede guardar `{ diagnostico_empresa, hallazgos }` y `modulos_sugeridos` puede guardar `{ propuesta_software, modulos }`; el parser mantiene compatibilidad con arrays históricos.
+- `diagnosticos`: instancia de diagnóstico vinculada a `leads.id`, con `token_publico` para formulario e informe sin login, `respuestas` en `jsonb`, `informe_hallazgos`, `modulos_sugeridos`, precios ideal/mínimo de desarrollo y mensual, y estado `pendiente`/`respondido`/`informe_generado`. Desde 2026-07-24, `informe_hallazgos` puede guardar `{ diagnostico_empresa, hallazgos, antes_despues, mapa_areas }` y `modulos_sugeridos` puede guardar `{ propuesta_software, condiciones_comerciales, modulos }`. `propuesta_software.roadmap_implementacion[]` admite `subtareas[]`; al marcar el lead como `ganado`, esas fases/subtareas se materializan en `proyectos`, `fases_proyecto`, `features` y `tareas`.
 - `modulos_catalogo`: catálogo admin de módulos comerciales con categoría, descripción, precio ideal, precio mínimo, incremento mensual y estado activo. El catálogo base incluye módulos de CRM comercial, pedidos/operación, agenda, inventario, facturación/cobranzas, dashboard, portal multiusuario y automatizaciones.
 - `cierres_mensuales`: histórico de cierres de caja mensuales con ingresos, egresos, margen, desvío versus el mes anterior, resumen generado y costo de IA.
 

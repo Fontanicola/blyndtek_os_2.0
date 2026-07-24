@@ -4,6 +4,10 @@ import { insertCobrosWithLeadIdFallback } from "@/lib/cobros/leadIdFallback";
 import { getLeadEtapaIndex } from "@/lib/leads";
 import { crearComisionDiagnostico, crearComisionVenta } from "@/lib/comisiones/crearComisionVenta";
 import { crearOActualizarContrato } from "@/lib/contratos/crearOActualizarContrato";
+import {
+  materializarPropuestaDiagnostico,
+  obtenerCondicionesDiagnostico
+} from "@/lib/diagnostico/materializarPropuesta";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { crearTareaConAdminClient } from "@/lib/tareas/crearTarea";
 import { hoyLocalString } from "@/lib/utils/fechas";
@@ -370,6 +374,12 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
         });
 
         const cliente = clienteResult.cliente;
+        const condiciones = await obtenerCondicionesDiagnostico(
+          supabase,
+          lead.id,
+          Number(ganadoFinalDesarrollo ?? lead.monto_propuesto_desarrollo ?? 0),
+          Number(ganadoFinalMensual ?? lead.monto_propuesto_mensual ?? 0)
+        );
 
         if (body.mismo_monto === false) {
           const proposedDesarrollo = lead.monto_propuesto_desarrollo ?? body.monto_propuesto_desarrollo ?? null;
@@ -410,27 +420,46 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
           }
         }
 
-      const montoVenta = Number((ganadoFinalDesarrollo ?? 0) + (ganadoFinalMensual ?? 0));
-      const hoy = new Date();
-      const diaPago = Math.min(hoy.getDate(), 28);
-      const mantenimientoMensual = ganadoFinalMensual ?? 0;
+        const desarrolloContrato = Number(ganadoFinalDesarrollo ?? condiciones.precio_desarrollo_usd ?? 0);
+        const mantenimientoMensual = Number(ganadoFinalMensual ?? condiciones.mantenimiento_mensual_usd ?? 0);
+        const montoVenta = desarrolloContrato + mantenimientoMensual;
+        const fechaPrimeraCuota = condiciones.fecha_primera_cuota || hoyLocalString();
+        const fechaAdelanto = condiciones.fecha_adelanto || hoyLocalString();
 
-      await crearOActualizarContrato(supabase, cliente.id, {
-        valor_total: montoVenta,
-        lead_id: lead.id,
-        cantidad_cuotas: 1,
-        dia_pago: diaPago,
-        fecha_primera_cuota: hoyLocalString(hoy),
-        valor_mantenimiento_mensual: mantenimientoMensual > 0 ? mantenimientoMensual : null,
-        dia_facturacion_mantenimiento: mantenimientoMensual > 0 ? diaPago : null
-      });
+        await crearOActualizarContrato(supabase, cliente.id, {
+          valor_total: desarrolloContrato,
+          lead_id: lead.id,
+          adelanto_pct: condiciones.adelanto_pct,
+          fecha_adelanto: fechaAdelanto,
+          cantidad_cuotas: condiciones.cantidad_cuotas,
+          dia_pago: condiciones.dia_pago,
+          fecha_primera_cuota: fechaPrimeraCuota,
+          valor_mantenimiento_mensual: mantenimientoMensual > 0 ? mantenimientoMensual : null,
+          dia_facturacion_mantenimiento:
+            mantenimientoMensual > 0
+              ? condiciones.dia_facturacion_mantenimiento ?? condiciones.dia_pago
+              : null
+        });
+
+        const materialized = await materializarPropuestaDiagnostico(supabase, {
+          lead,
+          clienteId: cliente.id,
+          responsableId: cliente.vendedor_id ?? currentUser.id,
+          precioDesarrollo: desarrolloContrato,
+          precioMensual: mantenimientoMensual,
+          condicionesOverride: {
+            ...condiciones,
+            precio_desarrollo_usd: desarrolloContrato,
+            mantenimiento_mensual_usd: mantenimientoMensual
+          }
+        });
 
         if (cliente.vendedor_id) {
           try {
             await crearComisionVenta(supabase, {
               vendedorId: cliente.vendedor_id,
               clienteId: cliente.id,
-              cotizacionId: null,
+              cotizacionId: materialized?.cotizacionId ?? null,
               montoVenta
             });
           } catch (commissionError) {

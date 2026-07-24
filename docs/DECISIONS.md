@@ -637,6 +637,8 @@
 - La propuesta puede editar datos comerciales sin regenerar todo: nombre visible del cliente, precio de desarrollo y mensual. Las vistas públicas de estos documentos se renderizan dinámicamente para reflejar esas ediciones de inmediato. Los precios mínimos internos siguen sin exponerse al cliente.
 - Después de generado el documento, el comercial puede pedir modificaciones por chat a la IA sobre el informe/propuesta ya existente. La IA reescribe el JSON completo del documento, pero no inventa precios ni módulos fuera de la estructura guardada.
 - Los PDFs de informe/propuesta se generan con fuentes estáticas del proyecto (`DM Sans`) y no con fuentes estándar de PDFKit como `Helvetica`, porque en Vercel esas fuentes pueden faltar dentro del bundle serverless y romper la descarga.
+- El roadmap de la propuesta es el blueprint de entrega. Al marcar el lead como `ganado`, ese roadmap se materializa como cotización aceptada, proyecto, fases, features y tareas en las mismas tablas que usa `/proyectos`; nunca se mantiene como un roadmap comercial paralelo.
+- Las condiciones comerciales editables de la propuesta deben espejar el contrato real: desarrollo, adelanto, cuotas, fechas de pago y mantenimiento mensual. El contrato final se genera desde esas condiciones para que propuesta, cliente y finanzas no diverjan.
 
 ## 2026-07-21 — Diagnóstico pago como etapa formal del embudo
 

@@ -93,6 +93,12 @@ export type LeadStageTransitionInput = {
   mismo_monto?: boolean;
   diagnostico_monto?: number | null;
   diagnostico_fecha?: string | null;
+  adelanto_pct?: number | null;
+  fecha_adelanto?: string | null;
+  cantidad_cuotas?: number | null;
+  dia_pago?: number | null;
+  fecha_primera_cuota?: string | null;
+  dia_facturacion_mantenimiento?: number | null;
 };
 
 export type CreateLeadInput = Omit<LeadWritableFields, "vendedor_id" | "mensaje_inicial"> & {
