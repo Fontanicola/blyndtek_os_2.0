@@ -2972,3 +2972,34 @@ $ find . -maxdepth 3 \( -name 'middleware.*' -o -name 'proxy.*' \) -not -path '.
   - Se renderizó visualmente la primera página de ambos PDFs nuevos y se confirmó que el informe ya no muestra precio/propuesta, mientras que la propuesta concentra la inversión y el alcance comercial.
   - `npm run lint` OK.
   - `npm run build` OK.
+
+## 2026-07-24 — Diagnóstico/propuesta con antes-después y heatmap operativo
+
+- Se profesionalizó la estructura consultiva del diagnóstico tomando como referencia buenas prácticas de análisis de procesos, mejora operativa y matrices de impacto:
+  - estado actual,
+  - evidencia y fricciones,
+  - impacto/costo de seguir igual,
+  - antes/después,
+  - mapa de calor por área,
+  - oportunidades priorizadas.
+- `app/api/diagnostico/[token]/generar-informe/route.ts` ahora le pide a Claude dos bloques estructurados nuevos:
+  - `antes_despues`: comparación por área con situación actual, situación esperada y métrica de impacto.
+  - `mapa_areas`: heatmap operativo de 1 a 5 por área del negocio, con diagnóstico y oportunidad concreta.
+- `lib/diagnostico/informe.ts` parsea esos nuevos bloques y genera fallback para informes existentes que todavía no tienen esa estructura guardada.
+- Las páginas públicas y PDFs incorporan las mismas secciones:
+  - Diagnóstico: antes/después, mapa de calor operativo y conclusión.
+  - Propuesta: impacto esperado antes/después además de visión, módulos, roadmap e inversión.
+- Se cambió el pie de ambos documentos:
+  - `Informe generado por Blyndtek LLC para [cliente]`
+  - `Propuesta generada por Blyndtek LLC para [cliente]`
+- Archivos modificados:
+  - `app/api/diagnostico/[token]/generar-informe/route.ts`
+  - `app/api/diagnostico/[token]/informe/chat/route.ts`
+  - `app/api/diagnostico/[token]/informe/pdf/route.ts`
+  - `app/api/diagnostico/[token]/propuesta/pdf/route.ts`
+  - `app/diagnostico/[token]/informe/page.tsx`
+  - `app/diagnostico/[token]/propuesta/page.tsx`
+  - `lib/diagnostico/informe.ts`
+  - `docs/PROGRESS.md`
+  - `docs/DECISIONS.md`
+- Nota técnica: se evaluó generar PDFs imprimiendo la misma página pública con navegador headless para tener equivalencia pixel-perfect, pero la instalación de Chromium quedó colgada sin modificar el repo. En esta unidad se dejó web/PDF con la misma estructura y contenido; una futura mejora puede reemplazar PDFKit por render HTML-to-PDF si se incorpora un runtime de navegador confiable en deploy.

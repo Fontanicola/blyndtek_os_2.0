@@ -198,6 +198,23 @@ async function renderPdf(token: string) {
   doc.moveDown(0.25);
   writeParagraph(doc, informe.propuestaSoftware.alcance_general);
 
+  writeSectionTitle(doc, "Impacto esperado", "Antes y después de implementar");
+  informe.antesDespues.slice(0, 5).forEach((item) => {
+    ensureSpace(doc, 120);
+    doc.font("DMSansBold").fontSize(11).fillColor("#0B0E14").text(item.area);
+    doc.moveDown(0.25);
+    writeParagraph(doc, `Hoy: ${item.antes}`);
+    doc.moveDown(0.15);
+    doc.font("DMSansBold").fontSize(10).fillColor("#0B0E14").text(`Con sistema: ${item.despues}`, {
+      lineGap: 3
+    });
+    doc.moveDown(0.15);
+    doc.font("DMSansBold").fontSize(9.5).fillColor("#2563EB").text(`Impacto medible: ${item.metrica}`, {
+      lineGap: 3
+    });
+    doc.moveDown(0.7);
+  });
+
   writeSectionTitle(doc, "Módulos propuestos", "Qué tendría el sistema y qué impacto busca");
   informe.modulos.forEach((modulo, index) => writeModule(doc, modulo, index));
 
@@ -224,7 +241,7 @@ async function renderPdf(token: string) {
 
   doc.moveDown(1.4);
   doc.font("DMSans").fontSize(8.8).fillColor("#5A6373").text(
-    "Documento generado por Blyndtek OS. Los precios mínimos internos no se exponen en esta propuesta pública.",
+    `Propuesta generada por Blyndtek LLC para ${informe.empresa}`,
     { align: "center" }
   );
 

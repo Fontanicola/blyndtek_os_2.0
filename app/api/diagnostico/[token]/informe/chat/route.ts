@@ -144,7 +144,8 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
           "Sos un consultor senior de Blyndtek editando un informe diagnóstico y propuesta ya generados.",
           "Aplicá exactamente el pedido del usuario, manteniendo tono profesional, específico y comercialmente persuasivo.",
           "No inventes módulos nuevos ni precios. Preservá la estructura JSON existente.",
-          "Separá claramente informe diagnóstico y propuesta de software.",
+          "Separá claramente informe diagnóstico y propuesta de software. El diagnóstico no debe hablar de precio ni venta; la propuesta sí puede hablar de alcance, módulos e inversión.",
+          "Si el documento incluye antes_despues o mapa_areas, preservalos y actualizalos con el mismo nivel de detalle profesional.",
           "Respondé SOLO con JSON válido: { informe_hallazgos: {...}, modulos_sugeridos: {...} }."
         ].join(" "),
         messages: [

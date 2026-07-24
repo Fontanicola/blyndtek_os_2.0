@@ -42,6 +42,20 @@ export type PropuestaSoftware = {
   proximos_pasos: string[];
 };
 
+export type AntesDespuesMetrica = {
+  area: string;
+  antes: string;
+  despues: string;
+  metrica: string;
+};
+
+export type AreaHeatmap = {
+  area: string;
+  nivel: number;
+  diagnostico: string;
+  oportunidad: string;
+};
+
 export type DiagnosticoInformeRecord = {
   id: string;
   token_publico: string;
@@ -65,6 +79,8 @@ export type DiagnosticoInformeView = {
   modulos: ModuloInforme[];
   diagnosticoEmpresa: DiagnosticoEmpresa;
   propuestaSoftware: PropuestaSoftware;
+  antesDespues: AntesDespuesMetrica[];
+  mapaAreas: AreaHeatmap[];
   precio_ideal_desarrollo: number;
   precio_ideal_mensual: number;
 };
@@ -245,6 +261,69 @@ export function parsePropuestaSoftware(value: unknown, modulos: ModuloInforme[])
   };
 }
 
+export function parseAntesDespues(value: unknown, hallazgos: HallazgoInforme[]): AntesDespuesMetrica[] {
+  const parsed = Array.isArray(value)
+    ? value.flatMap((item) => {
+        if (!isRecord(item)) {
+          return [];
+        }
+
+        const area = typeof item.area === "string" ? item.area.trim() : "";
+        const antes = typeof item.antes === "string" ? item.antes.trim() : "";
+        const despues = typeof item.despues === "string" ? item.despues.trim() : "";
+        const metrica = typeof item.metrica === "string" ? item.metrica.trim() : "";
+
+        return area && antes && despues && metrica ? [{ area, antes, despues, metrica }] : [];
+      })
+    : [];
+
+  if (parsed.length > 0) {
+    return parsed.slice(0, 6);
+  }
+
+  return hallazgos.slice(0, 4).map((hallazgo, index) => ({
+    area: hallazgo.hallazgo.split(":")[0]?.trim() || `Área ${index + 1}`,
+    antes: hallazgo.impacto,
+    despues: hallazgo.que_resolveria,
+    metrica: "Menos seguimiento manual, más trazabilidad y menor riesgo operativo."
+  }));
+}
+
+export function parseMapaAreas(value: unknown, hallazgos: HallazgoInforme[]): AreaHeatmap[] {
+  const parsed = Array.isArray(value)
+    ? value.flatMap((item) => {
+        if (!isRecord(item)) {
+          return [];
+        }
+
+        const area = typeof item.area === "string" ? item.area.trim() : "";
+        const nivelRaw = typeof item.nivel === "number" ? item.nivel : Number(item.nivel);
+        const diagnostico = typeof item.diagnostico === "string" ? item.diagnostico.trim() : "";
+        const oportunidad = typeof item.oportunidad === "string" ? item.oportunidad.trim() : "";
+        const nivel = Number.isFinite(nivelRaw) ? Math.min(5, Math.max(1, Math.round(nivelRaw))) : 3;
+
+        return area && diagnostico && oportunidad ? [{ area, nivel, diagnostico, oportunidad }] : [];
+      })
+    : [];
+
+  if (parsed.length > 0) {
+    return parsed.slice(0, 8);
+  }
+
+  const defaultAreas = ["Comercial", "Operación", "Administración", "Finanzas", "Control", "Equipo"];
+
+  return defaultAreas.map((area, index) => {
+    const hallazgo = hallazgos[index % Math.max(hallazgos.length, 1)];
+
+    return {
+      area,
+      nivel: hallazgo?.severidad?.toLowerCase().includes("alta") ? 4 : 3,
+      diagnostico: hallazgo?.hallazgo ?? "Área con oportunidad de orden y digitalización.",
+      oportunidad: hallazgo?.que_resolveria ?? "Centralizar información, responsables y seguimiento."
+    };
+  });
+}
+
 export function formatInformeCurrency(value: number | null | undefined) {
   return `$${Number(value ?? 0).toLocaleString("en-US", {
     maximumFractionDigits: 0
@@ -286,6 +365,7 @@ export async function fetchDiagnosticoInforme(token: string): Promise<Diagnostic
   const modulos = parseModulos(
     isRecord(data.modulos_sugeridos) ? data.modulos_sugeridos.modulos : data.modulos_sugeridos
   );
+  const informeHallazgos = isRecord(data.informe_hallazgos) ? data.informe_hallazgos : null;
 
   return {
     record: data,
@@ -294,13 +374,15 @@ export async function fetchDiagnosticoInforme(token: string): Promise<Diagnostic
     hallazgos,
     modulos,
     diagnosticoEmpresa: parseDiagnosticoEmpresa(
-      isRecord(data.informe_hallazgos) ? data.informe_hallazgos.diagnostico_empresa : null,
+      informeHallazgos ? informeHallazgos.diagnostico_empresa : null,
       hallazgos
     ),
     propuestaSoftware: parsePropuestaSoftware(
       isRecord(data.modulos_sugeridos) ? data.modulos_sugeridos.propuesta_software : null,
       modulos
     ),
+    antesDespues: parseAntesDespues(informeHallazgos ? informeHallazgos.antes_despues : null, hallazgos),
+    mapaAreas: parseMapaAreas(informeHallazgos ? informeHallazgos.mapa_areas : null, hallazgos),
     precio_ideal_desarrollo: Number(data.precio_ideal_desarrollo ?? 0),
     precio_ideal_mensual: Number(data.precio_ideal_mensual ?? 0)
   };

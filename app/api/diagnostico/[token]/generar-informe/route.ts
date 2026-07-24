@@ -65,6 +65,18 @@ type ClaudeInformePayload = {
     oportunidades_mejora?: string[];
     conclusion_diagnostico?: string;
   };
+  antes_despues?: Array<{
+    area?: string;
+    antes?: string;
+    despues?: string;
+    metrica?: string;
+  }>;
+  mapa_areas?: Array<{
+    area?: string;
+    nivel?: number;
+    diagnostico?: string;
+    oportunidad?: string;
+  }>;
   hallazgos: ClaudeHallazgo[];
   modulos_elegidos: ClaudeModulo[];
   propuesta_software?: {
@@ -243,6 +255,8 @@ function parseClaudeInforme(rawText: string): ClaudeInformePayload {
             }))
             .filter((modulo) => modulo.modulo_id && modulo.justificacion),
           diagnostico_empresa: parsed.diagnostico_empresa,
+          antes_despues: Array.isArray(parsed.antes_despues) ? parsed.antes_despues : [],
+          mapa_areas: Array.isArray(parsed.mapa_areas) ? parsed.mapa_areas : [],
           propuesta_software: parsed.propuesta_software
         };
       }
@@ -260,6 +274,7 @@ function buildSystemPrompt() {
     "Blyndtek vende salto digital, automatización y sistemas operativos a medida para PyMEs. Pensá como si estuvieras instalando maquinaria moderna en una empresa que todavía opera con procesos manuales.",
     "Tu objetivo comercial es que el cliente entienda con claridad su situación actual, vea el costo de seguir igual y perciba que Blyndtek puede resolverlo con software a medida.",
     "La salida tiene que sentirse como un informe consultivo profesional y una propuesta ejecutiva completa: específica, jerárquica, detallada, persuasiva y accionable.",
+    "Usá estructura de consultoría: estado actual, evidencia, impacto operativo, riesgo/costo de seguir igual, oportunidades priorizadas, antes/después y mapa de calor por área del negocio.",
     "Nunca inventes datos, volúmenes, dinero ni procesos que no estén en las respuestas.",
     "No inventes módulos: elegí únicamente del catálogo real provisto por modulo_id.",
     "Elegí entre 3 y 6 módulos si las respuestas lo justifican. No elijas módulos por cantidad: cada módulo tiene que conectarse con una respuesta concreta.",
@@ -299,10 +314,12 @@ function buildPrompt({
     "Los textos tienen que ser suficientemente detallados para que el cliente se reconozca en el diagnóstico y entienda por qué necesita digitalizarse.",
     "No uses frases genéricas tipo 'mejorar eficiencia' sin explicar qué cambiaría concretamente en su operación.",
     "Hallazgos: entre 4 y 7, cada uno con { hallazgo, evidencia, impacto, severidad, que_resolveria }.",
+    "Antes/después: entre 4 y 6 filas con { area, antes, despues, metrica }. La métrica debe expresar tiempo perdido, riesgo, reproceso, dependencia manual, velocidad de respuesta o trazabilidad. Si no hay números reales, usá estimaciones cualitativas honestas como 'alto', 'medio', 'bajo' o 'horas semanales a validar'.",
+    "Mapa de áreas: entre 5 y 8 áreas del negocio con { area, nivel, diagnostico, oportunidad }. nivel es 1 a 5, donde 1 = saludable y 5 = crítico. Usalo como heatmap de madurez/fricción operativa.",
     "Módulos: elegí ÚNICAMENTE del catálogo real. Para cada módulo devolvé modulo_id, justificacion, problema_resuelve, impacto_esperado, funcionalidades (4 a 7 bullets), tiempo_estimado_semanas y prioridad.",
     "Priorizá módulos que resuelvan dolores repetidos, pérdidas de seguimiento, desorden operativo, errores manuales, falta de trazabilidad, cobranzas o stock.",
     "NO inventes módulos que no estén en la lista dada.",
-    'Respondé SOLO con JSON: { "diagnostico_empresa": { "resumen_ejecutivo": "...", "operativa_actual": "...", "problemas_principales": ["..."], "costo_de_no_cambiar": "...", "oportunidades_mejora": ["..."], "conclusion_diagnostico": "..." }, "hallazgos": [...], "modulos_elegidos": [{ "modulo_id": "...", "justificacion": "...", "problema_resuelve": "...", "impacto_esperado": "...", "funcionalidades": ["..."], "tiempo_estimado_semanas": 2, "prioridad": "Alta" }], "propuesta_software": { "vision_sistema": "...", "alcance_general": "...", "beneficios_esperados": ["..."], "roadmap_implementacion": [{ "etapa": "...", "descripcion": "...", "duracion_estimada": "..." }], "supuestos": ["..."], "proximos_pasos": ["..."] } }',
+    'Respondé SOLO con JSON: { "diagnostico_empresa": { "resumen_ejecutivo": "...", "operativa_actual": "...", "problemas_principales": ["..."], "costo_de_no_cambiar": "...", "oportunidades_mejora": ["..."], "conclusion_diagnostico": "..." }, "antes_despues": [{ "area": "...", "antes": "...", "despues": "...", "metrica": "..." }], "mapa_areas": [{ "area": "...", "nivel": 4, "diagnostico": "...", "oportunidad": "..." }], "hallazgos": [...], "modulos_elegidos": [{ "modulo_id": "...", "justificacion": "...", "problema_resuelve": "...", "impacto_esperado": "...", "funcionalidades": ["..."], "tiempo_estimado_semanas": 2, "prioridad": "Alta" }], "propuesta_software": { "vision_sistema": "...", "alcance_general": "...", "beneficios_esperados": ["..."], "roadmap_implementacion": [{ "etapa": "...", "descripcion": "...", "duracion_estimada": "..." }], "supuestos": ["..."], "proximos_pasos": ["..."] } }',
     `Empresa: ${empresa ?? "Sin empresa cargada"}`,
     `Contexto adicional escrito por Blyndtek para orientar a la IA:\n${contextoAdicional || "- Sin contexto adicional"}`,
     `Respuestas:\n${respuestasTexto || "- Sin respuestas con contenido"}`,
@@ -628,6 +645,8 @@ export async function POST(_request: NextRequest, { params }: RouteContext) {
         oportunidades_mejora: hallazgos.map((hallazgo) => hallazgo.que_resolveria),
         conclusion_diagnostico: "Hay fundamentos suficientes para avanzar con un sistema operativo a medida."
       },
+      antes_despues: parsed.antes_despues ?? [],
+      mapa_areas: parsed.mapa_areas ?? [],
       hallazgos
     };
     const propuestaPayload = {

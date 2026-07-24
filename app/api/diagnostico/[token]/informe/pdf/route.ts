@@ -88,6 +88,22 @@ function writeCallout(doc: PDFKit.PDFDocument, text: string) {
   doc.y = y + 96;
 }
 
+function getHeatmapColor(nivel: number) {
+  if (nivel >= 5) {
+    return "#FDE8E8";
+  }
+
+  if (nivel >= 4) {
+    return "#FEF3C7";
+  }
+
+  if (nivel >= 3) {
+    return "#E8EEFF";
+  }
+
+  return "#E6F4EA";
+}
+
 async function renderPdf(token: string) {
   const informe = await fetchDiagnosticoInforme(token);
 
@@ -179,12 +195,53 @@ async function renderPdf(token: string) {
     writeBulletList(doc, informe.diagnosticoEmpresa.oportunidades_mejora);
   }
 
+  writeSectionTitle(doc, "Antes y después", "Qué cambia en la operación si se digitaliza");
+  informe.antesDespues.forEach((item) => {
+    ensureSpace(doc, 120);
+    doc.font("DMSansBold").fontSize(11).fillColor("#0B0E14").text(item.area);
+    doc.moveDown(0.25);
+    writeParagraph(doc, `Hoy: ${item.antes}`);
+    doc.moveDown(0.15);
+    doc.font("DMSansBold").fontSize(10).fillColor("#0B0E14").text(`Con sistema: ${item.despues}`, {
+      lineGap: 3
+    });
+    doc.moveDown(0.15);
+    doc.font("DMSansBold").fontSize(9.5).fillColor("#2563EB").text(`Métrica de impacto: ${item.metrica}`, {
+      lineGap: 3
+    });
+    doc.moveDown(0.7);
+  });
+
+  writeSectionTitle(doc, "Mapa de calor operativo", "Áreas con más fricción y potencial de mejora");
+  informe.mapaAreas.forEach((area) => {
+    ensureSpace(doc, 92);
+    const y = doc.y;
+    doc.roundedRect(PAGE_MARGIN, y, 487, 74, 8).fillAndStroke(getHeatmapColor(area.nivel), "#EAECF0");
+    doc.font("DMSansBold").fontSize(11).fillColor("#0B0E14").text(area.area, PAGE_MARGIN + 14, y + 12, {
+      width: 310
+    });
+    doc.font("DMSansBold").fontSize(9).fillColor("#5A6373").text(`Nivel ${area.nivel}/5`, 430, y + 12, {
+      width: 80,
+      align: "right"
+    });
+    doc.font("DMSans").fontSize(9).fillColor("#5A6373").text(area.diagnostico, PAGE_MARGIN + 14, y + 32, {
+      width: 455,
+      lineGap: 2
+    });
+    doc.font("DMSansBold").fontSize(9).fillColor("#0B0E14").text(area.oportunidad, PAGE_MARGIN + 14, y + 52, {
+      width: 455,
+      lineGap: 2
+    });
+    doc.x = PAGE_MARGIN;
+    doc.y = y + 88;
+  });
+
   writeSectionTitle(doc, "Conclusión", "Lectura final del diagnóstico");
   writeCallout(doc, informe.diagnosticoEmpresa.conclusion_diagnostico);
 
   doc.moveDown(1.4);
   doc.font("DMSans").fontSize(8.8).fillColor("#5A6373").text(
-    "Documento generado por Blyndtek OS a partir del diagnóstico operativo. La propuesta comercial se entrega como documento separado.",
+    `Informe generado por Blyndtek LLC para ${informe.empresa}`,
     { align: "center" }
   );
 

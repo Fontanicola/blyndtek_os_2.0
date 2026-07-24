@@ -50,7 +50,7 @@ export default async function DiagnosticoPropuestaPage({ params }: PropuestaPage
     notFound();
   }
 
-  const { empresa, modulos, propuestaSoftware } = informe;
+  const { empresa, modulos, propuestaSoftware, antesDespues } = informe;
   const whatsappText = encodeURIComponent(
     `Hola Blyndtek, revisé la propuesta de software para ${empresa}. Quiero avanzar con el próximo paso.`
   );
@@ -122,6 +122,35 @@ export default async function DiagnosticoPropuestaPage({ params }: PropuestaPage
           <SectionLabel>Visión del sistema</SectionLabel>
           <h2 className="mt-2 text-3xl font-title text-carbon">{propuestaSoftware.vision_sistema}</h2>
           <p className="mt-4 max-w-4xl text-base leading-7 text-graphite">{propuestaSoftware.alcance_general}</p>
+        </section>
+
+        <section className="rounded-card border border-line-soft bg-white p-6 sm:p-8">
+          <div className="max-w-3xl">
+            <SectionLabel>Impacto esperado</SectionLabel>
+            <h2 className="mt-2 text-2xl font-title text-carbon">Antes y después de implementar el sistema</h2>
+            <p className="mt-3 text-sm leading-6 text-graphite">
+              La propuesta no se mide solo por pantallas construidas, sino por el cambio operativo que debería producir en el negocio.
+            </p>
+          </div>
+
+          <div className="mt-6 grid gap-4 md:grid-cols-2">
+            {antesDespues.slice(0, 4).map((item) => (
+              <article key={`${item.area}-${item.metrica}`} className="rounded-card border border-line-soft p-5">
+                <p className="text-sm font-label text-signal">{item.area}</p>
+                <div className="mt-4 grid gap-3">
+                  <div className="rounded-component bg-paper p-3">
+                    <p className="text-xs font-label text-graphite">Hoy</p>
+                    <p className="mt-1 text-sm leading-6 text-graphite">{item.antes}</p>
+                  </div>
+                  <div className="rounded-component bg-success-light p-3">
+                    <p className="text-xs font-label text-success">Con sistema</p>
+                    <p className="mt-1 text-sm font-label leading-6 text-carbon">{item.despues}</p>
+                  </div>
+                </div>
+                <p className="mt-4 text-sm font-label leading-6 text-carbon">{item.metrica}</p>
+              </article>
+            ))}
+          </div>
         </section>
 
         <section className="rounded-card border border-line-soft bg-white p-6 sm:p-8">
@@ -271,7 +300,7 @@ export default async function DiagnosticoPropuestaPage({ params }: PropuestaPage
         </section>
 
         <p className="text-center text-xs text-graphite">
-          Propuesta generada por Blyndtek OS a partir del diagnóstico operativo completado con el cliente.
+          Propuesta generada por Blyndtek LLC para {empresa}
         </p>
       </div>
     </main>
