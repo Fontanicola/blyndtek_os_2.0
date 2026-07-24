@@ -1,5 +1,12 @@
 # Decisions
 
+## 2026-07-24 — Propuesta comercial con alcance verificable
+
+- La propuesta de software no se limita a módulos, beneficios y precio: debe explicar cómo se implementa, qué se entrega, cómo se acepta cada fase, qué participación requiere el cliente y qué queda fuera del alcance.
+- Claude puede interpretar y redactar la propuesta, pero no inventa resultados financieros exactos; cuando faltan números reales, los criterios de éxito se expresan como resultados operativos observables o métricas a validar.
+- Las condiciones de propiedad, soporte, cambios de alcance y migración se muestran como parte explícita de la propuesta, mientras que los precios siguen siendo calculados y editables desde Blyndtek.
+- La estructura se guarda dentro de `diagnosticos.modulos_sugeridos` como JSON versionable y mantiene defaults para documentos históricos.
+
 ## 2026-07-24 — El informe público es la fuente única del PDF
 
 - El informe diagnóstico se diseña y mantiene una sola vez, en la página pública HTML que ve el cliente.

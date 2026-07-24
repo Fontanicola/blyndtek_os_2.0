@@ -83,15 +83,28 @@ type ClaudeInformePayload = {
   propuesta_software?: {
     vision_sistema?: string;
     alcance_general?: string;
+    modelo_operativo?: string;
     beneficios_esperados?: string[];
+    entregables?: string[];
+    fuera_de_alcance?: string[];
+    criterios_exito?: string[];
     roadmap_implementacion?: Array<{
       etapa?: string;
       descripcion?: string;
       duracion_estimada?: string;
       subtareas?: string[];
+      entregables?: string[];
+      criterio_aceptacion?: string;
+      responsable_cliente?: string;
     }>;
     supuestos?: string[];
     proximos_pasos?: string[];
+    condiciones_operativas?: {
+      propiedad_sistema?: string;
+      soporte_mantenimiento?: string;
+      cambios_alcance?: string;
+      datos_y_migracion?: string;
+    };
   };
 };
 
@@ -359,17 +372,19 @@ function buildPrompt({
   return [
     "Analizá estas respuestas de un diagnóstico operativo y generá DOS piezas conectadas, pero separadas conceptualmente:",
     "A. Informe de diagnóstico de empresa: describí la operación actual en lenguaje ejecutivo, interpretá problemas y causas, explicá el impacto, el costo de no cambiar, oportunidades priorizadas y una conclusión. El diagnóstico no debe vender módulos ni mencionar precios.",
-    "B. Propuesta de software: visión del sistema recomendado, módulos, impacto de cada módulo, funcionalidades, prioridad, tiempos estimados, roadmap completo y condiciones a definir por Blyndtek.",
+    "B. Propuesta de software: visión del sistema recomendado, modelo operativo, alcance, entregables, módulos, impacto de cada módulo, funcionalidades, prioridad, tiempos estimados, roadmap completo, criterios de aceptación, participación requerida del cliente y condiciones operativas.",
     "Los textos tienen que ser suficientemente detallados para que el cliente se reconozca en el diagnóstico sin leer una copia de sus respuestas y entienda por qué necesita digitalizarse.",
     "No uses frases genéricas tipo 'mejorar eficiencia' sin explicar qué cambiaría concretamente en su operación.",
     "Hallazgos: entre 4 y 7, cada uno con { hallazgo, evidencia, impacto, severidad, que_resolveria }. evidencia debe ser una señal analítica sintetizada, no una cita.",
     "Antes/después: entre 4 y 6 filas con { area, antes, despues, metrica }. Antes debe resumir la capacidad o limitación operativa actual sin copiar respuestas; después debe describir un estado futuro observable. La métrica debe expresar tiempo perdido, riesgo, reproceso, dependencia manual, velocidad de respuesta o trazabilidad. Si no hay números reales, usá 'a validar en relevamiento', nunca inventes una cifra.",
     "Mapa de áreas: entre 5 y 8 áreas del negocio con { area, nivel, diagnostico, oportunidad }. nivel es 1 a 5, donde 1 = saludable y 5 = crítico. Usalo como heatmap de madurez/fricción operativa.",
     "Módulos: elegí ÚNICAMENTE del catálogo real. Para cada módulo devolvé modulo_id, justificacion, problema_resuelve, impacto_esperado, funcionalidades (4 a 7 bullets), tiempo_estimado_semanas y prioridad.",
-    "Roadmap: generá entre 3 y 6 fases concretas. Cada fase debe tener descripcion, duracion_estimada y subtareas (4 a 8 subtareas accionables). Estas fases y subtareas se van a convertir luego en /proyectos como fases y features reales, así que no escribas frases vagas.",
+    "Roadmap: generá entre 3 y 6 fases concretas. Cada fase debe tener descripcion, duracion_estimada, subtareas (4 a 8 subtareas accionables), entregables, criterio_aceptacion y responsable_cliente. Estas fases y subtareas se van a convertir luego en /proyectos como fases y features reales, así que no escribas frases vagas.",
+    "La propuesta debe responder explícitamente: qué se construye, qué recibe el cliente al terminar, cómo se valida cada etapa, qué debe aportar el cliente, qué queda fuera del alcance, cómo se mide el éxito y cómo funciona el soporte/mantenimiento.",
+    "No prometas resultados financieros exactos ni porcentajes de ahorro si no surgen de datos reales. Usá resultados operativos observables y métricas a validar cuando falten números.",
     "Priorizá módulos que resuelvan dolores repetidos, pérdidas de seguimiento, desorden operativo, errores manuales, falta de trazabilidad, cobranzas o stock.",
     "NO inventes módulos que no estén en la lista dada.",
-    'Respondé SOLO con JSON: { "diagnostico_empresa": { "resumen_ejecutivo": "...", "operativa_actual": "...", "problemas_principales": ["..."], "costo_de_no_cambiar": "...", "oportunidades_mejora": ["..."], "conclusion_diagnostico": "..." }, "antes_despues": [{ "area": "...", "antes": "...", "despues": "...", "metrica": "..." }], "mapa_areas": [{ "area": "...", "nivel": 4, "diagnostico": "...", "oportunidad": "..." }], "hallazgos": [...], "modulos_elegidos": [{ "modulo_id": "...", "justificacion": "...", "problema_resuelve": "...", "impacto_esperado": "...", "funcionalidades": ["..."], "tiempo_estimado_semanas": 2, "prioridad": "Alta" }], "propuesta_software": { "vision_sistema": "...", "alcance_general": "...", "beneficios_esperados": ["..."], "roadmap_implementacion": [{ "etapa": "...", "descripcion": "...", "duracion_estimada": "...", "subtareas": ["..."] }], "supuestos": ["..."], "proximos_pasos": ["..."] } }',
+    'Respondé SOLO con JSON: { "diagnostico_empresa": { "resumen_ejecutivo": "...", "operativa_actual": "...", "problemas_principales": ["..."], "costo_de_no_cambiar": "...", "oportunidades_mejora": ["..."], "conclusion_diagnostico": "..." }, "antes_despues": [{ "area": "...", "antes": "...", "despues": "...", "metrica": "..." }], "mapa_areas": [{ "area": "...", "nivel": 4, "diagnostico": "...", "oportunidad": "..." }], "hallazgos": [...], "modulos_elegidos": [{ "modulo_id": "...", "justificacion": "...", "problema_resuelve": "...", "impacto_esperado": "...", "funcionalidades": ["..."], "tiempo_estimado_semanas": 2, "prioridad": "Alta" }], "propuesta_software": { "vision_sistema": "...", "alcance_general": "...", "modelo_operativo": "...", "beneficios_esperados": ["..."], "entregables": ["..."], "fuera_de_alcance": ["..."], "criterios_exito": ["..."], "roadmap_implementacion": [{ "etapa": "...", "descripcion": "...", "duracion_estimada": "...", "subtareas": ["..."], "entregables": ["..."], "criterio_aceptacion": "...", "responsable_cliente": "..." }], "supuestos": ["..."], "proximos_pasos": ["..."], "condiciones_operativas": { "propiedad_sistema": "...", "soporte_mantenimiento": "...", "cambios_alcance": "...", "datos_y_migracion": "..." } } }',
     `Empresa: ${empresa ?? "Sin empresa cargada"}`,
     `Contexto adicional escrito por Blyndtek para orientar a la IA:\n${contextoAdicional || "- Sin contexto adicional"}`,
     `Respuestas internas para interpretar (no copiar ni mostrar textualmente):\n${respuestasTexto || "- Sin respuestas con contenido"}`,
@@ -926,7 +941,21 @@ export async function POST(_request: NextRequest, { params }: RouteContext) {
       propuesta_software: parsed.propuesta_software ?? {
         vision_sistema: "Construir un sistema operativo propio para ordenar la operación y automatizar procesos críticos.",
         alcance_general: "El alcance inicial queda organizado por los módulos propuestos.",
+        modelo_operativo: "Blyndtek implementa el sistema por fases, validando cada flujo con usuarios clave antes de avanzar al siguiente bloque.",
         beneficios_esperados: modulosSugeridos.map((modulo) => modulo.impacto_esperado || modulo.justificacion),
+        entregables: [
+          "Sistema web operativo con los módulos priorizados",
+          "Usuarios, permisos y estados de trabajo definidos",
+          "Capacitación inicial y acompañamiento de puesta en marcha"
+        ],
+        fuera_de_alcance: [
+          "Integraciones o funcionalidades no detalladas en los módulos aprobados",
+          "Carga histórica que requiera limpieza o transformación extraordinaria"
+        ],
+        criterios_exito: [
+          "Los usuarios clave pueden completar los flujos priorizados sin depender de planillas paralelas",
+          "La dirección puede consultar el estado de la operación desde una vista central"
+        ],
         roadmap_implementacion: [
           {
             etapa: "Relevamiento y diseño funcional",
@@ -937,7 +966,10 @@ export async function POST(_request: NextRequest, { params }: RouteContext) {
               "Definir entidades y permisos",
               "Priorizar módulos del MVP",
               "Cerrar alcance funcional validado"
-            ]
+            ],
+            entregables: ["Mapa funcional validado", "Alcance priorizado", "Criterios de aceptación iniciales"],
+            criterio_aceptacion: "El cliente valida por escrito el alcance, los roles y el orden de implementación.",
+            responsable_cliente: "Disponibilizar usuarios clave y validar los flujos relevados."
           },
           {
             etapa: "Construcción del sistema",
@@ -948,7 +980,10 @@ export async function POST(_request: NextRequest, { params }: RouteContext) {
               "Crear flujos de estados y responsables",
               "Implementar tableros de control",
               "Probar con casos reales"
-            ]
+            ],
+            entregables: ["Módulos priorizados funcionando", "Flujos de estados", "Primera versión de métricas"],
+            criterio_aceptacion: "Los usuarios clave completan casos reales y se registran los ajustes pendientes.",
+            responsable_cliente: "Probar casos reales, aportar feedback y designar un referente por área."
           },
           {
             etapa: "Implementación",
@@ -959,11 +994,20 @@ export async function POST(_request: NextRequest, { params }: RouteContext) {
               "Migrar datos iniciales necesarios",
               "Ajustar fricciones de uso",
               "Dejar próximos pasos operativos"
-            ]
+            ],
+            entregables: ["Usuarios capacitados", "Datos iniciales cargados", "Sistema listo para operación"],
+            criterio_aceptacion: "El equipo ejecuta el flujo acordado y cuenta con un canal de soporte definido.",
+            responsable_cliente: "Coordinar la adopción interna y confirmar el cierre de la etapa."
           }
         ],
         supuestos: ["El alcance final se confirma antes del inicio del desarrollo."],
-        proximos_pasos: ["Revisar informe", "Validar módulos", "Cerrar alcance e iniciar proyecto"]
+        proximos_pasos: ["Revisar informe", "Validar módulos", "Cerrar alcance e iniciar proyecto"],
+        condiciones_operativas: {
+          propiedad_sistema: "El sistema desarrollado para el cliente queda destinado a su operación; los alcances de licencia, código y hosting se detallan en el acuerdo final.",
+          soporte_mantenimiento: "El mantenimiento mensual cubre continuidad operativa, correcciones y ajustes menores dentro del alcance acordado.",
+          cambios_alcance: "Nuevos módulos o cambios que alteren el alcance se estiman y aprueban por separado antes de construirse.",
+          datos_y_migracion: "La migración inicial se limita a datos disponibles y utilizables; la limpieza extraordinaria se estima aparte si fuera necesaria."
+        }
       },
       condiciones_comerciales: {
         precio_desarrollo_usd: precioIdealDesarrollo,

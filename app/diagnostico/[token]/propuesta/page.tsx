@@ -131,6 +131,24 @@ export default async function DiagnosticoPropuestaPage({ params }: PropuestaPage
         </section>
 
         <section className="rounded-card border border-line-soft bg-white p-6 sm:p-8">
+          <SectionLabel>Cómo se implementa</SectionLabel>
+          <h2 className="mt-2 text-2xl font-title text-carbon">Un sistema que se incorpora al trabajo real</h2>
+          <p className="mt-4 max-w-4xl text-base leading-7 text-graphite">{propuestaSoftware.modelo_operativo}</p>
+          {propuestaSoftware.entregables.length > 0 ? (
+            <div className="mt-6">
+              <p className="text-sm font-label text-carbon">Entregables principales</p>
+              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                {propuestaSoftware.entregables.map((item) => (
+                  <div key={item} className="rounded-component border border-line-soft bg-paper/50 p-4 text-sm leading-6 text-graphite">
+                    {item}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
+        </section>
+
+        <section className="rounded-card border border-line-soft bg-white p-6 sm:p-8">
           <div className="max-w-3xl">
             <SectionLabel>Impacto esperado</SectionLabel>
             <h2 className="mt-2 text-2xl font-title text-carbon">Antes y después de implementar el sistema</h2>
@@ -233,6 +251,27 @@ export default async function DiagnosticoPropuestaPage({ params }: PropuestaPage
           </div>
         </section>
 
+        <section className="grid gap-6 lg:grid-cols-2">
+          {propuestaSoftware.criterios_exito.length > 0 ? (
+            <div className="rounded-card border border-line-soft bg-white p-6 sm:p-8">
+              <SectionLabel>Medición de resultado</SectionLabel>
+              <h2 className="mt-2 text-2xl font-title text-carbon">Cómo sabremos que funcionó</h2>
+              <div className="mt-4">
+                <Bullets items={propuestaSoftware.criterios_exito} />
+              </div>
+            </div>
+          ) : null}
+          {propuestaSoftware.fuera_de_alcance.length > 0 ? (
+            <div className="rounded-card border border-line-soft bg-white p-6 sm:p-8">
+              <SectionLabel>Alcance claro</SectionLabel>
+              <h2 className="mt-2 text-2xl font-title text-carbon">Qué no está incluido</h2>
+              <div className="mt-4">
+                <Bullets items={propuestaSoftware.fuera_de_alcance} />
+              </div>
+            </div>
+          ) : null}
+        </section>
+
         <section className="rounded-card border border-line-soft bg-white p-6 sm:p-8">
           <div className="max-w-3xl">
             <SectionLabel>Roadmap</SectionLabel>
@@ -267,6 +306,27 @@ export default async function DiagnosticoPropuestaPage({ params }: PropuestaPage
                           {subtarea}
                         </div>
                       ))}
+                    </div>
+                  </div>
+                ) : null}
+                {etapa.entregables.length > 0 ? (
+                  <div className="mt-5 grid gap-4 border-t border-line-soft pt-5 md:grid-cols-2">
+                    <div>
+                      <p className="text-sm font-label text-carbon">Qué se entrega</p>
+                      <ul className="mt-3 space-y-2">
+                        {etapa.entregables.map((entregable) => (
+                          <li key={entregable} className="flex gap-2 text-sm leading-6 text-graphite">
+                            <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-signal" aria-hidden="true" />
+                            <span>{entregable}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div className="rounded-component bg-paper p-4">
+                      <p className="text-sm font-label text-carbon">Criterio de aceptación</p>
+                      <p className="mt-2 text-sm leading-6 text-graphite">{etapa.criterio_aceptacion}</p>
+                      <p className="mt-4 text-sm font-label text-carbon">Participación del cliente</p>
+                      <p className="mt-2 text-sm leading-6 text-graphite">{etapa.responsable_cliente}</p>
                     </div>
                   </div>
                 ) : null}
@@ -317,6 +377,24 @@ export default async function DiagnosticoPropuestaPage({ params }: PropuestaPage
                   </p>
                 </div>
               </div>
+            </div>
+          </div>
+          <div className="mt-6 grid gap-4 border-t border-line-soft pt-5 md:grid-cols-2">
+            <div>
+              <p className="text-sm font-label text-carbon">Propiedad y uso</p>
+              <p className="mt-2 text-sm leading-6 text-graphite">{propuestaSoftware.condiciones_operativas.propiedad_sistema}</p>
+            </div>
+            <div>
+              <p className="text-sm font-label text-carbon">Soporte y mantenimiento</p>
+              <p className="mt-2 text-sm leading-6 text-graphite">{propuestaSoftware.condiciones_operativas.soporte_mantenimiento}</p>
+            </div>
+            <div>
+              <p className="text-sm font-label text-carbon">Cambios de alcance</p>
+              <p className="mt-2 text-sm leading-6 text-graphite">{propuestaSoftware.condiciones_operativas.cambios_alcance}</p>
+            </div>
+            <div>
+              <p className="text-sm font-label text-carbon">Datos y migración</p>
+              <p className="mt-2 text-sm leading-6 text-graphite">{propuestaSoftware.condiciones_operativas.datos_y_migracion}</p>
             </div>
           </div>
         </section>

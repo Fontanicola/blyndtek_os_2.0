@@ -32,15 +32,28 @@ export type DiagnosticoEmpresa = {
 export type PropuestaSoftware = {
   vision_sistema: string;
   alcance_general: string;
+  modelo_operativo: string;
   beneficios_esperados: string[];
+  entregables: string[];
+  fuera_de_alcance: string[];
+  criterios_exito: string[];
   roadmap_implementacion: Array<{
     etapa: string;
     descripcion: string;
     duracion_estimada: string;
     subtareas: string[];
+    entregables: string[];
+    criterio_aceptacion: string;
+    responsable_cliente: string;
   }>;
   supuestos: string[];
   proximos_pasos: string[];
+  condiciones_operativas: {
+    propiedad_sistema: string;
+    soporte_mantenimiento: string;
+    cambios_alcance: string;
+    datos_y_migracion: string;
+  };
 };
 
 export type CondicionesComercialesPropuesta = {
@@ -263,9 +276,23 @@ export function parsePropuestaSoftware(value: unknown, modulos: ModuloInforme[])
     return {
       vision_sistema: "Construir un sistema operativo propio para centralizar la información crítica y ordenar el trabajo diario.",
       alcance_general: "El alcance inicial se organiza alrededor de los módulos sugeridos en esta propuesta.",
+      modelo_operativo: "Blyndtek implementa el sistema por fases, validando cada flujo con usuarios clave antes de avanzar al siguiente bloque.",
       beneficios_esperados: modulos
         .map((modulo) => modulo.impacto_esperado || modulo.justificacion)
         .filter(Boolean),
+      entregables: [
+        "Sistema web operativo con los módulos priorizados",
+        "Usuarios, permisos y estados de trabajo definidos",
+        "Capacitación inicial y acompañamiento de puesta en marcha"
+      ],
+      fuera_de_alcance: [
+        "Integraciones o funcionalidades no detalladas en los módulos aprobados",
+        "Carga histórica que requiera limpieza o transformación extraordinaria"
+      ],
+      criterios_exito: [
+        "Los usuarios clave pueden completar los flujos priorizados sin depender de planillas paralelas",
+        "La dirección puede consultar el estado de la operación desde una vista central"
+      ],
       roadmap_implementacion: [
         {
           etapa: "Relevamiento y diseño funcional",
@@ -275,7 +302,10 @@ export function parsePropuestaSoftware(value: unknown, modulos: ModuloInforme[])
             "Relevar flujos actuales con responsables",
             "Definir entidades, permisos y pantallas críticas",
             "Cerrar alcance funcional antes de construir"
-          ]
+          ],
+          entregables: ["Mapa funcional validado", "Alcance priorizado", "Criterios de aceptación iniciales"],
+          criterio_aceptacion: "El cliente valida por escrito el alcance, los roles y el orden de implementación.",
+          responsable_cliente: "Disponibilizar usuarios clave y validar los flujos relevados."
         },
         {
           etapa: "Construcción del MVP operativo",
@@ -285,7 +315,10 @@ export function parsePropuestaSoftware(value: unknown, modulos: ModuloInforme[])
             "Construir módulos priorizados",
             "Conectar registros, estados y tableros",
             "Probar con casos reales de la operación"
-          ]
+          ],
+          entregables: ["Módulos priorizados funcionando", "Flujos de estados", "Primera versión de métricas"],
+          criterio_aceptacion: "Los usuarios clave completan casos reales y se registran los ajustes pendientes.",
+          responsable_cliente: "Probar casos reales, aportar feedback y designar un referente por área."
         },
         {
           etapa: "Implementación y ajustes",
@@ -295,13 +328,27 @@ export function parsePropuestaSoftware(value: unknown, modulos: ModuloInforme[])
             "Capacitar usuarios clave",
             "Ajustar fricciones detectadas en uso real",
             "Dejar tablero de seguimiento y próximos pasos"
-          ]
+          ],
+          entregables: ["Usuarios capacitados", "Datos iniciales cargados", "Sistema listo para operación"],
+          criterio_aceptacion: "El equipo ejecuta el flujo acordado y cuenta con un canal de soporte definido.",
+          responsable_cliente: "Coordinar la adopción interna y confirmar el cierre de la etapa."
         }
       ],
       supuestos: ["El alcance final se confirma en una reunión de cierre antes de iniciar el desarrollo."],
-      proximos_pasos: ["Revisar la propuesta", "Priorizar módulos", "Cerrar alcance, inversión y fecha de inicio"]
+      proximos_pasos: ["Revisar la propuesta", "Priorizar módulos", "Cerrar alcance, inversión y fecha de inicio"],
+      condiciones_operativas: {
+        propiedad_sistema: "El sistema desarrollado para el cliente queda destinado a su operación; los alcances de licencia, código y hosting se detallan en el acuerdo final.",
+        soporte_mantenimiento: "El mantenimiento mensual cubre continuidad operativa, correcciones y ajustes menores dentro del alcance acordado.",
+        cambios_alcance: "Nuevos módulos o cambios que alteren el alcance se estiman y aprueban por separado antes de construirse.",
+        datos_y_migracion: "La migración inicial se limita a datos disponibles y utilizables; la limpieza extraordinaria se estima aparte si fuera necesaria."
+      }
     };
   }
+
+  const beneficios = parseStringArray(value.beneficios_esperados);
+  const entregables = parseStringArray(value.entregables);
+  const fueraDeAlcance = parseStringArray(value.fuera_de_alcance);
+  const criteriosExito = parseStringArray(value.criterios_exito);
 
   return {
     vision_sistema:
@@ -312,7 +359,24 @@ export function parsePropuestaSoftware(value: unknown, modulos: ModuloInforme[])
       typeof value.alcance_general === "string"
         ? value.alcance_general
         : "El alcance inicial se organiza alrededor de los módulos sugeridos en esta propuesta.",
-    beneficios_esperados: parseStringArray(value.beneficios_esperados),
+    modelo_operativo:
+      typeof value.modelo_operativo === "string"
+        ? value.modelo_operativo
+        : "Blyndtek implementa el sistema por fases, validando cada flujo con usuarios clave antes de avanzar.",
+    beneficios_esperados: beneficios.length > 0 ? beneficios : modulos.map((modulo) => modulo.impacto_esperado || modulo.justificacion).filter(Boolean),
+    entregables: entregables.length > 0 ? entregables : [
+      "Sistema web operativo con los módulos priorizados",
+      "Usuarios, permisos y estados de trabajo definidos",
+      "Capacitación inicial y acompañamiento de puesta en marcha"
+    ],
+    fuera_de_alcance: fueraDeAlcance.length > 0 ? fueraDeAlcance : [
+      "Integraciones o funcionalidades no detalladas en los módulos aprobados",
+      "Carga histórica que requiera limpieza o transformación extraordinaria"
+    ],
+    criterios_exito: criteriosExito.length > 0 ? criteriosExito : [
+      "Los usuarios clave pueden completar los flujos priorizados sin depender de planillas paralelas",
+      "La dirección puede consultar el estado de la operación desde una vista central"
+    ],
     roadmap_implementacion: Array.isArray(value.roadmap_implementacion)
       ? value.roadmap_implementacion.flatMap((item) => {
           if (!isRecord(item)) {
@@ -323,14 +387,31 @@ export function parsePropuestaSoftware(value: unknown, modulos: ModuloInforme[])
           const descripcion = typeof item.descripcion === "string" ? item.descripcion : "";
           const duracion = typeof item.duracion_estimada === "string" ? item.duracion_estimada : "";
           const subtareas = parseStringArray(item.subtareas);
+          const entregables = parseStringArray(item.entregables);
+          const criterioAceptacion = typeof item.criterio_aceptacion === "string" ? item.criterio_aceptacion : "A validar con el cliente.";
+          const responsableCliente = typeof item.responsable_cliente === "string" ? item.responsable_cliente : "Participar en la validación de la etapa.";
 
           return etapa && descripcion
-            ? [{ etapa, descripcion, duracion_estimada: duracion || "A definir", subtareas }]
+            ? [{ etapa, descripcion, duracion_estimada: duracion || "A definir", subtareas, entregables, criterio_aceptacion: criterioAceptacion, responsable_cliente: responsableCliente }]
             : [];
         })
       : [],
     supuestos: parseStringArray(value.supuestos),
-    proximos_pasos: parseStringArray(value.proximos_pasos)
+    proximos_pasos: parseStringArray(value.proximos_pasos),
+    condiciones_operativas: {
+      propiedad_sistema: isRecord(value.condiciones_operativas) && typeof value.condiciones_operativas.propiedad_sistema === "string"
+        ? value.condiciones_operativas.propiedad_sistema
+        : "El sistema se destina a la operación del cliente y sus condiciones finales quedan establecidas en el acuerdo.",
+      soporte_mantenimiento: isRecord(value.condiciones_operativas) && typeof value.condiciones_operativas.soporte_mantenimiento === "string"
+        ? value.condiciones_operativas.soporte_mantenimiento
+        : "El mantenimiento mensual cubre continuidad operativa, correcciones y ajustes menores dentro del alcance.",
+      cambios_alcance: isRecord(value.condiciones_operativas) && typeof value.condiciones_operativas.cambios_alcance === "string"
+        ? value.condiciones_operativas.cambios_alcance
+        : "Los cambios de alcance se estiman y aprueban por separado.",
+      datos_y_migracion: isRecord(value.condiciones_operativas) && typeof value.condiciones_operativas.datos_y_migracion === "string"
+        ? value.condiciones_operativas.datos_y_migracion
+        : "La migración se limita a datos disponibles y utilizables, según lo acordado."
+    }
   };
 }
 

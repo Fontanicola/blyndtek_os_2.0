@@ -10,6 +10,19 @@ Estado general actual: Fase 0 completa. Cimientos técnicos listos: documentaci�
 
 ## Actualización 2026-07-24
 
+- Se profesionalizó la propuesta pública de software para que no sea sólo una lista de módulos y precios:
+  - la IA ahora debe generar modelo operativo, entregables, criterios de aceptación por fase, participación requerida del cliente, criterios de éxito, fuera de alcance y condiciones de propiedad, soporte, cambios y migración;
+  - cada fase del roadmap conserva subtareas accionables y suma entregables verificables, criterio de aceptación y responsabilidad del cliente;
+  - la propuesta pública muestra estas capas separadas en secciones legibles, manteniendo la diferencia conceptual entre diagnóstico y propuesta;
+  - propuestas históricas que todavía no tienen los campos nuevos reciben defaults compatibles basados en sus módulos, sin romper la vista ni exigir regeneración inmediata.
+- Archivos modificados:
+  - `app/api/diagnostico/[token]/generar-informe/route.ts`
+  - `lib/diagnostico/informe.ts`
+  - `app/diagnostico/[token]/propuesta/page.tsx`
+  - `docs/PROGRESS.md`
+  - `docs/DECISIONS.md`
+- Verificación ejecutada: `npm run lint` OK y `npm run build` OK.
+
 - Se unificó la descarga del informe diagnóstico con su vista pública:
   - la página HTML pública es ahora la única fuente de verdad para layout, colores, tipografía, radios y componentes;
   - `Descargar PDF` usa la impresión nativa del navegador sobre ese mismo DOM, esperando fuentes e imágenes antes de abrir la vista de guardado;
