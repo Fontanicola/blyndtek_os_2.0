@@ -630,9 +630,10 @@
 
 ## 2026-07-24 — Diagnóstico y propuesta como dos piezas comerciales separadas
 
-- El documento generado desde un diagnóstico se estructura en dos piezas claramente separadas: primero `Informe diagnóstico` (operativa actual, problemas, costo de no cambiar, oportunidades) y después `Propuesta de software` (visión del sistema, módulos, funcionalidades, impacto, tiempos y roadmap).
+- El documento generado desde un diagnóstico se estructura en dos piezas claramente separadas: primero `Informe diagnóstico` (operativa actual, problemas, costo de no cambiar, oportunidades) y después `Propuesta de software` (visión del sistema, módulos, funcionalidades, impacto, tiempos, inversión y roadmap).
+- La separación es también técnica y visual: el diagnóstico y la propuesta tienen rutas públicas y PDFs propios. El diagnóstico nunca muestra precios, módulos comerciales ni llamados de venta; la propuesta sí concentra alcance, módulos, inversión y próximos pasos.
 - El formulario de diagnóstico reserva `respuestas.__contexto_adicional` para que Blyndtek pueda sumar notas de la reunión, criterio comercial, ideas de solución y contexto que no entra en las preguntas preset. Ese contexto se le pasa a Claude como insumo obligatorio.
-- La propuesta puede editar datos comerciales sin regenerar todo: nombre visible del cliente, precio de desarrollo y mensual. Los precios mínimos internos siguen sin exponerse al cliente.
+- La propuesta puede editar datos comerciales sin regenerar todo: nombre visible del cliente, precio de desarrollo y mensual. Las vistas públicas de estos documentos se renderizan dinámicamente para reflejar esas ediciones de inmediato. Los precios mínimos internos siguen sin exponerse al cliente.
 - Después de generado el documento, el comercial puede pedir modificaciones por chat a la IA sobre el informe/propuesta ya existente. La IA reescribe el JSON completo del documento, pero no inventa precios ni módulos fuera de la estructura guardada.
 - Los PDFs de informe/propuesta se generan con fuentes estáticas del proyecto (`DM Sans`) y no con fuentes estándar de PDFKit como `Helvetica`, porque en Vercel esas fuentes pueden faltar dentro del bundle serverless y romper la descarga.
 

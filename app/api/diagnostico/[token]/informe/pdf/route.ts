@@ -4,10 +4,8 @@ import { NextRequest, NextResponse } from "next/server";
 import PDFDocument from "pdfkit";
 import {
   fetchDiagnosticoInforme,
-  formatInformeCurrency,
   sanitizePdfFilename
 } from "@/lib/diagnostico/informe";
-import type { ModuloInforme } from "@/lib/diagnostico/informe";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -90,52 +88,6 @@ function writeCallout(doc: PDFKit.PDFDocument, text: string) {
   doc.y = y + 96;
 }
 
-function writeModule(doc: PDFKit.PDFDocument, modulo: ModuloInforme, index: number) {
-  ensureSpace(doc, 190);
-  const y = doc.y;
-  doc.roundedRect(PAGE_MARGIN, y, 487, 34, 8).fill("#F5F6FA");
-  doc.font("DMSansBold").fontSize(12.5).fillColor("#0B0E14").text(`${index + 1}. ${modulo.nombre}`, PAGE_MARGIN + 14, y + 10, {
-    width: 335
-  });
-  if (modulo.prioridad || modulo.tiempo_estimado_semanas) {
-    const meta = [
-      modulo.prioridad ? `Prioridad ${modulo.prioridad}` : null,
-      modulo.tiempo_estimado_semanas ? `${modulo.tiempo_estimado_semanas} sem.` : null
-    ]
-      .filter(Boolean)
-      .join(" · ");
-    doc.font("DMSans").fontSize(8.5).fillColor("#5A6373").text(meta, 405, y + 11, { width: 120, align: "right" });
-  }
-
-  doc.x = PAGE_MARGIN;
-  doc.y = y + 48;
-  if (modulo.descripcion) {
-    writeParagraph(doc, modulo.descripcion);
-    doc.moveDown(0.35);
-  }
-  if (modulo.problema_resuelve) {
-    doc.font("DMSansBold").fontSize(10).fillColor("#0B0E14").text("Problema que resuelve");
-    writeParagraph(doc, modulo.problema_resuelve);
-    doc.moveDown(0.25);
-  }
-  if (modulo.impacto_esperado) {
-    doc.font("DMSansBold").fontSize(10).fillColor("#0B0E14").text("Impacto esperado");
-    writeParagraph(doc, modulo.impacto_esperado);
-    doc.moveDown(0.25);
-  }
-  if (modulo.funcionalidades && modulo.funcionalidades.length > 0) {
-    doc.font("DMSansBold").fontSize(10).fillColor("#0B0E14").text("Funcionalidades incluidas");
-    doc.moveDown(0.15);
-    writeBulletList(doc, modulo.funcionalidades.slice(0, 6));
-  }
-  if (modulo.justificacion) {
-    doc.font("DMSansBold").fontSize(9.5).fillColor("#0B0E14").text(`Por qué aplica: ${modulo.justificacion}`, {
-      lineGap: 3
-    });
-  }
-  doc.moveDown(0.8);
-}
-
 async function renderPdf(token: string) {
   const informe = await fetchDiagnosticoInforme(token);
 
@@ -149,7 +101,7 @@ async function renderPdf(token: string) {
     autoFirstPage: false,
     font: null as unknown as string,
     info: {
-      Title: `Diagnóstico y propuesta - ${informe.empresa}`,
+      Title: `Informe diagnóstico - ${informe.empresa}`,
       Author: "Blyndtek"
     }
   });
@@ -166,16 +118,16 @@ async function renderPdf(token: string) {
 
   doc.rect(0, 0, doc.page.width, 112).fill("#F5F6FA");
   doc.font("DMSansBold").fontSize(20).fillColor("#0B0E14").text("Blyndtek", PAGE_MARGIN, 34);
-  doc.font("DMSans").fontSize(10).fillColor("#5A6373").text("Diagnóstico de empresa y propuesta de software", PAGE_MARGIN, 61);
+  doc.font("DMSans").fontSize(10).fillColor("#5A6373").text("Informe diagnóstico de empresa", PAGE_MARGIN, 61);
 
   doc.y = 146;
-  doc.font("DMSansBold").fontSize(25).fillColor("#0B0E14").text(`Sistema a medida para ${informe.empresa}`, {
+  doc.font("DMSansBold").fontSize(25).fillColor("#0B0E14").text(`Diagnóstico operativo de ${informe.empresa}`, {
     lineGap: 4
   });
   doc.moveDown(0.8);
   writeParagraph(
     doc,
-    "Este documento separa dos lecturas: primero, el diagnóstico operativo de la empresa; después, la propuesta de sistema pensada para resolver los problemas detectados y habilitar un salto digital concreto."
+    "Este documento analiza la operación actual, identifica fricciones concretas y ordena las oportunidades de mejora detectadas. No incluye inversión ni alcance comercial: esos puntos viven en la propuesta de software separada."
   );
 
   doc.moveDown(1.2);
@@ -183,16 +135,9 @@ async function renderPdf(token: string) {
   doc.roundedRect(PAGE_MARGIN, summaryY, 152, 82, 8).fillAndStroke("#E8EEFF", "#D8DBE3");
   doc.roundedRect(222, summaryY, 152, 82, 8).fillAndStroke("#FFFFFF", "#EAECF0");
   doc.roundedRect(388, summaryY, 152, 82, 8).fillAndStroke("#FFFFFF", "#EAECF0");
-  writeKeyValue(doc, "Inversión desarrollo", formatInformeCurrency(informe.precio_ideal_desarrollo), 72, summaryY + 16, 120);
-  writeKeyValue(doc, "Módulos propuestos", informe.modulos.length.toString(), 238, summaryY + 16, 120);
-  writeKeyValue(
-    doc,
-    "Mensual",
-    informe.precio_ideal_mensual > 0 ? formatInformeCurrency(informe.precio_ideal_mensual) : "No aplica",
-    404,
-    summaryY + 16,
-    120
-  );
+  writeKeyValue(doc, "Hallazgos", informe.hallazgos.length.toString(), 72, summaryY + 16, 120);
+  writeKeyValue(doc, "Oportunidades", informe.diagnosticoEmpresa.oportunidades_mejora.length.toString(), 238, summaryY + 16, 120);
+  writeKeyValue(doc, "Tipo", "Operativo", 404, summaryY + 16, 120);
 
   doc.x = PAGE_MARGIN;
   doc.y = summaryY + 110;
@@ -234,39 +179,12 @@ async function renderPdf(token: string) {
     writeBulletList(doc, informe.diagnosticoEmpresa.oportunidades_mejora);
   }
 
-  writeSectionTitle(doc, "Propuesta de software", "Sistema recomendado");
-  writeCallout(doc, informe.propuestaSoftware.vision_sistema);
-  doc.font("DMSansBold").fontSize(11.5).fillColor("#0B0E14").text("Alcance general");
-  doc.moveDown(0.25);
-  writeParagraph(doc, informe.propuestaSoftware.alcance_general);
-
-  writeSectionTitle(doc, "Módulos propuestos", "Qué tendría el sistema y qué impacto busca");
-  informe.modulos.forEach((modulo, index) => writeModule(doc, modulo, index));
-
-  writeSectionTitle(doc, "Beneficios esperados", "Qué debería mejorar al implementar");
-  writeBulletList(doc, informe.propuestaSoftware.beneficios_esperados);
-
-  writeSectionTitle(doc, "Roadmap de implementación", "Cómo avanzaríamos");
-  informe.propuestaSoftware.roadmap_implementacion.forEach((etapa, index) => {
-    ensureSpace(doc, 80);
-    doc.font("DMSansBold").fontSize(11).fillColor("#0B0E14").text(`${index + 1}. ${etapa.etapa}`);
-    doc.font("DMSans").fontSize(9).fillColor("#5A6373").text(etapa.duracion_estimada);
-    doc.moveDown(0.2);
-    writeParagraph(doc, etapa.descripcion);
-    doc.moveDown(0.6);
-  });
-
-  if (informe.propuestaSoftware.supuestos.length > 0) {
-    writeSectionTitle(doc, "Supuestos", "Condiciones consideradas para esta propuesta");
-    writeBulletList(doc, informe.propuestaSoftware.supuestos);
-  }
-
-  writeSectionTitle(doc, "Próximos pasos", "Cierre comercial");
-  writeBulletList(doc, informe.propuestaSoftware.proximos_pasos);
+  writeSectionTitle(doc, "Conclusión", "Lectura final del diagnóstico");
+  writeCallout(doc, informe.diagnosticoEmpresa.conclusion_diagnostico);
 
   doc.moveDown(1.4);
   doc.font("DMSans").fontSize(8.8).fillColor("#5A6373").text(
-    "Documento generado por Blyndtek OS. Los precios mínimos internos no se exponen en esta propuesta pública.",
+    "Documento generado por Blyndtek OS a partir del diagnóstico operativo. La propuesta comercial se entrega como documento separado.",
     { align: "center" }
   );
 
@@ -274,7 +192,7 @@ async function renderPdf(token: string) {
 
   return {
     buffer: await done,
-    filename: `diagnostico-propuesta-${sanitizePdfFilename(informe.empresa)}.pdf`
+    filename: `informe-diagnostico-${sanitizePdfFilename(informe.empresa)}.pdf`
   };
 }
 

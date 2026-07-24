@@ -2948,3 +2948,27 @@ $ find . -maxdepth 3 \( -name 'middleware.*' -o -name 'proxy.*' \) -not -path '.
   - La prueba se limpió al final borrando los tres registros temporales.
   - `npm run lint` OK.
   - `npm run build` OK.
+
+## 2026-07-24 — Diagnóstico y propuesta separados, PDFs profesionales
+
+- Se corrigió la mezcla conceptual del flujo comercial: el informe público de diagnóstico ya no incluye precio, módulos ni CTA de propuesta; ahora se enfoca solamente en operación actual, problemas detectados, costo de no cambiar, oportunidades de mejora y conclusión.
+- Se creó una página pública separada de propuesta en `app/diagnostico/[token]/propuesta/page.tsx`, con estructura comercial propia: visión del sistema, módulos propuestos, funcionalidades, beneficios, roadmap, inversión y próximos pasos.
+- Se separaron también los PDFs:
+  - `app/api/diagnostico/[token]/informe/pdf/route.ts` genera `informe-diagnostico-[cliente].pdf`.
+  - `app/api/diagnostico/[token]/propuesta/pdf/route.ts` genera `propuesta-software-[cliente].pdf`.
+- La ficha del lead ahora muestra acciones separadas para ver/descargar diagnóstico y ver/descargar propuesta; el botón principal quedó como `Generar documentos` para no sugerir que ambos salen mezclados en un único archivo.
+- Se forzó render dinámico y sin revalidación en las páginas públicas de diagnóstico/propuesta para que las ediciones de nombre del cliente y precios comerciales se reflejen inmediatamente en pantalla y en la descarga, sin quedar atrapadas por cache.
+- Archivos modificados/creados:
+  - `app/diagnostico/[token]/informe/page.tsx`
+  - `app/diagnostico/[token]/propuesta/page.tsx`
+  - `app/api/diagnostico/[token]/informe/pdf/route.ts`
+  - `app/api/diagnostico/[token]/propuesta/pdf/route.ts`
+  - `components/diagnostico/LeadDiagnosticoSection.tsx`
+  - `docs/PROGRESS.md`
+  - `docs/DECISIONS.md`
+- Verificación ejecutada:
+  - Se renderizó visualmente el PDF anterior adjunto y se confirmó la causa: el documento mezclaba diagnóstico y propuesta en la primera página, incluyendo inversión y módulos dentro del diagnóstico.
+  - Se probaron localmente las descargas para el token `1f5b42aca08ee9f2`: ambos endpoints devolvieron `200` con `application/pdf`.
+  - Se renderizó visualmente la primera página de ambos PDFs nuevos y se confirmó que el informe ya no muestra precio/propuesta, mientras que la propuesta concentra la inversión y el alcance comercial.
+  - `npm run lint` OK.
+  - `npm run build` OK.

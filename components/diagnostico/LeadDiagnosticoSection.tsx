@@ -88,7 +88,11 @@ export function LeadDiagnosticoSection({ lead }: LeadDiagnosticoSectionProps) {
 
   const publicPath = diagnostico?.token_publico ? `/diagnostico/${diagnostico.token_publico}` : null;
   const informePath = diagnostico?.token_publico ? `/diagnostico/${diagnostico.token_publico}/informe` : null;
+  const propuestaPath = diagnostico?.token_publico ? `/diagnostico/${diagnostico.token_publico}/propuesta` : null;
   const informePdfPath = diagnostico?.token_publico ? `/api/diagnostico/${diagnostico.token_publico}/informe/pdf` : null;
+  const propuestaPdfPath = diagnostico?.token_publico
+    ? `/api/diagnostico/${diagnostico.token_publico}/propuesta/pdf`
+    : null;
   const publicUrl = useMemo(() => {
     if (!publicPath || typeof window === "undefined") {
       return publicPath;
@@ -377,7 +381,7 @@ export function LeadDiagnosticoSection({ lead }: LeadDiagnosticoSectionProps) {
           <div className="flex flex-wrap items-center gap-2">
             {diagnostico.estado === "informe_generado" && informePath ? (
               <Button size="sm" variant="secondary" onClick={() => window.open(informePath, "_blank")}>
-                Ver informe público
+                Ver diagnóstico
               </Button>
             ) : null}
             {diagnostico.estado === "informe_generado" && informePdfPath ? (
@@ -386,7 +390,21 @@ export function LeadDiagnosticoSection({ lead }: LeadDiagnosticoSectionProps) {
                 className="inline-flex items-center justify-center gap-2 rounded-component border border-line bg-white px-3 py-1.5 text-sm font-label text-carbon transition-colors duration-fast hover:bg-paper"
               >
                 <DownloadIcon size={15} aria-hidden="true" />
-                Descargar PDF
+                PDF diagnóstico
+              </a>
+            ) : null}
+            {diagnostico.estado === "informe_generado" && propuestaPath ? (
+              <Button size="sm" variant="secondary" onClick={() => window.open(propuestaPath, "_blank")}>
+                Ver propuesta
+              </Button>
+            ) : null}
+            {diagnostico.estado === "informe_generado" && propuestaPdfPath ? (
+              <a
+                href={propuestaPdfPath}
+                className="inline-flex items-center justify-center gap-2 rounded-component border border-line bg-white px-3 py-1.5 text-sm font-label text-carbon transition-colors duration-fast hover:bg-paper"
+              >
+                <DownloadIcon size={15} aria-hidden="true" />
+                PDF propuesta
               </a>
             ) : null}
             <Button
@@ -395,7 +413,7 @@ export function LeadDiagnosticoSection({ lead }: LeadDiagnosticoSectionProps) {
               onClick={handleGenerateInforme}
               loading={generatingInforme}
             >
-              {diagnostico.estado === "informe_generado" ? "Regenerar informe" : "Generar informe y propuesta"}
+              {diagnostico.estado === "informe_generado" ? "Regenerar documentos" : "Generar documentos"}
             </Button>
           </div>
 

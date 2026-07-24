@@ -3,7 +3,10 @@ import type { ReactNode } from "react";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { DownloadIcon } from "@/components/ui/icons";
-import { fetchDiagnosticoInforme, formatInformeCurrency } from "@/lib/diagnostico/informe";
+import { fetchDiagnosticoInforme } from "@/lib/diagnostico/informe";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 type InformePageProps = {
   params: {
@@ -36,7 +39,7 @@ export async function generateMetadata({ params }: InformePageProps): Promise<Me
   const informe = await fetchDiagnosticoInforme(params.token).catch(() => null);
 
   return {
-    title: informe ? `Diagnóstico y propuesta · ${informe.empresa}` : "Informe no disponible"
+    title: informe ? `Informe diagnóstico · ${informe.empresa}` : "Informe no disponible"
   };
 }
 
@@ -47,10 +50,7 @@ export default async function DiagnosticoInformePage({ params }: InformePageProp
     notFound();
   }
 
-  const { empresa, hallazgos, modulos, diagnosticoEmpresa, propuestaSoftware } = informe;
-  const whatsappText = encodeURIComponent(
-    `Hola Blyndtek, revisé el diagnóstico y la propuesta para ${empresa}. Quiero avanzar con el próximo paso.`
-  );
+  const { empresa, hallazgos, diagnosticoEmpresa } = informe;
 
   return (
     <main className="min-h-screen bg-paper px-4 py-6 sm:px-6 sm:py-10">
@@ -79,25 +79,19 @@ export default async function DiagnosticoInformePage({ params }: InformePageProp
 
           <div className="grid gap-8 p-6 sm:p-8 lg:grid-cols-[1.2fr_0.8fr] lg:items-end">
             <div>
-              <SectionLabel>Diagnóstico de empresa y propuesta de software</SectionLabel>
+              <SectionLabel>Informe diagnóstico de empresa</SectionLabel>
               <h1 className="mt-3 text-3xl font-title text-carbon sm:text-5xl">
-                Sistema a medida para {empresa}
+                Diagnóstico operativo de {empresa}
               </h1>
               <p className="mt-5 max-w-3xl text-base leading-7 text-graphite">
-                Este documento primero muestra qué está pasando en la operación actual y después traduce ese diagnóstico en una propuesta concreta de software, módulos, impacto esperado y próximos pasos.
+                Este informe analiza cómo opera hoy la empresa, dónde aparecen fricciones, qué costos ocultos puede estar generando la operación manual y qué oportunidades de mejora conviene priorizar.
               </p>
             </div>
-
-            <div className="rounded-card border border-signal/20 bg-signal-light p-5">
-              <p className="text-sm font-label text-signal">Inversión estimada</p>
-              <p className="mt-2 text-3xl font-title text-carbon">
-                {formatInformeCurrency(informe.precio_ideal_desarrollo)}
+            <div className="rounded-card border border-line-soft bg-paper/70 p-5">
+              <p className="text-sm font-label text-graphite">Objetivo del documento</p>
+              <p className="mt-3 text-lg font-title leading-7 text-carbon">
+                Convertir una conversación operativa en claridad para tomar decisiones.
               </p>
-              {informe.precio_ideal_mensual > 0 ? (
-                <p className="mt-2 text-sm text-graphite">
-                  + {formatInformeCurrency(informe.precio_ideal_mensual)} mensuales
-                </p>
-              ) : null}
             </div>
           </div>
         </header>
@@ -108,12 +102,12 @@ export default async function DiagnosticoInformePage({ params }: InformePageProp
             <p className="mt-2 text-3xl font-title text-carbon">{hallazgos.length}</p>
           </div>
           <div className="rounded-card border border-line-soft bg-white p-5">
-            <p className="text-sm font-label text-graphite">Módulos propuestos</p>
-            <p className="mt-2 text-3xl font-title text-carbon">{modulos.length}</p>
+            <p className="text-sm font-label text-graphite">Oportunidades de mejora</p>
+            <p className="mt-2 text-3xl font-title text-carbon">{diagnosticoEmpresa.oportunidades_mejora.length}</p>
           </div>
           <div className="rounded-card border border-line-soft bg-white p-5">
-            <p className="text-sm font-label text-graphite">Tipo de solución</p>
-            <p className="mt-2 text-lg font-title text-carbon">Sistema operativo a medida</p>
+            <p className="text-sm font-label text-graphite">Tipo de análisis</p>
+            <p className="mt-2 text-lg font-title text-carbon">Diagnóstico operativo</p>
           </div>
         </section>
 
@@ -179,159 +173,8 @@ export default async function DiagnosticoInformePage({ params }: InformePageProp
           </div>
         </section>
 
-        <section className="rounded-card border border-line-soft bg-carbon p-6 text-white sm:p-8">
-          <SectionLabel>Propuesta de software</SectionLabel>
-          <div className="mt-2 grid gap-6 lg:grid-cols-[1fr_0.8fr]">
-            <div>
-              <h2 className="text-3xl font-title">{propuestaSoftware.vision_sistema}</h2>
-              <p className="mt-4 text-sm leading-7 text-white/70">{propuestaSoftware.alcance_general}</p>
-            </div>
-            <div className="rounded-card border border-white/10 bg-white/5 p-5">
-              <p className="text-sm font-label text-white/70">Inversión</p>
-              <p className="mt-2 text-3xl font-title">{formatInformeCurrency(informe.precio_ideal_desarrollo)}</p>
-              {informe.precio_ideal_mensual > 0 ? (
-                <p className="mt-2 text-sm text-white/70">
-                  + {formatInformeCurrency(informe.precio_ideal_mensual)} mensuales
-                </p>
-              ) : null}
-            </div>
-          </div>
-        </section>
-
-        <section className="rounded-card border border-line-soft bg-white p-6 sm:p-8">
-          <div className="max-w-3xl">
-            <SectionLabel>Módulos propuestos</SectionLabel>
-            <h2 className="mt-2 text-2xl font-title text-carbon">Qué tendría el sistema y por qué importa</h2>
-            <p className="mt-3 text-sm leading-6 text-graphite">
-              Cada módulo está conectado a un dolor del diagnóstico. El cliente no está comprando pantallas: está comprando control operativo, velocidad y menor dependencia de procesos manuales.
-            </p>
-          </div>
-
-          <div className="mt-6 space-y-4">
-            {modulos.map((modulo, index) => (
-              <article key={`${modulo.nombre}-${index}`} className="rounded-card border border-line-soft p-5">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <p className="text-sm font-label text-graphite">Módulo {index + 1}</p>
-                    <h3 className="mt-1 text-xl font-title text-carbon">{modulo.nombre}</h3>
-                    {modulo.descripcion ? (
-                      <p className="mt-2 text-sm leading-6 text-graphite">{modulo.descripcion}</p>
-                    ) : null}
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {modulo.prioridad ? (
-                      <span className="rounded-pill bg-warning-light px-2 py-1 text-xs font-label text-warning">
-                        Prioridad {modulo.prioridad}
-                      </span>
-                    ) : null}
-                    {modulo.tiempo_estimado_semanas ? (
-                      <span className="rounded-pill bg-paper px-2 py-1 text-xs font-label text-graphite">
-                        {modulo.tiempo_estimado_semanas} semanas
-                      </span>
-                    ) : null}
-                  </div>
-                </div>
-
-                <div className="mt-5 grid gap-4 lg:grid-cols-2">
-                  <div className="rounded-component bg-paper p-4">
-                    <p className="text-sm font-label text-carbon">Problema que resuelve</p>
-                    <p className="mt-2 text-sm leading-6 text-graphite">
-                      {modulo.problema_resuelve || modulo.justificacion}
-                    </p>
-                  </div>
-                  <div className="rounded-component bg-success-light p-4">
-                    <p className="text-sm font-label text-carbon">Impacto esperado</p>
-                    <p className="mt-2 text-sm leading-6 text-graphite">
-                      {modulo.impacto_esperado || modulo.justificacion}
-                    </p>
-                  </div>
-                </div>
-
-                {modulo.funcionalidades && modulo.funcionalidades.length > 0 ? (
-                  <div className="mt-5">
-                    <p className="text-sm font-label text-carbon">Funcionalidades incluidas</p>
-                    <div className="mt-3 grid gap-2 md:grid-cols-2">
-                      {modulo.funcionalidades.map((funcionalidad) => (
-                        <div key={funcionalidad} className="rounded-component border border-line-soft px-3 py-2 text-sm text-graphite">
-                          {funcionalidad}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ) : null}
-              </article>
-            ))}
-          </div>
-        </section>
-
-        <section className="grid gap-4 lg:grid-cols-2">
-          <div className="rounded-card border border-line-soft bg-white p-6 sm:p-8">
-            <SectionLabel>Beneficios esperados</SectionLabel>
-            <h2 className="mt-2 text-2xl font-title text-carbon">Qué cambia cuando el sistema entra en operación</h2>
-            <div className="mt-4">
-              <Bullets items={propuestaSoftware.beneficios_esperados} />
-            </div>
-          </div>
-
-          <div className="rounded-card border border-line-soft bg-white p-6 sm:p-8">
-            <SectionLabel>Roadmap</SectionLabel>
-            <h2 className="mt-2 text-2xl font-title text-carbon">Plan de implementación sugerido</h2>
-            <div className="mt-5 space-y-4">
-              {propuestaSoftware.roadmap_implementacion.map((etapa, index) => (
-                <div key={`${etapa.etapa}-${index}`} className="border-l-2 border-signal pl-4">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="font-title text-carbon">{etapa.etapa}</p>
-                    <span className="rounded-pill bg-paper px-2 py-1 text-xs font-label text-graphite">
-                      {etapa.duracion_estimada}
-                    </span>
-                  </div>
-                  <p className="mt-2 text-sm leading-6 text-graphite">{etapa.descripcion}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="rounded-card border border-line-soft bg-white p-6 sm:p-8">
-          <div className="grid gap-6 lg:grid-cols-2">
-            <div>
-              <SectionLabel>Supuestos</SectionLabel>
-              <h2 className="mt-2 text-2xl font-title text-carbon">Condiciones consideradas</h2>
-              <div className="mt-4">
-                <Bullets items={propuestaSoftware.supuestos} />
-              </div>
-            </div>
-            <div>
-              <SectionLabel>Próximos pasos</SectionLabel>
-              <h2 className="mt-2 text-2xl font-title text-carbon">Cómo avanzar</h2>
-              <div className="mt-4">
-                <Bullets items={propuestaSoftware.proximos_pasos} />
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section className="rounded-card border border-line-soft bg-carbon p-6 text-white sm:p-8">
-          <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
-            <div>
-              <h2 className="text-2xl font-title">Siguiente paso</h2>
-              <p className="mt-2 max-w-xl text-sm leading-6 text-white/70">
-                Si la dirección hace sentido, coordinamos una llamada corta para ajustar alcance, prioridades, tiempos y forma de pago.
-              </p>
-            </div>
-            <a
-              href={`https://wa.me/?text=${whatsappText}`}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center justify-center rounded-component bg-white px-5 py-2.5 text-base font-label text-carbon transition-colors duration-fast hover:bg-paper"
-            >
-              Avanzar por WhatsApp
-            </a>
-          </div>
-        </section>
-
         <p className="text-center text-xs text-graphite">
-          Propuesta generada por Blyndtek OS a partir del diagnóstico operativo completado con el cliente.
+          Informe generado por Blyndtek OS a partir del diagnóstico operativo completado con el cliente.
         </p>
       </div>
     </main>
