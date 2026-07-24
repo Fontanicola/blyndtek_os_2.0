@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Button, SavingIndicator } from "@/components/ui";
 import { cn } from "@/lib/cn";
-import type { DiagnosticoPublicPayload } from "@/types/diagnostico";
+import { DIAGNOSTICO_CONTEXTO_KEY, type DiagnosticoPublicPayload } from "@/types/diagnostico";
 
 type DiagnosticoFormProps = {
   initialPayload: DiagnosticoPublicPayload;
@@ -50,7 +50,10 @@ export function DiagnosticoForm({
   const [submitLoading, setSubmitLoading] = useState(false);
   const grupos = useMemo(() => groupPreguntas(initialPayload.preguntas), [initialPayload.preguntas]);
   const answeredCount = useMemo(
-    () => Object.values(respuestas).filter((value) => value.trim().length > 0).length,
+    () =>
+      Object.entries(respuestas).filter(
+        ([key, value]) => key !== DIAGNOSTICO_CONTEXTO_KEY && value.trim().length > 0
+      ).length,
     [respuestas]
   );
   const canSubmit = answeredCount >= Math.min(MIN_RESPUESTAS_PARA_ENVIAR, initialPayload.preguntas.length);
@@ -152,6 +155,26 @@ export function DiagnosticoForm({
           {error}
         </div>
       ) : null}
+
+      <section className="space-y-3 rounded-card border border-line-soft bg-paper/60 p-4">
+        <div>
+          <h2 className={cn("font-title text-carbon", compact ? "text-base" : "text-xl")}>
+            Contexto adicional para la IA
+          </h2>
+          <p className="mt-1 text-sm leading-6 text-graphite">
+            Usá este espacio para sumar todo lo que no entra en las preguntas: impresiones de la reunión,
+            contexto del lead, ideas de sistema, prioridades comerciales, riesgos y cualquier criterio que
+            querés que la IA tenga en cuenta al armar el informe y la propuesta.
+          </p>
+        </div>
+        <textarea
+          value={respuestas[DIAGNOSTICO_CONTEXTO_KEY] ?? ""}
+          onChange={(event) => setRespuesta(DIAGNOSTICO_CONTEXTO_KEY, event.target.value)}
+          rows={compact ? 5 : 6}
+          className="w-full resize-y rounded-component border border-line bg-white px-3 py-2 text-sm text-carbon transition-all duration-fast ease-fast placeholder:text-graphite focus:border-signal focus:outline-none focus:ring-2 focus:ring-signal/20"
+          placeholder="Ej: El dueño se preocupa por perder pedidos por WhatsApp, el equipo anota cosas en papel, hay oportunidad de ordenar stock y seguimiento de pagos..."
+        />
+      </section>
 
       {grupos.map((grupo) => (
         <section key={grupo.categoria} className="space-y-3">

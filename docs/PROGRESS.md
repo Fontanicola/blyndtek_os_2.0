@@ -8,6 +8,47 @@ Fecha de inicio: 2026-06-25
 
 Estado general actual: Fase 0 completa. Cimientos técnicos listos: documentación fundacional, setup del repo, design system, shell de app y sistema de autenticación base. Las fases 1, 2 y 3 del roadmap original quedaron completadas.
 
+## Actualización 2026-07-24
+
+- Se rediseñó el flujo de `Generar informe y propuesta` para que sea una pieza comercial completa y no un resumen corto:
+  - Claude ahora recibe las respuestas del formulario, el catálogo real de módulos y un campo extra de contexto comercial/reunión (`respuestas.__contexto_adicional`);
+  - el JSON generado separa `Informe diagnóstico` (`diagnostico_empresa` + `hallazgos`) de `Propuesta de software` (`propuesta_software` + `modulos`);
+  - el prompt exige lectura de operativa actual, problemas, evidencia, costo de no cambiar, oportunidades, módulos, impacto esperado, funcionalidades, prioridad, tiempos y roadmap.
+- Se agregó en el formulario de diagnóstico un bloque editable “Contexto adicional para la IA” para cargar notas del Meet, criterio comercial, ideas de sistema y contexto del lead que no entra en las preguntas preset.
+- La ficha del lead ahora permite:
+  - editar nombre visible del cliente, precio de desarrollo y mensual sin regenerar todo el informe;
+  - pedir cambios con IA por chat sobre el informe/propuesta ya generado;
+  - descargar el PDF desde el mismo bloque de diagnóstico.
+- Se crearon endpoints nuevos:
+  - `PATCH /api/diagnostico/[token]/propuesta` para guardar datos comerciales editables y sincronizarlos con el lead;
+  - `POST /api/diagnostico/[token]/informe/chat` para aplicar modificaciones conversacionales con Claude sobre el documento generado.
+- Se corrigió la descarga de PDF:
+  - causa exacta del bug: PDFKit inicializaba `Helvetica` por defecto y en Vercel intentaba leer `data/Helvetica.afm` dentro del bundle serverless, archivo que no existe en producción;
+  - fix aplicado: el PDF se crea con `autoFirstPage:false`, `font:null` y registra `DM Sans` desde `public/fonts` antes de agregar la primera página;
+  - el PDF público ahora renderiza el documento largo con diagnóstico, propuesta, módulos, beneficios y roadmap.
+- Se corrigió retrocompatibilidad del parser de informes:
+  - causa detectada durante verificación: `isRecord()` trataba arrays históricos como objetos y buscaba `modulos_sugeridos.modulos`, por eso un informe viejo podía mostrar `0` módulos aunque el array real existiera;
+  - fix aplicado: `isRecord()` excluye arrays y el helper lee tanto arrays históricos como el nuevo formato `{ propuesta_software, modulos }`.
+- Archivos creados/modificados en esta unidad:
+  - `app/api/diagnostico/[token]/generar-informe/route.ts`
+  - `app/api/diagnostico/[token]/informe/chat/route.ts`
+  - `app/api/diagnostico/[token]/informe/pdf/route.ts`
+  - `app/api/diagnostico/[token]/propuesta/route.ts`
+  - `app/diagnostico/[token]/informe/page.tsx`
+  - `components/diagnostico/DiagnosticoForm.tsx`
+  - `components/diagnostico/LeadDiagnosticoSection.tsx`
+  - `lib/diagnostico/informe.ts`
+  - `types/diagnostico.ts`
+  - `docs/DATABASE.md`
+  - `docs/DECISIONS.md`
+  - `docs/PROGRESS.md`
+- Verificación ejecutada:
+  - `npm run lint` OK;
+  - `npm run build` OK;
+  - consulta directa a Supabase encontró el diagnóstico real `1f5b42aca08ee9f2` con `estado='informe_generado'`;
+  - `GET http://localhost:3100/api/diagnostico/1f5b42aca08ee9f2/informe/pdf` devolvió `200 OK`, `Content-Type: application/pdf`, archivo `diagnostico-propuesta-panaderias.pdf`;
+  - el PDF resultante tiene 6 páginas y fue renderizado con `pdftoppm` a PNG para confirmar que no era JSON de error ni un archivo corrupto.
+
 ## Actualización 2026-07-23
 
 - Se corrigió el flujo de `Generar informe y propuesta` del diagnóstico comercial:

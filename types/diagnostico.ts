@@ -39,6 +39,8 @@ export type ModuloCatalogo = {
   created_at: string;
 };
 
+export const DIAGNOSTICO_CONTEXTO_KEY = "__contexto_adicional";
+
 export type DiagnosticoPublicPayload = {
   diagnostico: Pick<
     Diagnostico,

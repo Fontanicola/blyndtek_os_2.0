@@ -1150,14 +1150,14 @@ Nota: `usuarios` debe existir antes que `leads`, `proyectos`, `features`, `tarea
 - `agentes`, `agente_config` y `agente_analisis` soportan el módulo de Agentes; `agente_analisis` guarda tanto la base determinística como la síntesis en lenguaje natural.
 - `cierres_mensuales` guarda el resumen financiero mensual generado por el agente `cierre-mensual`, con base numérica real y texto sintetizado por Claude.
 - `preguntas_diagnostico` guarda las preguntas activas del formulario público de diagnóstico, agrupadas por categoría y orden.
-- `diagnosticos` guarda un diagnóstico por lead con `token_publico`, respuestas JSON, estado, quién lo completó, informe generado, módulos sugeridos y precios calculados para la propuesta.
+- `diagnosticos` guarda un diagnóstico por lead con `token_publico`, respuestas JSON, estado, quién lo completó, informe generado, módulos sugeridos y precios calculados para la propuesta. `respuestas` reserva la clave interna `__contexto_adicional` para contexto de reunión/notas comerciales que orientan a la IA y no corresponde a una pregunta preset.
 - `modulos_catalogo` guarda el catálogo editable de módulos con precios ideal/mínimo e incremento mensual para usar en propuestas. La migración `019_seed_modulos_catalogo_defaults.sql` carga un catálogo base idempotente para que el diagnóstico pueda generar propuestas aunque el admin todavía no haya cargado módulos manualmente.
 
 ### Tabla nueva
 
 - `ai_dev_ejecuciones`: registra cada corrida de AI Dev por fase con modelos usados, estado, PR, tokens, costo estimado, usuario que inició y timestamps de inicio/fin.
 - `preguntas_diagnostico`: banco de preguntas del diagnóstico comercial, filtrable por `activa=true`.
-- `diagnosticos`: instancia de diagnóstico vinculada a `leads.id`, con `token_publico` para formulario e informe sin login, `respuestas` en `jsonb`, `informe_hallazgos`, `modulos_sugeridos`, precios ideal/mínimo de desarrollo y mensual, y estado `pendiente`/`respondido`/`informe_generado`.
+- `diagnosticos`: instancia de diagnóstico vinculada a `leads.id`, con `token_publico` para formulario e informe sin login, `respuestas` en `jsonb`, `informe_hallazgos`, `modulos_sugeridos`, precios ideal/mínimo de desarrollo y mensual, y estado `pendiente`/`respondido`/`informe_generado`. Desde 2026-07-24, `informe_hallazgos` puede guardar `{ diagnostico_empresa, hallazgos }` y `modulos_sugeridos` puede guardar `{ propuesta_software, modulos }`; el parser mantiene compatibilidad con arrays históricos.
 - `modulos_catalogo`: catálogo admin de módulos comerciales con categoría, descripción, precio ideal, precio mínimo, incremento mensual y estado activo. El catálogo base incluye módulos de CRM comercial, pedidos/operación, agenda, inventario, facturación/cobranzas, dashboard, portal multiusuario y automatizaciones.
 - `cierres_mensuales`: histórico de cierres de caja mensuales con ingresos, egresos, margen, desvío versus el mes anterior, resumen generado y costo de IA.
 

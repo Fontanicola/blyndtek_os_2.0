@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
-import type { Diagnostico, ModuloCatalogo, PreguntaDiagnostico } from "@/types/diagnostico";
+import { DIAGNOSTICO_CONTEXTO_KEY, type Diagnostico, type ModuloCatalogo, type PreguntaDiagnostico } from "@/types/diagnostico";
 
 type RouteContext = {
   params: {
@@ -42,16 +42,43 @@ type ClaudeHallazgo = {
   hallazgo: string;
   impacto: string;
   que_resolveria: string;
+  evidencia?: string;
+  severidad?: string;
 };
 
 type ClaudeModulo = {
   modulo_id: string;
   justificacion: string;
+  problema_resuelve?: string;
+  impacto_esperado?: string;
+  funcionalidades?: string[];
+  tiempo_estimado_semanas?: number;
+  prioridad?: string;
 };
 
 type ClaudeInformePayload = {
+  diagnostico_empresa?: {
+    resumen_ejecutivo?: string;
+    operativa_actual?: string;
+    problemas_principales?: string[];
+    costo_de_no_cambiar?: string;
+    oportunidades_mejora?: string[];
+    conclusion_diagnostico?: string;
+  };
   hallazgos: ClaudeHallazgo[];
   modulos_elegidos: ClaudeModulo[];
+  propuesta_software?: {
+    vision_sistema?: string;
+    alcance_general?: string;
+    beneficios_esperados?: string[];
+    roadmap_implementacion?: Array<{
+      etapa?: string;
+      descripcion?: string;
+      duracion_estimada?: string;
+    }>;
+    supuestos?: string[];
+    proximos_pasos?: string[];
+  };
 };
 
 type ModuloSugerido = {
@@ -63,6 +90,11 @@ type ModuloSugerido = {
   precio_minimo: number;
   incremento_mensual: number;
   justificacion: string;
+  problema_resuelve?: string;
+  impacto_esperado?: string;
+  funcionalidades?: string[];
+  tiempo_estimado_semanas?: number | null;
+  prioridad?: string | null;
 };
 
 const MODULOS_CATALOGO_DEFAULT: Array<Omit<ModuloCatalogo, "id" | "created_at">> = [
@@ -186,16 +218,32 @@ function parseClaudeInforme(rawText: string): ClaudeInformePayload {
               hallazgo: typeof hallazgo.hallazgo === "string" ? hallazgo.hallazgo.trim() : "",
               impacto: typeof hallazgo.impacto === "string" ? hallazgo.impacto.trim() : "",
               que_resolveria:
-                typeof hallazgo.que_resolveria === "string" ? hallazgo.que_resolveria.trim() : ""
+                typeof hallazgo.que_resolveria === "string" ? hallazgo.que_resolveria.trim() : "",
+              evidencia: typeof hallazgo.evidencia === "string" ? hallazgo.evidencia.trim() : "",
+              severidad: typeof hallazgo.severidad === "string" ? hallazgo.severidad.trim() : ""
             }))
             .filter((hallazgo) => hallazgo.hallazgo && hallazgo.impacto && hallazgo.que_resolveria)
             .slice(0, 5),
           modulos_elegidos: parsed.modulos_elegidos
             .map((modulo) => ({
               modulo_id: typeof modulo.modulo_id === "string" ? modulo.modulo_id.trim() : "",
-              justificacion: typeof modulo.justificacion === "string" ? modulo.justificacion.trim() : ""
+              justificacion: typeof modulo.justificacion === "string" ? modulo.justificacion.trim() : "",
+              problema_resuelve:
+                typeof modulo.problema_resuelve === "string" ? modulo.problema_resuelve.trim() : "",
+              impacto_esperado:
+                typeof modulo.impacto_esperado === "string" ? modulo.impacto_esperado.trim() : "",
+              funcionalidades: Array.isArray(modulo.funcionalidades)
+                ? modulo.funcionalidades.filter(
+                    (value): value is string => typeof value === "string" && value.trim().length > 0
+                  )
+                : [],
+              tiempo_estimado_semanas:
+                typeof modulo.tiempo_estimado_semanas === "number" ? modulo.tiempo_estimado_semanas : undefined,
+              prioridad: typeof modulo.prioridad === "string" ? modulo.prioridad.trim() : ""
             }))
-            .filter((modulo) => modulo.modulo_id && modulo.justificacion)
+            .filter((modulo) => modulo.modulo_id && modulo.justificacion),
+          diagnostico_empresa: parsed.diagnostico_empresa,
+          propuesta_software: parsed.propuesta_software
         };
       }
     } catch {
@@ -209,8 +257,9 @@ function parseClaudeInforme(rawText: string): ClaudeInformePayload {
 function buildSystemPrompt() {
   return [
     "Sos un consultor senior en digitalización de PyMEs.",
-    "Analizás respuestas cualitativas y proponés sistemas operativos concretos.",
-    "Tu salida tiene que sentirse como una propuesta ejecutiva profesional: clara, accionable, específica y sin relleno.",
+    "Blyndtek vende salto digital, automatización y sistemas operativos a medida para PyMEs. Pensá como si estuvieras instalando maquinaria moderna en una empresa que todavía opera con procesos manuales.",
+    "Tu objetivo comercial es que el cliente entienda con claridad su situación actual, vea el costo de seguir igual y perciba que Blyndtek puede resolverlo con software a medida.",
+    "La salida tiene que sentirse como un informe consultivo profesional y una propuesta ejecutiva completa: específica, jerárquica, detallada, persuasiva y accionable.",
     "Nunca inventes datos, volúmenes, dinero ni procesos que no estén en las respuestas.",
     "No inventes módulos: elegí únicamente del catálogo real provisto por modulo_id.",
     "Elegí entre 3 y 6 módulos si las respuestas lo justifican. No elijas módulos por cantidad: cada módulo tiene que conectarse con una respuesta concreta.",
@@ -221,10 +270,12 @@ function buildSystemPrompt() {
 function buildPrompt({
   empresa,
   respuestas,
+  contextoAdicional,
   modulos
 }: {
   empresa: string | null;
   respuestas: Array<{ categoria: string; pregunta: string; respuesta: string }>;
+  contextoAdicional: string;
   modulos: ModuloCatalogo[];
 }) {
   const respuestasTexto = respuestas
@@ -242,13 +293,18 @@ function buildPrompt({
     .join("\n");
 
   return [
-    "Analizá estas respuestas de un diagnóstico operativo y generá:",
-    "1. Entre 3 y 5 HALLAZGOS, cada uno con EXACTAMENTE esta estructura: { hallazgo: 'el proceso actual en una frase', impacto: 'tiempo perdido/plata/riesgo concreto, con número si las respuestas lo permiten', que_resolveria: 'qué parte de un sistema atacaría esto' }.",
-    "2. Una lista de MÓDULOS NECESARIOS, eligiendo ÚNICAMENTE de este catálogo real. Para cada módulo elegido, devolvé modulo_id y justificacion de una frase conectándolo a algo específico que la persona respondió.",
+    "Analizá estas respuestas de un diagnóstico operativo y generá DOS piezas conectadas:",
+    "A. Informe de diagnóstico de empresa: descripción de operativa actual, problemas, costo de no cambiar, oportunidades de mejora y conclusión.",
+    "B. Propuesta de software: visión del sistema recomendado, módulos, impacto de cada módulo, funcionalidades, prioridad, tiempos estimados y roadmap.",
+    "Los textos tienen que ser suficientemente detallados para que el cliente se reconozca en el diagnóstico y entienda por qué necesita digitalizarse.",
+    "No uses frases genéricas tipo 'mejorar eficiencia' sin explicar qué cambiaría concretamente en su operación.",
+    "Hallazgos: entre 4 y 7, cada uno con { hallazgo, evidencia, impacto, severidad, que_resolveria }.",
+    "Módulos: elegí ÚNICAMENTE del catálogo real. Para cada módulo devolvé modulo_id, justificacion, problema_resuelve, impacto_esperado, funcionalidades (4 a 7 bullets), tiempo_estimado_semanas y prioridad.",
     "Priorizá módulos que resuelvan dolores repetidos, pérdidas de seguimiento, desorden operativo, errores manuales, falta de trazabilidad, cobranzas o stock.",
     "NO inventes módulos que no estén en la lista dada.",
-    'Respondé SOLO con JSON: { "hallazgos": [...], "modulos_elegidos": [{ "modulo_id": "...", "justificacion": "..." }] }',
+    'Respondé SOLO con JSON: { "diagnostico_empresa": { "resumen_ejecutivo": "...", "operativa_actual": "...", "problemas_principales": ["..."], "costo_de_no_cambiar": "...", "oportunidades_mejora": ["..."], "conclusion_diagnostico": "..." }, "hallazgos": [...], "modulos_elegidos": [{ "modulo_id": "...", "justificacion": "...", "problema_resuelve": "...", "impacto_esperado": "...", "funcionalidades": ["..."], "tiempo_estimado_semanas": 2, "prioridad": "Alta" }], "propuesta_software": { "vision_sistema": "...", "alcance_general": "...", "beneficios_esperados": ["..."], "roadmap_implementacion": [{ "etapa": "...", "descripcion": "...", "duracion_estimada": "..." }], "supuestos": ["..."], "proximos_pasos": ["..."] } }',
     `Empresa: ${empresa ?? "Sin empresa cargada"}`,
+    `Contexto adicional escrito por Blyndtek para orientar a la IA:\n${contextoAdicional || "- Sin contexto adicional"}`,
     `Respuestas:\n${respuestasTexto || "- Sin respuestas con contenido"}`,
     `Catálogo real de módulos:\n${modulosTexto}`
   ].join("\n\n");
@@ -265,6 +321,10 @@ function mapRespuestas(
       respuesta: respuestas?.[pregunta.id]?.trim() ?? ""
     }))
     .filter((item) => item.respuesta.length > 0);
+}
+
+function getContextoAdicional(respuestas: Record<string, string> | null) {
+  return respuestas?.[DIAGNOSTICO_CONTEXTO_KEY]?.trim() ?? "";
 }
 
 function resolveModulos(
@@ -293,7 +353,12 @@ function resolveModulos(
         precio_ideal: Number(modulo.precio_ideal ?? 0),
         precio_minimo: Number(modulo.precio_minimo ?? 0),
         incremento_mensual: Number(modulo.incremento_mensual ?? 0),
-        justificacion: elegido.justificacion
+        justificacion: elegido.justificacion,
+        problema_resuelve: elegido.problema_resuelve,
+        impacto_esperado: elegido.impacto_esperado,
+        funcionalidades: elegido.funcionalidades,
+        tiempo_estimado_semanas: elegido.tiempo_estimado_semanas ?? null,
+        prioridad: elegido.prioridad ?? null
       }
     ];
   });
@@ -304,7 +369,9 @@ function buildFallbackHallazgos(
 ): ClaudeHallazgo[] {
   return respuestas.slice(0, 5).map((item) => ({
     hallazgo: `${item.categoria}: ${item.pregunta}`,
+    evidencia: item.respuesta,
     impacto: item.respuesta,
+    severidad: "Media",
     que_resolveria: "Un sistema a medida permitiría ordenar este flujo, dejar trazabilidad y reducir dependencia de seguimiento manual."
   }));
 }
@@ -352,7 +419,17 @@ function buildFallbackModulos(
       precio_ideal: Number(modulo.precio_ideal ?? 0),
       precio_minimo: Number(modulo.precio_minimo ?? 0),
       incremento_mensual: Number(modulo.incremento_mensual ?? 0),
-      justificacion: "Seleccionado por los dolores operativos detectados en las respuestas del diagnóstico."
+      justificacion: "Seleccionado por los dolores operativos detectados en las respuestas del diagnóstico.",
+      problema_resuelve: "Desorden operativo y dependencia de seguimiento manual.",
+      impacto_esperado: "Más trazabilidad, menos errores y mejor capacidad de control para la dirección.",
+      funcionalidades: [
+        "Registro centralizado de información",
+        "Estados claros por proceso",
+        "Responsables y próximos pasos",
+        "Alertas y seguimiento operativo"
+      ],
+      tiempo_estimado_semanas: 2,
+      prioridad: "Alta"
     }));
 }
 
@@ -460,6 +537,7 @@ export async function POST(_request: NextRequest, { params }: RouteContext) {
     }
 
     const respuestas = mapRespuestas(diagnostico.respuestas, preguntas ?? []);
+    const contextoAdicional = getContextoAdicional(diagnostico.respuestas);
 
     if (respuestas.length === 0) {
       return NextResponse.json(
@@ -490,7 +568,7 @@ export async function POST(_request: NextRequest, { params }: RouteContext) {
       },
       body: JSON.stringify({
         model: "claude-sonnet-4-6",
-        max_tokens: 1800,
+        max_tokens: 5000,
         temperature: 0.2,
         system: buildSystemPrompt(),
         messages: [
@@ -502,6 +580,7 @@ export async function POST(_request: NextRequest, { params }: RouteContext) {
                 text: buildPrompt({
                   empresa: diagnostico.lead?.empresa ?? null,
                   respuestas,
+                  contextoAdicional,
                   modulos
                 })
               } satisfies AnthropicTextBlock
@@ -540,9 +619,48 @@ export async function POST(_request: NextRequest, { params }: RouteContext) {
     const precioMinimoDesarrollo = sum(modulosSugeridos, "precio_minimo");
     const precioMensual = sum(modulosSugeridos, "incremento_mensual");
 
+    const informeDiagnosticoPayload = {
+      diagnostico_empresa: parsed.diagnostico_empresa ?? {
+        resumen_ejecutivo: "El diagnóstico muestra una operación con oportunidades claras de digitalización.",
+        operativa_actual: "La operación actual fue relevada a partir de las respuestas y el contexto adicional.",
+        problemas_principales: hallazgos.map((hallazgo) => hallazgo.hallazgo),
+        costo_de_no_cambiar: "Seguir operando sin sistema mantiene dependencia manual, pérdida de trazabilidad y riesgo de errores.",
+        oportunidades_mejora: hallazgos.map((hallazgo) => hallazgo.que_resolveria),
+        conclusion_diagnostico: "Hay fundamentos suficientes para avanzar con un sistema operativo a medida."
+      },
+      hallazgos
+    };
+    const propuestaPayload = {
+      propuesta_software: parsed.propuesta_software ?? {
+        vision_sistema: "Construir un sistema operativo propio para ordenar la operación y automatizar procesos críticos.",
+        alcance_general: "El alcance inicial queda organizado por los módulos propuestos.",
+        beneficios_esperados: modulosSugeridos.map((modulo) => modulo.impacto_esperado || modulo.justificacion),
+        roadmap_implementacion: [
+          {
+            etapa: "Relevamiento y diseño funcional",
+            descripcion: "Aterrizar flujos reales, roles, pantallas y prioridades.",
+            duracion_estimada: "1 semana"
+          },
+          {
+            etapa: "Construcción del sistema",
+            descripcion: "Desarrollar los módulos principales y validar con datos reales.",
+            duracion_estimada: "4 a 7 semanas"
+          },
+          {
+            etapa: "Implementación",
+            descripcion: "Capacitar al equipo, ajustar fricciones y dejar el sistema operando.",
+            duracion_estimada: "1 a 2 semanas"
+          }
+        ],
+        supuestos: ["El alcance final se confirma antes del inicio del desarrollo."],
+        proximos_pasos: ["Revisar informe", "Validar módulos", "Cerrar alcance e iniciar proyecto"]
+      },
+      modulos: modulosSugeridos
+    };
+
     const updatePayload = {
-      informe_hallazgos: hallazgos,
-      modulos_sugeridos: modulosSugeridos,
+      informe_hallazgos: informeDiagnosticoPayload,
+      modulos_sugeridos: propuestaPayload,
       precio_ideal_desarrollo: precioIdealDesarrollo,
       precio_minimo_desarrollo: precioMinimoDesarrollo,
       precio_ideal_mensual: precioMensual,
@@ -579,8 +697,8 @@ export async function POST(_request: NextRequest, { params }: RouteContext) {
     return NextResponse.json({
       data: {
         diagnostico: updatedDiagnostico as Diagnostico,
-        informe_hallazgos: hallazgos,
-        modulos_sugeridos: modulosSugeridos,
+        informe_hallazgos: informeDiagnosticoPayload,
+        modulos_sugeridos: propuestaPayload,
         precio_ideal_desarrollo: precioIdealDesarrollo,
         precio_minimo_desarrollo: precioMinimoDesarrollo,
         precio_ideal_mensual: precioMensual,

@@ -3,8 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Badge, Button, Modal } from "@/components/ui";
 import { DiagnosticoForm } from "@/components/diagnostico/DiagnosticoForm";
-import { CopyIcon, DownloadIcon, LinkIcon } from "@/components/ui/icons";
-import type { Diagnostico, DiagnosticoPublicPayload } from "@/types/diagnostico";
+import { CopyIcon, DownloadIcon, LinkIcon, SparklesIcon } from "@/components/ui/icons";
+import { DIAGNOSTICO_CONTEXTO_KEY, type Diagnostico, type DiagnosticoPublicPayload } from "@/types/diagnostico";
 import type { Lead } from "@/types/leads";
 
 type LeadDiagnosticoSectionProps = {
@@ -25,6 +25,21 @@ type InformeResponse = {
   data?: {
     diagnostico: Diagnostico;
     informe_url: string;
+  };
+  error?: string;
+};
+
+type PropuestaUpdateResponse = {
+  data?: {
+    diagnostico: Diagnostico;
+    empresa: string;
+  };
+  error?: string;
+};
+
+type ChatResponse = {
+  data?: {
+    diagnostico: Diagnostico;
   };
   error?: string;
 };
@@ -51,12 +66,22 @@ function groupRespuestas(payload: DiagnosticoPublicPayload) {
   );
 }
 
+function getContextoAdicional(payload: DiagnosticoPublicPayload | null) {
+  return payload?.diagnostico.respuestas?.[DIAGNOSTICO_CONTEXTO_KEY]?.trim() ?? "";
+}
+
 export function LeadDiagnosticoSection({ lead }: LeadDiagnosticoSectionProps) {
   const [diagnostico, setDiagnostico] = useState<Diagnostico | null>(null);
   const [payload, setPayload] = useState<DiagnosticoPublicPayload | null>(null);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [generatingInforme, setGeneratingInforme] = useState(false);
+  const [savingPropuesta, setSavingPropuesta] = useState(false);
+  const [chatLoading, setChatLoading] = useState(false);
+  const [empresaEditable, setEmpresaEditable] = useState(lead.empresa ?? "");
+  const [precioDesarrolloEditable, setPrecioDesarrolloEditable] = useState("");
+  const [precioMensualEditable, setPrecioMensualEditable] = useState("");
+  const [chatMensaje, setChatMensaje] = useState("");
   const [copied, setCopied] = useState(false);
   const [adminModalOpen, setAdminModalOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -72,6 +97,20 @@ export function LeadDiagnosticoSection({ lead }: LeadDiagnosticoSectionProps) {
     return `${window.location.origin}${publicPath}`;
   }, [publicPath]);
   const groupedRespuestas = payload ? groupRespuestas(payload) : [];
+  const contextoAdicional = getContextoAdicional(payload);
+
+  useEffect(() => {
+    setEmpresaEditable(lead.empresa ?? "");
+  }, [lead.empresa]);
+
+  useEffect(() => {
+    setPrecioDesarrolloEditable(
+      diagnostico?.precio_ideal_desarrollo == null ? "" : String(diagnostico.precio_ideal_desarrollo)
+    );
+    setPrecioMensualEditable(
+      diagnostico?.precio_ideal_mensual == null ? "" : String(diagnostico.precio_ideal_mensual)
+    );
+  }, [diagnostico?.precio_ideal_desarrollo, diagnostico?.precio_ideal_mensual]);
 
   async function fetchDiagnostico() {
     setLoading(true);
@@ -170,10 +209,76 @@ export function LeadDiagnosticoSection({ lead }: LeadDiagnosticoSectionProps) {
       }
 
       setDiagnostico(result.data.diagnostico);
+      await fetchPayload(diagnostico.token_publico);
     } catch (generateError) {
       setError(generateError instanceof Error ? generateError.message : "No se pudo generar el informe.");
     } finally {
       setGeneratingInforme(false);
+    }
+  }
+
+  async function handleSavePropuesta() {
+    if (!diagnostico?.token_publico) {
+      return;
+    }
+
+    setSavingPropuesta(true);
+    setError(null);
+
+    try {
+      const response = await fetch(`/api/diagnostico/${diagnostico.token_publico}/propuesta`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          empresa: empresaEditable,
+          precio_ideal_desarrollo: Number(precioDesarrolloEditable || 0),
+          precio_ideal_mensual: Number(precioMensualEditable || 0)
+        })
+      });
+      const result = (await response.json()) as PropuestaUpdateResponse;
+
+      if (!response.ok || !result.data) {
+        throw new Error(result.error ?? "No se pudieron guardar los datos de propuesta.");
+      }
+
+      setDiagnostico(result.data.diagnostico);
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : "No se pudieron guardar los datos de propuesta.");
+    } finally {
+      setSavingPropuesta(false);
+    }
+  }
+
+  async function handleChatModificacion() {
+    if (!diagnostico?.token_publico || !chatMensaje.trim()) {
+      return;
+    }
+
+    setChatLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch(`/api/diagnostico/${diagnostico.token_publico}/informe/chat`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ mensaje: chatMensaje })
+      });
+      const result = (await response.json()) as ChatResponse;
+
+      if (!response.ok || !result.data) {
+        throw new Error(result.error ?? "No se pudo modificar la propuesta con IA.");
+      }
+
+      setDiagnostico(result.data.diagnostico);
+      setChatMensaje("");
+    } catch (chatError) {
+      setError(chatError instanceof Error ? chatError.message : "No se pudo modificar la propuesta con IA.");
+    } finally {
+      setChatLoading(false);
     }
   }
 
@@ -247,6 +352,12 @@ export function LeadDiagnosticoSection({ lead }: LeadDiagnosticoSectionProps) {
         <div className="space-y-4">
           {groupedRespuestas.length > 0 ? (
             <div className="space-y-4">
+              {contextoAdicional ? (
+                <div className="space-y-2 rounded-component border border-signal/20 bg-signal-light p-4">
+                  <p className="font-label text-signal">Contexto adicional para la IA</p>
+                  <p className="text-sm leading-6 text-graphite">{contextoAdicional}</p>
+                </div>
+              ) : null}
               {groupedRespuestas.map((group) => (
                 <div key={group.categoria} className="space-y-3 rounded-component border border-line-soft p-4">
                   <p className="font-label text-carbon">{group.categoria}</p>
@@ -287,6 +398,69 @@ export function LeadDiagnosticoSection({ lead }: LeadDiagnosticoSectionProps) {
               {diagnostico.estado === "informe_generado" ? "Regenerar informe" : "Generar informe y propuesta"}
             </Button>
           </div>
+
+          {diagnostico.estado === "informe_generado" ? (
+            <div className="space-y-4 rounded-card border border-line-soft bg-paper/50 p-4">
+              <div>
+                <p className="font-title text-carbon">Datos editables de la propuesta</p>
+                <p className="mt-1 text-sm text-graphite">
+                  Ajustá los datos comerciales sin regenerar todo el informe.
+                </p>
+              </div>
+              <div className="grid gap-3 md:grid-cols-3">
+                <label className="space-y-1">
+                  <span className="text-sm font-label text-carbon">Nombre del cliente</span>
+                  <input
+                    value={empresaEditable}
+                    onChange={(event) => setEmpresaEditable(event.target.value)}
+                    className="w-full rounded-component border border-line bg-white px-3 py-2 text-sm text-carbon focus:border-signal focus:outline-none focus:ring-2 focus:ring-signal/20"
+                  />
+                </label>
+                <label className="space-y-1">
+                  <span className="text-sm font-label text-carbon">Precio desarrollo USD</span>
+                  <input
+                    value={precioDesarrolloEditable}
+                    onChange={(event) => setPrecioDesarrolloEditable(event.target.value)}
+                    type="number"
+                    min="0"
+                    className="w-full rounded-component border border-line bg-white px-3 py-2 text-sm text-carbon focus:border-signal focus:outline-none focus:ring-2 focus:ring-signal/20"
+                  />
+                </label>
+                <label className="space-y-1">
+                  <span className="text-sm font-label text-carbon">Mensual USD</span>
+                  <input
+                    value={precioMensualEditable}
+                    onChange={(event) => setPrecioMensualEditable(event.target.value)}
+                    type="number"
+                    min="0"
+                    className="w-full rounded-component border border-line bg-white px-3 py-2 text-sm text-carbon focus:border-signal focus:outline-none focus:ring-2 focus:ring-signal/20"
+                  />
+                </label>
+              </div>
+              <Button size="sm" variant="secondary" onClick={handleSavePropuesta} loading={savingPropuesta}>
+                Guardar datos comerciales
+              </Button>
+
+              <div className="space-y-2 border-t border-line-soft pt-4">
+                <p className="font-title text-carbon">Pedir cambios con IA</p>
+                <p className="text-sm text-graphite">
+                  Pedile ajustes sobre el informe o la propuesta. Ej: “hacelo más orientado a stock”,
+                  “sumá un módulo de reportes” o “bajá el alcance inicial”.
+                </p>
+                <textarea
+                  value={chatMensaje}
+                  onChange={(event) => setChatMensaje(event.target.value)}
+                  rows={3}
+                  className="w-full resize-y rounded-component border border-line bg-white px-3 py-2 text-sm text-carbon focus:border-signal focus:outline-none focus:ring-2 focus:ring-signal/20"
+                  placeholder="Escribí la modificación que querés pedirle a la IA..."
+                />
+                <Button size="sm" onClick={handleChatModificacion} loading={chatLoading} disabled={!chatMensaje.trim()}>
+                  <SparklesIcon size={15} aria-hidden="true" />
+                  Aplicar cambios con IA
+                </Button>
+              </div>
+            </div>
+          ) : null}
         </div>
       )}
 

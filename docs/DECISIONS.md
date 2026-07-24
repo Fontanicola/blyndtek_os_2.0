@@ -628,6 +628,14 @@
 - La vista pública del informe sólo muestra el precio ideal de desarrollo y el mensual si aplica. `precio_minimo_desarrollo` y `precio_minimo_mensual` son información interna de negociación y nunca se exponen al cliente.
 - Al generar un informe, los montos ideales se copian a `leads.monto_propuesto_desarrollo` y `leads.monto_propuesto_mensual` para preparar la etapa `cotizacion` sin recargar datos manualmente.
 
+## 2026-07-24 — Diagnóstico y propuesta como dos piezas comerciales separadas
+
+- El documento generado desde un diagnóstico se estructura en dos piezas claramente separadas: primero `Informe diagnóstico` (operativa actual, problemas, costo de no cambiar, oportunidades) y después `Propuesta de software` (visión del sistema, módulos, funcionalidades, impacto, tiempos y roadmap).
+- El formulario de diagnóstico reserva `respuestas.__contexto_adicional` para que Blyndtek pueda sumar notas de la reunión, criterio comercial, ideas de solución y contexto que no entra en las preguntas preset. Ese contexto se le pasa a Claude como insumo obligatorio.
+- La propuesta puede editar datos comerciales sin regenerar todo: nombre visible del cliente, precio de desarrollo y mensual. Los precios mínimos internos siguen sin exponerse al cliente.
+- Después de generado el documento, el comercial puede pedir modificaciones por chat a la IA sobre el informe/propuesta ya existente. La IA reescribe el JSON completo del documento, pero no inventa precios ni módulos fuera de la estructura guardada.
+- Los PDFs de informe/propuesta se generan con fuentes estáticas del proyecto (`DM Sans`) y no con fuentes estándar de PDFKit como `Helvetica`, porque en Vercel esas fuentes pueden faltar dentro del bundle serverless y romper la descarga.
+
 ## 2026-07-21 — Diagnóstico pago como etapa formal del embudo
 
 - El diagnóstico pago es una etapa formal del embudo comercial: `diagnostico_ofrecido` y `diagnostico_pagado` viven entre `calificado` y `cotizacion`.
