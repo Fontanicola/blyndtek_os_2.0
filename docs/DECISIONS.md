@@ -660,3 +660,9 @@
 - Los campos `ingresos_totales_usd`, `egresos_totales_usd`, `margen_usd` y `desvio_pct_vs_anterior` se calculan exclusivamente a partir de cobros `cobrado` y egresos `pagado`; la IA no inventa ni recalcula cifras.
 - El agente `cierre-mensual` queda integrado como un generador más del AI Hub: su actividad entra en el feed unificado y su costo suma al consolidado mensual de IA.
 - Su automatización vive como fila en `automatizaciones` con `endpoint_trigger='/api/cierres-mensuales/generar'`; el criterio operativo inicial es correrlo el día 28 a las 18:00 para capturar los últimos días hábiles del mes sin esperar al cierre administrativo final.
+## 2026-07-24 — Diagnóstico como síntesis consultiva, no transcripción
+
+- El cuestionario es evidencia interna para el análisis, no contenido para repetir al cliente. Claude debe transformar respuestas en causas operativas, impacto, riesgo, oportunidades y estado futuro; nunca copiar preguntas, transcripciones o respuestas textuales.
+- El backend valida esta regla antes de guardar: deduplica oportunidades, descarta salidas genéricas y reemplaza texto verbatim por una síntesis profesional segura. Esto también protege la visualización de diagnósticos ya generados.
+- El informe público se presenta en una única secuencia vertical, sin temario lateral. El mapa de calor conserva semántica visual por nivel: saludable, fricción relevante, riesgo alto y crítico.
+- La estructura se inspira en la convención consultiva de separar resumen ejecutivo, estado actual, hallazgos, impacto/costo de no cambiar, oportunidades y roadmap de implementación. La referencia conceptual consultada fue la estructura de informes de estado actual/futuro y roadmap de implementación usada en informes de mejora operativa de McKinsey/Deloitte, adaptada al diagnóstico comercial de Blyndtek.

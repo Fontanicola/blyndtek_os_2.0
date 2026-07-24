@@ -321,6 +321,10 @@ function buildSystemPrompt() {
     "La salida tiene que sentirse como un informe consultivo profesional y una propuesta ejecutiva completa: específica, jerárquica, detallada, persuasiva y accionable.",
     "Usá estructura de consultoría: estado actual, evidencia, impacto operativo, riesgo/costo de seguir igual, oportunidades priorizadas, antes/después y mapa de calor por área del negocio.",
     "Nunca inventes datos, volúmenes, dinero ni procesos que no estén en las respuestas.",
+    "No copies, pegues ni cites textualmente las respuestas del cuestionario. Transformá la información en diagnóstico: interpretá patrones, causas, consecuencias y oportunidades. No reproduzcas preguntas, transcripciones, nombres de reuniones ni frases literales de más de cinco palabras consecutivas.",
+    "Los campos evidencia y antes deben ser lecturas profesionales sintetizadas, nunca la respuesta original. El cliente ya conoce lo que dijo: el valor del informe está en explicar qué significa para su operación.",
+    "Cada hallazgo debe ser distinto y explicar una causa operativa concreta. Cada oportunidad debe resolver un problema diferente; prohibido repetir la misma frase con pequeñas variaciones.",
+    "Asigná niveles del mapa de calor con criterio: 1 es controlado, 3 es fricción relevante y 5 es riesgo crítico o alta dependencia manual. No uses nivel 3 para todas las áreas por defecto.",
     "No inventes módulos: elegí únicamente del catálogo real provisto por modulo_id.",
     "Elegí entre 3 y 6 módulos si las respuestas lo justifican. No elijas módulos por cantidad: cada módulo tiene que conectarse con una respuesta concreta.",
     "Respondé SOLO con JSON válido, sin markdown, sin texto adicional."
@@ -353,13 +357,13 @@ function buildPrompt({
     .join("\n");
 
   return [
-    "Analizá estas respuestas de un diagnóstico operativo y generá DOS piezas conectadas:",
-    "A. Informe de diagnóstico de empresa: descripción de operativa actual, problemas, costo de no cambiar, oportunidades de mejora y conclusión.",
-    "B. Propuesta de software: visión del sistema recomendado, módulos, impacto de cada módulo, funcionalidades, prioridad, tiempos estimados y roadmap completo.",
-    "Los textos tienen que ser suficientemente detallados para que el cliente se reconozca en el diagnóstico y entienda por qué necesita digitalizarse.",
+    "Analizá estas respuestas de un diagnóstico operativo y generá DOS piezas conectadas, pero separadas conceptualmente:",
+    "A. Informe de diagnóstico de empresa: describí la operación actual en lenguaje ejecutivo, interpretá problemas y causas, explicá el impacto, el costo de no cambiar, oportunidades priorizadas y una conclusión. El diagnóstico no debe vender módulos ni mencionar precios.",
+    "B. Propuesta de software: visión del sistema recomendado, módulos, impacto de cada módulo, funcionalidades, prioridad, tiempos estimados, roadmap completo y condiciones a definir por Blyndtek.",
+    "Los textos tienen que ser suficientemente detallados para que el cliente se reconozca en el diagnóstico sin leer una copia de sus respuestas y entienda por qué necesita digitalizarse.",
     "No uses frases genéricas tipo 'mejorar eficiencia' sin explicar qué cambiaría concretamente en su operación.",
-    "Hallazgos: entre 4 y 7, cada uno con { hallazgo, evidencia, impacto, severidad, que_resolveria }.",
-    "Antes/después: entre 4 y 6 filas con { area, antes, despues, metrica }. La métrica debe expresar tiempo perdido, riesgo, reproceso, dependencia manual, velocidad de respuesta o trazabilidad. Si no hay números reales, usá estimaciones cualitativas honestas como 'alto', 'medio', 'bajo' o 'horas semanales a validar'.",
+    "Hallazgos: entre 4 y 7, cada uno con { hallazgo, evidencia, impacto, severidad, que_resolveria }. evidencia debe ser una señal analítica sintetizada, no una cita.",
+    "Antes/después: entre 4 y 6 filas con { area, antes, despues, metrica }. Antes debe resumir la capacidad o limitación operativa actual sin copiar respuestas; después debe describir un estado futuro observable. La métrica debe expresar tiempo perdido, riesgo, reproceso, dependencia manual, velocidad de respuesta o trazabilidad. Si no hay números reales, usá 'a validar en relevamiento', nunca inventes una cifra.",
     "Mapa de áreas: entre 5 y 8 áreas del negocio con { area, nivel, diagnostico, oportunidad }. nivel es 1 a 5, donde 1 = saludable y 5 = crítico. Usalo como heatmap de madurez/fricción operativa.",
     "Módulos: elegí ÚNICAMENTE del catálogo real. Para cada módulo devolvé modulo_id, justificacion, problema_resuelve, impacto_esperado, funcionalidades (4 a 7 bullets), tiempo_estimado_semanas y prioridad.",
     "Roadmap: generá entre 3 y 6 fases concretas. Cada fase debe tener descripcion, duracion_estimada y subtareas (4 a 8 subtareas accionables). Estas fases y subtareas se van a convertir luego en /proyectos como fases y features reales, así que no escribas frases vagas.",
@@ -368,7 +372,7 @@ function buildPrompt({
     'Respondé SOLO con JSON: { "diagnostico_empresa": { "resumen_ejecutivo": "...", "operativa_actual": "...", "problemas_principales": ["..."], "costo_de_no_cambiar": "...", "oportunidades_mejora": ["..."], "conclusion_diagnostico": "..." }, "antes_despues": [{ "area": "...", "antes": "...", "despues": "...", "metrica": "..." }], "mapa_areas": [{ "area": "...", "nivel": 4, "diagnostico": "...", "oportunidad": "..." }], "hallazgos": [...], "modulos_elegidos": [{ "modulo_id": "...", "justificacion": "...", "problema_resuelve": "...", "impacto_esperado": "...", "funcionalidades": ["..."], "tiempo_estimado_semanas": 2, "prioridad": "Alta" }], "propuesta_software": { "vision_sistema": "...", "alcance_general": "...", "beneficios_esperados": ["..."], "roadmap_implementacion": [{ "etapa": "...", "descripcion": "...", "duracion_estimada": "...", "subtareas": ["..."] }], "supuestos": ["..."], "proximos_pasos": ["..."] } }',
     `Empresa: ${empresa ?? "Sin empresa cargada"}`,
     `Contexto adicional escrito por Blyndtek para orientar a la IA:\n${contextoAdicional || "- Sin contexto adicional"}`,
-    `Respuestas:\n${respuestasTexto || "- Sin respuestas con contenido"}`,
+    `Respuestas internas para interpretar (no copiar ni mostrar textualmente):\n${respuestasTexto || "- Sin respuestas con contenido"}`,
     `Catálogo real de módulos:\n${modulosTexto}`
   ].join("\n\n");
 }
@@ -388,6 +392,178 @@ function mapRespuestas(
 
 function getContextoAdicional(respuestas: Record<string, string> | null) {
   return respuestas?.[DIAGNOSTICO_CONTEXTO_KEY]?.trim() ?? "";
+}
+
+function normalizeForComparison(value: string) {
+  return value
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function dedupeStrings(values: string[]) {
+  const seen = new Set<string>();
+
+  return values.filter((value) => {
+    const normalized = normalizeForComparison(value);
+
+    if (!normalized || seen.has(normalized)) {
+      return false;
+    }
+
+    seen.add(normalized);
+    return true;
+  });
+}
+
+function containsVerbatimResponse(value: string, respuestas: Array<{ respuesta: string }>) {
+  const normalizedValue = normalizeForComparison(value);
+
+  return respuestas.some((item) => {
+    const response = normalizeForComparison(item.respuesta);
+    return response.length >= 48 && (normalizedValue.includes(response) || response.includes(normalizedValue));
+  });
+}
+
+function categoryFamily(categoria: string) {
+  const normalized = normalizeForComparison(categoria);
+
+  if (normalized.includes("cobro") || normalized.includes("administr")) return "finanzas";
+  if (normalized.includes("crecimiento") || normalized.includes("dato")) return "direccion";
+  if (normalized.includes("equipo") || normalized.includes("riesgo")) return "equipo";
+  if (normalized.includes("venta") || normalized.includes("cliente")) return "comercial";
+  if (normalized.includes("operacion") || normalized.includes("produccion")) return "operacion";
+  return "control";
+}
+
+function professionalDiagnostic(item: { categoria: string }, role: "hallazgo" | "evidencia" | "impacto" | "solucion") {
+  const family = categoryFamily(item.categoria);
+
+  const copy: Record<string, Record<typeof role, string>> = {
+    finanzas: {
+      hallazgo: "La gestión financiera combina acuerdos comerciales, entregas y cobranzas sin una trazabilidad única por cliente.",
+      evidencia: "Se observan registros distribuidos y formas de pago que requieren conciliación posterior para validar saldos.",
+      impacto: "Esto expone a diferencias entre lo entregado, lo facturado y lo cobrado, además de consumir tiempo administrativo en controles manuales.",
+      solucion: "Centralizar cuentas corrientes, entregas, vencimientos y medios de pago con un saldo por cliente y alertas de seguimiento."
+    },
+    direccion: {
+      hallazgo: "La dirección dispone de información operativa, pero no de una lectura inmediata de rentabilidad y desempeño por producto.",
+      evidencia: "Los indicadores se reconstruyen desde planillas y los cálculos de margen se realizan cuando aparece una necesidad puntual.",
+      impacto: "Las decisiones de precio, producción y mix comercial se toman con demora y aumentan el riesgo de sostener productos poco rentables.",
+      solucion: "Construir un tablero de gestión con ventas, costos, margen y desempeño por producto, categoría y establecimiento."
+    },
+    equipo: {
+      hallazgo: "El conocimiento operativo está repartido entre personas y archivos, sin un circuito central que preserve el contexto de trabajo.",
+      evidencia: "La continuidad depende de que distintos integrantes conozcan dónde registrar, buscar o completar cada dato.",
+      impacto: "La operación puede continuar ante una ausencia, pero con esfuerzo duplicado y baja capacidad para auditar cómo se tomó cada decisión.",
+      solucion: "Unificar registros, permisos, responsables y consumos internos en un entorno multiusuario con historial de cambios."
+    },
+    comercial: {
+      hallazgo: "La demanda y la relación con clientes se atienden por varios canales sin una cola común de pedidos y pendientes.",
+      evidencia: "Las consultas llegan por canales diferentes y el seguimiento depende de quién encuentra el mensaje o recuerda el próximo paso.",
+      impacto: "Esto limita la capacidad de medir tiempos de respuesta, priorizar pedidos y detectar oportunidades o reclamos antes de que escalen.",
+      solucion: "Registrar consultas y pedidos con estado, responsable, prioridad y fecha de seguimiento para hacer visible el ciclo comercial completo."
+    },
+    operacion: {
+      hallazgo: "La operación tiene volumen y complejidad, pero sus procesos críticos no están representados en un flujo digital único.",
+      evidencia: "La coordinación de producción, locales, cajas y administración requiere combinar información de varias herramientas y turnos.",
+      impacto: "El crecimiento agrega coordinación manual, dificulta encontrar el dato correcto y hace más costoso detectar desvíos a tiempo.",
+      solucion: "Diseñar un sistema operativo con procesos por establecimiento, responsables, estados, cierres y alertas de excepción."
+    },
+    control: {
+      hallazgo: "La empresa cuenta con datos valiosos, pero el control de la operación depende de consolidaciones manuales y lecturas fragmentadas.",
+      evidencia: "La información existe en distintas fuentes, aunque no está disponible como una vista ejecutiva común para decidir con rapidez.",
+      impacto: "La dirección invierte tiempo en armar la lectura del negocio y recibe tarde señales que podrían orientar la operación del día.",
+      solucion: "Implementar indicadores accionables y reportes por período, producto, local y responsable para convertir datos dispersos en decisiones."
+    }
+  };
+
+  return copy[family]?.[role] ?? copy.control?.[role] ?? "La operación requiere mayor trazabilidad y control centralizado.";
+}
+
+function sanitizeHallazgos(
+  hallazgos: ClaudeHallazgo[],
+  respuestas: Array<{ categoria: string; respuesta: string }>
+) {
+  return hallazgos
+    .map((hallazgo, index) => {
+      const source = respuestas[index % Math.max(respuestas.length, 1)] ?? { categoria: "Operación", respuesta: "" };
+      const isQuestion = hallazgo.hallazgo.includes("¿") || hallazgo.hallazgo.includes("?");
+
+      return {
+        hallazgo:
+          isQuestion || containsVerbatimResponse(hallazgo.hallazgo, respuestas)
+            ? professionalDiagnostic(source, "hallazgo")
+            : hallazgo.hallazgo,
+        evidencia:
+          !hallazgo.evidencia || containsVerbatimResponse(hallazgo.evidencia, respuestas)
+            ? professionalDiagnostic(source, "evidencia")
+            : hallazgo.evidencia,
+        impacto:
+          containsVerbatimResponse(hallazgo.impacto, respuestas)
+            ? professionalDiagnostic(source, "impacto")
+            : hallazgo.impacto,
+        severidad: hallazgo.severidad || "Media",
+        que_resolveria:
+          containsVerbatimResponse(hallazgo.que_resolveria, respuestas)
+            ? professionalDiagnostic(source, "solucion")
+            : hallazgo.que_resolveria
+      };
+    })
+    .filter((hallazgo) => hallazgo.hallazgo && hallazgo.impacto && hallazgo.que_resolveria)
+    .filter((hallazgo, index, all) => all.findIndex((item) => normalizeForComparison(item.hallazgo) === normalizeForComparison(hallazgo.hallazgo)) === index)
+    .slice(0, 7);
+}
+
+function buildFallbackOportunidades(respuestas: Array<{ categoria: string }>) {
+  return dedupeStrings(
+    respuestas.map((item) => professionalDiagnostic(item, "solucion"))
+  ).slice(0, 7);
+}
+
+function buildFallbackAntesDespues(respuestas: Array<{ categoria: string }>) {
+  return dedupeStrings(respuestas.map((item) => item.categoria)).slice(0, 6).map((area) => ({
+    area,
+    antes: professionalDiagnostic({ categoria: area }, "hallazgo"),
+    despues: professionalDiagnostic({ categoria: area }, "solucion"),
+    metrica: professionalDiagnostic({ categoria: area }, "impacto")
+  }));
+}
+
+function deriveHeatmapLevel(area: string, respuestas: Array<{ categoria: string; respuesta: string }>, fallback: number) {
+  const related = respuestas.find(
+    (item) =>
+      normalizeForComparison(item.categoria).includes(normalizeForComparison(area)) ||
+      normalizeForComparison(area).includes(normalizeForComparison(item.categoria)) ||
+      categoryFamily(item.categoria) === categoryFamily(area)
+  );
+
+  if (!related) return Math.min(5, Math.max(1, fallback));
+
+  const text = normalizeForComparison(related.respuesta);
+  const frictionSignals = ["papel", "excel", "manual", "no tienen", "se perdio", "perdio", "un dia", "demora", "no existe", "buscar"];
+  const friction = frictionSignals.filter((signal) => text.includes(signal)).length;
+  return Math.min(5, Math.max(1, 2 + friction));
+}
+
+function sanitizeMapaAreas(
+  mapa: ClaudeInformePayload["mapa_areas"],
+  respuestas: Array<{ categoria: string; respuesta: string }>,
+  hallazgos: ClaudeHallazgo[]
+) {
+  const parsed = Array.isArray(mapa)
+    ? mapa.filter((area): area is NonNullable<ClaudeInformePayload["mapa_areas"]>[number] => Boolean(area?.area && area.diagnostico && area.oportunidad))
+    : [];
+  const source = parsed.length > 0 ? parsed.slice(0, 8) : ["Comercial", "Operación", "Administración", "Finanzas", "Equipo", "Datos y decisiones"].map((area) => ({ area, nivel: 3, diagnostico: "", oportunidad: "" }));
+
+  return source.map((area, index) => ({
+    area: area.area ?? `Área ${index + 1}`,
+    nivel: deriveHeatmapLevel(area.area ?? "", respuestas, Number(area.nivel ?? (index % 4) + 2)),
+    diagnostico: area.diagnostico || hallazgos[index % Math.max(hallazgos.length, 1)]?.hallazgo || professionalDiagnostic({ categoria: area.area ?? "Operación" }, "hallazgo"),
+    oportunidad: area.oportunidad || professionalDiagnostic({ categoria: area.area ?? "Operación" }, "solucion")
+  }));
 }
 
 function resolveModulos(
@@ -430,12 +606,12 @@ function resolveModulos(
 function buildFallbackHallazgos(
   respuestas: Array<{ categoria: string; pregunta: string; respuesta: string }>
 ): ClaudeHallazgo[] {
-  return respuestas.slice(0, 5).map((item) => ({
-    hallazgo: `${item.categoria}: ${item.pregunta}`,
-    evidencia: item.respuesta,
-    impacto: item.respuesta,
+  return dedupeStrings(respuestas.map((item) => item.categoria)).slice(0, 5).map((categoria) => ({
+    hallazgo: professionalDiagnostic({ categoria }, "hallazgo"),
+    evidencia: professionalDiagnostic({ categoria }, "evidencia"),
+    impacto: professionalDiagnostic({ categoria }, "impacto"),
     severidad: "Media",
-    que_resolveria: "Un sistema a medida permitiría ordenar este flujo, dejar trazabilidad y reducir dependencia de seguimiento manual."
+    que_resolveria: professionalDiagnostic({ categoria }, "solucion")
   }));
 }
 
@@ -673,26 +849,77 @@ export async function POST(_request: NextRequest, { params }: RouteContext) {
     }
 
     const parsed = parseClaudeInforme(responseText);
-    const hallazgos = parsed.hallazgos.length > 0 ? parsed.hallazgos : buildFallbackHallazgos(respuestas);
+    const hallazgosCrudos = parsed.hallazgos.length > 0 ? parsed.hallazgos : buildFallbackHallazgos(respuestas);
+    const hallazgosLimpios = sanitizeHallazgos(hallazgosCrudos, respuestas);
+    const hallazgos = hallazgosLimpios.length > 0 ? hallazgosLimpios : buildFallbackHallazgos(respuestas);
     const resolvedModulos = resolveModulos(parsed.modulos_elegidos, modulos);
     const modulosSugeridos =
       resolvedModulos.length > 0 ? resolvedModulos : buildFallbackModulos(respuestas, modulos);
+
+    const diagnosticoClaude = parsed.diagnostico_empresa ?? {};
+    const oportunidadesClaude = Array.isArray(diagnosticoClaude.oportunidades_mejora)
+      ? diagnosticoClaude.oportunidades_mejora
+          .filter((value): value is string => typeof value === "string" && value.trim().length > 0)
+          .filter((value) => !containsVerbatimResponse(value, respuestas))
+          .filter((value) => !normalizeForComparison(value).startsWith("un sistema a medida permitiria ordenar este flujo"))
+      : [];
+    const oportunidades = dedupeStrings(oportunidadesClaude);
+    const oportunidadesFinales = dedupeStrings([...oportunidades, ...buildFallbackOportunidades(respuestas)]).slice(0, 7);
+    const problemasClaude = Array.isArray(diagnosticoClaude.problemas_principales)
+      ? diagnosticoClaude.problemas_principales.filter(
+          (value): value is string => typeof value === "string" && value.trim().length > 0 && !containsVerbatimResponse(value, respuestas)
+        )
+      : [];
+    const problemasFinales = dedupeStrings(problemasClaude).length >= 3
+      ? dedupeStrings(problemasClaude).slice(0, 7)
+      : hallazgos.map((hallazgo) => hallazgo.hallazgo);
+    const antesDespuesLimpio = (Array.isArray(parsed.antes_despues) ? parsed.antes_despues : [])
+      .filter((item) => item?.area && item.antes && item.despues && item.metrica)
+      .map((item, index) => {
+        const categoria = item.area ?? respuestas[index % Math.max(respuestas.length, 1)]?.categoria ?? "Operación";
+        return {
+          area: categoria,
+          antes: containsVerbatimResponse(item.antes ?? "", respuestas)
+            ? professionalDiagnostic({ categoria }, "hallazgo")
+            : item.antes ?? "",
+          despues: containsVerbatimResponse(item.despues ?? "", respuestas)
+            ? professionalDiagnostic({ categoria }, "solucion")
+            : item.despues ?? "",
+          metrica: containsVerbatimResponse(item.metrica ?? "", respuestas)
+            ? professionalDiagnostic({ categoria }, "impacto")
+            : item.metrica ?? ""
+        };
+      });
+    const antesDespues = antesDespuesLimpio.length > 0 ? antesDespuesLimpio : buildFallbackAntesDespues(respuestas);
+    const mapaAreas = sanitizeMapaAreas(parsed.mapa_areas, respuestas, hallazgos);
 
     const precioIdealDesarrollo = sum(modulosSugeridos, "precio_ideal");
     const precioMinimoDesarrollo = sum(modulosSugeridos, "precio_minimo");
     const precioMensual = sum(modulosSugeridos, "incremento_mensual");
 
     const informeDiagnosticoPayload = {
-      diagnostico_empresa: parsed.diagnostico_empresa ?? {
-        resumen_ejecutivo: "El diagnóstico muestra una operación con oportunidades claras de digitalización.",
-        operativa_actual: "La operación actual fue relevada a partir de las respuestas y el contexto adicional.",
-        problemas_principales: hallazgos.map((hallazgo) => hallazgo.hallazgo),
-        costo_de_no_cambiar: "Seguir operando sin sistema mantiene dependencia manual, pérdida de trazabilidad y riesgo de errores.",
-        oportunidades_mejora: hallazgos.map((hallazgo) => hallazgo.que_resolveria),
-        conclusion_diagnostico: "Hay fundamentos suficientes para avanzar con un sistema operativo a medida."
+      diagnostico_empresa: {
+        resumen_ejecutivo:
+          parsed.diagnostico_empresa?.resumen_ejecutivo && !containsVerbatimResponse(parsed.diagnostico_empresa.resumen_ejecutivo, respuestas)
+            ? parsed.diagnostico_empresa.resumen_ejecutivo
+            : "La operación tiene una base comercial y productiva valiosa, pero el crecimiento está sostenido por registros distribuidos y controles manuales que reducen la trazabilidad.",
+        operativa_actual:
+          parsed.diagnostico_empresa?.operativa_actual && !containsVerbatimResponse(parsed.diagnostico_empresa.operativa_actual, respuestas)
+            ? parsed.diagnostico_empresa.operativa_actual
+            : professionalDiagnostic({ categoria: respuestas[0]?.categoria ?? "Operación" }, "hallazgo"),
+        problemas_principales: problemasFinales,
+        costo_de_no_cambiar:
+          parsed.diagnostico_empresa?.costo_de_no_cambiar && !containsVerbatimResponse(parsed.diagnostico_empresa.costo_de_no_cambiar, respuestas)
+            ? parsed.diagnostico_empresa.costo_de_no_cambiar
+            : "Mantener la operación sin un sistema central sostiene el reproceso, demora la lectura de la rentabilidad y aumenta el riesgo de diferencias que sólo aparecen al conciliar.",
+        oportunidades_mejora: oportunidadesFinales,
+        conclusion_diagnostico:
+          parsed.diagnostico_empresa?.conclusion_diagnostico && !containsVerbatimResponse(parsed.diagnostico_empresa.conclusion_diagnostico, respuestas)
+            ? parsed.diagnostico_empresa.conclusion_diagnostico
+            : "La prioridad no es digitalizar por digitalizar: es instalar trazabilidad en los procesos que hoy concentran riesgo, tiempo manual y dependencia de memoria."
       },
-      antes_despues: parsed.antes_despues ?? [],
-      mapa_areas: parsed.mapa_areas ?? [],
+      antes_despues: antesDespues,
+      mapa_areas: mapaAreas,
       hallazgos
     };
     const propuestaPayload = {

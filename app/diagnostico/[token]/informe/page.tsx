@@ -35,20 +35,20 @@ function Bullets({ items }: { items: string[] }) {
   );
 }
 
-function heatmapTone(nivel: number) {
+function heatmapStyles(nivel: number) {
   if (nivel >= 5) {
-    return "border-danger/30 bg-danger-light text-danger";
+    return { backgroundColor: "#FFF5F5", borderColor: "#F5B5B5", color: "#B91C1C" };
   }
 
   if (nivel >= 4) {
-    return "border-warning/30 bg-warning-light text-warning";
+    return { backgroundColor: "#FFFBEB", borderColor: "#F4D28A", color: "#B45309" };
   }
 
   if (nivel >= 3) {
-    return "border-signal/25 bg-signal-light text-signal";
+    return { backgroundColor: "#E8EEFF", borderColor: "#AFC0FF", color: "#1F44FF" };
   }
 
-  return "border-success/25 bg-success-light text-success";
+  return { backgroundColor: "#F0FFF4", borderColor: "#A8E0BB", color: "#2F855A" };
 }
 
 export async function generateMetadata({ params }: InformePageProps): Promise<Metadata> {
@@ -67,16 +67,6 @@ export default async function DiagnosticoInformePage({ params }: InformePageProp
   }
 
   const { empresa, hallazgos, diagnosticoEmpresa, antesDespues, mapaAreas } = informe;
-  const secciones = [
-    { id: "lectura", label: "Lectura ejecutiva" },
-    { id: "hallazgos", label: "Problemas detectados" },
-    { id: "costo", label: "Costo de no cambiar" },
-    { id: "oportunidades", label: "Oportunidades" },
-    { id: "antes-despues", label: "Antes y después" },
-    { id: "mapa", label: "Mapa operativo" },
-    { id: "conclusion", label: "Conclusión" }
-  ];
-
   return (
     <main className="min-h-screen bg-paper px-4 py-6 sm:px-6 sm:py-10">
       <div className="mx-auto max-w-6xl space-y-6">
@@ -121,25 +111,7 @@ export default async function DiagnosticoInformePage({ params }: InformePageProp
           </div>
         </header>
 
-        <div className="grid gap-6 lg:grid-cols-[220px_1fr] lg:items-start">
-          <aside className="hidden lg:block">
-            <nav className="sticky top-6 rounded-card border border-line-soft bg-white p-4">
-              <p className="text-sm font-label text-carbon">Temario</p>
-              <div className="mt-4 space-y-1 border-l border-line-soft pl-3">
-                {secciones.map((seccion) => (
-                  <a
-                    key={seccion.id}
-                    href={`#${seccion.id}`}
-                    className="block rounded-component px-2 py-1.5 text-sm text-graphite transition-colors duration-fast hover:bg-paper hover:text-carbon"
-                  >
-                    {seccion.label}
-                  </a>
-                ))}
-              </div>
-            </nav>
-          </aside>
-
-          <div className="space-y-6">
+        <div className="space-y-6">
             <section className="grid gap-4 md:grid-cols-3">
               <div className="rounded-card border border-line-soft bg-white p-5">
                 <p className="text-sm font-label text-graphite">Problemas detectados</p>
@@ -189,7 +161,7 @@ export default async function DiagnosticoInformePage({ params }: InformePageProp
                     </div>
                     <h3 className="mt-3 text-lg font-title text-carbon">{hallazgo.hallazgo}</h3>
                     {hallazgo.evidencia ? (
-                      <p className="mt-3 text-sm leading-6 text-graphite">Evidencia: {hallazgo.evidencia}</p>
+                      <p className="mt-3 text-sm leading-6 text-graphite">Lectura de la operación: {hallazgo.evidencia}</p>
                     ) : null}
                     <p className="mt-3 text-sm leading-6 text-graphite">Impacto: {hallazgo.impacto}</p>
                     <div className="mt-4 rounded-component bg-signal-light px-3 py-2 text-sm font-label text-carbon">
@@ -257,7 +229,11 @@ export default async function DiagnosticoInformePage({ params }: InformePageProp
 
               <div className="mt-6 space-y-3">
                 {mapaAreas.map((area) => (
-                  <article key={area.area} className={`rounded-card border p-4 ${heatmapTone(area.nivel)}`}>
+                  <article
+                    key={area.area}
+                    className="rounded-card border p-4"
+                    style={heatmapStyles(area.nivel)}
+                  >
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <h3 className="font-title text-carbon">{area.area}</h3>
                       <span className="rounded-pill bg-white/70 px-2 py-1 text-xs font-label">Nivel {area.nivel}/5</span>
@@ -274,7 +250,6 @@ export default async function DiagnosticoInformePage({ params }: InformePageProp
               <h2 className="mt-2 text-2xl font-title text-carbon">Lectura final del diagnóstico</h2>
               <p className="mt-4 text-base leading-7 text-graphite">{diagnosticoEmpresa.conclusion_diagnostico}</p>
             </section>
-          </div>
         </div>
 
         <p className="text-center text-xs text-graphite">

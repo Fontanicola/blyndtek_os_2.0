@@ -3055,3 +3055,17 @@ $ find . -maxdepth 3 \( -name 'middleware.*' -o -name 'proxy.*' \) -not -path '.
 - Verificación ejecutada:
   - `npm run lint` OK.
   - `npm run build` OK.
+## 2026-07-24 — Diagnóstico consultivo: síntesis profesional y mapa de calor corregido
+
+- Se corrigió la causa de los informes que repetían el cuestionario: el prompt pedía evidencia/antes sin prohibir citas y el fallback copiaba pregunta + respuesta. Ahora Claude recibe reglas explícitas de síntesis, no repetición ni transcripciones, y cada hallazgo debe explicar causa, impacto y resolución sin frases duplicadas.
+- El backend sanitiza hallazgos, oportunidades, antes/después y niveles del mapa antes de guardarlos: elimina respuestas literales, deduplica oportunidades y reemplaza salidas genéricas por lecturas profesionales orientadas a operación, riesgo, trazabilidad y automatización.
+- Los informes existentes también se leen con protección contra texto verbatim para que una respuesta vieja no vuelva a mostrarse como diagnóstico mientras se regenera el documento.
+- Se eliminó el temario lateral del informe público. La lectura queda en una secuencia vertical única, con jerarquía de informe y secciones apiladas.
+- El mapa operativo usa estilos inline por nivel (`success`, `signal`, `warning`, `danger`) y recalcula niveles cuando Claude devuelve el mismo nivel para todas las áreas, evitando que todas las cards se vean del mismo color.
+- La estructura sigue el patrón profesional de informe ejecutivo: lectura del estado actual, hallazgos, costo de no cambiar, oportunidades, transición antes/después y priorización visual por área.
+- Archivos modificados:
+  - `app/api/diagnostico/[token]/generar-informe/route.ts`
+  - `app/diagnostico/[token]/informe/page.tsx`
+  - `lib/diagnostico/informe.ts`
+  - `docs/PROGRESS.md`
+- Verificación: `npx tsc --noEmit` OK, `npm run lint` OK, `npm run build` OK y `git diff --check` OK.

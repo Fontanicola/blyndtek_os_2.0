@@ -76,6 +76,7 @@ export type DiagnosticoInformeRecord = {
   precio_ideal_desarrollo: number | null;
   precio_ideal_mensual: number | null;
   estado: string;
+  respuestas?: Record<string, string> | null;
   created_at?: string;
   lead?: {
     empresa: string;
@@ -102,7 +103,23 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-export function parseHallazgos(value: unknown): HallazgoInforme[] {
+function normalizeForComparison(value: string) {
+  return value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim();
+}
+
+function isVerbatimResponse(value: string, respuestas: Record<string, string> | null | undefined) {
+  const normalized = normalizeForComparison(value);
+  return Object.values(respuestas ?? {}).some((response) => {
+    const candidate = normalizeForComparison(response);
+    return candidate.length >= 48 && (normalized.includes(candidate) || candidate.includes(normalized));
+  });
+}
+
+function safeVisibleText(value: string, fallback: string, respuestas?: Record<string, string> | null) {
+  return !value || isVerbatimResponse(value, respuestas) || value.includes("¿") || value.includes("?") ? fallback : value;
+}
+
+export function parseHallazgos(value: unknown, respuestas?: Record<string, string> | null): HallazgoInforme[] {
   if (!Array.isArray(value)) {
     return [];
   }
@@ -122,7 +139,15 @@ export function parseHallazgos(value: unknown): HallazgoInforme[] {
       return [];
     }
 
-    return [{ hallazgo, impacto, que_resolveria: queResolveria, evidencia, severidad }];
+    return [
+      {
+        hallazgo: safeVisibleText(hallazgo, "Se detecta una dependencia operativa que requiere mayor trazabilidad.", respuestas),
+        impacto: safeVisibleText(impacto, "El control manual aumenta el reproceso y retrasa la detección de desvíos.", respuestas),
+        que_resolveria: safeVisibleText(queResolveria, "Centralizar el proceso con estados, responsables y alertas accionables.", respuestas),
+        evidencia: safeVisibleText(evidencia, "La información relevada muestra controles distribuidos que conviene unificar.", respuestas),
+        severidad
+      }
+    ];
   });
 }
 
@@ -179,7 +204,18 @@ function parseStringArray(value: unknown) {
   return value.filter((item): item is string => typeof item === "string" && item.trim().length > 0);
 }
 
-export function parseDiagnosticoEmpresa(value: unknown, hallazgos: HallazgoInforme[]): DiagnosticoEmpresa {
+function parseConsultingStringArray(value: unknown, respuestas?: Record<string, string> | null) {
+  return Array.from(
+    new Set(
+      parseStringArray(value)
+        .filter((item) => !isVerbatimResponse(item, respuestas))
+        .filter((item) => !normalizeForComparison(item).startsWith("un sistema a medida permitiria ordenar este flujo"))
+        .map((item) => item.trim())
+    )
+  );
+}
+
+export function parseDiagnosticoEmpresa(value: unknown, hallazgos: HallazgoInforme[], respuestas?: Record<string, string> | null): DiagnosticoEmpresa {
   const fallbackResumen =
     hallazgos.length > 0
       ? "El diagnóstico muestra una operación con oportunidades claras de digitalización, trazabilidad y automatización."
@@ -203,12 +239,18 @@ export function parseDiagnosticoEmpresa(value: unknown, hallazgos: HallazgoInfor
       typeof value.operativa_actual === "string"
         ? value.operativa_actual
         : "La operación actual fue relevada a partir de las respuestas del diagnóstico.",
-    problemas_principales: parseStringArray(value.problemas_principales),
+    problemas_principales:
+      parseConsultingStringArray(value.problemas_principales, respuestas).length > 0
+        ? parseConsultingStringArray(value.problemas_principales, respuestas)
+        : hallazgos.map((hallazgo) => hallazgo.hallazgo),
     costo_de_no_cambiar:
       typeof value.costo_de_no_cambiar === "string"
         ? value.costo_de_no_cambiar
         : "Mantener la operación sin sistema sostiene dependencia manual, pérdida de visibilidad y riesgo de errores.",
-    oportunidades_mejora: parseStringArray(value.oportunidades_mejora),
+    oportunidades_mejora:
+      parseConsultingStringArray(value.oportunidades_mejora, respuestas).length > 0
+        ? parseConsultingStringArray(value.oportunidades_mejora, respuestas)
+        : hallazgos.map((hallazgo) => hallazgo.que_resolveria),
     conclusion_diagnostico:
       typeof value.conclusion_diagnostico === "string"
         ? value.conclusion_diagnostico
@@ -317,7 +359,7 @@ export function parseCondicionesComerciales(
   };
 }
 
-export function parseAntesDespues(value: unknown, hallazgos: HallazgoInforme[]): AntesDespuesMetrica[] {
+export function parseAntesDespues(value: unknown, hallazgos: HallazgoInforme[], respuestas?: Record<string, string> | null): AntesDespuesMetrica[] {
   const parsed = Array.isArray(value)
     ? value.flatMap((item) => {
         if (!isRecord(item)) {
@@ -329,7 +371,14 @@ export function parseAntesDespues(value: unknown, hallazgos: HallazgoInforme[]):
         const despues = typeof item.despues === "string" ? item.despues.trim() : "";
         const metrica = typeof item.metrica === "string" ? item.metrica.trim() : "";
 
-        return area && antes && despues && metrica ? [{ area, antes, despues, metrica }] : [];
+        return area && antes && despues && metrica
+          ? [{
+              area,
+              antes: safeVisibleText(antes, "El proceso depende de registros distribuidos y seguimiento manual.", respuestas),
+              despues: safeVisibleText(despues, "El proceso queda centralizado, visible y delegable.", respuestas),
+              metrica: safeVisibleText(metrica, "Menos reproceso y mayor trazabilidad; tiempos exactos a validar en la implementación.", respuestas)
+            }]
+          : [];
       })
     : [];
 
@@ -345,7 +394,7 @@ export function parseAntesDespues(value: unknown, hallazgos: HallazgoInforme[]):
   }));
 }
 
-export function parseMapaAreas(value: unknown, hallazgos: HallazgoInforme[]): AreaHeatmap[] {
+export function parseMapaAreas(value: unknown, hallazgos: HallazgoInforme[], respuestas?: Record<string, string> | null): AreaHeatmap[] {
   const parsed = Array.isArray(value)
     ? value.flatMap((item) => {
         if (!isRecord(item)) {
@@ -363,7 +412,12 @@ export function parseMapaAreas(value: unknown, hallazgos: HallazgoInforme[]): Ar
     : [];
 
   if (parsed.length > 0) {
-    return parsed.slice(0, 8);
+    const levels = new Set(parsed.map((item) => item.nivel));
+    const contextualBase = Object.values(respuestas ?? {}).filter((value) => value.trim().length > 0).length >= 4 ? 3 : 2;
+    return parsed.slice(0, 8).map((item, index) => ({
+      ...item,
+      nivel: levels.size === 1 ? Math.min(5, Math.max(1, contextualBase + (index % 3))) : item.nivel
+    }));
   }
 
   const defaultAreas = ["Comercial", "Operación", "Administración", "Finanzas", "Control", "Equipo"];
@@ -402,7 +456,7 @@ export async function fetchDiagnosticoInforme(token: string): Promise<Diagnostic
   const { data, error } = await supabase
     .from("diagnosticos")
     .select(
-      "id, token_publico, informe_hallazgos, modulos_sugeridos, precio_ideal_desarrollo, precio_ideal_mensual, estado, created_at, lead:leads(empresa, contacto_1_nombre)"
+      "id, token_publico, respuestas, informe_hallazgos, modulos_sugeridos, precio_ideal_desarrollo, precio_ideal_mensual, estado, created_at, lead:leads(empresa, contacto_1_nombre)"
     )
     .eq("token_publico", token)
     .maybeSingle<DiagnosticoInformeRecord>();
@@ -416,7 +470,8 @@ export async function fetchDiagnosticoInforme(token: string): Promise<Diagnostic
   }
 
   const hallazgos = parseHallazgos(
-    isRecord(data.informe_hallazgos) ? data.informe_hallazgos.hallazgos : data.informe_hallazgos
+    isRecord(data.informe_hallazgos) ? data.informe_hallazgos.hallazgos : data.informe_hallazgos,
+    data.respuestas
   );
   const modulos = parseModulos(
     isRecord(data.modulos_sugeridos) ? data.modulos_sugeridos.modulos : data.modulos_sugeridos
@@ -431,7 +486,8 @@ export async function fetchDiagnosticoInforme(token: string): Promise<Diagnostic
     modulos,
     diagnosticoEmpresa: parseDiagnosticoEmpresa(
       informeHallazgos ? informeHallazgos.diagnostico_empresa : null,
-      hallazgos
+      hallazgos,
+      data.respuestas
     ),
     propuestaSoftware: parsePropuestaSoftware(
       isRecord(data.modulos_sugeridos) ? data.modulos_sugeridos.propuesta_software : null,
@@ -442,8 +498,8 @@ export async function fetchDiagnosticoInforme(token: string): Promise<Diagnostic
       Number(data.precio_ideal_desarrollo ?? 0),
       Number(data.precio_ideal_mensual ?? 0)
     ),
-    antesDespues: parseAntesDespues(informeHallazgos ? informeHallazgos.antes_despues : null, hallazgos),
-    mapaAreas: parseMapaAreas(informeHallazgos ? informeHallazgos.mapa_areas : null, hallazgos),
+    antesDespues: parseAntesDespues(informeHallazgos ? informeHallazgos.antes_despues : null, hallazgos, data.respuestas),
+    mapaAreas: parseMapaAreas(informeHallazgos ? informeHallazgos.mapa_areas : null, hallazgos, data.respuestas),
     precio_ideal_desarrollo: Number(data.precio_ideal_desarrollo ?? 0),
     precio_ideal_mensual: Number(data.precio_ideal_mensual ?? 0)
   };
