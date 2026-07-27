@@ -199,12 +199,12 @@ function NavigationGroup({
         <span
           className={cn(
             "flex h-5 w-5 items-center justify-center transition-colors duration-fast ease-fast",
+            iconClassName,
             tone === "ai-hub"
               ? "text-white"
               : isActive
                 ? "text-carbon"
                 : "text-graphite group-hover:text-carbon",
-            iconClassName
           )}
         >
           {icon}
