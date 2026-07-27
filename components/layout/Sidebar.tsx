@@ -185,11 +185,12 @@ function NavigationGroup({
         className={cn(
           "group mx-2 flex w-[calc(100%-1rem)] items-center gap-3 rounded-component px-3 py-2 text-left transition-colors duration-fast ease-fast",
           "[&_svg]:h-5 [&_svg]:w-5",
+          tone === "ai-hub" && "[&_svg]:h-7 [&_svg]:w-7",
           collapsed && "justify-center px-0",
           tone === "ai-hub"
             ? isActive
-              ? "border border-white/95 bg-white/95 text-[#087EA4] shadow-[inset_0_1px_0_rgba(255,255,255,1),0_4px_14px_rgba(56,189,248,0.08)] backdrop-blur-md hover:bg-white"
-              : "border border-white/90 bg-white/90 text-[#087EA4] shadow-[inset_0_1px_0_rgba(255,255,255,1),0_3px_10px_rgba(56,189,248,0.06)] backdrop-blur-md hover:bg-white"
+              ? "border-2 border-white/95 bg-[linear-gradient(180deg,rgba(255,255,255,0.94)_0%,rgba(255,255,255,0.78)_100%)] text-[#087EA4] shadow-[inset_0_1px_0_rgba(255,255,255,1),inset_0_-1px_0_rgba(186,230,253,0.5),0_0_0_1px_rgba(125,211,252,0.28),0_7px_18px_rgba(56,189,248,0.12)] backdrop-blur-md hover:bg-white"
+              : "border-2 border-white/90 bg-[linear-gradient(180deg,rgba(255,255,255,0.9)_0%,rgba(255,255,255,0.72)_100%)] text-[#087EA4] shadow-[inset_0_1px_0_rgba(255,255,255,1),inset_0_-1px_0_rgba(186,230,253,0.45),0_0_0_1px_rgba(125,211,252,0.24),0_6px_16px_rgba(56,189,248,0.1)] backdrop-blur-md hover:bg-white"
               : isActive
                 ? "bg-white/80 text-signal"
               : "hover:bg-white/70"
@@ -199,7 +200,7 @@ function NavigationGroup({
           className={cn(
             "flex h-5 w-5 items-center justify-center transition-colors duration-fast ease-fast",
             tone === "ai-hub"
-              ? "text-[#087EA4]"
+              ? "text-[#7C3AED]"
               : isActive
                 ? "text-carbon"
                 : "text-graphite group-hover:text-carbon",
