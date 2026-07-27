@@ -190,8 +190,8 @@ function NavigationGroup({
           collapsed && "justify-center px-0",
           tone === "ai-hub"
             ? isActive
-              ? "border-2 border-[#B7ECFC]/95 bg-[radial-gradient(ellipse_at_center,rgba(211,244,253,0.99)_0%,rgba(160,223,242,0.97)_55%,rgba(91,190,225,0.96)_100%)] text-white shadow-[inset_0_0_20px_rgba(255,255,255,0.95),inset_0_-5px_12px_rgba(14,116,144,0.16),0_0_0_3px_rgba(255,255,255,0.92),0_0_0_5px_rgba(125,211,252,0.32),0_8px_20px_rgba(56,189,248,0.14)] backdrop-blur-md hover:bg-[#A7E3F5]"
-              : "border-2 border-[#C8F1FD]/95 bg-[radial-gradient(ellipse_at_center,rgba(224,248,254,0.98)_0%,rgba(178,230,245,0.95)_55%,rgba(111,202,235,0.94)_100%)] text-white shadow-[inset_0_0_22px_rgba(255,255,255,0.98),inset_0_-5px_12px_rgba(14,116,144,0.12),0_0_0_3px_rgba(255,255,255,0.95),0_0_0_5px_rgba(125,211,252,0.28),0_7px_18px_rgba(56,189,248,0.1)] backdrop-blur-md hover:bg-[#B4E9F7]"
+              ? "border-2 border-[#F2FCFF]/95 bg-[radial-gradient(ellipse_at_center,rgba(76,183,224,0.98)_0%,rgba(91,195,231,0.96)_42%,rgba(193,235,248,0.96)_82%,rgba(242,252,255,0.98)_100%)] text-white shadow-[inset_0_0_14px_rgba(255,255,255,0.5),inset_0_-5px_12px_rgba(14,116,144,0.2),0_0_0_3px_rgba(255,255,255,0.92),0_0_0_5px_rgba(125,211,252,0.38),0_8px_20px_rgba(56,189,248,0.14)] backdrop-blur-md hover:bg-[#77CBEA]"
+              : "border-2 border-[#F5FDFF]/95 bg-[radial-gradient(ellipse_at_center,rgba(104,202,235,0.96)_0%,rgba(117,209,238,0.94)_42%,rgba(203,239,249,0.96)_82%,rgba(245,253,255,0.98)_100%)] text-white shadow-[inset_0_0_16px_rgba(255,255,255,0.55),inset_0_-5px_12px_rgba(14,116,144,0.16),0_0_0_3px_rgba(255,255,255,0.95),0_0_0_5px_rgba(125,211,252,0.34),0_7px_18px_rgba(56,189,248,0.1)] backdrop-blur-md hover:bg-[#91D9F0]"
               : isActive
                 ? "bg-white/80 text-signal"
               : "hover:bg-white/70"
@@ -202,7 +202,7 @@ function NavigationGroup({
             "flex h-5 w-5 items-center justify-center transition-colors duration-fast ease-fast",
             iconClassName,
             tone === "ai-hub"
-              ? "text-white"
+              ? "text-white drop-shadow-[0_1px_2px_rgba(30,112,145,0.35)]"
               : isActive
                 ? "text-carbon"
                 : "text-graphite group-hover:text-carbon",
