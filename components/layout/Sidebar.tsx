@@ -173,7 +173,6 @@ function NavigationGroup({
 }: NavigationGroupProps) {
   const isActive = hasActiveItem(pathname, items);
   const showChildren = !collapsed && expanded;
-  const showAiHubLogo = tone === "ai-hub" && label === "AI Hub";
 
   return (
     <div>
@@ -204,21 +203,10 @@ function NavigationGroup({
               : isActive
                 ? "text-carbon"
                 : "text-graphite group-hover:text-carbon",
-            iconClassName,
-            showAiHubLogo && "overflow-hidden"
+            iconClassName
           )}
         >
-          {showAiHubLogo ? (
-            <Image
-              src="/Favicon_Blyndtek.svg"
-              alt=""
-              width={24}
-              height={24}
-              className="h-6 w-6 shrink-0 object-contain"
-            />
-          ) : (
-            icon
-          )}
+          {icon}
         </span>
         {collapsed ? null : (
           <span

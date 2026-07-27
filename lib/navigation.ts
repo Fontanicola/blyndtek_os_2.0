@@ -16,6 +16,7 @@ import {
   OutboundIcon,
   SaasIcon,
   NotasIcon,
+  SparklesIcon,
   WalletIcon,
   WikiIcon,
   ProyectosIcon,
@@ -41,7 +42,7 @@ export const navigationItems: NavItem[] = [
   },
   {
     label: "AI Hub",
-    icon: createElement(DashboardIcon),
+    icon: createElement(SparklesIcon),
     iconClassName: "text-[#7C3AED]",
     roles: ["admin"],
     section: "top-level",
