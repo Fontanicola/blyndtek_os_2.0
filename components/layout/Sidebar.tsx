@@ -189,8 +189,8 @@ function NavigationGroup({
           collapsed && "justify-center px-0",
           tone === "ai-hub"
             ? isActive
-              ? "border-2 border-white/95 bg-[linear-gradient(180deg,rgba(255,255,255,0.94)_0%,rgba(255,255,255,0.78)_100%)] text-[#087EA4] shadow-[inset_0_1px_0_rgba(255,255,255,1),inset_0_-1px_0_rgba(186,230,253,0.5),0_0_0_1px_rgba(125,211,252,0.28),0_7px_18px_rgba(56,189,248,0.12)] backdrop-blur-md hover:bg-white"
-              : "border-2 border-white/90 bg-[linear-gradient(180deg,rgba(255,255,255,0.9)_0%,rgba(255,255,255,0.72)_100%)] text-[#087EA4] shadow-[inset_0_1px_0_rgba(255,255,255,1),inset_0_-1px_0_rgba(186,230,253,0.45),0_0_0_1px_rgba(125,211,252,0.24),0_6px_16px_rgba(56,189,248,0.1)] backdrop-blur-md hover:bg-white"
+              ? "border-2 border-white/90 bg-[linear-gradient(135deg,rgba(146,222,247,0.98)_0%,rgba(80,181,225,0.94)_100%)] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.85),inset_0_-1px_0_rgba(14,116,144,0.18),0_0_0_1px_rgba(125,211,252,0.45),0_7px_18px_rgba(56,189,248,0.2)] backdrop-blur-md hover:bg-[#83D5F0]"
+              : "border-2 border-white/90 bg-[linear-gradient(135deg,rgba(168,231,249,0.94)_0%,rgba(110,201,235,0.88)_100%)] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.9),inset_0_-1px_0_rgba(14,116,144,0.14),0_0_0_1px_rgba(125,211,252,0.4),0_6px_16px_rgba(56,189,248,0.16)] backdrop-blur-md hover:bg-[#94DDF4]"
               : isActive
                 ? "bg-white/80 text-signal"
               : "hover:bg-white/70"
@@ -200,7 +200,7 @@ function NavigationGroup({
           className={cn(
             "flex h-5 w-5 items-center justify-center transition-colors duration-fast ease-fast",
             tone === "ai-hub"
-              ? "text-[#7C3AED]"
+              ? "text-white"
               : isActive
                 ? "text-carbon"
                 : "text-graphite group-hover:text-carbon",
