@@ -11,7 +11,7 @@ export default function manifest(): MetadataRoute.Manifest {
     theme_color: "#263a6d",
     icons: [
       {
-        src: "/app-orca.svg",
+        src: "/Favicon_Blyndtek.svg",
         sizes: "any",
         type: "image/svg+xml",
         purpose: "any"
