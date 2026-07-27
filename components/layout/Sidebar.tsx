@@ -100,8 +100,8 @@ function NavigationRow({
         level > 0 && !collapsed && "ml-4 w-[calc(100%-1.75rem)]",
         tone === "ai-hub"
           ? isActive
-            ? "border border-white/90 bg-[#8BD7F2]/70 text-[#164E63] shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_5px_14px_rgba(56,189,248,0.12)] backdrop-blur-md"
-            : "border border-white/80 bg-[#8BD7F2]/50 text-[#164E63] shadow-[inset_0_1px_0_rgba(255,255,255,0.85),0_4px_12px_rgba(56,189,248,0.08)] backdrop-blur-md hover:bg-[#8BD7F2]/70"
+            ? "border border-white/95 bg-[#A9DFF3]/95 text-[#334E68] shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_4px_12px_rgba(56,189,248,0.12)] backdrop-blur-md"
+            : "border border-white/90 bg-[#A9DFF3]/85 text-[#334E68] shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_3px_10px_rgba(56,189,248,0.08)] backdrop-blur-md hover:bg-[#BCEAF8]"
           : isActive
             ? "bg-white/80 text-carbon"
             : "hover:bg-white/70"
@@ -188,8 +188,8 @@ function NavigationGroup({
           collapsed && "justify-center px-0",
           tone === "ai-hub"
             ? isActive
-              ? "border border-white/90 bg-white/80 text-[#164E63] shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_4px_12px_rgba(56,189,248,0.1)] backdrop-blur-md hover:bg-white/90"
-              : "border border-white/75 bg-white/55 text-[#164E63] shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_3px_10px_rgba(56,189,248,0.06)] backdrop-blur-md hover:bg-white/75"
+              ? "border border-white/95 bg-white/95 text-[#087EA4] shadow-[inset_0_1px_0_rgba(255,255,255,1),0_4px_14px_rgba(56,189,248,0.08)] backdrop-blur-md hover:bg-white"
+              : "border border-white/90 bg-white/90 text-[#087EA4] shadow-[inset_0_1px_0_rgba(255,255,255,1),0_3px_10px_rgba(56,189,248,0.06)] backdrop-blur-md hover:bg-white"
               : isActive
                 ? "bg-white/80 text-signal"
               : "hover:bg-white/70"
@@ -245,7 +245,7 @@ function NavigationGroup({
             className={cn(
               "mx-2 space-y-1 rounded-card px-2 py-2",
               tone === "ai-hub"
-                ? "border border-[#76CFF0]/70 bg-[#B9EAF8]/35 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] backdrop-blur-md"
+                ? "border border-[#76CFF0]/80 bg-[#DDF6FF]/80 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_4px_16px_rgba(56,189,248,0.08)] backdrop-blur-md"
                 : "border border-line-soft/80 bg-white/45"
             )}
           >
