@@ -11,6 +11,10 @@ export const metadata: Metadata = {
   title: "Blyndtek OS",
   description: "Sistema de gestión interno de Blyndtek.",
   icons: {
+    icon: [
+      { url: "/Favicon_Blyndtek.svg", media: "(prefers-color-scheme: light)" },
+      { url: "/Favicon_Blyndtek_dark.svg", media: "(prefers-color-scheme: dark)" }
+    ],
     apple: "/Favicon_Blyndtek.svg"
   }
 };
