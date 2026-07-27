@@ -74,4 +74,6 @@ export type DiagnosticoSesionPayload = {
   areas: DiagnosticoArea[];
   metricas: DiagnosticoMetrica[];
   resumen: DiagnosticoCuantitativoResumen;
+  preguntas: import("@/types/diagnostico").PreguntaDiagnostico[];
+  respuestas: Record<string, string>;
 };

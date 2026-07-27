@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { resumirMetricas, normalizarMetrica } from "@/lib/diagnostico/cuantitativo";
 import { createAdminClient } from "@/lib/supabase/admin";
+import type { PreguntaDiagnostico } from "@/types/diagnostico";
 import type { DiagnosticoArea, DiagnosticoMetrica, DiagnosticoSesion } from "@/types/diagnosticoCuantitativo";
 
 export const dynamic = "force-dynamic";
@@ -22,7 +23,7 @@ async function getAccess(token: string) {
   };
   const { data: diagnostico, error } = await db
     .from("diagnosticos")
-    .select("id, lead_id, lead:leads(vendedor_id)")
+    .select("id, lead_id, respuestas, lead:leads(vendedor_id)")
     .eq("token_publico", token)
     .maybeSingle();
 
@@ -76,13 +77,14 @@ export async function GET(_request: NextRequest, { params }: RouteContext) {
     if (access.response) return access.response;
     const { db, diagnostico } = access;
 
-    const [{ data: sesion, error: sesionError }, { data: areas, error: areasError }, { data: metricas, error: metricasError }] = await Promise.all([
+    const [{ data: sesion, error: sesionError }, { data: areas, error: areasError }, { data: metricas, error: metricasError }, { data: preguntas, error: preguntasError }] = await Promise.all([
       db.from("diagnostico_sesiones").select("*").eq("diagnostico_id", diagnostico.id).maybeSingle(),
       db.from("diagnostico_areas").select("*").eq("diagnostico_id", diagnostico.id).order("created_at", { ascending: true }),
-      db.from("diagnostico_metricas").select("*").eq("diagnostico_id", diagnostico.id).order("created_at", { ascending: true })
+      db.from("diagnostico_metricas").select("*").eq("diagnostico_id", diagnostico.id).order("created_at", { ascending: true }),
+      db.from("preguntas_diagnostico").select("*").eq("activa", true).eq("momento", "sesion").order("categoria", { ascending: true }).order("orden", { ascending: true })
     ]);
 
-    const error = sesionError ?? areasError ?? metricasError;
+    const error = sesionError ?? areasError ?? metricasError ?? preguntasError;
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
     return NextResponse.json({
@@ -90,7 +92,9 @@ export async function GET(_request: NextRequest, { params }: RouteContext) {
         sesion: sesion as DiagnosticoSesion | null,
         areas: (areas ?? []) as DiagnosticoArea[],
         metricas: (metricas ?? []) as DiagnosticoMetrica[],
-        resumen: resumirMetricas((metricas ?? []) as Array<Record<string, unknown>>)
+        resumen: resumirMetricas((metricas ?? []) as Array<Record<string, unknown>>),
+        preguntas: (preguntas ?? []) as PreguntaDiagnostico[],
+        respuestas: (diagnostico.respuestas ?? {}) as Record<string, string>
       }
     });
   } catch (error) {
@@ -107,7 +111,21 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
       sesion?: Record<string, unknown>;
       areas?: Array<Record<string, unknown>>;
       metricas?: Array<Record<string, unknown>>;
+      respuestas?: Record<string, unknown>;
     };
+
+    if (body.respuestas) {
+      const respuestas = Object.fromEntries(
+        Object.entries(body.respuestas)
+          .map(([key, value]) => [key, typeof value === "string" ? value.trim() : ""])
+          .filter(([key]) => Boolean(key))
+      );
+      const { error } = await db
+        .from("diagnosticos")
+        .update({ respuestas: { ...(diagnostico.respuestas ?? {}), ...respuestas } })
+        .eq("id", diagnostico.id);
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    }
 
     if (body.sesion) {
       const sesionPayload = {
@@ -141,10 +159,11 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
       }
     }
 
-    const [{ data: sesion }, { data: areas }, { data: metricas }] = await Promise.all([
+    const [{ data: sesion }, { data: areas }, { data: metricas }, { data: preguntas }] = await Promise.all([
       db.from("diagnostico_sesiones").select("*").eq("diagnostico_id", diagnostico.id).maybeSingle(),
       db.from("diagnostico_areas").select("*").eq("diagnostico_id", diagnostico.id).order("created_at", { ascending: true }),
-      db.from("diagnostico_metricas").select("*").eq("diagnostico_id", diagnostico.id).order("created_at", { ascending: true })
+      db.from("diagnostico_metricas").select("*").eq("diagnostico_id", diagnostico.id).order("created_at", { ascending: true }),
+      db.from("preguntas_diagnostico").select("*").eq("activa", true).eq("momento", "sesion").order("categoria", { ascending: true }).order("orden", { ascending: true })
     ]);
 
     return NextResponse.json({
@@ -152,7 +171,12 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
         sesion,
         areas,
         metricas,
-        resumen: resumirMetricas((metricas ?? []) as Array<Record<string, unknown>>)
+        resumen: resumirMetricas((metricas ?? []) as Array<Record<string, unknown>>),
+        preguntas: (preguntas ?? []) as PreguntaDiagnostico[],
+        respuestas: {
+          ...(diagnostico.respuestas ?? {}),
+          ...(body.respuestas ?? {})
+        } as Record<string, string>
       }
     });
   } catch (error) {

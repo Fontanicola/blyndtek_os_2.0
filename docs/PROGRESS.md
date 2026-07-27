@@ -3167,6 +3167,15 @@ $ find . -maxdepth 3 \( -name 'middleware.*' -o -name 'proxy.*' \) -not -path '.
 - Se agregó un resumen operativo de tickets prioritarios, revisiones pendientes y potencial de upsell.
 - Se dejó preparado el job trimestral `022_revisiones_trimestrales_cron.sql`, con agente de cuenta y automatización pausables desde AI Hub.
 
+## 2026-07-26 — Preguntas separadas por momento del diagnóstico
+
+- Se creó la migración idempotente `019_preguntas_diagnostico_momento.sql`, con `preguntas_diagnostico.momento` (`formulario|sesion`) y default `formulario` para las preguntas existentes.
+- El formulario público filtra estrictamente `activa=true AND momento='formulario'` y el endpoint público evita leer o escribir claves de preguntas de sesión.
+- La sesión interna autenticada ahora carga preguntas `momento='sesion'` agrupadas por categoría, con categorías colapsables, indicador de avance y autosave en el mismo `diagnosticos.respuestas`.
+- Se actualizaron `types/diagnostico.ts`, `types/diagnosticoCuantitativo.ts`, `types/supabase.ts`, `app/api/diagnostico/[token]/route.ts`, `app/api/diagnostico/[token]/sesion/route.ts` y `components/diagnostico/DiagnosticoSesionInterna.tsx`.
+- Decisión: una sola fuente de respuestas permite que Claude analice el formulario previo y el relevamiento en vivo sin duplicar entidades; la separación de exposición se resuelve en los endpoints y no en tablas paralelas.
+- Verificación real contra Supabase y endpoint local con un diagnóstico existente: `19` preguntas activas de formulario, `0` con prefijo `Sesión ·` y `0` con `momento='sesion'` en el payload público. La consulta directa encontró `39` preguntas activas de sesión en la base (la carga actual difiere del conteo esperado de 37); ninguna se expone al formulario público.
+
 ## 2026-07-26 — Actualización de identidad visual Blyndtek
 
 - Se reemplazó el favicon por `Logo Blyndtek Orca.2.svg` y el logo completo utilizado por la plataforma por `Logo Blyndtek Orca completo.svg`, conservando las rutas públicas existentes para no romper referencias.

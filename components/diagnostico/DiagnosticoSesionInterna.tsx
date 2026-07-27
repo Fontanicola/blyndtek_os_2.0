@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Badge, Button, Modal, SavingIndicator } from "@/components/ui";
-import { PlusIcon, TrashIcon } from "@/components/ui/icons";
+import { ChevronDownIcon, PlusIcon, TrashIcon } from "@/components/ui/icons";
 import { calcularCostoMensualMetrica } from "@/lib/diagnostico/cuantitativo";
+import type { PreguntaDiagnostico } from "@/types/diagnostico";
 import type {
   DiagnosticoArea,
   DiagnosticoCuantitativoResumen,
@@ -77,6 +78,17 @@ function formatUsd(value: number) {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(value);
 }
 
+function groupPreguntas(preguntas: PreguntaDiagnostico[]) {
+  return preguntas.reduce<Array<{ categoria: string; preguntas: PreguntaDiagnostico[] }>>((groups, pregunta) => {
+    const current = groups.find((group) => group.categoria === pregunta.categoria);
+    if (current) {
+      current.preguntas.push(pregunta);
+      return groups;
+    }
+    return [...groups, { categoria: pregunta.categoria, preguntas: [pregunta] }];
+  }, []);
+}
+
 function Field({ label, value, onChange, type = "text", placeholder }: { label: string; value: string | number; onChange: (value: string) => void; type?: string; placeholder?: string }) {
   return (
     <label className="space-y-1">
@@ -125,6 +137,10 @@ export function DiagnosticoSesionInterna({ token }: Props) {
   const [areas, setAreas] = useState<DiagnosticoArea[]>([]);
   const [metricas, setMetricas] = useState<DiagnosticoMetrica[]>([]);
   const [resumen, setResumen] = useState<DiagnosticoCuantitativoResumen | null>(null);
+  const [preguntas, setPreguntas] = useState<PreguntaDiagnostico[]>([]);
+  const [respuestas, setRespuestas] = useState<Record<string, string>>({});
+  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
+  const skipQuestionAutosave = useRef(false);
 
   async function load() {
     setLoading(true);
@@ -137,6 +153,12 @@ export function DiagnosticoSesionInterna({ token }: Props) {
       setAreas(payload.data.areas);
       setMetricas(payload.data.metricas);
       setResumen(payload.data.resumen);
+      skipQuestionAutosave.current = true;
+      setPreguntas(payload.data.preguntas);
+      setRespuestas(payload.data.respuestas ?? {});
+      setExpandedCategories(
+        Object.fromEntries(groupPreguntas(payload.data.preguntas).map((group, index) => [group.categoria, index === 0]))
+      );
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : "No se pudo cargar la sesión.");
     } finally {
@@ -148,6 +170,36 @@ export function DiagnosticoSesionInterna({ token }: Props) {
     if (open) void load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, token]);
+
+  useEffect(() => {
+    if (!open || preguntas.length === 0) {
+      return;
+    }
+
+    if (skipQuestionAutosave.current) {
+      skipQuestionAutosave.current = false;
+      return;
+    }
+
+    setSaveState("saving");
+    const timeoutId = window.setTimeout(async () => {
+      try {
+        const response = await fetch(`/api/diagnostico/${token}/sesion`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ respuestas })
+        });
+        const payload = (await response.json()) as { error?: string };
+        if (!response.ok) throw new Error(payload.error ?? "No se pudieron guardar las respuestas.");
+        setSaveState("saved");
+      } catch (saveError) {
+        setSaveState("idle");
+        setError(saveError instanceof Error ? saveError.message : "No se pudieron guardar las respuestas.");
+      }
+    }, 900);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [open, preguntas.length, respuestas, token]);
 
   const liveSummary = useMemo(() => {
     let monthly = 0;
@@ -170,7 +222,7 @@ export function DiagnosticoSesionInterna({ token }: Props) {
       const response = await fetch(`/api/diagnostico/${token}/sesion`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sesion: { ...sesion, estado }, areas, metricas })
+        body: JSON.stringify({ sesion: { ...sesion, estado }, areas, metricas, respuestas })
       });
       const payload = (await response.json()) as { data?: DiagnosticoSesionPayload; error?: string };
       if (!response.ok || !payload.data) throw new Error(payload.error ?? "No se pudo guardar la sesión.");
@@ -204,6 +256,68 @@ export function DiagnosticoSesionInterna({ token }: Props) {
 
           {error ? <div className="rounded-component border border-danger/20 bg-danger-light px-3 py-2 text-sm text-danger">{error}</div> : null}
           {loading ? <p className="text-sm text-graphite">Cargando sesión...</p> : null}
+
+          {preguntas.length > 0 ? (
+            <section className="space-y-4 rounded-card border border-line-soft bg-paper/50 p-4">
+              <div className="flex flex-wrap items-end justify-between gap-3">
+                <div>
+                  <h3 className="text-lg font-title text-carbon">Guía de preguntas de la sesión</h3>
+                  <p className="mt-1 text-sm leading-6 text-graphite">
+                    Preguntas para recorrer en vivo. Las respuestas se guardan automáticamente en el diagnóstico.
+                  </p>
+                </div>
+                <div className="min-w-40 text-right">
+                  <p className="text-xs font-label text-graphite">
+                    {Object.values(respuestas).filter((respuesta) => respuesta.trim()).length} de {preguntas.length} respondidas
+                  </p>
+                  <div className="mt-2 h-1.5 overflow-hidden rounded-pill bg-line-soft">
+                    <div
+                      className="h-full rounded-pill bg-signal transition-all duration-normal ease-fast"
+                      style={{ width: `${preguntas.length ? Math.min(100, (Object.values(respuestas).filter((respuesta) => respuesta.trim()).length / preguntas.length) * 100) : 0}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                {groupPreguntas(preguntas).map((group) => {
+                  const expanded = expandedCategories[group.categoria] ?? false;
+                  const answered = group.preguntas.filter((pregunta) => respuestas[pregunta.id]?.trim()).length;
+                  return (
+                    <div key={group.categoria} className="overflow-hidden rounded-component border border-line-soft bg-white">
+                      <button
+                        type="button"
+                        onClick={() => setExpandedCategories((current) => ({ ...current, [group.categoria]: !expanded }))}
+                        className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition-colors duration-fast hover:bg-paper"
+                      >
+                        <span className="font-label text-carbon">{group.categoria}</span>
+                        <span className="flex items-center gap-2 text-xs text-graphite">
+                          {answered}/{group.preguntas.length}
+                          <ChevronDownIcon size={16} className={`transition-transform duration-fast ${expanded ? "rotate-180" : ""}`} />
+                        </span>
+                      </button>
+                      {expanded ? (
+                        <div className="space-y-4 border-t border-line-soft p-4">
+                          {group.preguntas.map((pregunta) => (
+                            <label key={pregunta.id} className="block space-y-2">
+                              <span className="block text-sm font-label text-carbon">{pregunta.pregunta}</span>
+                              <textarea
+                                value={respuestas[pregunta.id] ?? ""}
+                                onChange={(event) => setRespuestas((current) => ({ ...current, [pregunta.id]: event.target.value }))}
+                                rows={3}
+                                placeholder="Registrá lo que surge durante la conversación..."
+                                className="w-full resize-y rounded-component border border-line bg-white px-3 py-2 text-sm text-carbon focus:border-signal focus:outline-none focus:ring-2 focus:ring-signal/20"
+                              />
+                            </label>
+                          ))}
+                        </div>
+                      ) : null}
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          ) : null}
 
           <section className="space-y-3">
             <h3 className="text-lg font-title text-carbon">Datos de la sesión</h3>

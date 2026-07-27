@@ -57,6 +57,13 @@ export default async function DiagnosticoPage({ params }: DiagnosticoPageProps) 
     notFound();
   }
 
+  // Defensa adicional: aunque el endpoint ya filtra por momento, la vista pública nunca
+  // renderiza una pregunta de sesión si una respuesta mal formada llegara hasta acá.
+  const publicPayload: DiagnosticoPublicPayload = {
+    ...payload,
+    preguntas: payload.preguntas.filter((pregunta) => pregunta.activa && pregunta.momento === "formulario")
+  };
+
   return (
     <main className="min-h-screen bg-paper px-4 py-6 sm:px-6 sm:py-10">
       <div className="mx-auto max-w-3xl space-y-6">
@@ -92,7 +99,7 @@ export default async function DiagnosticoPage({ params }: DiagnosticoPageProps) 
 
         <section className="rounded-card border border-line-soft bg-white p-6 sm:p-8">
           <DiagnosticoForm
-            initialPayload={payload}
+            initialPayload={publicPayload}
             saveUrl={`/api/diagnostico/${params.token}`}
           />
         </section>

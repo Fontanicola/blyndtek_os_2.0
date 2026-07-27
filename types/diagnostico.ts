@@ -4,6 +4,7 @@ export type PreguntaDiagnostico = {
   pregunta: string;
   orden: number;
   activa: boolean;
+  momento: "formulario" | "sesion";
   created_at: string;
 };
 

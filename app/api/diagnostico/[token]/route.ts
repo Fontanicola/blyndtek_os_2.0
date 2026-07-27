@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import type { Diagnostico, DiagnosticoPublicPayload, PreguntaDiagnostico } from "@/types/diagnostico";
+import {
+  DIAGNOSTICO_CONTEXTO_KEY,
+  type Diagnostico,
+  type DiagnosticoPublicPayload,
+  type PreguntaDiagnostico
+} from "@/types/diagnostico";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -23,13 +28,17 @@ type DiagnosticoRecord = Diagnostico & {
   } | null;
 };
 
-function normalizeRespuestas(respuestas: Record<string, unknown> | undefined) {
+function normalizeRespuestas(
+  respuestas: Record<string, unknown> | undefined,
+  allowedKeys?: Set<string>
+) {
   if (!respuestas) {
     return {};
   }
 
   return Object.fromEntries(
     Object.entries(respuestas)
+      .filter(([key]) => !allowedKeys || allowedKeys.has(key) || key === DIAGNOSTICO_CONTEXTO_KEY)
       .map(([key, value]) => [key, typeof value === "string" ? value.trim() : ""])
       .filter(([key]) => Boolean(key))
   );
@@ -55,6 +64,7 @@ async function getDiagnosticoPayload(token: string): Promise<DiagnosticoPublicPa
     .from("preguntas_diagnostico")
     .select("*")
     .eq("activa", true)
+    .eq("momento", "formulario")
     .order("categoria", { ascending: true })
     .order("orden", { ascending: true })
     .returns<PreguntaDiagnostico[]>();
@@ -63,11 +73,19 @@ async function getDiagnosticoPayload(token: string): Promise<DiagnosticoPublicPa
     throw new Error(preguntasError.message);
   }
 
+  const preguntasFormulario = preguntas ?? [];
+  const idsFormulario = new Set(preguntasFormulario.map((pregunta) => pregunta.id));
+  const respuestasPublicas = Object.fromEntries(
+    Object.entries(diagnostico.respuestas ?? {}).filter(
+      ([key]) => key === DIAGNOSTICO_CONTEXTO_KEY || idsFormulario.has(key)
+    )
+  );
+
   return {
     diagnostico: {
       id: diagnostico.id,
       token_publico: diagnostico.token_publico,
-      respuestas: diagnostico.respuestas ?? {},
+      respuestas: respuestasPublicas,
       estado: diagnostico.estado,
       completado_por: diagnostico.completado_por,
       fecha_completado: diagnostico.fecha_completado
@@ -118,9 +136,20 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
       return NextResponse.json({ error: "Diagnóstico no encontrado." }, { status: 404 });
     }
 
+    const { data: preguntasFormulario, error: preguntasError } = await supabase
+      .from("preguntas_diagnostico")
+      .select("id")
+      .eq("activa", true)
+      .eq("momento", "formulario");
+
+    if (preguntasError) {
+      return NextResponse.json({ error: preguntasError.message }, { status: 500 });
+    }
+
+    const allowedKeys = new Set((preguntasFormulario ?? []).map((pregunta) => pregunta.id));
     const merged = {
       ...(current.respuestas ?? {}),
-      ...normalizeRespuestas(body.respuestas)
+      ...normalizeRespuestas(body.respuestas, allowedKeys)
     };
     const completePatch = body.completo
       ? { estado: "respondido", completado_por: "cliente", fecha_completado: new Date().toISOString() }
