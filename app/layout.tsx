@@ -11,8 +11,6 @@ export const metadata: Metadata = {
   title: "Blyndtek OS",
   description: "Sistema de gestión interno de Blyndtek.",
   icons: {
-    icon: "/Favicon_Blyndtek.svg",
-    shortcut: "/Favicon_Blyndtek.svg",
     apple: "/Favicon_Blyndtek.svg"
   }
 };
@@ -24,6 +22,18 @@ type RootLayoutProps = Readonly<{
 export default function RootLayout({ children }: RootLayoutProps) {
   return (
     <html lang="es">
+      <head>
+        <link
+          rel="icon"
+          href="/Favicon_Blyndtek.svg"
+          media="(prefers-color-scheme: light)"
+        />
+        <link
+          rel="icon"
+          href="/Favicon_Blyndtek_dark.svg"
+          media="(prefers-color-scheme: dark)"
+        />
+      </head>
       <body className={`${inter.className} bg-paper font-sans text-carbon antialiased`}>
         {children}
       </body>

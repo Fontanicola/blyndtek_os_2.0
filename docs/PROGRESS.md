@@ -3172,3 +3172,8 @@ $ find . -maxdepth 3 \( -name 'middleware.*' -o -name 'proxy.*' \) -not -path '.
 - Se reemplazó el favicon por `Logo Blyndtek Orca.2.svg` y el logo completo utilizado por la plataforma por `Logo Blyndtek Orca completo.svg`, conservando las rutas públicas existentes para no romper referencias.
 - El ítem padre de AI Hub ahora utiliza el isotipo SVG real en lugar del ícono dibujado en código.
 - Archivos actualizados: `public/Favicon_Blyndtek.svg`, `public/Logo_Blyndtek_plataforma.svg`, `public/Logo_Blyndtek_plataforma_negro.svg`, `components/layout/Sidebar.tsx`.
+
+## 2026-07-26 — Favicon adaptable al tema del navegador
+
+- Se agregó `public/Favicon_Blyndtek_dark.svg` para el modo oscuro.
+- `app/layout.tsx` selecciona el favicon claro u oscuro con `prefers-color-scheme`, manteniendo el favicon claro para Apple Touch Icon.
