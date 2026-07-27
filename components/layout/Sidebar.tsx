@@ -100,8 +100,8 @@ function NavigationRow({
         level > 0 && !collapsed && "ml-4 w-[calc(100%-1.75rem)]",
         tone === "ai-hub"
           ? isActive
-            ? "bg-white text-carbon"
-            : "bg-white/55 text-carbon hover:bg-white/80"
+            ? "border border-white/90 bg-[#8BD7F2]/70 text-[#164E63] shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_5px_14px_rgba(56,189,248,0.12)] backdrop-blur-md"
+            : "border border-white/80 bg-[#8BD7F2]/50 text-[#164E63] shadow-[inset_0_1px_0_rgba(255,255,255,0.85),0_4px_12px_rgba(56,189,248,0.08)] backdrop-blur-md hover:bg-[#8BD7F2]/70"
           : isActive
             ? "bg-white/80 text-carbon"
             : "hover:bg-white/70"
@@ -112,8 +112,8 @@ function NavigationRow({
           "transition-colors duration-fast ease-fast",
           tone === "ai-hub"
             ? isActive
-              ? "text-[#5B21B6]"
-              : "text-[#667085] group-hover:text-[#4C1D95]"
+              ? "text-[#087EA4]"
+              : "text-[#64748B] group-hover:text-[#164E63]"
             : isActive
               ? "text-signal"
               : "text-graphite group-hover:text-carbon",
@@ -128,8 +128,8 @@ function NavigationRow({
             "text-sm font-label transition-colors duration-fast ease-fast",
             tone === "ai-hub"
               ? isActive
-                ? "text-[#2E1065]"
-                : "text-[#475467] group-hover:text-[#2E1065]"
+                ? "text-[#164E63]"
+                : "text-[#334155] group-hover:text-[#164E63]"
               : isActive
                 ? "text-signal"
                 : "text-graphite group-hover:text-carbon"
@@ -188,8 +188,8 @@ function NavigationGroup({
           collapsed && "justify-center px-0",
           tone === "ai-hub"
             ? isActive
-              ? "bg-[#EDE9FE] text-[#4C1D95] hover:bg-[#DDD6FE]"
-              : "bg-[#7C3AED]/10 text-[#5B21B6] hover:bg-[#7C3AED]/15"
+              ? "border border-white/90 bg-white/80 text-[#164E63] shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_4px_12px_rgba(56,189,248,0.1)] backdrop-blur-md hover:bg-white/90"
+              : "border border-white/75 bg-white/55 text-[#164E63] shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_3px_10px_rgba(56,189,248,0.06)] backdrop-blur-md hover:bg-white/75"
               : isActive
                 ? "bg-white/80 text-signal"
               : "hover:bg-white/70"
@@ -199,7 +199,7 @@ function NavigationGroup({
           className={cn(
             "flex h-5 w-5 items-center justify-center transition-colors duration-fast ease-fast",
             tone === "ai-hub"
-              ? "text-[#7C3AED]"
+              ? "text-[#087EA4]"
               : isActive
                 ? "text-carbon"
                 : "text-graphite group-hover:text-carbon",
@@ -212,8 +212,8 @@ function NavigationGroup({
           <span
             className={cn(
               "text-sm font-label transition-colors duration-fast ease-fast",
-              tone === "ai-hub"
-                ? "text-[#5B21B6]"
+            tone === "ai-hub"
+              ? "text-[#087EA4]"
                 : isActive
                   ? "text-signal"
                   : "text-graphite group-hover:text-carbon"
@@ -226,7 +226,7 @@ function NavigationGroup({
           <ChevronDownIcon
             className={cn(
               "ml-auto h-4 w-4 shrink-0 transition-transform duration-normal ease-normal",
-              tone === "ai-hub" ? "text-[#7C3AED]" : "text-graphite",
+              tone === "ai-hub" ? "text-[#087EA4]" : "text-graphite",
               expanded ? "rotate-180" : "rotate-0"
             )}
           />
@@ -245,7 +245,7 @@ function NavigationGroup({
             className={cn(
               "mx-2 space-y-1 rounded-card px-2 py-2",
               tone === "ai-hub"
-                ? "border border-[#7C3AED]/15 bg-[#7C3AED]/[0.055]"
+                ? "border border-[#76CFF0]/70 bg-[#B9EAF8]/35 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] backdrop-blur-md"
                 : "border border-line-soft/80 bg-white/45"
             )}
           >
