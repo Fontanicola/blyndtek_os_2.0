@@ -366,14 +366,14 @@ export function Sidebar({
         onMouseEnter={mobile ? undefined : onMouseEnter}
         onMouseLeave={mobile ? undefined : onMouseLeave}
       >
-        <div className={cn("flex h-16 items-center border-b border-line-soft", collapsed ? "justify-center px-2" : "px-5")}>{collapsed ? (
-          <div className="relative h-9 w-9 shrink-0">
+        <div className={cn("flex items-center border-b border-line-soft", collapsed ? "h-12 justify-center px-1" : "h-16 px-5")}>{collapsed ? (
+          <div className="relative h-8 w-8 shrink-0">
             <Image
               src="/Favicon_Blyndtek.svg"
               alt="Blyndtek OS"
-              width={36}
-              height={36}
-              className="h-9 w-9 object-contain"
+              width={32}
+              height={32}
+              className="h-8 w-8 object-contain"
               priority
             />
           </div>
