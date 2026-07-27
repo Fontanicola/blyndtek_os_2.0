@@ -189,8 +189,8 @@ function NavigationGroup({
           collapsed && "justify-center px-0",
           tone === "ai-hub"
             ? isActive
-              ? "border-2 border-white/90 bg-[linear-gradient(135deg,rgba(146,222,247,0.98)_0%,rgba(80,181,225,0.94)_100%)] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.85),inset_0_-1px_0_rgba(14,116,144,0.18),0_0_0_1px_rgba(125,211,252,0.45),0_7px_18px_rgba(56,189,248,0.2)] backdrop-blur-md hover:bg-[#83D5F0]"
-              : "border-2 border-white/90 bg-[linear-gradient(135deg,rgba(168,231,249,0.94)_0%,rgba(110,201,235,0.88)_100%)] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.9),inset_0_-1px_0_rgba(14,116,144,0.14),0_0_0_1px_rgba(125,211,252,0.4),0_6px_16px_rgba(56,189,248,0.16)] backdrop-blur-md hover:bg-[#94DDF4]"
+              ? "border-2 border-[#E9FAFF]/95 bg-[radial-gradient(ellipse_at_center,rgba(174,232,249,0.98)_0%,rgba(93,194,230,0.96)_58%,rgba(48,168,214,0.98)_100%)] text-white shadow-[inset_0_2px_5px_rgba(255,255,255,0.72),inset_0_-3px_8px_rgba(14,116,144,0.2),0_0_0_3px_rgba(255,255,255,0.65),0_0_0_5px_rgba(125,211,252,0.45),0_8px_20px_rgba(56,189,248,0.2)] backdrop-blur-md hover:bg-[#83D5F0]"
+              : "border-2 border-[#F3FCFF]/95 bg-[radial-gradient(ellipse_at_center,rgba(190,238,250,0.96)_0%,rgba(111,204,236,0.93)_58%,rgba(74,181,222,0.96)_100%)] text-white shadow-[inset_0_2px_5px_rgba(255,255,255,0.78),inset_0_-3px_8px_rgba(14,116,144,0.16),0_0_0_3px_rgba(255,255,255,0.7),0_0_0_5px_rgba(125,211,252,0.4),0_7px_18px_rgba(56,189,248,0.16)] backdrop-blur-md hover:bg-[#94DDF4]"
               : isActive
                 ? "bg-white/80 text-signal"
               : "hover:bg-white/70"
