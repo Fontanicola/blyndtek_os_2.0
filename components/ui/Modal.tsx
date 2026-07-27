@@ -78,7 +78,7 @@ export function Modal({
         aria-modal="true"
         aria-labelledby="modal-title"
         className={cn(
-          "relative mt-[10vh] w-full rounded-card bg-white shadow-modal",
+          "relative mt-[10vh] w-full rounded-md bg-white shadow-modal",
           "max-h-[calc(100vh-20vh)] overflow-hidden",
           sizeClasses[size],
           isClosing ? "animate-modal-out" : "animate-modal-in"

@@ -211,7 +211,7 @@ export function DashboardClient() {
         colorIcono: "warning"
       },
       {
-        label: "Cobros vencidos",
+        label: "Cobros con atraso",
         value: fin.cobros_vencidos,
         icono: <BellIcon />,
         colorIcono: "danger"

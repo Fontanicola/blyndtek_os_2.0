@@ -198,7 +198,7 @@ export function CobroModal({
               <option value="pendiente">Pendiente</option>
               <option value="facturado">Facturado</option>
               <option value="cobrado">Cobrado</option>
-              <option value="vencido">Vencido</option>
+              <option value="vencido">Con atraso</option>
             </select>
           </div>
           {estado === "cobrado" ? (

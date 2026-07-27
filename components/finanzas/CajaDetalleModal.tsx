@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Badge, Button, Card, EmptyState, FilterPopover, Input, Modal, Spinner } from "@/components/ui";
+import { labelEstado } from "@/lib/ui/labels";
 import { formatMonthLabel } from "@/lib/finanzas";
 import { useCajaMovimientos } from "@/lib/hooks/useCajaMovimientos";
 import { cn } from "@/lib/cn";
@@ -159,7 +160,7 @@ function MovimientoRow({ movimiento }: { movimiento: MovimientoCaja }) {
             <div className="flex flex-wrap items-center gap-2">
               <p className="truncate text-sm font-label text-carbon">{movimiento.concepto}</p>
               <Badge variant="ghost">{badge}</Badge>
-              <Badge variant={isIngreso ? "success" : "default"}>{movimiento.estado}</Badge>
+              <Badge variant={isIngreso ? "success" : "default"}>{labelEstado(movimiento.estado)}</Badge>
             </div>
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-graphite">
               {movimiento.cliente_nombre ? <span>{movimiento.cliente_nombre}</span> : null}

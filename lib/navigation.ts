@@ -207,3 +207,45 @@ export function getPageLabel(pathname: string) {
 
   return findLabel(navigationItems) ?? "Blyndtek OS";
 }
+
+export type NavigationTrailItem = {
+  label: string;
+  href?: string;
+};
+
+function matchesNavigationPath(pathname: string, item: NavItem) {
+  if (!item.href) {
+    return false;
+  }
+
+  return item.exact ? pathname === item.href : pathname === item.href || pathname.startsWith(`${item.href}/`);
+}
+
+export function getNavigationTrail(pathname: string): NavigationTrailItem[] {
+  function findTrail(items: NavItem[], ancestors: NavigationTrailItem[]): NavigationTrailItem[] | null {
+    for (const item of items) {
+      const itemTrail = item.href
+        ? [...ancestors, { label: item.label, href: item.href }]
+        : ancestors;
+
+      if (item.children) {
+        const nestedTrail = findTrail(item.children, [
+          ...ancestors,
+          { label: item.label, href: item.href ?? item.children[0]?.href }
+        ]);
+
+        if (nestedTrail && nestedTrail.length > 0) {
+          return nestedTrail;
+        }
+      }
+
+      if (matchesNavigationPath(pathname, item)) {
+        return itemTrail;
+      }
+    }
+
+    return null;
+  }
+
+  return findTrail(navigationItems, []) ?? [{ label: getPageLabel(pathname) }];
+}

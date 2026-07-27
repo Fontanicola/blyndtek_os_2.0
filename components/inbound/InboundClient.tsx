@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { InboundFicha, InboundNuevaFicha } from "@/components/inbound";
-import { Badge, Button, FilterPopover, Input, Toast } from "@/components/ui";
+import { Badge, Button, EmptyState, FilterPopover, Input, PageSkeleton, Toast } from "@/components/ui";
 import { SearchIcon } from "@/components/icons";
 import { ETAPA_LABELS, OUTBOUND_ETAPAS } from "@/lib/leads";
 import { useInboundLeads } from "@/lib/hooks/useInboundLeads";
@@ -170,14 +170,11 @@ export default function InboundPage() {
       ) : null}
 
       {loading && leads.length === 0 ? (
-        <div className="text-sm text-graphite">Cargando leads inbound...</div>
+        <PageSkeleton />
       ) : null}
 
       {!loading && leads.length === 0 ? (
-        <div className="flex flex-1 flex-col items-center justify-center gap-4 rounded-card bg-white p-10 text-center shadow-soft">
-          <p className="text-lg font-title text-carbon">Sin leads inbound todavía</p>
-          <Button onClick={() => setIsNuevaFichaOpen(true)}>Nueva ficha</Button>
-        </div>
+        <EmptyState icon={SearchIcon} titulo="Sin leads inbound todavía" descripcion="Las fichas recibidas desde el sitio aparecerán aquí." accion={{ label: "Nueva ficha", onClick: () => setIsNuevaFichaOpen(true) }} className="flex-1 border-0 bg-white" />
       ) : (
         <div className="grid grid-cols-1 gap-4 pb-6">
           {visibleLeads.map((lead) => (

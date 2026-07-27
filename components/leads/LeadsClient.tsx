@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { KanbanColumn, LeadFormRapido, LeadModal } from "@/components/outbound";
 import { LeadEtapaModal } from "./LeadEtapaModal";
 import {
@@ -13,6 +13,7 @@ import {
 } from "@/lib/leads";
 import { useLeads } from "@/lib/hooks/useLeads";
 import { useInboundLeads } from "@/lib/hooks/useInboundLeads";
+import { PageSkeleton } from "@/components/ui";
 import type { Usuario } from "@/types/auth";
 import type {
   CreateLeadInput,
@@ -39,6 +40,7 @@ function normalizeModalInput(input: UpdateLeadInput, etapa: EtapaLead = "por_con
 
 export function LeadsClient({ usuario }: LeadsClientProps) {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const outboundHook = useLeads();
   const inboundHook = useInboundLeads();
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
@@ -100,11 +102,13 @@ export function LeadsClient({ usuario }: LeadsClientProps) {
     setSelectedLead(lead);
     setIsModalOpen(true);
     setActiveQuickForm(null);
+    router.replace(`/leads?lead_id=${encodeURIComponent(lead.id)}`, { scroll: false });
   }
 
   function handleCloseModal() {
     setIsModalOpen(false);
     setSelectedLead(null);
+    router.replace("/leads", { scroll: false });
   }
 
   async function refreshAllLeads() {
@@ -278,7 +282,7 @@ export function LeadsClient({ usuario }: LeadsClientProps) {
       />
 
       {outboundHook.loading || inboundHook.loading ? (
-        <div className="text-sm text-graphite">Cargando leads...</div>
+        <PageSkeleton />
       ) : null}
     </div>
   );

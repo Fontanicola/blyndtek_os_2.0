@@ -38,7 +38,7 @@ export function Card({ children, className, padding = "md", onClick }: CardProps
       role={onClick ? "button" : undefined}
       tabIndex={onClick ? 0 : undefined}
       className={cn(
-        "rounded-card border border-line-soft bg-white shadow-card",
+        "rounded-md border border-line-soft bg-white shadow-none",
         paddingClasses[padding],
         onClick &&
           "cursor-pointer transition-colors duration-normal ease-normal hover:border-line hover:bg-paper/35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-signal/20",

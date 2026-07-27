@@ -131,7 +131,7 @@ function NavigationRow({
                 ? "text-[#2E1065]"
                 : "text-[#475467] group-hover:text-[#2E1065]"
               : isActive
-                ? "text-carbon"
+                ? "text-signal"
                 : "text-graphite group-hover:text-carbon"
           )}
         >
@@ -191,8 +191,8 @@ function NavigationGroup({
             ? isActive
               ? "bg-[#EDE9FE] text-[#4C1D95] hover:bg-[#DDD6FE]"
               : "bg-[#7C3AED]/10 text-[#5B21B6] hover:bg-[#7C3AED]/15"
-            : isActive
-              ? "bg-white/80 text-carbon"
+              : isActive
+                ? "bg-white/80 text-signal"
               : "hover:bg-white/70"
         )}
       >
@@ -227,7 +227,7 @@ function NavigationGroup({
               tone === "ai-hub"
                 ? "text-[#5B21B6]"
                 : isActive
-                  ? "text-carbon"
+                  ? "text-signal"
                   : "text-graphite group-hover:text-carbon"
             )}
           >
@@ -470,23 +470,23 @@ export function Sidebar({
         </nav>
 
         <div ref={menuRef} className={cn("relative border-t border-line-soft py-3", collapsed ? "px-2" : "px-3")}>
-          <button
-            type="button"
-            onClick={() => setMenuOpen((current) => !current)}
-            title={collapsed ? displayName : undefined}
-            className={cn(
-              "flex w-full items-center gap-3 rounded-component px-2 py-1.5 text-left transition-colors duration-fast ease-fast hover:bg-white/70",
-              collapsed && "justify-center px-0"
-            )}
-          >
-            <UserAvatar name={usuario?.nombre ?? null} fotoUrl={usuario?.foto_url ?? null} size="sm" />
-            {collapsed ? null : (
+          {collapsed ? (
+            <Link href="/perfil" title={displayName || "Perfil"} className="flex justify-center rounded-md p-1.5 transition-colors duration-fast ease-fast hover:bg-white/70">
+              <UserAvatar name={usuario?.nombre ?? null} fotoUrl={usuario?.foto_url ?? null} size="sm" />
+            </Link>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setMenuOpen((current) => !current)}
+              className="flex w-full items-center gap-3 rounded-md px-2 py-1.5 text-left transition-colors duration-fast ease-fast hover:bg-white/70"
+            >
+              <UserAvatar name={usuario?.nombre ?? null} fotoUrl={usuario?.foto_url ?? null} size="sm" />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-label text-carbon">{displayName}</p>
                 <p className="text-xs text-graphite">{displayRole}</p>
               </div>
-            )}
-          </button>
+            </button>
+          )}
 
           {menuOpen ? (
             <div

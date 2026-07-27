@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ClienteCard, ClienteFicha, ClienteModal } from "@/components/clientes";
-import { Button, Input } from "@/components/ui";
+import { Button, EmptyState, Toolbar } from "@/components/ui";
 import { SearchIcon } from "@/components/ui/icons";
 import { useInboundLeads } from "@/lib/hooks/useInboundLeads";
 import { useClientes } from "@/lib/hooks/useClientes";
@@ -12,6 +12,7 @@ import { useLeads } from "@/lib/hooks/useLeads";
 
 export default function ClientesPage() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const { clientes, loading, error, fetchClientes, createCliente, updateCliente } = useClientes();
   const { leads: outboundLeads } = useLeads();
   const { leads: inboundLeads } = useInboundLeads();
@@ -68,6 +69,12 @@ export default function ClientesPage() {
     clientes.find((cliente) => cliente.id === selectedClienteId) ??
     null;
 
+  function selectCliente(id: string) {
+    setSelectedClienteId(id);
+    setMobileView("detail");
+    router.replace(`/clientes?cliente_id=${encodeURIComponent(id)}`, { scroll: false });
+  }
+
   const leadOptions = useMemo(
     () =>
       [...outboundLeads, ...inboundLeads]
@@ -82,8 +89,7 @@ export default function ClientesPage() {
 
   async function handleCreateCliente(input: CreateClienteInput) {
     const cliente = await createCliente(input);
-    setSelectedClienteId(cliente.id);
-    setMobileView("detail");
+    selectCliente(cliente.id);
   }
 
   return (
@@ -97,12 +103,7 @@ export default function ClientesPage() {
           ].join(" ")}
         >
           <div className="space-y-4 border-b border-line-soft p-4">
-            <Input
-              placeholder="Buscar cliente"
-              value={busqueda}
-              onChange={(event) => setBusqueda(event.target.value)}
-              leftIcon={<SearchIcon />}
-            />
+            <Toolbar searchValue={busqueda} onSearchChange={setBusqueda} searchPlaceholder="Buscar cliente" />
 
             <div className="inline-flex rounded-pill bg-paper p-1">
               {(["activo", "pausado", "inactivo"] as const).map((value) => (
@@ -132,17 +133,13 @@ export default function ClientesPage() {
                     cliente={cliente}
                     selected={cliente.id === selectedCliente?.id}
                     onClick={() => {
-                      setSelectedClienteId(cliente.id);
-                      setMobileView("detail");
+                      selectCliente(cliente.id);
                     }}
                   />
                 ))}
               </div>
             ) : (
-              <div className="flex h-full flex-col items-center justify-center gap-4 rounded-card border border-dashed border-line bg-paper p-6 text-center">
-                <p className="text-sm text-graphite">No hay clientes para mostrar</p>
-                <Button onClick={() => setIsModalOpen(true)}>Nuevo cliente</Button>
-              </div>
+              <EmptyState icon={SearchIcon} titulo="No hay clientes para mostrar" descripcion="Probá con otro estado o cargá un cliente nuevo." accion={{ label: "Nuevo cliente", onClick: () => setIsModalOpen(true) }} className="h-full border-0 bg-transparent" />
             )}
           </div>
 

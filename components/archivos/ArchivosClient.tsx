@@ -9,7 +9,8 @@ import {
   Input,
   Modal,
   Spinner,
-  Toast
+  Toast,
+  Toolbar
 } from "@/components/ui";
 import {
   ClientesIcon,
@@ -1529,44 +1530,15 @@ export function ArchivosClient() {
               ))}
             </div>
 
-            <div className="flex shrink-0 items-center gap-2">
-              <div className="inline-flex rounded-pill bg-paper p-1">
-                {[
-                  { key: "icons" as const, label: "Íconos" },
-                  { key: "list" as const, label: "Lista" },
-                  { key: "gallery" as const, label: "Galería" }
-                ].map((option) => (
-                  <button
-                    key={option.key}
-                    type="button"
-                    onClick={() => setViewMode(option.key)}
-                    className={cn(
-                      "rounded-pill px-3 py-1.5 text-sm font-label transition-colors duration-fast ease-fast",
-                      viewMode === option.key ? "bg-white text-carbon shadow-soft" : "text-graphite hover:text-carbon"
-                    )}
-                  >
-                    {option.label}
-                  </button>
-                ))}
-              </div>
-
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => setCreateFolderOpen(true)}
-                disabled={isTrash}
-              >
-                + Nueva carpeta
-              </Button>
-
-              <Button
-                size="sm"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isTrash || currentFolderTrail.length === 0}
-              >
-                Subir archivo
-              </Button>
-            </div>
+            <Toolbar className="shrink-0" secondaryActions={<div className="inline-flex rounded-pill bg-paper p-1">
+              {[
+                { key: "icons" as const, label: "Íconos" },
+                { key: "list" as const, label: "Lista" },
+                { key: "gallery" as const, label: "Galería" }
+              ].map((option) => (
+                <button key={option.key} type="button" onClick={() => setViewMode(option.key)} className={cn("rounded-pill px-3 py-1.5 text-sm font-label transition-colors duration-fast ease-fast", viewMode === option.key ? "bg-white text-carbon shadow-soft" : "text-graphite hover:text-carbon")}>{option.label}</button>
+              ))}
+            </div>} primaryAction={<><Button variant="secondary" size="sm" onClick={() => setCreateFolderOpen(true)} disabled={isTrash}>+ Nueva carpeta</Button><Button size="sm" onClick={() => fileInputRef.current?.click()} disabled={isTrash || currentFolderTrail.length === 0}>Subir archivo</Button></>} />
           </div>
 
           <div

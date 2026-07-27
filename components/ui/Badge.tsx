@@ -9,11 +9,11 @@ type BadgeProps = {
 };
 
 const variantClasses: Record<BadgeVariant, string> = {
-  default: "bg-paper text-graphite",
-  signal: "bg-signal-light text-signal",
-  success: "bg-success-light text-success",
-  warning: "bg-warning-light text-warning",
-  danger: "bg-danger-light text-danger",
+  default: "border border-line-soft bg-paper text-graphite",
+  signal: "border border-signal/15 bg-signal-light text-signal",
+  success: "border border-success/15 bg-success-light text-success",
+  warning: "border border-warning/15 bg-warning-light text-warning",
+  danger: "border border-danger/15 bg-danger-light text-danger",
   ghost: "border border-line bg-transparent text-graphite"
 };
 

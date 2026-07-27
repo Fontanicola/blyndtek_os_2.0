@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Badge, Button, Card, Input, Modal } from "@/components/ui";
+import { Badge, Button, Card, EmptyState, Input, Modal } from "@/components/ui";
+import { FileTextIcon } from "@/components/ui/icons";
 import { formatUSD } from "@/lib/utils/formatters";
 import type { ProductoPlan, CreateProductoPlanInput } from "@/types/productoPlanes";
 
@@ -250,9 +251,7 @@ export function ProductoPlanesModal({ isOpen, onClose, producto }: ProductoPlane
 
           <div className="space-y-3">
             {planes.length === 0 && !loading ? (
-              <Card padding="md" className="border border-dashed border-line-soft bg-paper">
-                <p className="text-sm text-graphite">Todavía no hay planes creados para este producto.</p>
-              </Card>
+              <EmptyState icon={FileTextIcon} titulo="Sin planes creados" descripcion="Creá un plan para ofrecer este producto." className="min-h-28 border-0 bg-paper" />
             ) : null}
 
             {planes.map((plan) => {

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
-import { Spinner } from "@/components/ui/Spinner";
+import { PageSkeleton } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { fetchMarcaBlyndtek, fetchPiezas, fetchPilares } from "@/lib/hooks/useContenido";
 import type { MarcaContenido, PilarContenido } from "@/types/contenido";
@@ -40,9 +40,7 @@ export default function ContenidoPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-[420px] items-center justify-center">
-        <Spinner />
-      </div>
+      <PageSkeleton rows={7} kpis={2} />
     );
   }
 

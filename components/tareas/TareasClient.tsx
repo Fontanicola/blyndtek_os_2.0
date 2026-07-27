@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Badge, Card } from "@/components/ui";
+import { Badge, Card, PageSkeleton, Toolbar } from "@/components/ui";
 import { useTareas } from "@/lib/hooks/useTareas";
 import type { TaskProjectOption, TaskUserOption } from "@/lib/task-support";
 import type { CreateTareaInput, EstadoTarea, Tarea } from "@/types/tareas";
@@ -114,8 +114,7 @@ export function TareasClient({ usuario, proyectos, usuarios }: TareasClientProps
         </div>
       ) : null}
 
-      <div className="flex flex-shrink-0 flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-4">
+      <Toolbar secondaryActions={<div className="flex flex-wrap items-center gap-4">
           {isAdmin ? (
             <label className="inline-flex items-center gap-2 text-sm text-carbon">
               <span className="text-sm font-label text-graphite">Ver tareas de:</span>
@@ -154,13 +153,10 @@ export function TareasClient({ usuario, proyectos, usuarios }: TareasClientProps
             />
             Ocultar tareas de IA
           </label>
-        </div>
-
-        <Badge variant="default">{visibleTareas.length} tareas</Badge>
-      </div>
+        </div>} primaryAction={<Badge variant="default">{visibleTareas.length} tareas</Badge>} />
 
       {loading && tareas.length === 0 ? (
-        <div className="text-sm text-graphite">Cargando tareas...</div>
+        <PageSkeleton />
       ) : null}
 
       <Card padding="lg" className="flex min-h-0 flex-1 flex-col overflow-hidden">

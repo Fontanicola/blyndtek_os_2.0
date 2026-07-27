@@ -23,9 +23,9 @@ const variantClasses: Record<ButtonVariant, string> = {
 };
 
 const sizeClasses: Record<ButtonSize, string> = {
-  sm: "rounded-component px-3 py-1.5 text-sm font-label",
-  md: "rounded-component px-4 py-2 text-base font-label",
-  lg: "rounded-component px-5 py-2.5 text-md font-label"
+  sm: "rounded-md px-3 py-1.5 text-sm font-label",
+  md: "rounded-md px-4 py-2 text-base font-label",
+  lg: "rounded-md px-5 py-2.5 text-md font-label"
 };
 
 const spinnerSizes: Record<ButtonSize, "xs" | "sm" | "md"> = {

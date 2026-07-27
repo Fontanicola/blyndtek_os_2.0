@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Button, Card, EmptyState, EntityMultiSelect, EntitySelect, Input, Modal } from "@/components/ui";
+import { useRouter } from "next/navigation";
+import { Button, Card, EmptyState, EntityMultiSelect, EntitySelect, Input, Modal, PageSkeleton } from "@/components/ui";
 import { ProyectosIcon } from "@/components/ui/icons";
 import { cn } from "@/lib/cn";
 import { useFeatures } from "@/lib/hooks/useFeatures";
@@ -49,6 +50,7 @@ export function ProyectosClient({
   usuarios,
   initialSelectedProjectId = null
 }: ProyectosClientProps) {
+  const router = useRouter();
   const isAdmin = usuario?.rol === "admin";
   const { proyectos, loading, error, setProyectos, createProyecto, updateProyecto } = useProyectos();
   const { features, fetchFeatures } = useFeatures();
@@ -92,6 +94,12 @@ export function ProyectosClient({
     [proyectos, selectedProjectId]
   );
 
+  function selectProject(id: string) {
+    setSelectedProjectId(id);
+    setMobileMode("detail");
+    router.replace(`/proyectos?project_id=${encodeURIComponent(id)}`, { scroll: false });
+  }
+
   useEffect(() => {
     if (selectedProject) {
       void fetchFeatures(selectedProject.id);
@@ -113,8 +121,7 @@ export function ProyectosClient({
     });
 
     setNewProjectOpen(false);
-    setSelectedProjectId(created.id);
-    setMobileMode("detail");
+    selectProject(created.id);
   }
 
   async function handleProyectoUpdated(updated: Proyecto) {
@@ -122,7 +129,7 @@ export function ProyectosClient({
   }
 
   if (loading && proyectos.length === 0) {
-    return <div className="text-sm text-graphite">Cargando proyectos...</div>;
+    return <PageSkeleton />;
   }
 
   return (
@@ -189,8 +196,7 @@ export function ProyectosClient({
                         key={proyecto.id}
                         type="button"
                         onClick={() => {
-                          setSelectedProjectId(proyecto.id);
-                          setMobileMode("detail");
+                          selectProject(proyecto.id);
                         }}
                         title={`${clienteNombre} · ${proyecto.nombre}`}
                         className={cn(
@@ -211,8 +217,7 @@ export function ProyectosClient({
                       proyecto={proyecto}
                       clienteNombre={getClienteNombre(proyecto.cliente_id, clientes)}
                       onClick={() => {
-                        setSelectedProjectId(proyecto.id);
-                        setMobileMode("detail");
+                        selectProject(proyecto.id);
                       }}
                       selected={selectedProjectId === proyecto.id}
                     />

@@ -1,4 +1,4 @@
-import { Badge } from "@/components/ui";
+import { Badge, OverdueIndicator } from "@/components/ui";
 import { formatearFechaDisplay } from "@/lib/utils/fechas";
 import type { PublicRoadmapPaymentSummary } from "@/types/roadmap-public";
 
@@ -28,7 +28,7 @@ function getBadgeLabel(estado: PublicRoadmapPaymentSummary["hitos"][number]["est
   }
 
   if (estado === "vencido") {
-    return "Vencido";
+    return "Pendiente";
   }
 
   if (estado === "facturado") {
@@ -96,7 +96,7 @@ export function ResumenPagos({ pagos }: ResumenPagosProps) {
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
                   <span className="text-sm font-label text-carbon">USD {hito.monto.toLocaleString()}</span>
-                  <Badge variant={getBadgeVariant(hito.estado)}>{getBadgeLabel(hito.estado)}</Badge>
+        <span className="inline-flex items-center gap-1"><Badge variant={getBadgeVariant(hito.estado)}>{getBadgeLabel(hito.estado)}</Badge>{hito.estado === "vencido" ? <OverdueIndicator /> : null}</span>
                 </div>
               </div>
             ))}

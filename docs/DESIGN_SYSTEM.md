@@ -1,326 +1,288 @@
-# Blyndtek OS — Design System
+# Blyndtek OS — Sistema de diseño
 
-Documento canónico del sistema de diseño visual de Blyndtek OS.
+Documento canónico para construir y revisar la interfaz de Blyndtek OS. La referencia visual es una plataforma B2B premium, compacta y operativa: densa como Procore, clara como Linear y prolija como Attio. Todo criterio nuevo debe seguir este documento por encima de decisiones históricas aisladas.
 
-Este archivo consolida el estado actual real del código y reemplaza como referencia operativa las decisiones visuales dispersas en `docs/DECISIONS.md`. `docs/DECISIONS.md` sigue existiendo como bitácora histórica de por qué se llegó a cada criterio, pero la regla vigente para diseñar o construir UI nueva vive acá.
+## Visión y principios
 
-## 1. Filosofía general
+- Regla madre: si una decisión visual no ayuda a trabajar más rápido, entender mejor o reducir ruido, sobra.
+- Densidad operativa: tablas compactas, filas bajas, headers chicos, toolbars en una sola fila y acciones secundarias ocultas en menús.
+- La metadata vive en badges o columnas; no se convierte en párrafos decorativos.
+- Una acción primaria por pantalla. El resto son acciones secundarias o viven en el menú de tres puntos.
+- Consistencia por encima de creatividad aislada: todos los módulos comparten header, breadcrumb, toolbar, buscador, filtros, tablas, menús, estados, skeletons y empty states.
+- La interfaz comunica estado y próxima acción antes que decoración.
+- El contenido debe ser escaneable en una pantalla de laptop normal sin espacios muertos enormes ni bloques innecesariamente altos.
+- Una misma entidad debe conservar el mismo nombre, color, icono y patrón de interacción en todos los módulos.
 
-- Blyndtek OS usa una UI sobria, técnica y plana: la jerarquía sale de tipografía, spacing, color semántico y borde fino, no de volumen visual exagerado.
-- La app evita ruido decorativo. No se agregan gradientes libres, sombras pesadas, dobles superficies ni elementos “de adorno” fuera de casos funcionales concretos.
-- El shell autenticado funciona como panel flotante sobre `canvas`; el contenido principal respira dentro de una superficie blanca única.
-- La regla general es una sola superficie principal por región. Se evita el patrón “card dentro de card”, salvo excepciones explícitas como `MetricaCard`.
-- Los componentes compartidos son obligatorios cuando existen. No se reimplementan variantes visuales de empty states, saving, iconos, charts, cards, modales o selects si ya hay una pieza base.
+## Layout
 
-## 2. Tipografía
+- El fondo general es blanco. El contenido principal es blanco. Cards y tablas son blancas con borde sutil.
+- Los módulos tabulares usan el ancho útil disponible; no se encierra una tabla operativa en un `max-width` angosto.
+- El padding lateral es consistente en todo el shell y se adapta al ancho disponible.
+- No se permite scroll horizontal en la página. Si una tabla no puede comprimirse sin perder semántica, el scroll vive dentro del contenedor de la tabla.
+- El espaciado vertical es sobrio: el cuerpo no queda pegado al breadcrumb, pero tampoco se crean separaciones ornamentales.
+- No se agregan doble separador ni superficies anidadas sin una razón funcional.
+- El layout de una pantalla nueva sigue este orden: breadcrumb, tabs si aplican, toolbar, contenido principal y estados correspondientes.
+- La región principal debe priorizar una tabla o listado cuando el usuario necesita comparar registros; las cards quedan para resumen, KPIs, detalle y bloques claramente separables.
 
-- La tipografía de la plataforma es `Inter`, definida en `tailwind.config.ts` como `fontFamily.sans`.
-- La escala tipográfica vigente es:
-- `xs`: `12/16`
-- `sm`: `13/18`
-- `base`: `14/20`
-- `md`: `15/22`
-- `lg`: `17/24`
-- `xl`: `20/28`
-- `2xl`: `24/32`
-- `3xl`: `30/38`
-- Los pesos semánticos reales del sistema son:
-- cuerpo regular `400`
-- `font-label` = `500`
-- `font-title` = `600`
-- Regla canónica de uso:
-- cuerpo y texto corrido en regular
-- labels, pills, metadatos y énfasis medio con `font-label`
-- títulos, nombres de bloques y métricas principales con `font-title`
-- Prohibido el uso de texto en mayúsculas (`uppercase`) en cualquier parte de la interfaz. El énfasis se logra con tamaño, peso semántico o color, nunca con transformación de mayúsculas.
-- No se deben introducir `font-bold`, `font-semibold` o `font-medium` sueltos como convención de producto.
-- Aclaración de nomenclatura: en decisiones viejas aparece `font-base`; la regla canónica actual es interpretarlo como cuerpo regular. El token configurado en Tailwind es `font-body`, pero el sistema operativo visualmente usa tres niveles: regular, `font-label` y `font-title`.
-- Excepción explícita: Content Studio renderiza piezas generadas con `DM Sans`; eso no cambia la tipografía de la plataforma.
+## Header y breadcrumb
 
-## 3. Geometría y radios
+- El breadcrumb navegable es la referencia principal de ubicación.
+- Ejemplos válidos: `Dashboard`, `Clientes`, `Clientes > ARC Global`, `Clientes > ARC Global > Contrato`, `Proyectos > Funes Exclusivos > Features`, `Finanzas > Tesorería`, `Leads > nombre del lead`.
+- Cada segmento que representa una ruta navegable es un link.
+- El segmento actual puede mostrarse sin link y con mayor contraste.
+- Ninguna pantalla repite como título el nombre que ya comunica el breadcrumb.
+- Están prohibidos los headers internos duplicados: no se renderiza un título grande sólo para repetir la sección actual.
+- El header global debe ser compacto y dejar el protagonismo al contenido operativo.
+- El topbar deja de ser la referencia primaria de ubicación: el breadcrumb pasa a ser la navegación contextual canónica.
+- Cuando una pantalla necesita un título adicional, debe explicar la tarea o el contenido, no repetir el nombre de la ruta.
 
-- Los radios canónicos salen de `tailwind.config.ts` y no se redefinen por módulo.
-- `rounded-component = 6px`
-- `rounded-card = 8px`
-- `rounded-pill = 100px`
-- Regla de uso:
-- `rounded-component` para inputs, botones, rows activables, dropdown items y controles chicos
-- `rounded-card` para paneles, cards, modales, tablas contenedoras y bloques de contenido
-- `rounded-pill` para badges, chips, tabs pill, estados y toggles compactos
-- No se vuelven a usar radios “blandos” o inconsistentes más grandes como lenguaje general de producto.
+## Color
 
-## 4. Elevación y sombras
+### Acción principal
 
-- La superficie normal se define por borde, no por sombra.
-- El borde estándar es `border-line-soft` para contención general y `border-line` para controles o énfasis un poco más marcado.
-- Las sombras configuradas reales son:
-- `shadow-soft = 0 1px 2px rgba(11,14,20,0.03)`
-- `shadow-card = 0 1px 2px rgba(11,14,20,0.03)`
-- `shadow-modal = 0 8px 32px rgba(11,14,20,0.12)`
-- Regla canónica:
-- `shadow-soft` y `shadow-card` son casi imperceptibles y solo acompañan superficies ya definidas por borde
-- `shadow-modal` se reserva para overlays reales: modales, dropdowns, toasts y tooltips flotantes
-- No se agregan sombras pesadas a cards normales para “hacerlas destacar”.
+- El color de acción principal es `#263a6d`.
+- Se usa en botones primarios, links, tabs activas, iconos activos, flechas de despliegue, controles seleccionados y hover relevante.
+- El color de acción debe ser estable en todos los módulos; no se reemplaza por otro azul según el prompt que construyó una pantalla.
 
-## 5. Paleta de colores
+### Superficie de acento
 
-- La paleta base real del sistema, tomada de `tailwind.config.ts`, es:
-- `carbon = #0B0E14`
-- `signal = #1F44FF`
-- `paper = #EEF0F4`
-- `canvas = #F5F6FA`
-- `white = #FFFFFF`
-- `graphite = #5A6373`
-- Tokens de apoyo existentes:
-- `signal-hover = #1A38D6`
-- `signal-light = #E8EEFF`
-- `carbon-soft = #1C2030`
-- `line = #D8DBE3`
-- `line-soft = #EAECF0`
-- Semánticos:
-- `success = #38A169`
-- `success-light = #F0FFF4`
-- `danger = #E53E3E`
-- `danger-light = #FFF5F5`
-- `danger-hover = #B91C1C`
-- `warning = #D97706`
-- `warning-light = #FFFBEB`
-- Reglas de uso:
-- `carbon` para texto principal y fondos oscuros puntuales
-- `graphite` para texto secundario y soporte
-- `signal` para acción primaria, foco, selección activa y acento principal
-- `paper` para fondos suaves, tabs inactivas, filas auxiliares y estados neutros
-- `canvas` solo para el exterior del shell o áreas de respiro
-- `white` para superficies principales
-- `success`, `warning` y `danger` se usan con sus fondos light para estados semánticos; no se inventan tonos alternativos por pantalla
-- Excepción documentada: AI Hub mantiene tratamiento cromático propio en violeta para su entrada de navegación y subárbol.
-- Excepción aparte: la paleta `postit` queda reservada exclusivamente para Notas.
+- La superficie de acento es `#dfeeff`.
+- Se usa para filas desplegadas, filas seleccionadas, fondo de tab activa, badges suaves y hover de fila.
+- Regla dura: `#dfeeff` nunca es fondo de botón primario ni color de texto de link. Es un tono claro y falla como color de acción con contraste suficiente.
 
-## 6. Iconografía
+### Neutros y estados
 
-- La librería estándar de iconos de interfaz es `lucide-react`.
-- La fuente única es `components/ui/icons.tsx`.
-- Ese archivo reexporta todos los iconos con defaults unificados: tamaño base `20` y `strokeWidth = 1.5`.
-- Los aliases semánticos del producto (`AgentesIcon`, `ArchivosIcon`, `CalendarioIcon`, `ClientesIcon`, `FinanzasIcon`, `OutboundIcon`, `WikiIcon`, etc.) también salen de ese mismo registro.
-- Reglas:
-- no se importan iconos directo desde `lucide-react` dentro de módulos si ya existe export centralizada
-- no se dibujan SVG custom para iconos de interfaz
-- los tamaños se ajustan solo por contexto, manteniendo el mismo trazo base
-- Excepciones permitidas:
-- logos de marca
-- gráficos de datos
-- fondos circulares de `MetricaCard`
-- tiles de Archivos cuando forman parte del patrón visual de archivo
+- La escala neutra es slate: texto principal oscuro, texto secundario slate medio, bordes slate claros y fondos auxiliares muy claros.
+- Verde sólo comunica aprobado, activo, cobrado, guardado o resultado positivo.
+- Rojo sólo comunica crítico, error, destructivo o vencimiento.
+- Ámbar sólo comunica programado, pendiente o advertencia.
+- Azul informativo sólo se usa para información puntual; nunca reemplaza al color de acción principal.
+- Gris neutro comunica cerrado, archivado o sin estado activo.
+- No se usan colores fuertes sin significado semántico.
+- Están prohibidos los botones negros, el azul genérico como acción principal y los fondos saturados para decorar.
+- Excepción única mantenida: AI Hub conserva su identidad violeta propia en el árbol de navegación y sus estados específicos.
 
-## 7. Sidebar y navegación
+## Tipografía
 
-- La navegación canónica actual volvió al sidebar lateral; el dock inferior quedó revertido y no forma parte del shell vigente.
-- La fuente única de navegación es `lib/navigation.ts`.
-- La topbar y el sidebar leen la misma definición para evitar duplicación de labels.
-- El sidebar desktop y el mobile drawer usan el mismo componente `Sidebar`, cambiando solo comportamiento y visibilidad.
-- Desktop:
-- ancho colapsado `76px`
-- ancho expandido `220px`
-- expansión por hover
-- logo compacto al colapsar y logo completo al expandir
-- Mobile:
-- drawer lateral con backdrop sobre `bg-canvas/40`
-- animación por `translate-x`
-- cierre por backdrop o navegación
-- Estructura:
-- items top-level arriba
-- secciones `Comercial`, `Entrega` y `Control` debajo
-- footer con avatar, nombre, rol y menú de perfil/logout
-- Patrones de navegación:
-- rows con `rounded-component`
-- activo por fondo blanco y color de acento
-- hover sutil sobre blanco/paper
-- el estado activo se resuelve por `pathname`
-- AI Hub tiene tratamiento especial:
-- vive como parent colapsable top-level
-- usa violeta fijo en iconografía y fondo
-- su subnavegación se renderiza como bloque interno diferenciado
-- al entrar en `/ai-hub`, su parent queda expandido automáticamente
+- La tipografía debe ser nítida, compacta, empresarial y legible en tablas.
+- No se usan títulos enormes en módulos operativos.
+- La metadata secundaria usa slate claro y un tamaño menor.
+- En la UI, los usuarios se muestran sólo por nombre. El email puede aparecer en perfil, login y formularios de selección donde sea necesario identificar una cuenta.
+- La escala se mantiene compacta y consistente: cuerpo, metadata, labels y títulos de bloque deben conservar sus tamaños entre módulos.
+- Los títulos de pantalla no compiten con el breadcrumb; los títulos de card o bloque son breves.
+- Regla mantenida de Blyndtek: está prohibido el texto en mayúsculas en toda la interfaz, incluidos headers de tabla, labels, badges y estados.
+- El énfasis se logra con tamaño, peso semántico, espaciado y color; nunca con `uppercase` ni `text-transform: uppercase`.
+- No se usan pesos sueltos arbitrarios si existe una clase semántica del sistema.
+- Los nombres propios y marcas conservan su capitalización correcta.
+- Content Studio puede usar una tipografía específica en imágenes generadas, pero no modifica la tipografía de la plataforma.
 
-## 8. Topbar y shell general
+## Superficies, bordes y radios
 
-- El shell autenticado usa `bg-canvas` por fuera y una sola superficie blanca flotante por dentro.
-- La superficie principal del contenido está redondeada con `rounded-tl-card` y usa sombra leve para separar la app del fondo exterior.
-- La topbar vive dentro de ese panel, no como barra global externa.
-- La topbar actual es compacta: `h-8`, `sticky`, fondo blanco, `border-b border-line-soft` y `shadow-soft`.
-- La topbar muestra el label de la página actual desde `lib/navigation.ts`.
-- En mobile suma botón hamburguesa; en desktop no repite controles innecesarios.
-- Regla global anti-header-duplicado:
-- ningún módulo nuevo debe volver a renderizar un `h1` o subtítulo redundante solo para repetir el nombre de la sección ya visible en topbar
-- el contenido debe arrancar desde la primera fila funcional real
+- El radio estándar de tablas, cards, inputs y botones es `rounded-md`.
+- Se prohíben radios muy suaves tipo `rounded-2xl` y cualquier radio aislado que rompa la lectura compacta.
+- Los bordes estándar son `border-slate-200` o el token equivalente del sistema.
+- Los separadores internos usan el mismo lenguaje de borde fino.
+- Las superficies normales se definen por borde, no por sombra.
+- Las sombras son mínimas y se reservan para dropdowns, tooltips, modales y overlays que realmente flotan.
+- Se prohíben cards flotantes con sombra pesada.
+- No se usan fondos grises grandes para crear jerarquía si un borde, una fila de acento o el espaciado resuelven la diferencia.
+- El contenido interno de una card no se convierte automáticamente en otra card. Se usan espaciado, tipografía y separadores.
 
-## 9. Listas vs Cards
+## Botones
 
-- El sistema usa ambos patrones, pero no indistintamente.
-- Usar listas o tablas cuando:
-- hay comparación entre muchos registros del mismo tipo
-- importa escaneo rápido por columnas o filas
-- la interacción principal es filtrar, editar, abrir o marcar estado
-- Usar cards cuando:
-- cada unidad necesita más contexto visual o jerarquía interna
-- hay KPIs, highlights, previews o navegación por bloques
-- la densidad es menor y el valor está en la lectura individual
-- Reglas complementarias:
-- en vistas densas de negocio, primero lista/tabla y no mosaico “decorativo”
-- las cards clickeables deben usar el componente base `Card`
-- el hover de `Card` es sutil: borde un poco más visible, fondo `paper` apenas perceptible y transición consistente
-- se evita apilar card dentro de otra card salvo que una de las dos sea una unidad KPI o un bloque funcional realmente independiente
+- Primario: fondo `#263a6d`, texto blanco, `rounded-md`, altura compacta y una sola acción principal por pantalla.
+- Secundario: fondo blanco, borde slate, texto slate y hover suave.
+- Ghost: sin superficie protagonista, para acciones auxiliares y contextos de baja jerarquía.
+- Peligroso: texto rojo o item rojo dentro de un menú. Se evitan botones rojos grandes salvo confirmaciones críticas.
+- Los botones tienen labels en castellano y un icono sólo cuando mejora el reconocimiento.
+- No se colocan varios botones protagonistas en una misma fila de tabla.
+- En tablas, las acciones se agrupan en el menú de tres puntos al final de la fila.
+- Los estados de carga, guardado y éxito deben conservar el ancho y la altura del control para evitar saltos de layout.
 
-## 10. Estados vacíos y guardado
+## Links
 
-- Todo estado vacío debe usar `components/ui/EmptyState.tsx`.
-- Patrón obligatorio:
-- icono desde `components/ui/icons.tsx`
-- título claro
-- descripción breve opcional
-- acción opcional
-- contenedor dashed con `border-line`, fondo `paper/45` y centrado
-- No se agregan mensajes sueltos tipo “No hay…” perdidos dentro de cards o tablas.
-- Todo estado de autosave o persistencia liviana debe usar `components/ui/SavingIndicator.tsx`.
-- Estados permitidos:
-- `idle`
-- `saving`
-- `saved`
-- La semántica visual real es:
-- `idle`: pill neutra `paper`
-- `saving`: pill `warning-light` + spinner
-- `saved`: pill `success-light` + check
+- Todo texto clickeable con función de enlace usa el color de acción principal y subrayado.
+- Aplica a nombres de registros en tablas, archivos adjuntos, relaciones entre módulos, breadcrumbs y accesos como `Ver detalle`.
+- No aplica a botones, tabs, sidebar ni menús de acciones, que tienen sus propios estados visuales.
+- Un texto que navega no puede parecer un texto estático de color slate sin señal de interacción.
 
-## 11. Prioridad y codificación visual de estado
+## Toolbar
 
-- El sistema prioriza tinte completo, badge o pill semántica sobre adornos laterales decorativos.
-- El patrón de “línea lateral de color” no es canónico para estado general de producto.
-- Estados y severidades se codifican así:
-- `signal-light` / `signal` para selección activa o estado informativo
-- `success-light` / `success` para éxito, cobrado, guardado o positivo
-- `warning-light` / `warning` para pendiente, atención o transición
-- `danger-light` / `danger` para error, vencido, destructivo o negativo
-- `paper` / `graphite` para neutralidad
-- En tablas o listas, el énfasis de estado va en `Badge`, pill o tinte de fila completo cuando hay riesgo real.
-- Ejemplos vigentes:
-- cobros vencidos: fila teñida en `danger-light`
-- egresos vencidos: fila teñida en `danger-light`
-- estados generales: `Badge`
-- En Proyectos, la prioridad visual pierde énfasis cuando una fase ya está en `lista`.
+- La toolbar ocupa una sola fila siempre que el ancho lo permita.
+- Orden canónico: buscador flexible, filtros, acciones secundarias y acción primaria.
+- El buscador es uniforme en todos los módulos: lupa a la izquierda, placeholder claro en castellano, borde slate, `rounded-md` y altura compacta.
+- El botón de filtros usa un icono de sliders y el texto `Filtros`.
+- Los filtros activos deben ser visibles y removibles sin abrir varias capas de navegación.
+- Las acciones secundarias no deben competir visualmente con el buscador ni con la acción primaria.
+- En anchos reducidos, la toolbar puede envolver de forma controlada, pero no se convierte en varias filas desordenadas ni desplaza indefinidamente la acción primaria.
 
-## 12. Formularios y selección de entidades
+## Tablas
 
-- Los formularios de la plataforma usan inputs blancos, borde `line`, radio `component` y foco `signal`.
-- Los componentes canónicos de selección por entidad son:
-- `EntitySelect`
-- `EntityMultiSelect`
-- Regla funcional obligatoria:
-- el usuario elige por nombre legible
-- los UUID se resuelven por detrás
-- no se piden IDs manuales en UI
-- Los dropdowns de selección usan:
-- buscador interno
-- contenedor flotante con `rounded-card`, borde `line-soft` y `shadow-modal`
-- items con `rounded-component`
-- selección con `signal-light`
-- Regla de fechas:
-- toda fecha sin hora real se maneja como string `YYYY-MM-DD` de punta a punta
-- no se persiste pasando por `new Date("YYYY-MM-DD")` ni `toISOString()`
-- si hay que operar en UI, se convierte localmente con helpers de `lib/utils/fechas.ts`
+- Contenedor con borde slate y `rounded-md`.
+- Header con fondo muy claro y texto compacto, sin transformación a mayúsculas.
+- Filas bajas, separadores finos y alto contraste suficiente para escanear.
+- No se usan sombras fuertes.
+- No se colocan cards dentro de celdas.
+- Se evitan columnas anchas o prescindibles; la información secundaria va a detalle o menú.
+- Las acciones siempre terminan en un menú de tres puntos.
+- El scroll horizontal es el último recurso y vive sólo dentro de la tabla, nunca en la página completa.
+- No se usa paginación hardcodeada o falsa. Si el volumen necesita paginación, debe ser real y mantener el contexto de filtros.
+- Las filas desplegables abiertas usan `#dfeeff` y flecha en `#263a6d`; las cerradas quedan blancas.
+- Una fila seleccionada y una fila desplegada deben ser distinguibles sin sumar bordes gruesos.
+- Las fechas y montos se alinean de forma consistente. Los montos no se cortan ni se parten en lugares ilegibles.
 
-## 13. Tablas
+## Menús de tres puntos
 
-- Las tablas del sistema priorizan lectura densa y contención limpia.
-- Patrón vigente:
-- wrapper con `overflow-x-auto`
-- contenedor blanco con borde `line-soft`
-- `thead` con fondo `paper`
-- headers en `text-xs`, `font-label` y `text-graphite`, sin transformación a mayúsculas
-- `tbody` blanco con divisores `line-soft`
-- No se usan tablas con sombras protagonistas.
-- Cuando la tabla vive dentro de un bloque reusable, ese bloque puede ir dentro de una `Card` con `padding="none"` y overflow oculto.
-- Se permiten `thead` sticky en tablas largas cuando el contexto lo pide, como en `EgresosTabla`.
-- Los estados vacíos dentro de tablas usan `EmptyState` embebido, no copy ad-hoc.
-- En mobile o anchos reducidos, la tabla debe poder scrollear horizontalmente antes de romper densidad o semántica de columnas.
+- Son controles sueltos, sin caja visible permanente y sin aumentar artificialmente la altura de la fila.
+- Abren al click, cierran al click afuera y con Escape.
+- Se renderizan por encima del contenido y nunca quedan recortados por `overflow` de la tabla o card.
+- El orden recomendado es: ver, editar, duplicar o actualizar, cambiar estado, descargar y acciones destructivas al final.
+- Las acciones destructivas deben estar separadas visualmente y pedir confirmación cuando corresponda.
+- El menú no reemplaza una acción primaria que el usuario necesita repetir constantemente; esa acción debe vivir en la toolbar o en el flujo principal.
 
-## 14. Gráficos de datos
+## Cards
 
-- La fuente única de reglas visuales para charts es `lib/charts/chartTheme.ts`.
-- Todo gráfico nuevo o ajustado debe tomar de ahí:
-- colores
-- gradientes
-- grid
-- ejes
-- tooltip
-- radios de barras
-- stroke widths
-- dots
-- legend pills
-- El lenguaje visual vigente de charts es más premium que la UI estructural:
-- gradientes sobrios permitidos solo dentro de gráficos
-- sombras SVG suaves permitidas solo dentro de gráficos
-- series semánticas consistentes
-- Las áreas deben sentirse orgánicas: usar curvas suaves para series positivas y evitar cierres verticales duros con máscaras/gradientes de desvanecimiento visual en los bordes. Nunca se agregan puntos falsos a una serie financiera para resolver un problema estético.
-- Regla de superficie:
-- la UI estructural sigue plana; los gradientes no salen del dominio chart
-- La grilla estándar usa líneas horizontales sutiles; no se reintroducen grids verticales salvo justificación analítica concreta.
-- Los tooltips deben seguir el estilo centralizado: tarjeta translúcida, borde suave, `shadow-modal`, blur y tipografía compacta.
-- Aclaración importante: la paleta de `chartTheme.ts` es la fuente de verdad visual de charts aunque no replique 1:1 los hex de la UI estructural.
+- Las cards se usan para KPIs, resumen de perfil, empty states, bloques de detalle y paneles colapsables.
+- No se usan para listados que naturalmente son tablas ni para metadata que cabe en una fila.
+- Una card debe representar una unidad comprensible y tener una jerarquía interna clara.
+- La card no necesita sombra para parecer clickeable: usa borde, hover sutil y transición.
+- No se anidan cards completas salvo que la unidad interna sea genuinamente independiente, como un KPI dentro de una fila de métricas.
+- Los títulos son compactos y no duplican el breadcrumb.
 
-## 15. Modales y overlays
+## Skeletons
 
-- `components/ui/Modal.tsx` es la base canónica de modales.
-- Comportamiento obligatorio:
-- cierre por backdrop
-- cierre por `Escape`
-- salida animada antes de desmontar
-- backdrop oscuro translúcido con blur
-- panel blanco con `rounded-card` y `shadow-modal`
-- header con borde inferior y título `font-title`
-- body scrollable con padding interno
-- Tamaños estándar:
-- `sm = 400px`
-- `md = 560px`
-- `lg = 720px`
-- `xl = 960px`
-- Dropdowns, popovers y menús contextuales siguen la misma lógica de overlay:
-- borde `line-soft`
-- fondo blanco
-- `rounded-card`
-- `shadow-modal`
+- Los skeletons deben parecerse a la pantalla final: breadcrumb, tabs si aplican, toolbar, tabla y cards KPI.
+- Usan fondo slate claro, `rounded-md` y animación suave.
+- No se usan spinners grandes como carga principal de una página de datos.
+- El skeleton conserva la densidad esperada y evita que la pantalla salte al cargar.
+- Si una acción puntual está procesando, se usa el estado de carga del botón o `SavingIndicator`, no un overlay general innecesario.
 
-## 16. Animaciones y transiciones
+## Formularios y modales
 
-- Las duraciones canónicas en `tailwind.config.ts` son:
-- `fast = 150ms`
-- `normal = 250ms`
-- El easing canónico para ambas es `cubic-bezier(0.2, 0.8, 0.2, 1)`.
-- Reglas de uso:
-- `fast` para hover, foco, apertura de dropdown, cambios de color y microinteracciones
-- `normal` para transiciones de ancho, desplazamiento y cambios de layout visibles
-- Animaciones definidas reales:
-- `spinner`
-- `overlay-in`
-- `overlay-out`
-- `modal-in`
-- `modal-out`
-- No se introducen animaciones largas o elásticas que rompan el tono técnico del producto.
+- Los formularios son compactos, están validados y no muestran campos irrelevantes para la tarea actual.
+- Las labels están en castellano y describen la intención del negocio, no el nombre técnico de la columna de base.
+- Los formularios inline arrancan ocultos y se abren con una acción `+` o equivalente.
+- Los errores son humanos, específicos y accionables.
+- Los modales se usan sólo cuando la acción necesita foco, edición concentrada o confirmación crítica.
+- Cierran con Escape y click afuera cuando no hay una acción destructiva en curso.
+- Nunca se anidan modales. Si un flujo necesita otra selección, se resuelve dentro del modal actual o con una navegación clara.
+- Los campos de selección muestran nombres legibles y resuelven IDs por detrás.
 
-## 17. Responsividad
+## Estados y badges
 
-- El shell trabaja mobile-first con adaptación por comportamiento, no con una UI paralela totalmente distinta.
-- Reglas vigentes:
-- el sidebar desktop se oculta en mobile y se reemplaza por drawer
-- la topbar expone hamburguesa solo en mobile
-- el panel principal mantiene scroll dentro de `main`, no en toda la ventana
-- las tablas densas usan `overflow-x-auto`
-- listas horizontales, tabs pills o grupos de filtros pueden scrollear horizontalmente cuando hace falta
-- en mobile se prioriza continuidad funcional antes que forzar la misma densidad de desktop
-- los componentes deben sostener legibilidad con una sola columna cuando el ancho cae, en especial formularios, panels de perfil y modales
-- el roadmap público, los informes y otras vistas externas pueden tener reglas propias, pero la app autenticada debe seguir el mismo sistema de spacing, borde y tipografía
+- Nunca se muestran valores crudos de enum. Todo estado se traduce a castellano legible.
+- Los badges son compactos, tienen fondo suave, borde sutil y texto legible.
+- Un badge no domina la tabla ni reemplaza información esencial.
+- Vencidos: se muestra un icono rojo con tooltip junto al estado; no se repite la palabra `Vencido` como texto adicional.
+- Estados de éxito, advertencia, peligro e información respetan la semántica de color y no se reutilizan como decoración.
+- Las filas críticas pueden recibir un tinte suave completo cuando ayuda a priorizar, sin convertir la tabla en un collage de colores.
 
-## Nota final
+## Iconografía
 
-Este documento es la fuente de verdad para cualquier tarea nueva de UI en Blyndtek OS.
+- Los iconos son lineales, de tamaño consistente y slate por defecto.
+- Un icono activo usa el color de acción principal; AI Hub mantiene su excepción violeta.
+- La única fuente de iconos de UI es `lucide-react` centralizada en `components/ui/icons.tsx`.
+- Los módulos no importan iconos directamente si ya existe una exportación semántica en el registro centralizado.
+- Se prohíben SVG dibujados a mano para iconos de interfaz.
+- Los logos de marca no son iconos de UI y pueden usar sus assets SVG reales.
+- El grosor de trazo y el tamaño deben ser uniformes dentro de una misma superficie de navegación, tabla o toolbar.
 
-`docs/DECISIONS.md` sigue siendo la bitácora histórica de decisiones y reversions, útil para entender el contexto y el porqué. Pero antes de construir, ajustar o rediseñar cualquier componente visual, se debe consultar primero `docs/DESIGN_SYSTEM.md`.
+## Idioma
+
+- Toda la UI visible está en castellano.
+- Se prohíbe inglés visible salvo nombres propios, marcas, URLs o términos que sean el nombre oficial de una integración.
+- Se prohíben placeholders técnicos, nombres de tablas, UUIDs y JSON crudo en pantalla.
+- Los mensajes de error deben explicar qué ocurrió y cómo continuar.
+- Los usuarios se muestran por nombre; el email sólo aparece en perfil, login y selección de cuentas cuando agrega valor.
+
+## Componentes obligatorios mantenidos de Blyndtek
+
+- `components/ui/EmptyState.tsx` es obligatorio para todo estado vacío. No se reimplementan mensajes sueltos como `No hay datos` o `Todavía no hay registros`.
+- `components/ui/SavingIndicator.tsx` es obligatorio para todo autosave o persistencia liviana. No se reimplementan variantes de `Guardando` o `Guardado` a mano.
+- `components/ui/icons.tsx` es el registro centralizado de iconos de UI.
+- `lib/charts/chartTheme.ts` es la fuente única de paleta, ejes, grid, tooltip, gradientes, radios y puntos para gráficos nuevos.
+- Los componentes base de botones, cards, modales, badges, selects y tablas deben reutilizarse antes de crear una variante local.
+
+## Gráficos
+
+- Todo gráfico nuevo usa `lib/charts/chartTheme.ts`.
+- El tema centraliza colores, opacidades, gradientes, grid horizontal, ejes, tooltip, radios de barras, grosor de líneas, puntos y leyendas.
+- Los gráficos son complementarios a la lectura operativa; nunca reemplazan una tabla cuando el usuario necesita exactitud.
+- Las barras usan colores sólidos y radios moderados.
+- Las áreas y líneas usan opacidades sobrias, sin degradados decorativos fuera del lenguaje aprobado por `chartTheme`.
+- Las curvas deben ser fieles a los datos reales y no generar picos o valles artificiales.
+- Los ejes secundarios se mantienen sutiles o se convierten en un indicador separado cuando agregan ruido.
+- Los tooltips son overlays con elevación real, título claro y valores alineados.
+
+## Anti-patrones prohibidos
+
+- Botones negros.
+- Azul genérico como acción principal fuera de `#263a6d`.
+- Fondos grises grandes e innecesarios.
+- Cards enormes donde naturalmente corresponde una tabla.
+- Cards dentro de cards sin una unidad funcional separable.
+- Headers internos duplicados.
+- Toolbars en varias filas sin una razón responsive real.
+- Muchos botones visibles por fila.
+- Emails pegados al nombre del usuario.
+- Links azules por defecto que no usan el color de acción principal.
+- Texto clickeable sin subrayado cuando funciona como link.
+- Tres puntos dentro de cajas visibles o que rompen la altura de la fila.
+- Dropdowns que no cierran al click afuera o con Escape.
+- La palabra `Vencido` repetida como estado y alerta.
+- Placeholders técnicos.
+- Inglés visible no justificado.
+- JSON crudo en pantalla.
+- Scroll horizontal provocado por columnas infladas.
+- Paginación falsa o hardcodeada.
+- Mayúsculas en cualquier parte de la UI.
+- SVG dibujados a mano para iconos de interfaz.
+- Empty states con ilustraciones decorativas genéricas o emojis.
+- Reimplementaciones locales de `EmptyState`, `SavingIndicator` o estilos de chart.
+
+## Reglas para pantallas nuevas
+
+Toda pantalla nueva debe seguir este orden y validar cada punto:
+
+1. Breadcrumb navegable como referencia de ubicación.
+2. Tabs sólo si existen subáreas reales; no se agregan tabs decorativas.
+3. Toolbar en una sola fila: buscador, filtros, acciones secundarias y una acción primaria.
+4. Tabla o listado compacto cuando el usuario compara registros; cards sólo cuando la unidad lo justifica.
+5. Empty state real con `EmptyState` si no hay registros.
+6. Skeleton equivalente a la pantalla final durante la carga.
+7. Acciones secundarias en menú de tres puntos.
+8. Links subrayados y color de acción principal.
+9. Estados traducidos al castellano y codificados semánticamente.
+10. Usuarios mostrados sólo por nombre salvo excepciones justificadas.
+
+## Checklist de QA visual
+
+Antes de dar por terminada una pantalla, verificar:
+
+- El breadcrumb ubica al usuario y cada segmento navegable funciona.
+- No existe un título que repita el breadcrumb ni un header interno duplicado.
+- El fondo y las superficies son blancos, con bordes slate y sin sombras pesadas.
+- El ancho útil permite trabajar sin un `max-width` innecesariamente angosto.
+- La densidad es operativa: filas bajas, headers compactos y sin espacios muertos.
+- Hay una sola acción primaria claramente dominante.
+- La toolbar sigue el orden buscador, filtros, secundarias y primaria.
+- El buscador tiene lupa, placeholder claro, borde, `rounded-md` y altura consistente.
+- Las tablas tienen borde, separadores finos, header suave y acciones en tres puntos.
+- El scroll horizontal, si es inevitable, está contenido dentro de la tabla.
+- Los dropdowns cierran con click afuera y Escape y no se recortan.
+- Los radios usan `rounded-md`; no hay `rounded-2xl` ni superficies excesivamente suaves.
+- No hay cards dentro de cards sin una razón funcional.
+- Los estados tienen badge o tinte semántico y están traducidos al castellano.
+- Los vencidos usan icono con tooltip y no repiten la palabra como texto adicional.
+- No hay texto en mayúsculas ni clases `uppercase`.
+- No hay inglés visible, JSON crudo, UUIDs ni placeholders técnicos.
+- Los nombres de usuario no muestran el email salvo en excepciones justificadas.
+- Los links son subrayados y usan `#263a6d`.
+- Todos los iconos vienen de `components/ui/icons.tsx` y mantienen tamaño y trazo.
+- Los estados vacíos usan `EmptyState` y no incluyen emojis ni ilustraciones genéricas.
+- Los autosaves usan `SavingIndicator` y no generan saltos de layout.
+- Los skeletons representan breadcrumb, toolbar, tabla y KPIs de la pantalla real.
+- Los gráficos importan `chartTheme` y no tienen colores, tooltips o ejes hardcodeados inconsistentes.
+- AI Hub conserva su violeta sólo donde corresponde y no contamina el resto de la navegación.
+- La pantalla se revisó en desktop, sidebar expandido, sidebar colapsado y un ancho reducido.
+- La pantalla se revisó con datos reales, estado vacío, error, carga y una interacción completa.

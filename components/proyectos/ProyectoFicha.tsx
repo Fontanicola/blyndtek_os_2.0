@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Badge, Button, Card, EmptyState, EntityMultiSelect, EntitySelect, Input } from "@/components/ui";
 import { ClockIcon, ImageIcon, SettingsIcon } from "@/components/ui/icons";
@@ -208,7 +209,11 @@ export function ProyectoFicha({
   onProyectoUpdated,
   onUpdateProyecto
 }: ProyectoFichaProps) {
-  const [activeTab, setActiveTab] = useState<TabKey>("general");
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const currentSearchParams = searchParams ?? new URLSearchParams();
+  const queryTab = currentSearchParams.get("view") as TabKey | null;
+  const [activeTab, setActiveTab] = useState<TabKey>(tabs.some((tab) => tab.key === queryTab) ? queryTab ?? "general" : "general");
   const [cuentas, setCuentas] = useState<CuentaServicio[]>([]);
   const [cuentaModalOpen, setCuentaModalOpen] = useState(false);
   const [editingCuenta, setEditingCuenta] = useState<CuentaServicio | null>(null);
@@ -218,6 +223,18 @@ export function ProyectoFicha({
   const [imagenSistemaUploading, setImagenSistemaUploading] = useState(false);
   const [imagenSistemaError, setImagenSistemaError] = useState<string | null>(null);
   const [tiempoProyecto, setTiempoProyecto] = useState<ProyectoTiempoResponse | null>(null);
+
+  function changeActiveTab(tab: TabKey) {
+    setActiveTab(tab);
+    const params = new URLSearchParams(currentSearchParams.toString());
+    params.set("project_id", proyecto.id);
+    if (tab === "general") {
+      params.delete("view");
+    } else {
+      params.set("view", tab);
+    }
+    router.replace(`/proyectos?${params.toString()}`, { scroll: false });
+  }
   const [tiempoProyectoLoading, setTiempoProyectoLoading] = useState(false);
   const [roadmapConfigDraft, setRoadmapConfigDraft] = useState<RoadmapConfigDraft>({
     url_sistema: proyecto.url_sistema ?? "",
@@ -552,7 +569,7 @@ export function ProyectoFicha({
             <button
               key={tab.key}
               type="button"
-              onClick={() => setActiveTab(tab.key)}
+              onClick={() => changeActiveTab(tab.key)}
               className={cn(
                 "rounded-pill px-3 py-1.5 text-sm font-label transition-colors duration-fast ease-fast",
                 activeTab === tab.key

@@ -1,18 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Badge, Button, Card, EmptyState } from "@/components/ui";
-import {
-  GlobeIcon,
-  LandmarkIcon,
-  MegaphoneIcon,
-  MoreHorizontalIcon,
-  RefreshIcon,
-  ServerIcon,
-  UsersIcon,
-  WalletIcon,
-  WrenchIcon
-} from "@/components/ui/icons";
+import { useMemo } from "react";
+import { Badge, EmptyState, DataTable, DataTableBody, DataTableCell, DataTableHead, DataTableHeader, DataTableRow, RowActions } from "@/components/ui";
+import { GlobeIcon, LandmarkIcon, MegaphoneIcon, MoreHorizontalIcon, RefreshIcon, ServerIcon, UsersIcon, WalletIcon, WrenchIcon } from "@/components/ui/icons";
 import { formatCajaLabel } from "@/lib/cajas";
 import { formatFecha, formatUSD } from "@/lib/utils/formatters";
 import { fechaStringAFechaLocal } from "@/lib/utils/fechas";
@@ -20,213 +10,36 @@ import { cn } from "@/lib/cn";
 import type { Caja } from "@/types/cajas";
 import type { CategoriaEgreso, Egreso } from "@/types/egresos";
 
-type EgresosTablaProps = {
-  egresos: Egreso[];
-  cajas?: Caja[];
-  onEdit?: (egreso: Egreso) => void;
-  onDelete?: (egreso: Egreso) => Promise<void> | void;
-  onTogglePagado?: (egreso: Egreso) => Promise<void> | void;
-  showRecurrenteColumn?: boolean;
-  emptyTitle?: string;
-  emptyDescription?: string;
-};
-
-const categorias: Array<{
-  value: CategoriaEgreso;
-  label: string;
-  Icon: typeof GlobeIcon;
-}> = [
-  { value: "dominios", label: "Dominios", Icon: GlobeIcon },
-  { value: "hosting_infraestructura", label: "Hosting/Infraestructura", Icon: ServerIcon },
-  { value: "herramientas_software", label: "Herramientas/Software", Icon: WrenchIcon },
-  { value: "marketing_ads", label: "Marketing/Ads", Icon: MegaphoneIcon },
-  { value: "impuestos_contable", label: "Impuestos/Contable", Icon: LandmarkIcon },
-  { value: "sueldos_honorarios", label: "Sueldos/Honorarios", Icon: UsersIcon },
-  { value: "comisiones", label: "Comisiones", Icon: WalletIcon },
-  { value: "otro", label: "Otro", Icon: MoreHorizontalIcon },
-  { value: "transferencia", label: "Transferencia", Icon: RefreshIcon }
+type EgresosTablaProps = { egresos: Egreso[]; cajas?: Caja[]; onEdit?: (egreso: Egreso) => void; onDelete?: (egreso: Egreso) => Promise<void> | void; onTogglePagado?: (egreso: Egreso) => Promise<void> | void; showRecurrenteColumn?: boolean; emptyTitle?: string; emptyDescription?: string };
+const categorias: Array<{ value: CategoriaEgreso; label: string; Icon: typeof GlobeIcon }> = [
+  { value: "dominios", label: "Dominios", Icon: GlobeIcon }, { value: "hosting_infraestructura", label: "Hosting/Infraestructura", Icon: ServerIcon }, { value: "herramientas_software", label: "Herramientas/Software", Icon: WrenchIcon }, { value: "marketing_ads", label: "Marketing/Ads", Icon: MegaphoneIcon }, { value: "impuestos_contable", label: "Impuestos/Contable", Icon: LandmarkIcon }, { value: "sueldos_honorarios", label: "Sueldos/Honorarios", Icon: UsersIcon }, { value: "comisiones", label: "Comisiones", Icon: WalletIcon }, { value: "otro", label: "Otro", Icon: MoreHorizontalIcon }, { value: "transferencia", label: "Transferencia", Icon: RefreshIcon }
 ];
+function categoryMeta(value: CategoriaEgreso) { return categorias.find((item) => item.value === value) ?? { value: "otro", label: "Otro", Icon: MoreHorizontalIcon }; }
+function isEgresoVencido(egreso: Egreso) { if (egreso.pagado) return false; const date = fechaStringAFechaLocal(egreso.fecha); const today = new Date(); const start = new Date(today.getFullYear(), today.getMonth(), today.getDate()); return !Number.isNaN(date.getTime()) && date < start; }
 
-function categoryLabel(value: CategoriaEgreso) {
-  return categorias.find((item) => item.value === value)?.label ?? value;
-}
-
-function categoryMeta(value: CategoriaEgreso) {
-  return (
-    categorias.find((item) => item.value === value) ?? {
-      value: "otro",
-      label: "Otro",
-      Icon: MoreHorizontalIcon
-    }
-  );
-}
-
-function startOfToday() {
-  const today = new Date();
-  return new Date(today.getFullYear(), today.getMonth(), today.getDate());
-}
-
-function isEgresoVencido(egreso: Egreso) {
-  if (egreso.pagado) {
-    return false;
-  }
-
-  const fecha = fechaStringAFechaLocal(egreso.fecha);
-  return !Number.isNaN(fecha.getTime()) && fecha < startOfToday();
-}
-
-export function EgresosTabla({
-  egresos,
-  cajas = [],
-  onEdit,
-  onDelete,
-  onTogglePagado,
-  showRecurrenteColumn = true,
-  emptyTitle = "No hay egresos cargados todavía",
-  emptyDescription = "Los egresos operativos, recurrentes o puntuales van a aparecer en esta tabla."
-}: EgresosTablaProps) {
+export function EgresosTabla({ egresos, cajas = [], onEdit, onDelete, onTogglePagado, showRecurrenteColumn = true, emptyTitle = "No hay egresos cargados todavía", emptyDescription = "Los egresos operativos, recurrentes o puntuales van a aparecer en esta tabla." }: EgresosTablaProps) {
   const total = useMemo(() => egresos.reduce((sum, egreso) => sum + egreso.monto, 0), [egresos]);
-  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
-  const menuRootRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    function handlePointerDown(event: MouseEvent) {
-      if (!menuRootRef.current) {
-        return;
-      }
-
-      if (!menuRootRef.current.contains(event.target as Node)) {
-        setOpenMenuId(null);
-      }
-    }
-
-    document.addEventListener("mousedown", handlePointerDown);
-    return () => document.removeEventListener("mousedown", handlePointerDown);
-  }, []);
-
-  return (
-    <div className="flex h-full min-h-0 flex-col gap-4">
-      <div ref={menuRootRef}>
-        <Card padding="none" className="flex h-full min-h-0 flex-col overflow-hidden">
-          <div className="min-h-0 flex-1 overflow-y-auto overflow-x-auto">
-            <table className="min-w-full table-fixed divide-y divide-line-soft">
-              <thead className="sticky top-0 z-10 bg-paper">
-                <tr className="text-left text-xs font-label text-graphite">
-                  <th className={cn("px-4 py-3", showRecurrenteColumn ? "w-[19%]" : "w-[21%]")}>Concepto</th>
-                  <th className="w-[18%] px-4 py-3">Categoría</th>
-                  <th className="w-[12%] px-4 py-3">Estado</th>
-                  <th className="w-[16%] px-4 py-3">Medio</th>
-                  <th className="w-[11%] px-4 py-3">Monto</th>
-                  <th className="w-[13%] px-4 py-3">Fecha</th>
-                  {showRecurrenteColumn ? <th className="w-[10%] px-4 py-3">Recurrente</th> : null}
-                  <th className={cn("px-2 py-3 text-right", showRecurrenteColumn ? "w-[4%]" : "w-[9%]")}>
-                    <span className="sr-only">Acciones</span>
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-line-soft bg-white">
-                {egresos.map((egreso) => {
-                  const categoria = categoryMeta(egreso.categoria);
-                  const CategoriaIcon = categoria.Icon;
-
-                  return (
-                  <tr key={egreso.id} className={cn(isEgresoVencido(egreso) && "bg-danger-light")}>
-                    <td className="px-4 py-3 text-sm font-label text-carbon">{egreso.concepto}</td>
-                    <td className="px-4 py-3">
-                      <div className="inline-flex items-center gap-2 text-sm text-carbon">
-                        <CategoriaIcon size={16} className="text-graphite" />
-                        <span>{categoryLabel(egreso.categoria)}</span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      {onTogglePagado ? (
-                        <button
-                          type="button"
-                          onClick={() => void onTogglePagado(egreso)}
-                          className="inline-flex"
-                          title={egreso.pagado ? "Marcar como pendiente" : "Marcar como pagado"}
-                        >
-                          <Badge variant={egreso.pagado ? "success" : "warning"}>{egreso.pagado ? "Pagado" : "Pendiente"}</Badge>
-                        </button>
-                      ) : (
-                        <Badge variant={egreso.pagado ? "success" : "warning"}>{egreso.pagado ? "Pagado" : "Pendiente"}</Badge>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      <Badge variant="default">{formatCajaLabel(egreso.cuenta_medio, cajas)}</Badge>
-                    </td>
-                    <td className="px-4 py-3 text-sm font-label text-carbon">{formatUSD(egreso.monto)}</td>
-                    <td className="px-4 py-3 text-sm text-graphite">{formatFecha(egreso.fecha)}</td>
-                    {showRecurrenteColumn ? <td className="px-4 py-3 text-sm text-graphite">{egreso.recurrente ? "Sí" : "No"}</td> : null}
-                    <td className="px-2 py-3 text-right">
-                      <div className="relative inline-flex justify-end" data-egreso-actions>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-8 w-8 px-0 py-0"
-                          onClick={() => setOpenMenuId((current) => (current === egreso.id ? null : egreso.id))}
-                        >
-                          ⋮
-                        </Button>
-                        {openMenuId === egreso.id ? (
-                          <div className="absolute right-0 top-full z-20 mt-2 w-40 rounded-card border border-line bg-white p-2 shadow-modal">
-                            {onEdit ? (
-                              <button
-                                type="button"
-                                className="w-full rounded-component px-3 py-2 text-left text-sm text-carbon transition-colors duration-fast ease-fast hover:bg-paper"
-                                onClick={() => {
-                                  setOpenMenuId(null);
-                                  onEdit(egreso);
-                                }}
-                              >
-                                Editar
-                              </button>
-                            ) : null}
-                            {onDelete ? (
-                              <button
-                                type="button"
-                                className="w-full rounded-component px-3 py-2 text-left text-sm text-danger transition-colors duration-fast ease-fast hover:bg-danger-light"
-                                onClick={async () => {
-                                  setOpenMenuId(null);
-                                  const confirmed = window.confirm("¿Eliminar este egreso?");
-                                  if (!confirmed) {
-                                    return;
-                                  }
-
-                                  await onDelete(egreso);
-                                }}
-                              >
-                                Eliminar
-                              </button>
-                            ) : null}
-                          </div>
-                        ) : null}
-                      </div>
-                    </td>
-                  </tr>
-                  );
-                })}
-                {egresos.length === 0 ? (
-                  <tr>
-                    <td className="px-4 py-8 text-center text-sm text-graphite" colSpan={showRecurrenteColumn ? 8 : 7}>
-                      <EmptyState
-                        icon={WalletIcon}
-                        titulo={emptyTitle}
-                        descripcion={emptyDescription}
-                        className="mx-auto max-w-xl"
-                      />
-                    </td>
-                  </tr>
-                ) : null}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="border-t border-line-soft px-4 py-3 text-right text-sm text-graphite">
-            Total egresos: <span className="font-label text-carbon">{formatUSD(total)}</span>
-          </div>
-        </Card>
+  return <div className="flex h-full min-h-0 flex-col gap-4">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-md border border-line-soft bg-white">
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        <DataTable className="table-fixed">
+          <DataTableHeader><tr><DataTableHead className={showRecurrenteColumn ? "w-[23%]" : "w-[26%]"}>Concepto</DataTableHead><DataTableHead className="w-[19%]">Categoría</DataTableHead><DataTableHead className="w-[14%]">Estado</DataTableHead><DataTableHead className="w-[15%]">Medio</DataTableHead><DataTableHead className="w-[12%]">Monto</DataTableHead><DataTableHead className="w-[13%]">Fecha</DataTableHead>{showRecurrenteColumn ? <DataTableHead className="w-[8%]">Recurrente</DataTableHead> : null}<DataTableHead className="w-[6%] text-right"><span className="sr-only">Acciones</span></DataTableHead></tr></DataTableHeader>
+          <DataTableBody>
+            {egresos.map((egreso) => { const category = categoryMeta(egreso.categoria); const Icon = category.Icon; return <DataTableRow key={egreso.id} className={cn(isEgresoVencido(egreso) && "bg-danger-light")}>
+              <DataTableCell className="truncate font-label text-carbon">{egreso.concepto}</DataTableCell>
+              <DataTableCell><span className="inline-flex min-w-0 items-center gap-2 truncate text-carbon"><Icon size={15} className="shrink-0 text-graphite" /><span className="truncate">{category.label}</span></span></DataTableCell>
+              <DataTableCell>{onTogglePagado ? <button type="button" onClick={() => void onTogglePagado(egreso)} title={egreso.pagado ? "Marcar como pendiente" : "Marcar como pagado"}><Badge variant={egreso.pagado ? "success" : "warning"}>{egreso.pagado ? "Pagado" : "Pendiente"}</Badge></button> : <Badge variant={egreso.pagado ? "success" : "warning"}>{egreso.pagado ? "Pagado" : "Pendiente"}</Badge>}</DataTableCell>
+              <DataTableCell><Badge variant="default">{formatCajaLabel(egreso.cuenta_medio, cajas)}</Badge></DataTableCell>
+              <DataTableCell className="whitespace-nowrap font-label text-carbon">{formatUSD(egreso.monto)}</DataTableCell>
+              <DataTableCell className="whitespace-nowrap">{formatFecha(egreso.fecha)}</DataTableCell>
+              {showRecurrenteColumn ? <DataTableCell>{egreso.recurrente ? "Sí" : "No"}</DataTableCell> : null}
+              <DataTableCell className="text-right"><RowActions actions={[...(onEdit ? [{ kind: "edit" as const, label: "Editar", onClick: () => onEdit(egreso) }] : []), ...(onDelete ? [{ kind: "destructive" as const, label: "Eliminar", onClick: async () => { if (window.confirm("¿Eliminar este egreso?")) await onDelete(egreso); } }] : [])]} /></DataTableCell>
+            </DataTableRow>; })}
+            {egresos.length === 0 ? <DataTableRow><DataTableCell className="py-8 text-center" colSpan={showRecurrenteColumn ? 8 : 7}><EmptyState icon={WalletIcon} titulo={emptyTitle} descripcion={emptyDescription} className="mx-auto max-w-xl" /></DataTableCell></DataTableRow> : null}
+          </DataTableBody>
+        </DataTable>
       </div>
+      <div className="border-t border-line-soft px-4 py-3 text-right text-sm text-graphite">Total egresos: <span className="font-label text-carbon">{formatUSD(total)}</span></div>
     </div>
-  );
+  </div>;
 }

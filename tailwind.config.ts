@@ -10,15 +10,16 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        carbon: "#0B0E14",
-        signal: "#1F44FF",
-        paper: "#EEF0F4",
-        canvas: "#F5F6FA",
+        carbon: "#0F172A",
+        signal: "#263A6D",
+        paper: "#F8FAFC",
+        canvas: "#F1F5F9",
         white: "#FFFFFF",
-        graphite: "#5A6373",
-        "signal-hover": "#1A38D6",
-        "signal-light": "#E8EEFF",
-        "carbon-soft": "#1C2030",
+        graphite: "#64748B",
+        "signal-hover": "#1D2D55",
+        "signal-light": "#DFEEFF",
+        "surface-accent": "#DFEEFF",
+        "carbon-soft": "#1E293B",
         danger: "#E53E3E",
         "danger-light": "#FFF5F5",
         success: "#38A169",
@@ -32,8 +33,8 @@ const config: Config = {
           verde: "#E3FFEE",
           violeta: "#F1E3FF"
         },
-        line: "#D8DBE3",
-        "line-soft": "#EAECF0",
+        line: "#CBD5E1",
+        "line-soft": "#E2E8F0",
         "danger-hover": "#B91C1C"
       },
       fontFamily: {
@@ -62,7 +63,7 @@ const config: Config = {
       },
       borderRadius: {
         component: "6px",
-        card: "8px",
+        card: "6px",
         pill: "100px"
       },
       boxShadow: {

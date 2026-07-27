@@ -3186,3 +3186,69 @@ $ find . -maxdepth 3 \( -name 'middleware.*' -o -name 'proxy.*' \) -not -path '.
 
 - Se agregó `public/Favicon_Blyndtek_dark.svg` para el modo oscuro.
 - `app/layout.tsx` selecciona el favicon claro u oscuro con `prefers-color-scheme`, manteniendo el favicon claro para Apple Touch Icon.
+
+## 2026-07-26 — Sistema visual HA Control de Obra adoptado
+
+- Se reescribió `docs/DESIGN_SYSTEM.md` como documento canónico completo para la nueva dirección visual de Blyndtek OS.
+- Se documentaron la densidad operativa, el breadcrumb como ubicación principal, el color de acción `#263a6d`, la superficie `#dfeeff`, tablas compactas, toolbars, menús, estados, cards, skeletons y el checklist de QA visual.
+- Se mantuvieron explícitamente las reglas Blyndtek de no usar mayúsculas, centralizar iconos lucide, reutilizar `EmptyState` y `SavingIndicator`, y usar `chartTheme` como fuente única de gráficos.
+- Se registró en `docs/DECISIONS.md` la adopción integral del sistema visual, la arquitectura de color y el reemplazo del topbar por breadcrumb.
+
+## 2026-07-26 — Base visual HA aplicada
+
+- Se remapearon los tokens existentes sin cambiar sus nombres: `carbon #0B0E14 -> #0F172A`, `signal #1F44FF -> #263A6D`, `signal-hover #1A38D6 -> #1D2D55`, `signal-light #E8EEFF -> #DFEEFF`, `paper #EEF0F4 -> #F8FAFC`, `canvas #F5F6FA -> #F1F5F9`, `graphite #5A6373 -> #64748B`, `line #D8DBE3 -> #CBD5E1`, `line-soft #EAECF0 -> #E2E8F0` y `carbon-soft #1C2030 -> #1E293B`.
+- Se agregó `surface-accent` con valor `#DFEEFF`. El violeta del AI Hub no fue modificado.
+- Se actualizaron `Button`, `Input`, `Card`, `Badge`, `Modal` y `Spinner` para el nuevo lenguaje de superficies, bordes slate y radios `rounded-md`; las sombras quedaron reservadas para modales y overlays.
+- Se creó `components/ui/Link.tsx` con color de acción navy y subrayado persistente.
+- Se realineó `lib/charts/chartTheme.ts` al navy de acción, escala slate y colores semánticos suavizados para ingresos, egresos y estados.
+- Archivos modificados: `tailwind.config.ts`, `components/ui/Button.tsx`, `components/ui/Input.tsx`, `components/ui/Card.tsx`, `components/ui/Badge.tsx`, `components/ui/Modal.tsx`, `lib/charts/chartTheme.ts`, `docs/PROGRESS.md`. Archivo creado: `components/ui/Link.tsx`.
+
+## 2026-07-26 — Breadcrumb global y contexto de navegación
+
+- Se reemplazó el nombre aislado del Topbar por `components/layout/Breadcrumb.tsx`, con segmentos navegables, separadores lucide y segmento actual sin enlace.
+- El breadcrumb resuelve la jerarquía desde `lib/navigation.ts` y agrega contexto de entidad para clientes, proyectos y leads, además de tabs como `Finanzas > Tesorería` y vistas como `Proyectos > Features`.
+- La selección de cliente, proyecto, lead y tabs relevantes se refleja en la URL para que la ubicación sea navegable y persistente al recargar.
+- Se eliminó el espacio superior innecesario del shell y se dejó el header global con una sola línea de separación.
+- El Sidebar conserva la excepción cromática del AI Hub, usa el color de acción para estados activos y convierte el avatar colapsado en un acceso directo a perfil; logout queda disponible sólo en el menú expandido.
+- Archivos creados: `components/layout/Breadcrumb.tsx`. Archivos modificados: `components/layout/Topbar.tsx`, `components/layout/AppShell.tsx`, `components/layout/Sidebar.tsx`, `components/layout/index.ts`, `lib/navigation.ts`, `components/clientes/ClientesClient.tsx`, `components/clientes/ClienteFicha.tsx`, `components/proyectos/ProyectosClient.tsx`, `components/proyectos/ProyectoFicha.tsx`, `components/leads/LeadsClient.tsx`, `components/finanzas/FinanzasClient.tsx`.
+- Verificación: lint, tipado y build OK. Se cargaron localmente las rutas de Dashboard, Finanzas, Clientes, Proyectos, Leads y AI Hub; sin sesión redirigen correctamente al login, y las rutas profundas compilan sin errores.
+## 2026-07-26 — Tablas, toolbars y acciones compartidas
+
+- Se crearon `components/ui/DataTable.tsx`, `Toolbar.tsx` y `RowActions.tsx` como primitives compartidos: bordes sutiles, filas compactas, superficies sin sombra, filtros en popover y menús de acciones con cierre por click afuera/Escape.
+- Se migraron las tablas de Ingresos, Egresos y Comisiones al patrón `DataTable`; las acciones dejaron de ocupar columnas anchas y pasaron a `RowActions`.
+- Suscripciones, Presupuesto, Clientes, Tareas y Archivos adoptaron el patrón de toolbar y densidad operativa donde su UI es de cards, kanban o explorador de archivos, sin forzar tablas artificiales.
+- Las filas y listados mantienen `min-w-0`, overflow contenido dentro de la tabla y fechas compactas para evitar scroll horizontal de página.
+- Verificación: `npm run lint`, `npx tsc --noEmit` y `npm run build` OK. La revisión estructural confirmó que sólo Ingresos, Egresos y Comisiones son tablas HTML; Leads y Tareas son kanbans, y Suscripciones/Presupuesto/Clientes/Archivos son listados especializados.
+
+## 2026-07-26 — Auditoría transversal de patrones visuales y estados
+
+- Se creó `lib/ui/labels.ts` como fuente central para traducir estados, tipos y categorías internas a etiquetas legibles en castellano. Se corrigieron estados visibles en Clientes, Finanzas, Tesorería, Suscripciones, SaaS, Soporte y diagnóstico.
+- Se creó `components/ui/OverdueIndicator.tsx`: los registros con atraso muestran el badge correspondiente y un ícono rojo de alerta con tooltip accesible, sin imprimir la palabra técnica como texto adicional.
+- Se creó `components/ui/PageSkeleton.tsx` con estructura de breadcrumb, toolbar, indicadores KPI y tabla para reemplazar cargas genéricas en las pantallas principales. Se aplicó a Clientes, Leads, Proyectos, Tareas, Finanzas y otras cargas de módulo.
+- Se reemplazaron estados vacíos sueltos por `EmptyState` en catálogo de módulos, agentes, planes de SaaS, inbound y secciones de Cliente, manteniendo textos orientados a la acción y sin mensajes técnicos.
+- Se eliminó el uso de la API antigua `EmptyState text` en ClienteFicha y se quitaron badges que imprimían directamente `estado` o `tipo` sin traducción.
+- Se confirmó que los nombres de usuarios en listados siguen presentándose sin email adjunto; los emails quedan restringidos a perfil, autenticación y selectores/formularios.
+- Verificación automatizada: `rg` final sobre `app/`, `components/` y `lib/` no encontró clases `uppercase` ni `text-transform: uppercase`; `git diff --check`, `npm run lint`, `npx tsc --noEmit` y `npm run build` OK.
+
+### Auditoría por módulo
+
+- Dashboard: cumplía en estructura general; se ajustaron labels de KPI de atrasos y se confirmó ausencia de mayúsculas activas.
+- Leads: se aplicó skeleton estructural durante carga; etapas visibles usan labels del dominio y el kanban conserva lectura compacta.
+- Clientes: requirió correcciones de estados de cobros/suscripciones, indicador de atraso, empty states y eliminación de estados/tipos crudos.
+- Proyectos: skeleton de pantalla aplicado; estados de proyecto, fase y feature ya pasan por labels en sus componentes de presentación.
+- Tareas: skeleton estructural aplicado; columnas y prioridades se muestran en castellano.
+- Calendario: se revisaron estados de invitaciones y eventos; no se detectaron valores crudos visibles ni mayúsculas activas.
+- Finanzas: requirió corregir KPIs y textos de atraso, estados de ingresos, movimientos de caja y suscripciones; Ingresos, Egresos y Comisiones mantienen DataTable y acciones por menú.
+- Marketing: mantiene EmptyState compartido y filtros en toolbar; la tabla de atribución conserva estructura compacta.
+- Contenido: mantiene EmptyState, badges de pieza legibles y skeleton de página; no se detectaron enums crudos en contenido visible.
+- Archivos: se revisaron estados vacíos, filtros y nombres de usuarios; las cargas internas del explorador permanecen localizadas al panel correspondiente.
+- Notas: EmptyState compartido y carga localizada en el panel de lista; no se detectaron estados crudos visibles.
+- Wiki: EmptyState compartido y carga localizada en el panel de lista; las categorías se presentan por nombre humano.
+- SaaS: se corrigieron estados de suscripciones y empty state de planes; el selector de producto conserva su carga contextual.
+- AI Hub: agentes y actividad ahora usan EmptyState; configuración y automatizaciones muestran estados legibles, conservando la excepción violeta documentada.
+- Mi Panel: estados de comisiones ya estaban traducidos; se confirmó la presentación por nombre y la ausencia de email pegado.
+- Equipo Comercial: la vista cumple la escala de estados y usuarios; no se detectaron valores enum crudos visibles.
+
+### Alcance de verificación visual
+
+Se completó la auditoría de código, búsqueda transversal, tipado, lint y build para los 16 módulos. En este entorno no estuvo disponible una sesión de navegador autenticada para recorrer visualmente cada pantalla con datos reales; por eso la verificación visual pixel a pixel de los 16 módulos queda explícitamente pendiente, no se la considera asumida. Las correcciones fueron validadas por estructura renderizada, primitives compartidos y compilación de producción.

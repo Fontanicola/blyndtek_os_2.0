@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Badge, Button, Card, Input, Spinner, Toast } from "@/components/ui";
+import { Badge, Button, Card, EmptyState, Input, Toast } from "@/components/ui";
 import {
   AlertTriangleIcon,
   BellIcon,
@@ -11,7 +11,8 @@ import {
   ClockIcon,
   LinkIcon,
   SparklesIcon,
-  TrendingUpIcon
+  TrendingUpIcon,
+  FileTextIcon
 } from "@/components/ui/icons";
 import { MetricaCard } from "@/components/finanzas/MetricaCard";
 import { MarkdownContent } from "@/components/ui/MarkdownContent";
@@ -225,10 +226,7 @@ export function AgentesClient({ agentes, feed, costoActualMes }: AgentesClientPr
 
   if (agentes.length === 0) {
     return (
-      <Card padding="lg" className="flex items-center gap-3">
-        <Spinner />
-        <p className="text-sm text-graphite">No hay agentes cargados.</p>
-      </Card>
+      <EmptyState icon={BotIcon} titulo="Sin agentes configurados" descripcion="Los agentes disponibles aparecerán aquí cuando estén listos." />
     );
   }
 
@@ -500,9 +498,7 @@ export function AgentesClient({ agentes, feed, costoActualMes }: AgentesClientPr
                 </div>
 
                 {selectedAgent.analyses.length === 0 ? (
-                  <div className="rounded-card border border-dashed border-line bg-paper/40 p-6 text-sm text-graphite">
-                    Todavía no hay análisis guardados para este agente.
-                  </div>
+                  <EmptyState icon={FileTextIcon} titulo="Sin análisis guardados" descripcion="Los análisis de este agente aparecerán aquí." className="border-0 bg-transparent" />
                 ) : (
                   <div className="space-y-3">
                     {selectedAgent.analyses.map((analisis) => {
@@ -555,9 +551,7 @@ export function AgentesClient({ agentes, feed, costoActualMes }: AgentesClientPr
         </div>
 
         {feedVisible.length === 0 ? (
-          <div className="rounded-card border border-dashed border-line bg-paper/40 p-6 text-sm text-graphite">
-            Todavía no hay actividad registrada.
-          </div>
+          <EmptyState icon={BellIcon} titulo="Sin actividad registrada" descripcion="La actividad del agente aparecerá aquí." className="border-0 bg-transparent" />
         ) : (
           <div className="space-y-3">
             {feedVisible.map((item) => (

@@ -14,7 +14,7 @@ export default function RoadmapNotFound() {
         />
         <h1 className="mt-8 text-2xl font-title text-carbon">Este roadmap no está disponible.</h1>
         <p className="mt-3 max-w-md text-sm text-graphite">
-          El enlace puede haber vencido, estar desactivado o no corresponder a un roadmap público
+          El enlace puede haber expirado, estar desactivado o no corresponder a un roadmap público
           activo.
         </p>
       </div>

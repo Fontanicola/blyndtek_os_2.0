@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { LeadsClient } from "@/components/leads/LeadsClient";
 import { getCurrentUser, getDefaultRouteForRole } from "@/lib/auth";
+import { PageSkeleton } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
 
@@ -17,7 +18,7 @@ export default async function LeadsPage() {
   }
 
   return (
-    <Suspense fallback={<div className="p-6 text-sm text-graphite">Cargando leads...</div>}>
+    <Suspense fallback={<PageSkeleton rows={6} kpis={1} />}>
       <LeadsClient usuario={usuario} />
     </Suspense>
   );

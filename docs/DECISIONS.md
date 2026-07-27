@@ -723,3 +723,13 @@
 ### Soporte de cuenta y expansión
 
 El ciclo posterior al delivery se modela en tres objetos operativos: tickets para incidentes y solicitudes, revisiones trimestrales para sostener la relación con cada cliente activo y oportunidades de upsell para nuevas fases, módulos, automatizaciones o mantenimiento. Las revisiones se preparan de forma idempotente por cliente y trimestre; una oportunidad detectada no se considera venta hasta que atraviesa su propio flujo comercial.
+
+## 2026-07-26 — Adopción integral del sistema visual de HA Control de Obra
+
+- Blyndtek OS adopta como sistema visual canónico el manual de diseño de HA Control de Obra, adaptado al dominio B2B de Blyndtek: densidad operativa, lectura rápida y consistencia por encima de creatividad aislada.
+- El color de acción principal pasa a ser `#263a6d`; `#dfeeff` queda reservado para superficies de acento, filas seleccionadas, tabs activas y hover, nunca para botones primarios ni links.
+- La arquitectura visual usa fondo y contenido blancos, bordes slate sutiles, `rounded-md`, sombras mínimas y overlays con elevación real. Se abandona el uso de cards flotantes o radios excesivamente suaves como lenguaje general.
+- El breadcrumb navegable reemplaza al topbar como referencia principal de ubicación. Las pantallas no deben repetir el nombre de sección con headers internos duplicados.
+- Las tablas compactas, toolbars de una fila, acciones secundarias en menús de tres puntos y estados consistentes son el patrón por defecto para módulos operativos.
+- Se mantienen como reglas obligatorias de Blyndtek el registro centralizado de iconos lucide, `EmptyState`, `SavingIndicator` y `chartTheme`.
+- AI Hub conserva su identidad violeta como única excepción cromática de navegación.

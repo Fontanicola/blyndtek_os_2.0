@@ -1,14 +1,15 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
-import { Badge, Button, Card, Input, Modal, Toast } from "@/components/ui";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Badge, Button, Card, EmptyState, Input, Modal, OverdueIndicator, Toast } from "@/components/ui";
 import { CobroModal, EgresoModal, MetricaCard } from "@/components/finanzas";
-import { ChevronDownIcon, DashboardIcon, FinanzasIcon } from "@/components/ui/icons";
+import { ChevronDownIcon, DashboardIcon, DollarSignIcon, FileTextIcon, FinanzasIcon } from "@/components/ui/icons";
 import { NotasVinculadasSection } from "@/components/notas";
 import { ProyectoCard } from "@/components/proyectos";
 import { isCobroVencido } from "@/lib/finanzas";
 import { formatFecha, formatUSD } from "@/lib/utils/formatters";
+import { labelEstado } from "@/lib/ui/labels";
 import { formatearFechaDisplay, hoyLocalString } from "@/lib/utils/fechas";
 import { useCajas } from "@/lib/hooks/useCajas";
 import { useFinanzas } from "@/lib/hooks/useFinanzas";
@@ -205,26 +206,18 @@ function InlineText({
   );
 }
 
-function EmptyState({ text }: { text: string }) {
-  return (
-    <Card padding="lg" className="border border-dashed border-line bg-paper">
-      <p className="text-sm text-graphite">{text}</p>
-    </Card>
-  );
-}
-
 function CobroBadge({ estado }: { estado: Cobro["estado"] }) {
   const variant =
     estado === "cobrado" ? "success" : estado === "vencido" ? "danger" : estado === "facturado" ? "signal" : "default";
 
-  return <Badge variant={variant}>{estado}</Badge>;
+  return <Badge variant={variant}>{labelEstado(estado)}</Badge>;
 }
 
 function SuscripcionBadge({ estado }: { estado: Suscripcion["estado"] }) {
   const variant =
     estado === "activa" ? "success" : estado === "pausada" ? "warning" : estado === "baja" ? "danger" : "default";
 
-  return <Badge variant={variant}>{estado}</Badge>;
+  return <Badge variant={variant}>{labelEstado(estado)}</Badge>;
 }
 
 const estadoLabels: Record<EstadoCliente, string> = {
@@ -253,10 +246,13 @@ const egresoCategoriaLabels: Record<Egreso["categoria"], string> = {
 
 export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const currentSearchParams = searchParams ?? new URLSearchParams();
   const { cajas } = useCajas();
   const { fetchProyectos } = useProyectos();
   const { fetchCobros, fetchCobro, fetchSuscripciones, createSuscripcion, activarSuscripcion, updateCobro } = useFinanzas();
-  const [activeTab, setActiveTab] = useState<TabKey>("datos");
+  const queryTab = currentSearchParams.get("tab") as TabKey | null;
+  const [activeTab, setActiveTab] = useState<TabKey>(tabs.some((tab) => tab.key === queryTab) ? queryTab ?? "datos" : "datos");
   const [notaDraft, setNotaDraft] = useState("");
   const [proyectos, setProyectos] = useState<Proyecto[]>([]);
   const [cobros, setCobros] = useState<Cobro[]>([]);
@@ -273,6 +269,18 @@ export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
   const [planes, setPlanes] = useState<ProductoPlan[]>([]);
   const [leadOrigen, setLeadOrigen] = useState<Lead | null>(null);
   const [productoSeleccionadoId, setProductoSeleccionadoId] = useState("");
+
+  function changeActiveTab(tab: TabKey) {
+    setActiveTab(tab);
+    const params = new URLSearchParams(currentSearchParams.toString());
+    params.set("cliente_id", cliente.id);
+    if (tab === "datos") {
+      params.delete("tab");
+    } else {
+      params.set("tab", tab);
+    }
+    router.replace(`/clientes?${params.toString()}`, { scroll: false });
+  }
   const [planSeleccionadoId, setPlanSeleccionadoId] = useState("");
   const [montoDraft, setMontoDraft] = useState("");
   const [montoEditable, setMontoEditable] = useState(false);
@@ -1111,7 +1119,7 @@ export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <button
           type="button"
-          onClick={() => setActiveTab("cobros")}
+          onClick={() => changeActiveTab("cobros")}
           className="text-sm text-signal transition-colors duration-fast ease-fast hover:text-signal-hover"
         >
           Ver cuotas y editarlas individualmente
@@ -1145,7 +1153,7 @@ export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
           <button
             key={tab.key}
             type="button"
-            onClick={() => setActiveTab(tab.key)}
+            onClick={() => changeActiveTab(tab.key)}
             className={[
               "rounded-pill px-3 py-1.5 text-sm font-label transition-colors duration-fast ease-fast",
               activeTab === tab.key
@@ -1305,7 +1313,7 @@ export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
               ))}
             </div>
           ) : (
-            <EmptyState text="Este cliente no tiene proyectos todavía." />
+            <EmptyState icon={FileTextIcon} titulo="Sin proyectos todavía" descripcion="Los proyectos de este cliente aparecerán aquí." />
           )}
         </Card>
       ) : null}
@@ -1394,7 +1402,7 @@ export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
 
                   <button
                     type="button"
-                    onClick={() => setActiveTab("cobros")}
+                    onClick={() => changeActiveTab("cobros")}
                     className="text-sm text-signal transition-colors duration-fast ease-fast hover:text-signal-hover"
                   >
                     Ver cuotas y editarlas individualmente
@@ -1433,7 +1441,7 @@ export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
                   <p className="text-lg font-title text-carbon">{formatUSD(cobrosResumen.pendiente)}</p>
                 </Card>
                 <Card padding="md" className="space-y-1">
-                  <p className="text-xs font-label text-graphite">Vencido</p>
+                  <p className="inline-flex items-center gap-1 text-xs font-label text-graphite">Con atraso <OverdueIndicator /></p>
                   <p className="text-lg font-title text-carbon">{formatUSD(cobrosResumen.vencido)}</p>
                 </Card>
               </div>
@@ -1466,7 +1474,7 @@ export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
                       >
                         <div className="grid grid-cols-[minmax(280px,1.7fr)_92px_170px_170px_130px_140px_190px] items-center gap-3 px-4 py-3 text-sm">
                           <span className="truncate font-label text-carbon">{cobro.concepto}</span>
-                          <Badge variant="default">{cobro.tipo}</Badge>
+                          <Badge variant="default">{labelEstado(cobro.tipo)}</Badge>
                           <span className="whitespace-nowrap text-graphite" title={formatFecha(cobro.fecha_emision)}>
                             {formatFechaCorta(cobro.fecha_emision)}
                           </span>
@@ -1474,7 +1482,7 @@ export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
                             {formatFechaCorta(cobro.fecha_vencimiento)}
                           </span>
                           <span className="text-carbon">{formatUSD(cobro.monto)}</span>
-                          <CobroBadge estado={cobro.estado} />
+                          <span className="inline-flex items-center gap-1"><CobroBadge estado={cobro.estado} />{isOverdue || cobro.estado === "vencido" ? <OverdueIndicator /> : null}</span>
                           <div className="flex items-center justify-end gap-1 whitespace-nowrap">
                             {cobro.estado !== "cobrado" ? (
                               <button
@@ -1553,7 +1561,7 @@ export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
               </div>
             </div>
           ) : (
-            <EmptyState text="Sin cobros registrados." />
+            <EmptyState icon={DollarSignIcon} titulo="Sin ingresos registrados" descripcion="Los ingresos vinculados a este cliente aparecerán aquí." />
           )}
         </Card>
       ) : null}
@@ -1628,7 +1636,7 @@ export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
                 </div>
               </div>
             ) : (
-              <EmptyState text="Todavía no hay costos cargados para este cliente." />
+              <EmptyState icon={FileTextIcon} titulo="Sin costos cargados" descripcion="Los costos vinculados a este cliente aparecerán aquí." />
             )}
           </Card>
         </div>
@@ -1650,7 +1658,7 @@ export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
                 </Card>
                 <Card padding="md" className="space-y-1">
                   <p className="text-xs font-label text-graphite">Tipo</p>
-                  <p className="text-sm font-label text-carbon">{suscripcion.tipo}</p>
+                  <p className="text-sm font-label text-carbon">{labelEstado(suscripcion.tipo)}</p>
                 </Card>
                 <Card padding="md" className="space-y-1">
                   <p className="text-xs font-label text-graphite">Monto mensual</p>

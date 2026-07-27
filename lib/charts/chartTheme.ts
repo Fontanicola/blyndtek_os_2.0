@@ -2,15 +2,15 @@ import React from "react";
 
 export const chartTheme = {
   colors: {
-    signal: "#7467F7",
-    success: "#78B69B",
-    danger: "#D98A9D",
-    warning: "#C79B69",
-    graphite: "#667085",
-    carbon: "#101828",
-    muted: "#A4AEC1",
-    line: "#EEF2F7",
-    paper: "#FAFBFD"
+    signal: "#263A6D",
+    success: "#3F8F68",
+    danger: "#C96B74",
+    warning: "#B7791F",
+    graphite: "#64748B",
+    carbon: "#0F172A",
+    muted: "#94A3B8",
+    line: "#E2E8F0",
+    paper: "#F8FAFC"
   },
   gradients: {
     signal: {
@@ -40,18 +40,18 @@ export const chartTheme = {
     }
   },
   grid: {
-    stroke: "#F1F4F9",
+    stroke: "#E2E8F0",
     strokeDasharray: "0",
     vertical: false
   },
   axis: {
-    tick: { fontSize: 10, fill: "#7B8798" },
+    tick: { fontSize: 10, fill: "#64748B" },
     axisLine: false,
     tickLine: false,
     tickMargin: 10
   },
   legend: {
-    wrapperStyle: { fontSize: 11, color: "#5A6373" },
+    wrapperStyle: { fontSize: 11, color: "#64748B" },
     pillClassName:
       "inline-flex items-center gap-2 rounded-pill border border-line-soft bg-white px-3 py-1 text-[11px] font-label tracking-[0.01em] text-graphite",
     subtlePillClassName:

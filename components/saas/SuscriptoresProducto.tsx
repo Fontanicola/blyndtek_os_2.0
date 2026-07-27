@@ -4,6 +4,7 @@ import { Badge, Card } from "@/components/ui";
 import { formatFecha, formatUSD } from "@/lib/utils/formatters";
 import type { Cliente } from "@/types/clientes";
 import type { Suscripcion } from "@/types/suscripciones";
+import { labelEstado } from "@/lib/ui/labels";
 
 type SuscriptoresProductoProps = {
   suscripciones: Suscripcion[];
@@ -47,10 +48,10 @@ export function SuscriptoresProducto({ suscripciones, clientes }: SuscriptoresPr
                 <div className="min-w-0">
                   <p className="truncate font-label text-carbon">{getClienteNombre(suscripcion, clientes)}</p>
                   <p className="mt-1 text-sm text-graphite">
-                    {suscripcion.tipo} · {formatUSD(suscripcion.monto_mensual)}
+                    {labelEstado(suscripcion.tipo)} · {formatUSD(suscripcion.monto_mensual)}
                   </p>
                 </div>
-                <Badge variant={estadoVariant[suscripcion.estado]}>{suscripcion.estado}</Badge>
+                    <Badge variant={estadoVariant[suscripcion.estado]}>{labelEstado(suscripcion.estado)}</Badge>
               </div>
 
               <div className="mt-4 grid gap-2 text-sm text-graphite">

@@ -107,7 +107,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
           onKeyDown={onKeyDown}
           autoFocus={autoFocus}
           className={cn(
-            "w-full rounded-component border border-line bg-white px-3 py-2 text-base text-carbon transition-all duration-fast ease-fast",
+            "w-full rounded-md border border-line bg-white px-3 py-2 text-base text-carbon transition-all duration-fast ease-fast",
             "placeholder:text-graphite focus:border-signal focus:outline-none focus:ring-2 focus:ring-signal/20",
             Boolean(leftIcon) && "pl-10",
             Boolean(rightIcon || rightAction) && "pr-12",

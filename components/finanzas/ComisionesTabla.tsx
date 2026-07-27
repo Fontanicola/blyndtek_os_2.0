@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Badge, Button, Card, EmptyState } from "@/components/ui";
+import { Badge, EmptyState, DataTable, DataTableBody, DataTableCell, DataTableHead, DataTableHeader, DataTableRow, RowActions, Toolbar } from "@/components/ui";
 import { FinanzasIcon } from "@/components/icons";
 import { DollarSignIcon } from "@/components/ui/icons";
 import { MetricaCard } from "./MetricaCard";
@@ -90,8 +90,9 @@ export function ComisionesTabla({ comisiones, vendedores, onMarkPagada }: Comisi
         />
       </div>
 
-      <Card padding="md" className="space-y-4">
-        <div className="flex flex-wrap items-center gap-3">
+      <Toolbar
+        filterCount={(vendedorFilter !== "todos" ? 1 : 0) + (estadoFilter !== "todos" ? 1 : 0)}
+        filterContent={<div className="grid gap-3">
           <select
             value={vendedorFilter}
             onChange={(event) => setVendedorFilter(event.target.value)}
@@ -115,70 +116,49 @@ export function ComisionesTabla({ comisiones, vendedores, onMarkPagada }: Comisi
             <option value="pagada">Pagada</option>
             <option value="cancelada">Cancelada</option>
           </select>
-        </div>
-      </Card>
+        </div>}
+      />
 
-      <Card padding="none" className="overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-line-soft">
-            <thead className="bg-paper">
-              <tr className="text-left text-xs font-label text-graphite">
-                <th className="px-4 py-3">Vendedor</th>
-                <th className="px-4 py-3">Origen</th>
-                <th className="px-4 py-3">Venta</th>
-                <th className="px-4 py-3">% aplicado</th>
-                <th className="px-4 py-3">Comisión</th>
-                <th className="px-4 py-3">Fecha</th>
-                <th className="px-4 py-3">Estado</th>
-                <th className="px-4 py-3 text-right">Acción</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-line-soft bg-white">
+      <DataTable>
+            <DataTableHeader><tr><DataTableHead>Vendedor</DataTableHead><DataTableHead>Origen</DataTableHead><DataTableHead>Venta</DataTableHead><DataTableHead>% aplicado</DataTableHead><DataTableHead>Comisión</DataTableHead><DataTableHead>Fecha</DataTableHead><DataTableHead>Estado</DataTableHead><DataTableHead className="text-right">Acciones</DataTableHead></tr></DataTableHeader>
+            <DataTableBody>
               {filteredComisiones.map((comision) => {
                 const vendedorNombre = vendedores.find((usuario) => usuario.id === comision.vendedor_id)?.nombre ?? comision.vendedor_nombre ?? comision.vendedor_id;
 
                 return (
-                  <tr key={comision.id}>
-                    <td className="px-4 py-3 text-sm text-carbon">{vendedorNombre}</td>
-                    <td className="px-4 py-3 text-sm text-graphite">
+                  <DataTableRow key={comision.id}>
+                    <DataTableCell className="font-label text-carbon">{vendedorNombre}</DataTableCell>
+                    <DataTableCell>
                       {comision.cliente_nombre ??
                         comision.lead_nombre ??
                         (comision.tipo === "diagnostico" ? "Lead sin cliente" : comision.cliente_id)}
-                    </td>
-                    <td className="px-4 py-3 text-sm font-label text-carbon">{formatUSD(comision.monto_venta)}</td>
-                    <td className="px-4 py-3 text-sm text-graphite">{comision.porcentaje.toFixed(1)}%</td>
-                    <td className="px-4 py-3 text-sm font-label text-carbon">{formatUSD(comision.monto_comision)}</td>
-                    <td className="px-4 py-3 text-sm text-graphite">{formatFecha(comision.created_at)}</td>
-                    <td className="px-4 py-3">
+                    </DataTableCell>
+                    <DataTableCell className="whitespace-nowrap font-label text-carbon">{formatUSD(comision.monto_venta)}</DataTableCell>
+                    <DataTableCell className="whitespace-nowrap">{comision.porcentaje.toFixed(1)}%</DataTableCell>
+                    <DataTableCell className="whitespace-nowrap font-label text-carbon">{formatUSD(comision.monto_comision)}</DataTableCell>
+                    <DataTableCell className="whitespace-nowrap">{formatFecha(comision.created_at)}</DataTableCell>
+                    <DataTableCell>
                       <Badge variant={estadoVariant(comision.estado)}>{estadoLabels[comision.estado]}</Badge>
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      {comision.estado === "pendiente" ? (
-                        <Button variant="ghost" size="sm" onClick={() => void onMarkPagada(comision)}>
-                          Marcar pagada
-                        </Button>
-                      ) : null}
-                    </td>
-                  </tr>
+                    </DataTableCell>
+                    <DataTableCell className="text-right"><RowActions actions={comision.estado === "pendiente" ? [{ kind: "update", label: "Marcar pagada", onClick: () => onMarkPagada(comision) }] : []} /></DataTableCell>
+                  </DataTableRow>
                 );
               })}
 
               {filteredComisiones.length === 0 ? (
-                <tr>
-                  <td className="px-4 py-8 text-center text-sm text-graphite" colSpan={8}>
+                <DataTableRow>
+                  <DataTableCell className="py-8 text-center" colSpan={8}>
                     <EmptyState
                       icon={DollarSignIcon}
                       titulo="No hay comisiones para mostrar"
                       descripcion="Cuando haya ventas con comisión, se van a listar en esta tabla."
                       className="mx-auto max-w-xl"
                     />
-                  </td>
-                </tr>
+                  </DataTableCell>
+                </DataTableRow>
               ) : null}
-            </tbody>
-          </table>
-        </div>
-      </Card>
+            </DataTableBody>
+      </DataTable>
     </div>
   );
 }

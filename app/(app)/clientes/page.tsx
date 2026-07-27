@@ -1,9 +1,10 @@
 import { Suspense } from "react";
 import ClientesClient from "@/components/clientes/ClientesClient";
+import { PageSkeleton } from "@/components/ui";
 
 export default function ClientesPage() {
   return (
-    <Suspense fallback={<div className="p-6 text-sm text-graphite">Cargando clientes...</div>}>
+    <Suspense fallback={<PageSkeleton rows={7} kpis={2} />}>
       <ClientesClient />
     </Suspense>
   );

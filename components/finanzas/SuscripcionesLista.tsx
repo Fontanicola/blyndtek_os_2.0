@@ -1,6 +1,6 @@
 "use client";
 
-import { Badge, Button, Card, EmptyState } from "@/components/ui";
+import { Badge, Button, Card, EmptyState, RowActions, Toolbar } from "@/components/ui";
 import { RefreshIcon } from "@/components/ui/icons";
 import { cn } from "@/lib/cn";
 import { isCobroVencido } from "@/lib/finanzas";
@@ -10,6 +10,7 @@ import type { Cobro } from "@/types/cobros";
 import type { Cliente } from "@/types/clientes";
 import type { Cotizacion } from "@/types/cotizaciones";
 import type { Suscripcion } from "@/types/suscripciones";
+import { labelEstado } from "@/lib/ui/labels";
 
 function getDateOrNull(value: string | null | undefined) {
   if (!value) {
@@ -104,23 +105,10 @@ export function SuscripcionesLista({
 
   return (
     <div className="space-y-4">
-      <Card padding="md" className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h3 className="text-base font-title text-carbon">Suscripciones</h3>
-          <p className="text-sm text-graphite">Mantenimiento y planes recurrentes vinculados a clientes.</p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button variant="ghost" size="sm" onClick={() => void onGenerateMonthly()}>
-            Generar cobros del mes
-          </Button>
-          <Button variant="ghost" size="sm" onClick={() => void onMarkExpired()}>
-            Marcar vencidos
-          </Button>
-          <Button variant="primary" size="sm" onClick={onNew}>
-            Nueva suscripción
-          </Button>
-        </div>
-      </Card>
+      <Toolbar
+        secondaryActions={<><Button variant="secondary" size="sm" onClick={() => void onGenerateMonthly()}>Generar cobros del mes</Button><Button variant="secondary" size="sm" onClick={() => void onMarkExpired()}>Actualizar atrasos</Button></>}
+        primaryAction={<Button variant="primary" size="sm" onClick={onNew}>Nueva suscripción</Button>}
+      />
 
       <div className="grid gap-4 md:grid-cols-2">
         {suscripciones.map((suscripcion) => (
@@ -146,10 +134,10 @@ export function SuscripcionesLista({
                   {getClienteLabel(suscripcion.cliente_id, suscripcion.cotizacion_id)}
                 </p>
                 <p className="mt-1 text-sm text-graphite">
-                  {suscripcion.tipo} · {formatUSD(suscripcion.monto_mensual)}
+                  {labelEstado(suscripcion.tipo)} · {formatUSD(suscripcion.monto_mensual)}
                 </p>
               </div>
-              <Badge variant={estadoVariant[suscripcion.estado]}>{suscripcion.estado}</Badge>
+              <Badge variant={estadoVariant[suscripcion.estado]}>{labelEstado(suscripcion.estado)}</Badge>
             </div>
 
             <div className="grid gap-3 text-sm text-graphite">
@@ -163,27 +151,11 @@ export function SuscripcionesLista({
               </div>
             </div>
 
-            <div className="flex flex-wrap gap-2">
-              {suscripcion.estado === "pendiente" ? (
-                <Button variant="primary" size="sm" onClick={() => void onActivate(suscripcion)}>
-                  Activar
-                </Button>
-              ) : null}
-              {suscripcion.estado === "activa" && shouldOfferMarkCobrado(suscripcion) ? (
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => void onMarkCobrado(suscripcion, getCurrentCycleCobro(suscripcion))}
-                >
-                  Marcar cobrado
-                </Button>
-              ) : null}
-              {onEdit ? (
-                <Button variant="ghost" size="sm" onClick={() => onEdit(suscripcion)}>
-                  Editar
-                </Button>
-              ) : null}
-            </div>
+            <div className="flex justify-end"><RowActions actions={[
+              ...(suscripcion.estado === "pendiente" ? [{ kind: "changeState" as const, label: "Activar", onClick: () => onActivate(suscripcion) }] : []),
+              ...(suscripcion.estado === "activa" && shouldOfferMarkCobrado(suscripcion) ? [{ kind: "update" as const, label: "Marcar cobrado", onClick: () => onMarkCobrado(suscripcion, getCurrentCycleCobro(suscripcion)) }] : []),
+              ...(onEdit ? [{ kind: "edit" as const, label: "Editar", onClick: () => onEdit(suscripcion) }] : [])
+            ]} /></div>
           </Card>
         ))}
 

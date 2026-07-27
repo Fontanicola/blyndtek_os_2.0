@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Badge, Button, Input } from "@/components/ui";
-import { PlusIcon, TrashIcon } from "@/components/ui/icons";
+import { Badge, Button, EmptyState, Input } from "@/components/ui";
+import { FileTextIcon, PlusIcon, TrashIcon } from "@/components/ui/icons";
 import type { ModuloCatalogo } from "@/types/diagnostico";
 
 type ModulosResponse = {
@@ -239,7 +239,7 @@ export function ModulosCatalogoClient() {
         {loading ? (
           <p className="px-5 py-6 text-sm text-graphite">Cargando módulos...</p>
         ) : modulos.length === 0 ? (
-          <p className="px-5 py-6 text-sm text-graphite">Todavía no hay módulos cargados.</p>
+          <EmptyState icon={FileTextIcon} titulo="Sin módulos cargados" descripcion="Creá el primer módulo para usarlo en informes y propuestas." className="rounded-none border-0" />
         ) : (
           <div className="divide-y divide-line-soft">
             {modulos.map((modulo) => (

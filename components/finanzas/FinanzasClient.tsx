@@ -1,8 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import * as XLSX from "xlsx";
-import { Badge, Button, Card, Spinner, Toast } from "@/components/ui";
+import { Badge, Button, Card, PageSkeleton, Toast } from "@/components/ui";
 import { BellIcon, DashboardIcon, FinanzasIcon } from "@/components/icons";
 import { useCajas } from "@/lib/hooks/useCajas";
 import { useClientes } from "@/lib/hooks/useClientes";
@@ -95,6 +96,9 @@ function addOneMonth(dateString: string) {
 }
 
 export function FinanzasClient({ cotizaciones, asesorFinancieroAnalisis, cierresMensuales }: FinanzasClientProps) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const currentSearchParams = useMemo(() => searchParams ?? new URLSearchParams(), [searchParams]);
   const {
     cobros,
     egresos,
@@ -138,7 +142,9 @@ export function FinanzasClient({ cotizaciones, asesorFinancieroAnalisis, cierres
   );
   const cajasActivas = useMemo(() => cajas.filter((caja) => caja.activa), [cajas]);
 
-  const [activeTab, setActiveTab] = useState<TabKey>("resumen");
+  const queryTab = currentSearchParams.get("tab") as TabKey | null;
+  const initialTab = tabs.some((tab) => tab.key === queryTab) ? queryTab ?? "resumen" : "resumen";
+  const [activeTab, setActiveTab] = useState<TabKey>(initialTab);
   const [toast, setToast] = useState<{ message: string; type: "success" | "info" | "warning" | "error"; visible: boolean }>({
     message: "",
     type: "info",
@@ -153,6 +159,27 @@ export function FinanzasClient({ cotizaciones, asesorFinancieroAnalisis, cierres
   const [selectedEgreso, setSelectedEgreso] = useState<Egreso | null>(null);
   const [selectedSuscripcion, setSelectedSuscripcion] = useState<Suscripcion | null>(null);
   const [cajaInicialDraft, setCajaInicialDraft] = useState(String(config?.caja_inicial ?? 0));
+
+  useEffect(() => {
+    const nextTab = currentSearchParams.get("tab") as TabKey | null;
+    if (nextTab && tabs.some((tab) => tab.key === nextTab)) {
+      setActiveTab(nextTab);
+    }
+  }, [currentSearchParams]);
+
+  function handleTabChange(tab: TabKey) {
+    setActiveTab(tab);
+    const params = new URLSearchParams(currentSearchParams.toString());
+
+    if (tab === "resumen") {
+      params.delete("tab");
+    } else {
+      params.set("tab", tab);
+    }
+
+    const query = params.toString();
+    router.replace(query ? `/finanzas?${query}` : "/finanzas", { scroll: false });
+  }
 
   useEffect(() => {
     setCajaInicialDraft(String(config?.caja_inicial ?? 0));
@@ -500,7 +527,7 @@ export function FinanzasClient({ cotizaciones, asesorFinancieroAnalisis, cierres
             <button
               key={tab.key}
               type="button"
-              onClick={() => setActiveTab(tab.key)}
+              onClick={() => handleTabChange(tab.key)}
               className={
                 activeTab === tab.key
                   ? "rounded-pill bg-signal-light px-4 py-2 text-sm font-label text-signal"
@@ -534,12 +561,7 @@ export function FinanzasClient({ cotizaciones, asesorFinancieroAnalisis, cierres
         </div>
       </div>
 
-      {loading ? (
-        <Card padding="lg" className="flex flex-shrink-0 items-center gap-3">
-          <Spinner />
-          <p className="text-sm text-graphite">Cargando finanzas...</p>
-        </Card>
-      ) : null}
+      {loading ? <PageSkeleton rows={7} kpis={4} /> : null}
 
       {error ? (
         <Card padding="md" className="flex-shrink-0 border border-danger/20 bg-danger-light">
@@ -607,7 +629,7 @@ export function FinanzasClient({ cotizaciones, asesorFinancieroAnalisis, cierres
               colorIcono={ingresosPendientesMes > 0 ? "warning" : "graphite"}
             />
             <MetricaCard
-              label="Vencido"
+              label="Con atraso"
               value={formatUSD(ingresosVencidosMes)}
               icono={<BellIcon />}
               colorIcono={ingresosVencidosMes > 0 ? "danger" : "graphite"}
@@ -722,7 +744,7 @@ export function FinanzasClient({ cotizaciones, asesorFinancieroAnalisis, cierres
 
           {vencidoMes > 0 ? (
             <Card padding="sm" className="border-danger/30 bg-danger-light">
-              <p className="text-sm text-danger">Hay {formatUSD(vencidoMes)} en egresos vencidos dentro de {egresosMonthLabel}.</p>
+              <p className="text-sm text-danger">Hay {formatUSD(vencidoMes)} en egresos con atraso dentro de {egresosMonthLabel}.</p>
             </Card>
           ) : null}
         </div>
@@ -766,10 +788,10 @@ export function FinanzasClient({ cotizaciones, asesorFinancieroAnalisis, cierres
           onMarkExpired={async () => {
             try {
               const result = await marcarVencidos();
-              showToast(`Se marcaron ${result.vencidos} cobros como vencidos.`, "success");
+              showToast(`Se marcaron ${result.vencidos} cobros con atraso.`, "success");
               void refreshAll();
             } catch (mutationError) {
-              showToast(mutationError instanceof Error ? mutationError.message : "No se pudieron marcar los vencidos.", "error");
+              showToast(mutationError instanceof Error ? mutationError.message : "No se pudieron actualizar los cobros con atraso.", "error");
             }
           }}
         />
