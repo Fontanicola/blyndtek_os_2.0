@@ -1,5 +1,19 @@
 # Decisions
 
+## 2026-07-26 — Handoff de delivery derivado de la propuesta aprobada
+
+- El handoff no duplica el alcance comercial: lee la cotización aceptada y la estructura operativa materializada del proyecto.
+- Antes del kickoff, el equipo debe poder verificar en un único lugar si existe contrato, responsable, devs asignados, fecha de inicio, roadmap, fases, features y tareas.
+- Cada fase conserva su descripción, subtareas materializadas, criterio de aceptación y responsabilidad esperada del cliente; esto convierte la propuesta en instrucciones ejecutables para delivery.
+- Los pendientes de preparación se muestran como checklist, sin bloquear la operación ni inventar datos faltantes.
+
+## 2026-07-26 — Propuesta aprobada como fuente de contrato y proyecto
+
+- La aprobación comercial se expresa como la transición del lead a `ganado`, con una acción explícita desde la ficha del diagnóstico.
+- Esa única acción deriva la propuesta aprobada en una cotización aceptada, un contrato con condiciones editadas y un proyecto operativo con fases, features y tareas del roadmap.
+- Los hitos de pago se calculan en código desde precio, adelanto y cantidad de cuotas; cada cobro del contrato conserva el vínculo conceptual con la fase correspondiente mediante su concepto.
+- La materialización reutiliza cotización y proyecto existentes para evitar duplicados ante reintentos.
+
 ## 2026-07-24 — Paginación segura del informe impreso
 
 - El PDF del diagnóstico se sigue generando desde la misma página HTML pública, pero el modo de impresión aplica reglas específicas de paginación.
@@ -686,3 +700,26 @@
 - El backend valida esta regla antes de guardar: deduplica oportunidades, descarta salidas genéricas y reemplaza texto verbatim por una síntesis profesional segura. Esto también protege la visualización de diagnósticos ya generados.
 - El informe público se presenta en una única secuencia vertical, sin temario lateral. El mapa de calor conserva semántica visual por nivel: saludable, fricción relevante, riesgo alto y crítico.
 - La estructura se inspira en la convención consultiva de separar resumen ejecutivo, estado actual, hallazgos, impacto/costo de no cambiar, oportunidades y roadmap de implementación. La referencia conceptual consultada fue la estructura de informes de estado actual/futuro y roadmap de implementación usada en informes de mejora operativa de McKinsey/Deloitte, adaptada al diagnóstico comercial de Blyndtek.
+
+## 2026-07-26 — Modelo cuantitativo y sesión interna de diagnóstico
+
+- El diagnóstico comercial se divide en dos capas: un formulario cualitativo que puede completar el cliente y una sesión interna guiada por Blyndtek para capturar áreas, responsables, volumen, fricción y métricas económicas.
+- La cuantificación se calcula siempre en código con fórmulas explícitas. Claude interpreta los resultados y redacta el informe, pero no inventa números ni reemplaza valores de evidencia.
+- El costo mensual/anual estimado se presenta con nivel de confianza (`alta`, `media`, `baja`) y nunca se muestra como promesa de ahorro ni como precio de la propuesta.
+- La separación permite que la conversación comercial sea meticulosa y útil para diseñar el sistema correcto sin convertir el formulario público en una planilla financiera para el cliente.
+
+## 2026-07-26 — Informe diagnóstico profesional de 12 a 18 páginas
+
+- El informe diagnóstico es un documento consultivo independiente de la propuesta comercial. Su función es explicar el estado actual, las fricciones, los riesgos y el costo de no cambiar; no presenta precios de desarrollo ni vende módulos.
+- La estructura canónica incorpora alcance del relevamiento, contexto, línea de base cuantitativa, dependencias, riesgos, prioridades de 90 días, indicadores, hallazgos, antes/después y mapa de calor. La propuesta se presenta en una pieza posterior.
+- Para impresión, las secciones principales pueden comenzar en una página nueva mediante reglas de impresión, mientras que la vista pública mantiene una navegación vertical continua y la misma fuente visual de verdad.
+
+## 2026-07-26 — Propuesta comercial con pagos por hitos
+
+- La propuesta de software es una pieza separada del diagnóstico: el diagnóstico explica el estado actual y la necesidad de cambio; la propuesta define qué se construye, cuánto cuesta y cómo se implementa.
+- Los pagos de desarrollo se expresan como hitos vinculados a entregables y fases del roadmap, no como una suma aislada sin relación con el avance. El adelanto representa la reserva e inicio del proyecto y el saldo se distribuye entre las cuotas configuradas.
+- El cálculo de cada hito es determinístico y se recalcula desde las condiciones comerciales editables; Claude no decide montos ni porcentajes.
+- El mantenimiento mensual se mantiene fuera del calendario de hitos de desarrollo porque corresponde a continuidad operativa posterior a la puesta en marcha.
+### Soporte de cuenta y expansión
+
+El ciclo posterior al delivery se modela en tres objetos operativos: tickets para incidentes y solicitudes, revisiones trimestrales para sostener la relación con cada cliente activo y oportunidades de upsell para nuevas fases, módulos, automatizaciones o mantenimiento. Las revisiones se preparan de forma idempotente por cliente y trimestre; una oportunidad detectada no se considera venta hasta que atraviesa su propio flujo comercial.

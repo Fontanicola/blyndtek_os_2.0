@@ -6,7 +6,50 @@ Stack: Next.js 14 (App Router) · TypeScript estricto · Tailwind CSS · Supabas
 
 Fecha de inicio: 2026-06-25
 
+## Actualización 2026-07-26 — Capacidad de delivery y handoff
+
+- Se creó `GET /api/proyectos/[id]/handoff`, que reúne la propuesta aceptada, contrato activo, condiciones comerciales, responsables, equipo técnico, fases, features y tareas del proyecto.
+- Se agregó la pestaña `Handoff` en la ficha de proyecto con checklist de preparación, alcance aprobado, módulos, inversión, fases, criterios de aceptación y pendientes de kickoff.
+- El handoff reutiliza las tablas operativas existentes y no crea una fuente paralela: la propuesta aprobada sigue derivando el delivery en `proyectos`, `fases_proyecto`, `features` y `tareas`.
+- La materialización conserva entregables, criterios de aceptación y responsable del cliente dentro del resumen de cada fase para que el equipo pueda recibir el proyecto sin reinterpretar la propuesta.
+- Archivos creados/modificados: `types/entrega.ts`, `app/api/proyectos/[id]/handoff/route.ts`, `components/proyectos/DeliveryHandoff.tsx`, `components/proyectos/ProyectoFicha.tsx`, `components/proyectos/index.ts`, `lib/diagnostico/materializarPropuesta.ts`.
+- Verificación: `npm run lint`, `npx tsc --noEmit`, `npm run build` y `git diff --check` OK.
+
+## Actualización 2026-07-26 — Derivación automática desde propuesta aprobada
+
+- Se agregó una acción explícita `Aprobar y crear proyecto` en la ficha del diagnóstico. Reutiliza la transición comercial a `ganado` para evitar un segundo flujo de aprobación divergente.
+- Al aprobar, la propuesta genera o actualiza una cotización aceptada y materializa automáticamente el proyecto, sus fases, subtareas como features y tareas vinculadas.
+- Las condiciones comerciales editadas se conservan en la cotización y los pagos de desarrollo se calculan como hitos determinísticos vinculados a las fases del roadmap.
+- El contrato derivado usa esos hitos para nombrar sus cobros, manteniendo alineados propuesta, contrato, pagos y roadmap operativo.
+- La materialización es idempotente para no duplicar el proyecto si la acción se reintenta; los registros existentes se reutilizan por `lead_id` y `cotizacion_id`.
+- Archivos modificados: `components/diagnostico/LeadDiagnosticoSection.tsx`, `app/api/leads/[id]/etapa/route.ts`, `lib/diagnostico/materializarPropuesta.ts`, `lib/contratos/crearOActualizarContrato.ts`, `types/contratos.ts`.
+
 Estado general actual: Fase 0 completa. Cimientos técnicos listos: documentación fundacional, setup del repo, design system, shell de app y sistema de autenticación base. Las fases 1, 2 y 3 del roadmap original quedaron completadas.
+
+## Actualización 2026-07-26 — Modelo de diagnóstico cuantitativo y sesión interna
+
+- Se creó la migración idempotente `020_diagnostico_cuantitativo.sql` con `diagnostico_sesiones`, `diagnostico_areas` y `diagnostico_metricas`.
+- Se agregaron tipos estrictos en `types/diagnosticoCuantitativo.ts` y los registros correspondientes en `types/supabase.ts`.
+- Se creó el modelo determinístico de cálculo en `lib/diagnostico/cuantitativo.ts`: horas manuales, doble carga, errores, licencias subutilizadas, ventas perdidas y otros costos producen costo mensual/anual sin delegar matemática a Claude.
+- Se agregó `GET/PATCH /api/diagnostico/[token]/sesion`, restringido al equipo autenticado y al comercial dueño del lead.
+- Se agregó `DiagnosticoSesionInterna.tsx` dentro de la ficha del lead para registrar una sesión de 60–90 minutos, áreas, responsables, herramientas, fricción, dependencias y métricas con nivel de confianza.
+- El generador de informe recibe la cuantificación como evidencia interna y la guarda en `informe_hallazgos.cuantificacion`; el informe público muestra el costo anual como estimación, con confianza explícita, sin confundirlo con el precio de propuesta.
+- Decisión: el formulario público conserva preguntas cualitativas y contexto; la cuantificación se captura en una sesión interna para que el cliente no tenga que estimar costos técnicos durante el formulario.
+- Verificación: `npm run lint` OK y `npm run build` OK.
+
+## Actualización 2026-07-26 — Informe diagnóstico profesional extendido
+
+- El informe diagnóstico ahora está estructurado como un documento consultivo independiente de la propuesta: alcance del relevamiento, contexto empresarial, lectura ejecutiva, línea de base cuantitativa, estado actual, hallazgos, costo de no cambiar, dependencias, riesgos, oportunidades, prioridades de 90 días, indicadores, antes/después, mapa de calor y conclusión.
+- Claude debe generar capas ejecutivas nuevas (`contexto_empresa`, `dependencias_criticas`, `riesgos_operativos`, `prioridades_90_dias`, `indicadores_clave`) sin copiar respuestas ni repetir ideas entre secciones.
+- Se agregaron cortes de página exclusivos para impresión en las secciones principales, manteniendo la misma vista pública como fuente única del PDF.
+
+## Actualización 2026-07-26 — Propuesta separada con módulos, roadmap y pagos por hitos
+
+- La propuesta pública mantiene una separación explícita del informe diagnóstico y concentra únicamente la solución recomendada, módulos, impacto, alcance, roadmap, inversión y condiciones.
+- Se agregó el calendario de pagos por hitos: adelanto de inicio y saldo distribuido en hitos vinculados a las fases del roadmap. El cálculo se actualiza automáticamente con el precio, porcentaje de adelanto y cantidad de cuotas editables.
+- El calendario se muestra en la propuesta pública y también en el PDF de propuesta, incluyendo momento de pago, fase relacionada, porcentaje y monto.
+- El mantenimiento mensual permanece separado del desarrollo y se factura desde la puesta en marcha según las condiciones comerciales.
+- Verificación: `npm run lint`, `npm run build` y `git diff --check` OK.
 
 ## Actualización 2026-07-24
 
@@ -3113,3 +3156,19 @@ $ find . -maxdepth 3 \( -name 'middleware.*' -o -name 'proxy.*' \) -not -path '.
   - `lib/diagnostico/informe.ts`
   - `docs/PROGRESS.md`
 - Verificación: `npx tsc --noEmit` OK, `npm run lint` OK, `npm run build` OK y `git diff --check` OK.
+## Soporte, revisiones y expansión
+
+- Se agregó la migración idempotente `021_soporte_cuenta.sql` con tickets de soporte, revisiones trimestrales y oportunidades de upsell.
+- Se incorporó `/soporte` con métricas operativas, alta y seguimiento de solicitudes, programación de revisiones y pipeline de expansión.
+- Se agregaron endpoints CRUD autenticados para las tres entidades, vinculados a clientes y proyectos.
+- El soporte queda integrado con el estado `soporte` existente de proyectos y con el handoff de delivery ya construido.
+- Se agregó `POST /api/soporte/revisiones/generar`, idempotente por cliente y trimestre, para preparar las revisiones de todos los clientes activos.
+- Se agregó el handoff formal de delivery a soporte (`soporte_handoffs`) y el endpoint para transferir un proyecto al estado `soporte`.
+- Se agregó un resumen operativo de tickets prioritarios, revisiones pendientes y potencial de upsell.
+- Se dejó preparado el job trimestral `022_revisiones_trimestrales_cron.sql`, con agente de cuenta y automatización pausables desde AI Hub.
+
+## 2026-07-26 — Actualización de identidad visual Blyndtek
+
+- Se reemplazó el favicon por `Logo Blyndtek Orca.2.svg` y el logo completo utilizado por la plataforma por `Logo Blyndtek Orca completo.svg`, conservando las rutas públicas existentes para no romper referencias.
+- El ítem padre de AI Hub ahora utiliza el isotipo SVG real en lugar del ícono dibujado en código.
+- Archivos actualizados: `public/Favicon_Blyndtek.svg`, `public/Logo_Blyndtek_plataforma.svg`, `public/Logo_Blyndtek_plataforma_negro.svg`, `components/layout/Sidebar.tsx`.

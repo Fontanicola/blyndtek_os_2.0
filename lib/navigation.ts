@@ -11,6 +11,7 @@ import {
   FileTextIcon,
   FinanzasIcon,
   LayersIcon,
+  LifeBuoyIcon,
   MegaphoneIcon,
   OutboundIcon,
   SaasIcon,
@@ -109,6 +110,13 @@ export const navigationItems: NavItem[] = [
     href: "/proyectos",
     icon: createElement(ProyectosIcon),
     roles: ["admin", "miembro"],
+    section: "entrega"
+  },
+  {
+    label: "Soporte",
+    href: "/soporte",
+    icon: createElement(LifeBuoyIcon),
+    roles: ["admin", "miembro", "comercial"],
     section: "entrega"
   },
   {

@@ -3,7 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Badge, Button, Modal } from "@/components/ui";
 import { DiagnosticoForm } from "@/components/diagnostico/DiagnosticoForm";
-import { CopyIcon, DownloadIcon, LinkIcon, SparklesIcon } from "@/components/ui/icons";
+import { DiagnosticoSesionInterna } from "@/components/diagnostico/DiagnosticoSesionInterna";
+import { CheckCircleIcon, CopyIcon, DownloadIcon, LinkIcon, SparklesIcon } from "@/components/ui/icons";
 import { DIAGNOSTICO_CONTEXTO_KEY, type Diagnostico, type DiagnosticoPublicPayload } from "@/types/diagnostico";
 import type { Lead } from "@/types/leads";
 
@@ -119,6 +120,7 @@ export function LeadDiagnosticoSection({ lead }: LeadDiagnosticoSectionProps) {
   const [creating, setCreating] = useState(false);
   const [generatingInforme, setGeneratingInforme] = useState(false);
   const [savingPropuesta, setSavingPropuesta] = useState(false);
+  const [approvingProposal, setApprovingProposal] = useState(false);
   const [chatLoading, setChatLoading] = useState(false);
   const [empresaEditable, setEmpresaEditable] = useState(lead.empresa ?? "");
   const [precioDesarrolloEditable, setPrecioDesarrolloEditable] = useState("");
@@ -349,6 +351,34 @@ export function LeadDiagnosticoSection({ lead }: LeadDiagnosticoSectionProps) {
     }
   }
 
+  async function handleApproveProposal() {
+    if (!diagnostico || diagnostico.estado !== "informe_generado" || lead.etapa === "ganado") {
+      return;
+    }
+
+    setApprovingProposal(true);
+    setError(null);
+
+    try {
+      const response = await fetch(`/api/leads/${lead.id}/etapa`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ etapa: "ganado", mismo_monto: true })
+      });
+      const result = (await response.json()) as { error?: string };
+
+      if (!response.ok) {
+        throw new Error(result.error ?? "No se pudo aprobar la propuesta.");
+      }
+
+      window.location.reload();
+    } catch (approveError) {
+      setError(approveError instanceof Error ? approveError.message : "No se pudo aprobar la propuesta.");
+    } finally {
+      setApprovingProposal(false);
+    }
+  }
+
   function handleCompleted(nextDiagnostico: DiagnosticoPublicPayload["diagnostico"]) {
     setDiagnostico((current) => (current ? { ...current, ...nextDiagnostico } : current));
     setPayload((current) => (current ? { ...current, diagnostico: nextDiagnostico } : current));
@@ -378,6 +408,16 @@ export function LeadDiagnosticoSection({ lead }: LeadDiagnosticoSectionProps) {
       {error ? (
         <div className="rounded-component border border-danger/20 bg-danger-light px-3 py-2 text-sm text-danger">
           {error}
+        </div>
+      ) : null}
+
+      {diagnostico ? (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-component border border-signal/20 bg-signal-light px-4 py-3">
+          <div>
+            <p className="font-label text-carbon">Sesión interna de diagnóstico</p>
+            <p className="mt-1 text-sm text-graphite">Cuantificá tiempos, errores, dependencias y volumen antes de generar el informe.</p>
+          </div>
+          <DiagnosticoSesionInterna token={diagnostico.token_publico} />
         </div>
       ) : null}
 
@@ -479,6 +519,27 @@ export function LeadDiagnosticoSection({ lead }: LeadDiagnosticoSectionProps) {
               {diagnostico.estado === "informe_generado" ? "Regenerar documentos" : "Generar documentos"}
             </Button>
           </div>
+
+          {diagnostico.estado === "informe_generado" && lead.etapa !== "ganado" ? (
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-component border border-success/25 bg-success-light px-4 py-3">
+              <div>
+                <p className="font-label text-carbon">¿La propuesta fue aprobada?</p>
+                <p className="mt-1 text-sm text-graphite">
+                  Esta acción crea el cliente, el contrato y el proyecto con sus fases, features y tareas del roadmap.
+                </p>
+              </div>
+              <Button
+                size="sm"
+                variant="primary"
+                className="bg-success hover:bg-success/90 focus-visible:ring-success/20"
+                onClick={handleApproveProposal}
+                loading={approvingProposal}
+              >
+                <CheckCircleIcon size={15} aria-hidden="true" />
+                Aprobar y crear proyecto
+              </Button>
+            </div>
+          ) : null}
 
           {diagnostico.estado === "informe_generado" ? (
             <div className="space-y-4 rounded-card border border-line-soft bg-paper/50 p-4">

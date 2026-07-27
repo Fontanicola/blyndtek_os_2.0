@@ -426,6 +426,19 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
         const fechaPrimeraCuota = condiciones.fecha_primera_cuota || hoyLocalString();
         const fechaAdelanto = condiciones.fecha_adelanto || hoyLocalString();
 
+        const materialized = await materializarPropuestaDiagnostico(supabase, {
+          lead,
+          clienteId: cliente.id,
+          responsableId: cliente.vendedor_id ?? currentUser.id,
+          precioDesarrollo: desarrolloContrato,
+          precioMensual: mantenimientoMensual,
+          condicionesOverride: {
+            ...condiciones,
+            precio_desarrollo_usd: desarrolloContrato,
+            mantenimiento_mensual_usd: mantenimientoMensual
+          }
+        });
+
         await crearOActualizarContrato(supabase, cliente.id, {
           valor_total: desarrolloContrato,
           lead_id: lead.id,
@@ -438,20 +451,8 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
           dia_facturacion_mantenimiento:
             mantenimientoMensual > 0
               ? condiciones.dia_facturacion_mantenimiento ?? condiciones.dia_pago
-              : null
-        });
-
-        const materialized = await materializarPropuestaDiagnostico(supabase, {
-          lead,
-          clienteId: cliente.id,
-          responsableId: cliente.vendedor_id ?? currentUser.id,
-          precioDesarrollo: desarrolloContrato,
-          precioMensual: mantenimientoMensual,
-          condicionesOverride: {
-            ...condiciones,
-            precio_desarrollo_usd: desarrolloContrato,
-            mantenimiento_mensual_usd: mantenimientoMensual
-          }
+              : null,
+          hitos_pago: materialized?.hitosPago
         });
 
         if (cliente.vendedor_id) {

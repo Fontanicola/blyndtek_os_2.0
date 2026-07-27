@@ -27,6 +27,14 @@ export type Diagnostico = {
   created_at: string;
 };
 
+export type DiagnosticoCuantificacionGuardada = {
+  total_mensual_usd: number;
+  total_anual_usd: number;
+  por_tipo: Record<string, number>;
+  metricas_con_datos: number;
+  confianza: "alta" | "media" | "baja";
+};
+
 export type ModuloCatalogo = {
   id: string;
   nombre: string;

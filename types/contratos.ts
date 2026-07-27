@@ -1,4 +1,5 @@
 import type { Suscripcion } from "@/types/suscripciones";
+import type { HitoPagoPropuesta } from "@/lib/diagnostico/informe";
 
 export type EstadoContrato = "activo" | "reemplazado";
 
@@ -44,6 +45,7 @@ export type CreateContratoInput = {
   fecha_primera_cuota: string;
   valor_mantenimiento_mensual?: number | null;
   dia_facturacion_mantenimiento?: number | null;
+  hitos_pago?: HitoPagoPropuesta[];
   motivo_redefinicion?: string | null;
 };
 

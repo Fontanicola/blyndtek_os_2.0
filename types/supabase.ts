@@ -816,6 +816,162 @@ export type Database = {
           }
         ];
       };
+      diagnostico_sesiones: {
+        Row: {
+          id: string;
+          diagnostico_id: string;
+          fecha: string;
+          duracion_minutos: number | null;
+          decisor_nombre: string | null;
+          decisor_cargo: string | null;
+          notas: string | null;
+          estado: "en_curso" | "completa";
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          diagnostico_id: string;
+          fecha?: string;
+          duracion_minutos?: number | null;
+          decisor_nombre?: string | null;
+          decisor_cargo?: string | null;
+          notas?: string | null;
+          estado?: "en_curso" | "completa";
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          diagnostico_id?: string;
+          fecha?: string;
+          duracion_minutos?: number | null;
+          decisor_nombre?: string | null;
+          decisor_cargo?: string | null;
+          notas?: string | null;
+          estado?: "en_curso" | "completa";
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      diagnostico_areas: {
+        Row: {
+          id: string;
+          diagnostico_id: string;
+          nombre: string;
+          responsable: string | null;
+          volumen_mensual: number;
+          unidad_volumen: string | null;
+          herramientas: string[];
+          proceso_actual: string | null;
+          dependencia_critica: boolean;
+          nivel_friccion: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          diagnostico_id: string;
+          nombre: string;
+          responsable?: string | null;
+          volumen_mensual?: number;
+          unidad_volumen?: string | null;
+          herramientas?: string[];
+          proceso_actual?: string | null;
+          dependencia_critica?: boolean;
+          nivel_friccion?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          diagnostico_id?: string;
+          nombre?: string;
+          responsable?: string | null;
+          volumen_mensual?: number;
+          unidad_volumen?: string | null;
+          herramientas?: string[];
+          proceso_actual?: string | null;
+          dependencia_critica?: boolean;
+          nivel_friccion?: number;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      diagnostico_metricas: {
+        Row: {
+          id: string;
+          diagnostico_id: string;
+          area_id: string | null;
+          tipo: "trabajo_manual" | "doble_carga" | "error_operativo" | "licencia" | "venta_perdida" | "otro";
+          concepto: string;
+          horas_mes: number;
+          costo_hora_usd: number;
+          cargas_mes: number;
+          minutos_por_carga: number;
+          errores_mes: number;
+          costo_por_error_usd: number;
+          licencias_mes_usd: number;
+          uso_pct: number;
+          oportunidades_mes: number;
+          ticket_promedio_usd: number;
+          tasa_cierre_pct: number;
+          costo_mensual_usd: number;
+          costo_anual_usd: number;
+          confianza: "alta" | "media" | "baja";
+          notas: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          diagnostico_id: string;
+          area_id?: string | null;
+          tipo: "trabajo_manual" | "doble_carga" | "error_operativo" | "licencia" | "venta_perdida" | "otro";
+          concepto: string;
+          horas_mes?: number;
+          costo_hora_usd?: number;
+          cargas_mes?: number;
+          minutos_por_carga?: number;
+          errores_mes?: number;
+          costo_por_error_usd?: number;
+          licencias_mes_usd?: number;
+          uso_pct?: number;
+          oportunidades_mes?: number;
+          ticket_promedio_usd?: number;
+          tasa_cierre_pct?: number;
+          costo_mensual_usd?: number;
+          costo_anual_usd?: number;
+          confianza?: "alta" | "media" | "baja";
+          notas?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          diagnostico_id?: string;
+          area_id?: string | null;
+          tipo?: "trabajo_manual" | "doble_carga" | "error_operativo" | "licencia" | "venta_perdida" | "otro";
+          concepto?: string;
+          horas_mes?: number;
+          costo_hora_usd?: number;
+          cargas_mes?: number;
+          minutos_por_carga?: number;
+          errores_mes?: number;
+          costo_por_error_usd?: number;
+          licencias_mes_usd?: number;
+          uso_pct?: number;
+          oportunidades_mes?: number;
+          ticket_promedio_usd?: number;
+          tasa_cierre_pct?: number;
+          costo_mensual_usd?: number;
+          costo_anual_usd?: number;
+          confianza?: "alta" | "media" | "baja";
+          notas?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       modulos_catalogo: {
         Row: {
           id: string;

@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { DownloadIcon } from "@/components/ui/icons";
-import { fetchDiagnosticoInforme, formatInformeCurrency } from "@/lib/diagnostico/informe";
+import { construirHitosPago, fetchDiagnosticoInforme, formatInformeCurrency } from "@/lib/diagnostico/informe";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -55,6 +55,7 @@ export default async function DiagnosticoPropuestaPage({ params }: PropuestaPage
     (condicionesComerciales.precio_desarrollo_usd * condicionesComerciales.adelanto_pct) / 100;
   const saldoFinanciado = Math.max(0, condicionesComerciales.precio_desarrollo_usd - adelantoMonto);
   const valorCuota = saldoFinanciado / Math.max(condicionesComerciales.cantidad_cuotas, 1);
+  const hitosPago = construirHitosPago(condicionesComerciales, propuestaSoftware.roadmap_implementacion);
   const whatsappText = encodeURIComponent(
     `Hola Blyndtek, revisé la propuesta de software para ${empresa}. Quiero avanzar con el próximo paso.`
   );
@@ -128,6 +129,32 @@ export default async function DiagnosticoPropuestaPage({ params }: PropuestaPage
           <SectionLabel>Visión del sistema</SectionLabel>
           <h2 className="mt-2 text-3xl font-title text-carbon">{propuestaSoftware.vision_sistema}</h2>
           <p className="mt-4 max-w-4xl text-base leading-7 text-graphite">{propuestaSoftware.alcance_general}</p>
+        </section>
+
+        <section className="rounded-card border border-line-soft bg-white p-6 sm:p-8">
+          <SectionLabel>Esquema de inversión</SectionLabel>
+          <h2 className="mt-2 text-2xl font-title text-carbon">Pagos vinculados a entregables verificables</h2>
+          <p className="mt-3 max-w-4xl text-sm leading-6 text-graphite">
+            El desarrollo se divide en hitos para que cada pago esté asociado a una instancia concreta de avance y validación. Los montos se recalculan si se modifica el precio, el adelanto o la cantidad de cuotas.
+          </p>
+          <div className="mt-6 overflow-hidden rounded-card border border-line-soft">
+            <div className="grid grid-cols-[0.7fr_1.8fr_1fr_1fr] gap-3 bg-paper px-4 py-3 text-xs font-label text-graphite">
+              <span>Hito</span><span>Momento</span><span>Referencia</span><span className="text-right">Monto</span>
+            </div>
+            <div className="divide-y divide-line-soft">
+              {hitosPago.map((hito) => (
+                <div key={`${hito.numero}-${hito.nombre}`} className="grid grid-cols-[0.7fr_1.8fr_1fr_1fr] gap-3 px-4 py-4 text-sm">
+                  <span className="font-title text-carbon">{hito.numero} · {hito.porcentaje}%</span>
+                  <span className="text-graphite">{hito.momento}</span>
+                  <span className="text-graphite">{hito.fase_referencia ?? "Entrega general"}</span>
+                  <span className="text-right font-title text-carbon">{formatInformeCurrency(hito.monto_usd)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          <p className="mt-4 text-xs leading-5 text-graphite">
+            El mantenimiento mensual se factura por separado desde la puesta en marcha, según el día acordado. La activación y el alcance final quedan sujetos a la aprobación del cliente y al cierre funcional.
+          </p>
         </section>
 
         <section className="rounded-card border border-line-soft bg-white p-6 sm:p-8">

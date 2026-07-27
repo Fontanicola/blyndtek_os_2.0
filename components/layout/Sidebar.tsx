@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { UserAvatar } from "@/components/ui";
-import { BlyndtekIsotipoIcon, ChevronDownIcon, LogoutIcon } from "@/components/ui/icons";
+import { ChevronDownIcon, LogoutIcon } from "@/components/ui/icons";
 import { cn } from "@/lib/cn";
 import { createClient } from "@/lib/supabase/client";
 import { navigationItems, navigationSections } from "@/lib/navigation";
@@ -209,9 +209,12 @@ function NavigationGroup({
           )}
         >
           {showAiHubLogo ? (
-            <BlyndtekIsotipoIcon
-              size={24}
-              className="h-6 w-6 shrink-0 text-[#7C3AED]"
+            <Image
+              src="/Favicon_Blyndtek.svg"
+              alt=""
+              width={24}
+              height={24}
+              className="h-6 w-6 shrink-0 object-contain"
             />
           ) : (
             icon

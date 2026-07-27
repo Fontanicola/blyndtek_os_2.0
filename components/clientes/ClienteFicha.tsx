@@ -25,13 +25,14 @@ import type { Proyecto } from "@/types/proyectos";
 import type { Contrato, ContratoDetalle, CreateContratoInput } from "@/types/contratos";
 import type { Suscripcion } from "@/types/suscripciones";
 import { ClienteRentabilidadChart } from "./ClienteRentabilidadChart";
+import { ClienteSoporteSection } from "./ClienteSoporteSection";
 
 type ClienteFichaProps = {
   cliente: Cliente;
   onUpdate: (input: UpdateClienteInput) => void | Promise<void>;
 };
 
-type TabKey = "datos" | "proyectos" | "contrato" | "financiero" | "cobros" | "suscripcion" | "historial";
+type TabKey = "datos" | "proyectos" | "contrato" | "financiero" | "cobros" | "suscripcion" | "soporte" | "historial";
 
 const tabs: Array<{ key: TabKey; label: string }> = [
   { key: "datos", label: "Datos generales" },
@@ -40,6 +41,7 @@ const tabs: Array<{ key: TabKey; label: string }> = [
   { key: "financiero", label: "Financiero" },
   { key: "cobros", label: "Cobros" },
   { key: "suscripcion", label: "Suscripción" },
+  { key: "soporte", label: "Soporte" },
   { key: "historial", label: "Historial" }
 ];
 
@@ -1796,6 +1798,8 @@ export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
           )}
         </Card>
       ) : null}
+
+      {activeTab === "soporte" ? <ClienteSoporteSection clienteId={cliente.id} /> : null}
 
       {activeTab === "historial" ? (
         <Card padding="lg" className="space-y-4">

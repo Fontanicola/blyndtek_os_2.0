@@ -1,5 +1,6 @@
 export { ProyectoCard } from "./ProyectoCard";
 export { ProyectoFicha } from "./ProyectoFicha";
+export { DeliveryHandoff } from "./DeliveryHandoff";
 export { FeaturesKanban } from "./FeaturesKanban";
 export { FeatureCard } from "./FeatureCard";
 export { CuentaServicioCard } from "./CuentaServicioCard";

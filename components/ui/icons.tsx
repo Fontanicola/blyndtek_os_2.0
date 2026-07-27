@@ -35,6 +35,7 @@ import {
   Globe,
   Image,
   Inbox,
+  LifeBuoy,
   Layers,
   Landmark,
   LayoutDashboard,
@@ -148,6 +149,7 @@ export const GridIcon = createIcon(Grid2x2);
 export const GlobeIcon = createIcon(Globe);
 export const ImageIcon = createIcon(Image);
 export const InboxIcon = createIcon(Inbox);
+export const LifeBuoyIcon = createIcon(LifeBuoy);
 export const LayersIcon = createIcon(Layers);
 export const LandmarkIcon = createIcon(Landmark);
 export const DashboardIcon = createIcon(LayoutDashboard);

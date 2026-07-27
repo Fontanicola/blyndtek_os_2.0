@@ -23,10 +23,22 @@ export type ModuloInforme = {
 export type DiagnosticoEmpresa = {
   resumen_ejecutivo: string;
   operativa_actual: string;
+  contexto_empresa: string;
+  dependencias_criticas: string[];
+  riesgos_operativos: string[];
+  prioridades_90_dias: string[];
+  indicadores_clave: Array<{
+    nombre: string;
+    lectura_actual: string;
+    por_que_importa: string;
+  }>;
   problemas_principales: string[];
   costo_de_no_cambiar: string;
   oportunidades_mejora: string[];
   conclusion_diagnostico: string;
+  costo_mensual_estimado_usd?: number;
+  costo_anual_estimado_usd?: number;
+  confianza_cuantificacion?: "alta" | "media" | "baja";
 };
 
 export type PropuestaSoftware = {
@@ -66,6 +78,61 @@ export type CondicionesComercialesPropuesta = {
   mantenimiento_mensual_usd: number;
   dia_facturacion_mantenimiento: number | null;
 };
+
+export type HitoPagoPropuesta = {
+  numero: number;
+  nombre: string;
+  fase_referencia: string | null;
+  porcentaje: number;
+  monto_usd: number;
+  momento: string;
+};
+
+export function construirHitosPago(
+  condiciones: CondicionesComercialesPropuesta,
+  roadmap: PropuestaSoftware["roadmap_implementacion"]
+): HitoPagoPropuesta[] {
+  const precio = Math.max(0, condiciones.precio_desarrollo_usd);
+  const adelantoPct = Math.min(100, Math.max(0, condiciones.adelanto_pct));
+  const cantidadCuotas = Math.max(1, Math.round(condiciones.cantidad_cuotas));
+  const saldoPct = Math.max(0, 100 - adelantoPct);
+  const hitos: HitoPagoPropuesta[] = [];
+
+  if (adelantoPct > 0) {
+    hitos.push({
+      numero: 1,
+      nombre: "Inicio del proyecto",
+      fase_referencia: roadmap[0]?.etapa ?? null,
+      porcentaje: adelantoPct,
+      monto_usd: Number((precio * adelantoPct / 100).toFixed(2)),
+      momento: "Al aprobar la propuesta y reservar el inicio"
+    });
+  }
+
+  const cuotaPct = saldoPct / cantidadCuotas;
+  const cuotaMonto = precio * cuotaPct / 100;
+  for (let index = 0; index < cantidadCuotas; index += 1) {
+    const fase = roadmap[index] ?? roadmap[roadmap.length - 1];
+    hitos.push({
+      numero: hitos.length + 1,
+      nombre: fase ? `Hito ${index + 1} · ${fase.etapa}` : `Hito ${index + 1} · Entrega validada`,
+      fase_referencia: fase?.etapa ?? null,
+      porcentaje: Number(cuotaPct.toFixed(2)),
+      monto_usd: Number(cuotaMonto.toFixed(2)),
+      momento: fase ? `Al validar los entregables de ${fase.etapa}` : "Contra entrega y validación del avance"
+    });
+  }
+
+  const diferencia = Number((precio - hitos.reduce((total, hito) => total + hito.monto_usd, 0)).toFixed(2));
+  if (hitos.length > 0 && diferencia !== 0) {
+    const ultimoHito = hitos[hitos.length - 1];
+    if (ultimoHito) {
+      ultimoHito.monto_usd = Number((ultimoHito.monto_usd + diferencia).toFixed(2));
+    }
+  }
+
+  return hitos;
+}
 
 export type AntesDespuesMetrica = {
   area: string;
@@ -108,6 +175,12 @@ export type DiagnosticoInformeView = {
   condicionesComerciales: CondicionesComercialesPropuesta;
   antesDespues: AntesDespuesMetrica[];
   mapaAreas: AreaHeatmap[];
+  cuantificacion: {
+    total_mensual_usd: number;
+    total_anual_usd: number;
+    metricas_con_datos: number;
+    confianza: "alta" | "media" | "baja";
+  } | null;
   precio_ideal_desarrollo: number;
   precio_ideal_mensual: number;
 };
@@ -238,6 +311,11 @@ export function parseDiagnosticoEmpresa(value: unknown, hallazgos: HallazgoInfor
     return {
       resumen_ejecutivo: fallbackResumen,
       operativa_actual: "La operación actual fue relevada a partir de las respuestas del diagnóstico.",
+      contexto_empresa: "La empresa presenta una operación con múltiples puntos de coordinación que requieren visibilidad transversal.",
+      dependencias_criticas: [],
+      riesgos_operativos: [],
+      prioridades_90_dias: [],
+      indicadores_clave: [],
       problemas_principales: hallazgos.map((hallazgo) => hallazgo.hallazgo),
       costo_de_no_cambiar: "Mantener la operación sin sistema sostiene dependencia manual, pérdida de visibilidad y riesgo de errores.",
       oportunidades_mejora: hallazgos.map((hallazgo) => hallazgo.que_resolveria),
@@ -252,6 +330,22 @@ export function parseDiagnosticoEmpresa(value: unknown, hallazgos: HallazgoInfor
       typeof value.operativa_actual === "string"
         ? value.operativa_actual
         : "La operación actual fue relevada a partir de las respuestas del diagnóstico.",
+    contexto_empresa:
+      typeof value.contexto_empresa === "string" ? value.contexto_empresa : "La empresa presenta una operación con múltiples puntos de coordinación que requieren visibilidad transversal.",
+    dependencias_criticas: parseConsultingStringArray(value.dependencias_criticas, respuestas),
+    riesgos_operativos: parseConsultingStringArray(value.riesgos_operativos, respuestas),
+    prioridades_90_dias: parseConsultingStringArray(value.prioridades_90_dias, respuestas),
+    indicadores_clave: Array.isArray(value.indicadores_clave)
+      ? value.indicadores_clave.flatMap((item) => {
+          if (!isRecord(item)) return [];
+          const nombre = typeof item.nombre === "string" ? item.nombre.trim() : "";
+          const lecturaActual = typeof item.lectura_actual === "string" ? item.lectura_actual.trim() : "";
+          const porQueImporta = typeof item.por_que_importa === "string" ? item.por_que_importa.trim() : "";
+          return nombre && lecturaActual && porQueImporta && !isVerbatimResponse(lecturaActual, respuestas)
+            ? [{ nombre, lectura_actual: lecturaActual, por_que_importa: porQueImporta }]
+            : [];
+        }).slice(0, 8)
+      : [],
     problemas_principales:
       parseConsultingStringArray(value.problemas_principales, respuestas).length > 0
         ? parseConsultingStringArray(value.problemas_principales, respuestas)
@@ -558,6 +652,19 @@ export async function fetchDiagnosticoInforme(token: string): Promise<Diagnostic
     isRecord(data.modulos_sugeridos) ? data.modulos_sugeridos.modulos : data.modulos_sugeridos
   );
   const informeHallazgos = isRecord(data.informe_hallazgos) ? data.informe_hallazgos : null;
+  const cuantificacionRecord = informeHallazgos && isRecord(informeHallazgos.cuantificacion)
+    ? informeHallazgos.cuantificacion
+    : null;
+  const cuantificacion = cuantificacionRecord
+    ? {
+        total_mensual_usd: Number(cuantificacionRecord.total_mensual_usd ?? 0),
+        total_anual_usd: Number(cuantificacionRecord.total_anual_usd ?? 0),
+        metricas_con_datos: Number(cuantificacionRecord.metricas_con_datos ?? 0),
+        confianza: ["alta", "media", "baja"].includes(String(cuantificacionRecord.confianza))
+          ? (String(cuantificacionRecord.confianza) as "alta" | "media" | "baja")
+          : "media"
+      }
+    : null;
 
   return {
     record: data,
@@ -581,6 +688,7 @@ export async function fetchDiagnosticoInforme(token: string): Promise<Diagnostic
     ),
     antesDespues: parseAntesDespues(informeHallazgos ? informeHallazgos.antes_despues : null, hallazgos, data.respuestas),
     mapaAreas: parseMapaAreas(informeHallazgos ? informeHallazgos.mapa_areas : null, hallazgos, data.respuestas),
+    cuantificacion,
     precio_ideal_desarrollo: Number(data.precio_ideal_desarrollo ?? 0),
     precio_ideal_mensual: Number(data.precio_ideal_mensual ?? 0)
   };

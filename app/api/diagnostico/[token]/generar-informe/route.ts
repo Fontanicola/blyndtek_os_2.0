@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
+import { resumirMetricas } from "@/lib/diagnostico/cuantitativo";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { DIAGNOSTICO_CONTEXTO_KEY, type Diagnostico, type ModuloCatalogo, type PreguntaDiagnostico } from "@/types/diagnostico";
 
@@ -61,6 +62,15 @@ type ClaudeInformePayload = {
   diagnostico_empresa?: {
     resumen_ejecutivo?: string;
     operativa_actual?: string;
+    contexto_empresa?: string;
+    dependencias_criticas?: string[];
+    riesgos_operativos?: string[];
+    prioridades_90_dias?: string[];
+    indicadores_clave?: Array<{
+      nombre?: string;
+      lectura_actual?: string;
+      por_que_importa?: string;
+    }>;
     problemas_principales?: string[];
     costo_de_no_cambiar?: string;
     oportunidades_mejora?: string[];
@@ -348,12 +358,14 @@ function buildPrompt({
   empresa,
   respuestas,
   contextoAdicional,
-  modulos
+  modulos,
+  cuantificacion
 }: {
   empresa: string | null;
   respuestas: Array<{ categoria: string; pregunta: string; respuesta: string }>;
   contextoAdicional: string;
   modulos: ModuloCatalogo[];
+  cuantificacion: string;
 }) {
   const respuestasTexto = respuestas
     .map((item) => `- [${item.categoria}] ${item.pregunta}\n  Respuesta: ${item.respuesta}`)
@@ -371,25 +383,42 @@ function buildPrompt({
 
   return [
     "Analizá estas respuestas de un diagnóstico operativo y generá DOS piezas conectadas, pero separadas conceptualmente:",
-    "A. Informe de diagnóstico de empresa: describí la operación actual en lenguaje ejecutivo, interpretá problemas y causas, explicá el impacto, el costo de no cambiar, oportunidades priorizadas y una conclusión. El diagnóstico no debe vender módulos ni mencionar precios.",
+    "A. Informe de diagnóstico de empresa: describí la operación actual en lenguaje ejecutivo, interpretá problemas y causas, explicá el impacto, el costo de no cambiar, oportunidades priorizadas, dependencias, riesgos, prioridades de los próximos 90 días e indicadores a seguir. El diagnóstico no debe vender módulos, mencionar precios de desarrollo ni adelantar una propuesta comercial.",
     "B. Propuesta de software: visión del sistema recomendado, modelo operativo, alcance, entregables, módulos, impacto de cada módulo, funcionalidades, prioridad, tiempos estimados, roadmap completo, criterios de aceptación, participación requerida del cliente y condiciones operativas.",
     "Los textos tienen que ser suficientemente detallados para que el cliente se reconozca en el diagnóstico sin leer una copia de sus respuestas y entienda por qué necesita digitalizarse.",
     "No uses frases genéricas tipo 'mejorar eficiencia' sin explicar qué cambiaría concretamente en su operación.",
     "Hallazgos: entre 4 y 7, cada uno con { hallazgo, evidencia, impacto, severidad, que_resolveria }. evidencia debe ser una señal analítica sintetizada, no una cita.",
     "Antes/después: entre 4 y 6 filas con { area, antes, despues, metrica }. Antes debe resumir la capacidad o limitación operativa actual sin copiar respuestas; después debe describir un estado futuro observable. La métrica debe expresar tiempo perdido, riesgo, reproceso, dependencia manual, velocidad de respuesta o trazabilidad. Si no hay números reales, usá 'a validar en relevamiento', nunca inventes una cifra.",
     "Mapa de áreas: entre 5 y 8 áreas del negocio con { area, nivel, diagnostico, oportunidad }. nivel es 1 a 5, donde 1 = saludable y 5 = crítico. Usalo como heatmap de madurez/fricción operativa.",
+    "Capas ejecutivas del diagnóstico: completá contexto_empresa con una lectura del negocio y su complejidad; dependencias_criticas con 3 a 6 dependencias de personas, herramientas o controles; riesgos_operativos con 3 a 6 riesgos concretos; prioridades_90_dias con 4 a 6 acciones de orden y medición previas a construir; indicadores_clave con 4 a 8 indicadores que dirección debería poder mirar, cada uno con nombre, lectura_actual y por_que_importa.",
+    "No repitas una misma idea entre riesgos, oportunidades y prioridades. Cada bloque debe cumplir una función distinta: riesgos explican exposición, oportunidades explican capacidad de mejora y prioridades ordenan el primer tramo de trabajo.",
     "Módulos: elegí ÚNICAMENTE del catálogo real. Para cada módulo devolvé modulo_id, justificacion, problema_resuelve, impacto_esperado, funcionalidades (4 a 7 bullets), tiempo_estimado_semanas y prioridad.",
     "Roadmap: generá entre 3 y 6 fases concretas. Cada fase debe tener descripcion, duracion_estimada, subtareas (4 a 8 subtareas accionables), entregables, criterio_aceptacion y responsable_cliente. Estas fases y subtareas se van a convertir luego en /proyectos como fases y features reales, así que no escribas frases vagas.",
     "La propuesta debe responder explícitamente: qué se construye, qué recibe el cliente al terminar, cómo se valida cada etapa, qué debe aportar el cliente, qué queda fuera del alcance, cómo se mide el éxito y cómo funciona el soporte/mantenimiento.",
     "No prometas resultados financieros exactos ni porcentajes de ahorro si no surgen de datos reales. Usá resultados operativos observables y métricas a validar cuando falten números.",
+    "Si hay una cuantificación interna, usala como evidencia y explicá la fórmula en lenguaje de negocio. No modifiques sus números ni inventes otros. Si la confianza es baja, presentala como estimación a validar.",
     "Priorizá módulos que resuelvan dolores repetidos, pérdidas de seguimiento, desorden operativo, errores manuales, falta de trazabilidad, cobranzas o stock.",
     "NO inventes módulos que no estén en la lista dada.",
-    'Respondé SOLO con JSON: { "diagnostico_empresa": { "resumen_ejecutivo": "...", "operativa_actual": "...", "problemas_principales": ["..."], "costo_de_no_cambiar": "...", "oportunidades_mejora": ["..."], "conclusion_diagnostico": "..." }, "antes_despues": [{ "area": "...", "antes": "...", "despues": "...", "metrica": "..." }], "mapa_areas": [{ "area": "...", "nivel": 4, "diagnostico": "...", "oportunidad": "..." }], "hallazgos": [...], "modulos_elegidos": [{ "modulo_id": "...", "justificacion": "...", "problema_resuelve": "...", "impacto_esperado": "...", "funcionalidades": ["..."], "tiempo_estimado_semanas": 2, "prioridad": "Alta" }], "propuesta_software": { "vision_sistema": "...", "alcance_general": "...", "modelo_operativo": "...", "beneficios_esperados": ["..."], "entregables": ["..."], "fuera_de_alcance": ["..."], "criterios_exito": ["..."], "roadmap_implementacion": [{ "etapa": "...", "descripcion": "...", "duracion_estimada": "...", "subtareas": ["..."], "entregables": ["..."], "criterio_aceptacion": "...", "responsable_cliente": "..." }], "supuestos": ["..."], "proximos_pasos": ["..."], "condiciones_operativas": { "propiedad_sistema": "...", "soporte_mantenimiento": "...", "cambios_alcance": "...", "datos_y_migracion": "..." } } }',
+    'Respondé SOLO con JSON: { "diagnostico_empresa": { "resumen_ejecutivo": "...", "operativa_actual": "...", "contexto_empresa": "...", "dependencias_criticas": ["..."], "riesgos_operativos": ["..."], "prioridades_90_dias": ["..."], "indicadores_clave": [{ "nombre": "...", "lectura_actual": "...", "por_que_importa": "..." }], "problemas_principales": ["..."], "costo_de_no_cambiar": "...", "oportunidades_mejora": ["..."], "conclusion_diagnostico": "..." }, "antes_despues": [{ "area": "...", "antes": "...", "despues": "...", "metrica": "..." }], "mapa_areas": [{ "area": "...", "nivel": 4, "diagnostico": "...", "oportunidad": "..." }], "hallazgos": [...], "modulos_elegidos": [{ "modulo_id": "...", "justificacion": "...", "problema_resuelve": "...", "impacto_esperado": "...", "funcionalidades": ["..."], "tiempo_estimado_semanas": 2, "prioridad": "Alta" }], "propuesta_software": { "vision_sistema": "...", "alcance_general": "...", "modelo_operativo": "...", "beneficios_esperados": ["..."], "entregables": ["..."], "fuera_de_alcance": ["..."], "criterios_exito": ["..."], "roadmap_implementacion": [{ "etapa": "...", "descripcion": "...", "duracion_estimada": "...", "subtareas": ["..."], "entregables": ["..."], "criterio_aceptacion": "...", "responsable_cliente": "..." }], "supuestos": ["..."], "proximos_pasos": ["..."], "condiciones_operativas": { "propiedad_sistema": "...", "soporte_mantenimiento": "...", "cambios_alcance": "...", "datos_y_migracion": "..." } } }',
     `Empresa: ${empresa ?? "Sin empresa cargada"}`,
     `Contexto adicional escrito por Blyndtek para orientar a la IA:\n${contextoAdicional || "- Sin contexto adicional"}`,
     `Respuestas internas para interpretar (no copiar ni mostrar textualmente):\n${respuestasTexto || "- Sin respuestas con contenido"}`,
+    `Relevamiento cuantitativo interno (usar como evidencia, no mostrar como transcripción):\n${cuantificacion || "- Todavía no hay métricas cuantitativas cargadas"}`,
     `Catálogo real de módulos:\n${modulosTexto}`
   ].join("\n\n");
+}
+
+async function fetchCuantificacion(supabase: ReturnType<typeof createAdminClient>, diagnosticoId: string) {
+  // Estas tablas se agregan en 020 y todavía no forman parte del tipo generado histórico.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const db = supabase as unknown as { from: (table: string) => any };
+  const [{ data: areas }, { data: metricas }] = await Promise.all([
+    db.from("diagnostico_areas").select("nombre, responsable, volumen_mensual, unidad_volumen, herramientas, proceso_actual, dependencia_critica, nivel_friccion").eq("diagnostico_id", diagnosticoId),
+    db.from("diagnostico_metricas").select("concepto, tipo, horas_mes, costo_hora_usd, cargas_mes, minutos_por_carga, errores_mes, costo_por_error_usd, licencias_mes_usd, uso_pct, oportunidades_mes, ticket_promedio_usd, tasa_cierre_pct, costo_mensual_usd, costo_anual_usd, confianza, notas").eq("diagnostico_id", diagnosticoId)
+  ]);
+  const metricasSeguras = (metricas ?? []) as Array<Record<string, unknown>>;
+  const resumen = resumirMetricas(metricasSeguras);
+  return { areas: areas ?? [], metricas: metricasSeguras, resumen };
 }
 
 function mapRespuestas(
@@ -807,6 +836,8 @@ export async function POST(_request: NextRequest, { params }: RouteContext) {
       );
     }
 
+    const cuantificacion = await fetchCuantificacion(supabase, diagnostico.id);
+
     const apiKey = process.env.ANTHROPIC_API_KEY;
 
     if (!apiKey) {
@@ -835,7 +866,8 @@ export async function POST(_request: NextRequest, { params }: RouteContext) {
                   empresa: diagnostico.lead?.empresa ?? null,
                   respuestas,
                   contextoAdicional,
-                  modulos
+                  modulos,
+                  cuantificacion: JSON.stringify(cuantificacion, null, 2)
                 })
               } satisfies AnthropicTextBlock
             ]
@@ -932,10 +964,26 @@ export async function POST(_request: NextRequest, { params }: RouteContext) {
           parsed.diagnostico_empresa?.conclusion_diagnostico && !containsVerbatimResponse(parsed.diagnostico_empresa.conclusion_diagnostico, respuestas)
             ? parsed.diagnostico_empresa.conclusion_diagnostico
             : "La prioridad no es digitalizar por digitalizar: es instalar trazabilidad en los procesos que hoy concentran riesgo, tiempo manual y dependencia de memoria."
+        ,
+        contexto_empresa: parsed.diagnostico_empresa?.contexto_empresa && !containsVerbatimResponse(parsed.diagnostico_empresa.contexto_empresa, respuestas)
+          ? parsed.diagnostico_empresa.contexto_empresa
+          : "La empresa presenta una operación con múltiples puntos de coordinación que requieren visibilidad transversal y criterios comunes de seguimiento.",
+        dependencias_criticas: dedupeStrings((parsed.diagnostico_empresa?.dependencias_criticas ?? []).filter((item) => typeof item === "string" && !containsVerbatimResponse(item, respuestas))).slice(0, 6),
+        riesgos_operativos: dedupeStrings((parsed.diagnostico_empresa?.riesgos_operativos ?? []).filter((item) => typeof item === "string" && !containsVerbatimResponse(item, respuestas))).slice(0, 6),
+        prioridades_90_dias: dedupeStrings((parsed.diagnostico_empresa?.prioridades_90_dias ?? []).filter((item) => typeof item === "string" && !containsVerbatimResponse(item, respuestas))).slice(0, 6),
+        indicadores_clave: (parsed.diagnostico_empresa?.indicadores_clave ?? []).flatMap((item) => {
+          if (!item || typeof item.nombre !== "string" || typeof item.lectura_actual !== "string" || typeof item.por_que_importa !== "string") return [];
+          if (containsVerbatimResponse(item.lectura_actual, respuestas)) return [];
+          return [{ nombre: item.nombre, lectura_actual: item.lectura_actual, por_que_importa: item.por_que_importa }];
+        }).slice(0, 8),
+        costo_mensual_estimado_usd: cuantificacion.resumen.total_mensual_usd,
+        costo_anual_estimado_usd: cuantificacion.resumen.total_anual_usd,
+        confianza_cuantificacion: cuantificacion.resumen.confianza
       },
       antes_despues: antesDespues,
       mapa_areas: mapaAreas,
-      hallazgos
+      hallazgos,
+      cuantificacion: cuantificacion.resumen
     };
     const propuestaPayload = {
       propuesta_software: parsed.propuesta_software ?? {

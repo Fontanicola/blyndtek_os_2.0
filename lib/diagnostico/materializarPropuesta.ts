@@ -4,6 +4,7 @@ import {
   parseCondicionesComerciales,
   parseModulos,
   parsePropuestaSoftware,
+  construirHitosPago,
   type CondicionesComercialesPropuesta
 } from "@/lib/diagnostico/informe";
 import { crearTareaVinculadaAFeature } from "@/lib/proyectos/featureTarea";
@@ -120,6 +121,7 @@ export async function materializarPropuestaDiagnostico(
     precio_desarrollo_usd: precioDesarrollo,
     mantenimiento_mensual_usd: precioMensual
   };
+  const hitosPago = construirHitosPago(condiciones, propuesta.roadmap_implementacion);
   const created = {
     cotizacionId: null as string | null,
     cotizacionCreada: false,
@@ -156,14 +158,17 @@ export async function materializarPropuestaDiagnostico(
           descripcion: etapa.descripcion,
           duracion_estimada: etapa.duracion_estimada,
           orden: index + 1,
-          subtareas: etapa.subtareas
+          subtareas: etapa.subtareas,
+          entregables: etapa.entregables,
+          criterio_aceptacion: etapa.criterio_aceptacion,
+          responsable_cliente: etapa.responsable_cliente
         }))
       ),
       modulos: asJson(modulos),
       entendimiento: propuesta.alcance_general,
       beneficios: asJson(propuesta.beneficios_esperados),
       supuestos: asJson(propuesta.supuestos),
-      condiciones_comerciales: asJson(condiciones),
+      condiciones_comerciales: asJson({ ...condiciones, hitos_pago: hitosPago }),
       datos_propuesta: asJson({ diagnostico_id: diagnostico.id, origen: "diagnostico" }),
       resumen_ejecutivo: propuesta.vision_sistema,
       estado: "aceptada" as const
@@ -201,7 +206,7 @@ export async function materializarPropuestaDiagnostico(
     }
 
     if (existingProyecto?.id) {
-      return { cotizacionId: created.cotizacionId, proyectoId: existingProyecto.id };
+      return { cotizacionId: created.cotizacionId, proyectoId: existingProyecto.id, hitosPago };
     }
 
     const roadmapSlug = await generarRoadmapSlugUnico(supabase, lead.empresa);
@@ -291,7 +296,7 @@ export async function materializarPropuestaDiagnostico(
       }
     }
 
-    return { cotizacionId: created.cotizacionId, proyectoId: created.proyectoId };
+    return { cotizacionId: created.cotizacionId, proyectoId: created.proyectoId, hitosPago };
   } catch (error) {
     if (created.tareaIds.length > 0) {
       await supabase.from("tareas").delete().in("id", created.tareaIds);

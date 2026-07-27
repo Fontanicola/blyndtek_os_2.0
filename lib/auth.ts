@@ -9,7 +9,7 @@ import type { Database } from "@/types/supabase";
 
 const roleAllowedPrefixes: Record<Rol, readonly string[]> = {
   admin: ["/"],
-  miembro: ["/proyectos", "/tareas", "/calendario"],
+  miembro: ["/proyectos", "/tareas", "/calendario", "/soporte"],
   comercial: [
     "/mi-panel",
     "/leads",
@@ -20,7 +20,8 @@ const roleAllowedPrefixes: Record<Rol, readonly string[]> = {
     "/notas",
     "/wiki",
     "/archivos",
-    "/perfil"
+    "/perfil",
+    "/soporte"
   ]
 };
 

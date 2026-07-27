@@ -20,6 +20,7 @@ import type { ProyectoTiempoResponse } from "@/types/sesionesTiempo";
 import { CuentaServicioCard } from "./CuentaServicioCard";
 import { CuentaServicioModal } from "./CuentaServicioModal";
 import { FasesEstadoKanban } from "./features-kanban";
+import { DeliveryHandoff } from "./DeliveryHandoff";
 
 type ProyectoFichaProps = {
   proyecto: Proyecto;
@@ -33,7 +34,7 @@ type ProyectoFichaProps = {
   onUpdateProyecto: (input: UpdateProyectoInput) => Promise<Proyecto>;
 };
 
-type TabKey = "general" | "features" | "cuentas" | "roadmap";
+type TabKey = "general" | "handoff" | "features" | "cuentas" | "roadmap";
 
 type RoadmapConfigDraft = {
   url_sistema: string;
@@ -47,6 +48,7 @@ type RoadmapConfigDraft = {
 
 const tabs: Array<{ key: TabKey; label: string }> = [
   { key: "general", label: "General" },
+  { key: "handoff", label: "Handoff" },
   { key: "features", label: "Features" },
   { key: "cuentas", label: "Cuentas y servicios" },
   { key: "roadmap", label: "Roadmap" }
@@ -804,6 +806,8 @@ export function ProyectoFicha({
             </div>
           </div>
         ) : null}
+
+        {activeTab === "handoff" ? <DeliveryHandoff proyectoId={proyecto.id} /> : null}
 
         {activeTab === "features" ? (
           <div className="h-full min-h-0 overflow-hidden pr-1">

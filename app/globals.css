@@ -70,6 +70,11 @@
     page-break-after: avoid;
   }
 
+  .print-page {
+    break-before: page;
+    page-break-before: always;
+  }
+
   .print-card,
   .print-heading-group {
     orphans: 3;

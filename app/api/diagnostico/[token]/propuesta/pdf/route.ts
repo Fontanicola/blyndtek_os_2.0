@@ -3,6 +3,7 @@ import path from "path";
 import { NextRequest, NextResponse } from "next/server";
 import PDFDocument from "pdfkit";
 import {
+  construirHitosPago,
   fetchDiagnosticoInforme,
   formatInformeCurrency,
   sanitizePdfFilename
@@ -178,6 +179,7 @@ async function renderPdf(token: string) {
   const adelantoMonto = (condiciones.precio_desarrollo_usd * condiciones.adelanto_pct) / 100;
   const saldoFinanciado = Math.max(0, condiciones.precio_desarrollo_usd - adelantoMonto);
   const valorCuota = saldoFinanciado / Math.max(condiciones.cantidad_cuotas, 1);
+  const hitosPago = construirHitosPago(condiciones, informe.propuestaSoftware.roadmap_implementacion);
 
   doc.moveDown(1.2);
   const summaryY = doc.y;
@@ -251,6 +253,11 @@ async function renderPdf(token: string) {
       ? `Mantenimiento mensual: ${formatInformeCurrency(condiciones.mantenimiento_mensual_usd)}`
       : "Mantenimiento mensual: no aplica"
   ]);
+
+  writeSectionTitle(doc, "Pagos por hitos", "Calendario vinculado a entregables");
+  writeBulletList(doc, hitosPago.map((hito) =>
+    `${hito.numero}. ${hito.nombre}: ${hito.porcentaje}% · ${formatInformeCurrency(hito.monto_usd)} · ${hito.momento}`
+  ));
 
   if (informe.propuestaSoftware.supuestos.length > 0) {
     writeSectionTitle(doc, "Supuestos", "Condiciones consideradas");

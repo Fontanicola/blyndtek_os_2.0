@@ -118,6 +118,42 @@
 
 ## Tabla: leads
 
+## Tabla: soporte_tickets
+
+**PK:** `id`
+
+**FKs:** `cliente_id` -> `clientes.id`; `proyecto_id` -> `proyectos.id`; `responsable_id` -> `usuarios.id`.
+
+Tickets de soporte de clientes en producción, con prioridad, estado, responsable y fecha límite.
+
+`sla_horas` conserva el objetivo de respuesta según prioridad; la interfaz lo usa para identificar tickets que requieren atención.
+
+## Tabla: soporte_handoffs
+
+**PK:** `id`; `proyecto_id` es único.
+
+Registra la transferencia formal de un proyecto terminado a Soporte, con estado, fecha, checklist y notas.
+
+## Tabla: revisiones_cuenta
+
+**PK:** `id`
+
+**FKs:** `cliente_id` -> `clientes.id`; `proyecto_id` -> `proyectos.id`; `creado_por` -> `usuarios.id`.
+
+Una fila por cliente y trimestre (`cliente_id`, `periodo_inicio` es único). Registra la revisión de cuenta, satisfacción, decisiones y próximas acciones.
+
+El endpoint de preparación trimestral crea estas filas para clientes `activo` sin duplicarlas.
+
+La automatización trimestral se ejecuta el día 25 de marzo, junio, septiembre y diciembre; debe activarse reemplazando los placeholders de `022_revisiones_trimestrales_cron.sql`.
+
+## Tabla: oportunidades_upsell
+
+**PK:** `id`
+
+**FKs:** `cliente_id` -> `clientes.id`; `proyecto_id` -> `proyectos.id`; `responsable_id` -> `usuarios.id`.
+
+Oportunidades de expansión detectadas desde soporte, delivery, revisiones trimestrales o el equipo comercial. El monto estimado es interno y no reemplaza una propuesta aprobada.
+
 **PK:** `id`
 
 **FKs:** `responsable_id` → `usuarios.id`
@@ -1159,6 +1195,9 @@ Nota: `usuarios` debe existir antes que `leads`, `proyectos`, `features`, `tarea
 - `preguntas_diagnostico`: banco de preguntas del diagnóstico comercial, filtrable por `activa=true`.
 - `diagnosticos`: instancia de diagnóstico vinculada a `leads.id`, con `token_publico` para formulario e informe sin login, `respuestas` en `jsonb`, `informe_hallazgos`, `modulos_sugeridos`, precios ideal/mínimo de desarrollo y mensual, y estado `pendiente`/`respondido`/`informe_generado`. Desde 2026-07-24, `informe_hallazgos` puede guardar `{ diagnostico_empresa, hallazgos, antes_despues, mapa_areas }` y `modulos_sugeridos` puede guardar `{ propuesta_software, condiciones_comerciales, modulos }`. `propuesta_software.roadmap_implementacion[]` admite `subtareas[]`; al marcar el lead como `ganado`, esas fases/subtareas se materializan en `proyectos`, `fases_proyecto`, `features` y `tareas`.
 - `modulos_catalogo`: catálogo admin de módulos comerciales con categoría, descripción, precio ideal, precio mínimo, incremento mensual y estado activo. El catálogo base incluye módulos de CRM comercial, pedidos/operación, agenda, inventario, facturación/cobranzas, dashboard, portal multiusuario y automatizaciones.
+- `diagnostico_sesiones`: sesión interna de relevamiento vinculada uno a uno a `diagnosticos`, con fecha, duración, decisor, notas y estado. Se usa para registrar la conversación comercial sin sobrecargar el formulario público.
+- `diagnostico_areas`: áreas operativas relevadas dentro de una sesión, con responsable, volumen, herramientas actuales, proceso, dependencia crítica y nivel de fricción de 1 a 5.
+- `diagnostico_metricas`: métricas cuantitativas internas asociadas a un diagnóstico y opcionalmente a un área. Guarda horas, cargas, errores, licencias, oportunidades y parámetros de cálculo según el tipo de pérdida. `costo_mensual_usd` y `costo_anual_usd` se calculan en código, no los inventa Claude.
 - `cierres_mensuales`: histórico de cierres de caja mensuales con ingresos, egresos, margen, desvío versus el mes anterior, resumen generado y costo de IA.
 
 ### Diagnóstico pago
@@ -1170,3 +1209,10 @@ Nota: `usuarios` debe existir antes que `leads`, `proyectos`, `features`, `tarea
 - `comisiones.tipo` admite `diagnostico` además de `venta`.
 - `contratos.descuento_diagnostico_usd` numeric default `0` guarda el monto ya pagado por diagnóstico que se descontó del saldo del contrato final.
 - `config_comisiones.comision_diagnostico_usd` numeric define el monto fijo de comisión pendiente que se genera al registrar un diagnóstico pagado.
+
+### Modelo de diagnóstico cuantitativo
+
+- La ruta autenticada `GET/PATCH /api/diagnostico/[token]/sesion` permite que el equipo cargue durante un Meet una sesión interna, áreas operativas y métricas con evidencia.
+- Los tipos de métrica admitidos son `trabajo_manual`, `doble_carga`, `error_operativo`, `licencia`, `venta_perdida` y `otro`.
+- Las fórmulas son determinísticas: horas por costo horario; cargas por minutos y costo horario; errores por costo unitario; licencias por porcentaje no utilizado; y oportunidades por ticket promedio y tasa de cierre. La IA interpreta y redacta, pero no altera los valores ni calcula el costo.
+- El informe guarda la síntesis bajo `informe_hallazgos.cuantificacion` y la presenta como estimación con nivel de confianza. Este número no reemplaza el precio de desarrollo ni el mantenimiento de la propuesta.
