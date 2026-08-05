@@ -92,7 +92,7 @@ function NavigationRow({
       onClick={mobile ? onClose : undefined}
       title={collapsed ? item.label : undefined}
       className={cn(
-        "group mx-2 flex items-center gap-3 rounded-component px-3 py-2 no-underline transition-colors duration-fast ease-fast",
+        "group relative z-10 mx-2 flex items-center gap-3 rounded-component px-3 py-2 no-underline transition-colors duration-fast ease-fast",
         "[&_svg]:h-5 [&_svg]:w-5",
         collapsed && "justify-center px-0",
         level > 0 && !collapsed && "ml-4 w-[calc(100%-1.75rem)]",
@@ -153,7 +153,7 @@ function NavigationGroup({
   const showChildren = !collapsed && expanded;
 
   return (
-    <div>
+    <div className="relative">
       <button
         type="button"
         onClick={onToggleExpanded}
@@ -161,7 +161,7 @@ function NavigationGroup({
         aria-expanded={expanded}
         aria-controls={`${groupKey}-panel`}
         className={cn(
-          "group mx-2 flex w-[calc(100%-1rem)] items-center gap-3 px-3 py-2 text-left transition-colors duration-fast ease-fast",
+          "group relative z-10 mx-2 flex w-[calc(100%-1rem)] items-center gap-3 px-3 py-2 text-left transition-colors duration-fast ease-fast",
           "[&_svg]:h-5 [&_svg]:w-5",
           "rounded-component",
           collapsed && "justify-center px-0",
@@ -201,7 +201,7 @@ function NavigationGroup({
       {showChildren ? (
         <div
           id={`${groupKey}-panel`}
-          className="mt-1 grid grid-rows-[1fr] opacity-100 transition-[grid-template-rows,opacity,margin] duration-normal ease-normal"
+          className="relative z-10 mt-1 grid grid-rows-[1fr] opacity-100 transition-[grid-template-rows,opacity,margin] duration-normal ease-normal"
         >
           <div className="min-h-0 overflow-hidden">
             <div className="mx-2 space-y-1 rounded-card border border-line-soft/80 bg-white/45 px-2 py-2">
@@ -339,7 +339,7 @@ export function Sidebar({
           />
         )}</div>
 
-        <nav className="flex-1 overflow-y-auto py-2">
+        <nav className="relative z-10 flex-1 overflow-y-auto py-2">
           {topLevelItems.length > 0 ? (
             <div className="space-y-1">
               {topLevelItems.map((item) => (
