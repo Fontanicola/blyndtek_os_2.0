@@ -198,16 +198,12 @@ function NavigationGroup({
         ) : null}
       </button>
 
-      <div
-        id={`${groupKey}-panel`}
-        className={cn(
-          "grid transition-[grid-template-rows,opacity,margin] duration-normal ease-normal",
-          showChildren ? "mt-1 grid-rows-[1fr] opacity-100" : "mt-0 grid-rows-[0fr] opacity-0"
-        )}
-        aria-hidden={!showChildren}
-      >
-        <div className="min-h-0 overflow-hidden">
-          {showChildren ? (
+      {showChildren ? (
+        <div
+          id={`${groupKey}-panel`}
+          className="mt-1 grid grid-rows-[1fr] opacity-100 transition-[grid-template-rows,opacity,margin] duration-normal ease-normal"
+        >
+          <div className="min-h-0 overflow-hidden">
             <div className="mx-2 space-y-1 rounded-card border border-line-soft/80 bg-white/45 px-2 py-2">
               {items.map((item) => (
                 <NavigationRow
@@ -221,9 +217,9 @@ function NavigationGroup({
                 />
               ))}
             </div>
-          ) : null}
+          </div>
         </div>
-      </div>
+      ) : null}
     </div>
   );
 }
