@@ -3279,3 +3279,10 @@ Se completó la auditoría de código, búsqueda transversal, tipado, lint y bui
 - Se agregó `app/api/piezas-contenido/[id]/publicar/route.ts`: publica imágenes/historias en Instagram mediante contenedor de medios y posts de texto en LinkedIn mediante Posts API; cada éxito o error queda trazado en `contenido_publicaciones_log` y sólo un éxito cambia la pieza a `publicada`.
 - El laboratorio ahora permite agregar, editar y eliminar slides de un carrusel, conservando `guion.slides` como fuente de verdad para preview y renderizado.
 - Verificación local: `npx tsc --noEmit`, `npm run lint` y `npm run build` OK. La aplicación compila con la migración pendiente de aplicar en Supabase.
+
+## 2026-08-05 — Marca y contenido: navegación separada y feed editorial
+
+- Marca y contenido ahora funciona como grupo colapsable del sidebar con rutas independientes: `/marca/feed`, `/marca/historias`, `/marca/calendario` y `/marca/identidad`.
+- El Feed fue reorganizado como perfil editorial de Instagram: cabecera de cuenta, métricas operativas, bio, selector Instagram/LinkedIn y grilla 3xN de publicaciones con hover de fecha y apertura del lab editable.
+- Historias, calendario e identidad mantienen los mismos datos y APIs de Content Studio, pero cada uno tiene su propia entrada y URL.
+- Verificación: `npx tsc --noEmit` y `npm run lint` OK. La revisión visual se hizo contra la referencia adjunta; la grilla quedó en tres columnas para preservar el lenguaje de feed.

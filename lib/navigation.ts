@@ -9,6 +9,7 @@ import {
   DashboardIcon,
   ArchivosIcon,
   FileTextIcon,
+  GridIcon,
   FinanzasIcon,
   LayersIcon,
   LifeBuoyIcon,
@@ -45,7 +46,13 @@ export const navigationItems: NavItem[] = [
     href: "/marca",
     icon: createElement(MegaphoneIcon),
     roles: ["admin", "marketing"],
-    section: "top-level"
+    section: "top-level",
+    children: [
+      { label: "Feed", href: "/marca/feed", icon: createElement(GridIcon), roles: ["admin", "marketing"], section: "top-level" },
+      { label: "Historias", href: "/marca/historias", icon: createElement(SparklesIcon), roles: ["admin", "marketing"], section: "top-level" },
+      { label: "Calendario", href: "/marca/calendario", icon: createElement(CalendarioIcon), roles: ["admin", "marketing"], section: "top-level" },
+      { label: "Identidad de marca", href: "/marca/identidad", icon: createElement(FileTextIcon), roles: ["admin", "marketing"], section: "top-level" }
+    ]
   },
   {
     label: "AI Hub",
@@ -102,7 +109,7 @@ export const navigationItems: NavItem[] = [
     label: "Contenido",
     href: "/contenido",
     icon: createElement(FileTextIcon),
-    roles: ["admin", "marketing"],
+    roles: [],
     section: "comercial"
   },
   {
@@ -137,7 +144,7 @@ export const navigationItems: NavItem[] = [
     label: "Calendario",
     href: "/calendario",
     icon: createElement(CalendarioIcon),
-    roles: ["admin", "miembro", "comercial", "marketing"],
+    roles: ["miembro", "comercial"],
     section: "entrega"
   },
   {
