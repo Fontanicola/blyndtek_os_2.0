@@ -43,7 +43,6 @@ export const navigationItems: NavItem[] = [
   {
     label: "AI Hub",
     icon: createElement(SparklesIcon),
-    iconClassName: "text-[#7C3AED]",
     roles: ["admin"],
     section: "top-level",
     children: [

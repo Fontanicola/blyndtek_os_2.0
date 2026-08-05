@@ -67,7 +67,6 @@ type NavigationRowProps = {
   mobile: boolean;
   onClose?: () => void;
   level?: number;
-  tone?: "default" | "ai-hub";
 };
 
 function NavigationRow({
@@ -76,8 +75,7 @@ function NavigationRow({
   collapsed,
   mobile,
   onClose,
-  level = 0,
-  tone = "default"
+  level = 0
 }: NavigationRowProps) {
   const hasChildren = Boolean(item.children?.length);
 
@@ -98,25 +96,13 @@ function NavigationRow({
         "[&_svg]:h-5 [&_svg]:w-5",
         collapsed && "justify-center px-0",
         level > 0 && !collapsed && "ml-4 w-[calc(100%-1.75rem)]",
-        tone === "ai-hub"
-          ? isActive
-            ? "border border-white/95 bg-[#A9DFF3]/95 text-[#334E68] shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_4px_12px_rgba(56,189,248,0.12)] backdrop-blur-md"
-            : "border border-white/90 bg-[#A9DFF3]/85 text-[#334E68] shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_3px_10px_rgba(56,189,248,0.08)] backdrop-blur-md hover:bg-[#BCEAF8]"
-          : isActive
-            ? "bg-white/80 text-carbon"
-            : "hover:bg-white/70"
+        isActive ? "bg-white/80 text-carbon" : "hover:bg-white/70"
       )}
     >
       <span
         className={cn(
           "transition-colors duration-fast ease-fast",
-          tone === "ai-hub"
-            ? isActive
-              ? "text-[#087EA4]"
-              : "text-[#64748B] group-hover:text-[#164E63]"
-            : isActive
-              ? "text-signal"
-              : "text-graphite group-hover:text-carbon",
+          isActive ? "text-signal" : "text-graphite group-hover:text-carbon",
           item.iconClassName
         )}
       >
@@ -126,13 +112,7 @@ function NavigationRow({
         <span
           className={cn(
             "text-sm font-label transition-colors duration-fast ease-fast",
-            tone === "ai-hub"
-              ? isActive
-                ? "text-[#164E63]"
-                : "text-[#334155] group-hover:text-[#164E63]"
-              : isActive
-                ? "text-signal"
-                : "text-graphite group-hover:text-carbon"
+            isActive ? "text-signal" : "text-graphite group-hover:text-carbon"
           )}
         >
           {item.label}
@@ -153,7 +133,6 @@ type NavigationGroupProps = {
   onClose?: () => void;
   expanded: boolean;
   onToggleExpanded: () => void;
-  tone?: "default" | "ai-hub";
   iconClassName?: string;
 };
 
@@ -168,7 +147,6 @@ function NavigationGroup({
   onClose,
   expanded,
   onToggleExpanded,
-  tone = "default",
   iconClassName
 }: NavigationGroupProps) {
   const isActive = hasActiveItem(pathname, items);
@@ -185,27 +163,16 @@ function NavigationGroup({
         className={cn(
           "group mx-2 flex w-[calc(100%-1rem)] items-center gap-3 px-3 py-2 text-left transition-colors duration-fast ease-fast",
           "[&_svg]:h-5 [&_svg]:w-5",
-          tone === "ai-hub" && "[&_svg]:h-7 [&_svg]:w-7",
-          tone === "ai-hub" ? "rounded-card" : "rounded-component",
+          "rounded-component",
           collapsed && "justify-center px-0",
-          tone === "ai-hub"
-            ? isActive
-              ? "border border-[#74D0EF]/95 bg-[radial-gradient(ellipse_at_center,rgba(74,184,226,0.98)_0%,rgba(92,196,231,0.96)_45%,rgba(185,232,247,0.96)_84%,rgba(241,252,255,0.98)_100%)] text-white shadow-[inset_0_0_12px_rgba(255,255,255,0.48),inset_0_-3px_7px_rgba(14,116,144,0.18),0_0_0_1px_rgba(255,255,255,0.9),0_0_8px_rgba(255,255,255,0.72),0_5px_12px_rgba(56,189,248,0.12)] backdrop-blur-md hover:bg-[#77CBEA]"
-              : "border border-[#8ADBF2]/95 bg-[radial-gradient(ellipse_at_center,rgba(98,199,233,0.96)_0%,rgba(120,210,238,0.94)_45%,rgba(201,239,249,0.96)_84%,rgba(245,253,255,0.98)_100%)] text-white shadow-[inset_0_0_14px_rgba(255,255,255,0.55),inset_0_-3px_7px_rgba(14,116,144,0.14),0_0_0_1px_rgba(255,255,255,0.94),0_0_8px_rgba(255,255,255,0.78),0_5px_12px_rgba(56,189,248,0.09)] backdrop-blur-md hover:bg-[#91D9F0]"
-              : isActive
-                ? "bg-white/80 text-signal"
-              : "hover:bg-white/70"
+        isActive ? "bg-white/80 text-carbon" : "hover:bg-white/70"
         )}
       >
         <span
           className={cn(
             "flex h-5 w-5 items-center justify-center transition-colors duration-fast ease-fast",
             iconClassName,
-            tone === "ai-hub"
-              ? "text-white drop-shadow-[0_1px_2px_rgba(30,112,145,0.35)]"
-              : isActive
-                ? "text-carbon"
-                : "text-graphite group-hover:text-carbon",
+            isActive ? "text-carbon" : "text-graphite group-hover:text-carbon",
           )}
         >
           {icon}
@@ -214,11 +181,7 @@ function NavigationGroup({
           <span
             className={cn(
               "text-sm font-label transition-colors duration-fast ease-fast",
-            tone === "ai-hub"
-              ? "text-[#087EA4]"
-                : isActive
-                  ? "text-signal"
-                  : "text-graphite group-hover:text-carbon"
+            isActive ? "text-signal" : "text-graphite group-hover:text-carbon"
             )}
           >
             {label}
@@ -228,7 +191,7 @@ function NavigationGroup({
           <ChevronDownIcon
             className={cn(
               "ml-auto h-4 w-4 shrink-0 transition-transform duration-normal ease-normal",
-              tone === "ai-hub" ? "text-[#087EA4]" : "text-graphite",
+              "text-graphite",
               expanded ? "rotate-180" : "rotate-0"
             )}
           />
@@ -246,9 +209,7 @@ function NavigationGroup({
           <div
             className={cn(
               "mx-2 space-y-1 rounded-card px-2 py-2",
-              tone === "ai-hub"
-                ? "border border-[#76CFF0]/80 bg-[#DDF6FF]/80 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_4px_16px_rgba(56,189,248,0.08)] backdrop-blur-md"
-                : "border border-line-soft/80 bg-white/45"
+              "border border-line-soft/80 bg-white/45"
             )}
           >
             {items.map((item) => (
@@ -260,7 +221,6 @@ function NavigationGroup({
                 mobile={mobile}
                 onClose={onClose}
                 level={1}
-                tone={tone}
               />
             ))}
           </div>
@@ -410,7 +370,6 @@ export function Sidebar({
                         [item.label]: !current[item.label]
                       }))
                     }
-                    tone="ai-hub"
                     iconClassName={item.iconClassName}
                   />
                 ) : (
