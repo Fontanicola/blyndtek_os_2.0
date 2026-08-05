@@ -126,14 +126,6 @@ export function MarcaContentStudio({ initialTab = "feed" }: MarcaContentStudioPr
 
   return (
     <div className="space-y-5">
-      <header className="flex flex-wrap items-end justify-between gap-4 border-b border-slate-200 pb-4">
-        <div>
-          <p className="text-sm font-label text-signal">Marca y contenido</p>
-          <h1 className="mt-1 font-title text-2xl text-carbon">Content Operations</h1>
-          <p className="mt-1 max-w-2xl text-sm text-graphite">Un espacio único para planificar, editar, publicar y medir la presencia de Blyndtek en Instagram y LinkedIn.</p>
-        </div>
-        <div className="flex items-center gap-2"><Badge variant="success">Publicación orgánica</Badge><Badge variant="default">Sin aprobación previa</Badge></div>
-      </header>
       {initialTab ? null : <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-3">
         <div className="flex flex-wrap gap-1">
           {(["feed", "historias", "calendario", "identidad"] as StudioTab[]).map((item) => {
