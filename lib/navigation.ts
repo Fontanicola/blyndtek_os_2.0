@@ -42,7 +42,7 @@ export const navigationItems: NavItem[] = [
     section: "top-level"
   },
   {
-    label: "Marca y contenido",
+    label: "Marca",
     href: "/marca",
     icon: createElement(MegaphoneIcon),
     roles: ["admin", "marketing"],
