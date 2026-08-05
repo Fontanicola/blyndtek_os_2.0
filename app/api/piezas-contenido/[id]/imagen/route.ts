@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { getAdminUser } from "@/lib/require-admin";
+import { getBrandManagerUser } from "@/lib/require-admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { CONTENT_BUCKET, getBlyndtekContentBrand } from "@/lib/contenido/blyndtek";
 import type { ContenidoDatabase } from "@/types/contenido";
@@ -26,7 +26,7 @@ function normalizeExtension(filename: string, mimeType: string) {
 
 export async function POST(request: Request, { params }: RouteContext) {
   try {
-    const admin = await getAdminUser();
+    const admin = await getBrandManagerUser();
     if (!admin) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }

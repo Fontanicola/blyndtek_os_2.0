@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { generarPlanSemanalContenido } from "@/lib/contenido/generarPlanSemanal";
-import { getAdminUser } from "@/lib/require-admin";
+import { getBrandManagerUser } from "@/lib/require-admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { ContenidoDatabase } from "@/types/contenido";
 
@@ -15,7 +15,7 @@ function isDateInput(value: string | undefined): value is string {
 
 export async function POST(request: Request) {
   try {
-    const admin = await getAdminUser();
+    const admin = await getBrandManagerUser();
     if (!admin) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }

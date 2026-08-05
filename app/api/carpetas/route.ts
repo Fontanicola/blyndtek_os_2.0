@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAdminUser } from "@/lib/require-admin";
+import { getBrandManagerUser } from "@/lib/require-admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getCarpetaById } from "@/lib/carpetas";
 import type { Carpeta, CarpetaConConteos, Seccion } from "@/types/archivos";
@@ -107,7 +107,7 @@ async function buildConteos(
 
 export async function GET(request: NextRequest) {
   try {
-    const admin = await getAdminUser();
+    const admin = await getBrandManagerUser();
 
     if (!admin) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -150,7 +150,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const admin = await getAdminUser();
+    const admin = await getBrandManagerUser();
 
     if (!admin) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });

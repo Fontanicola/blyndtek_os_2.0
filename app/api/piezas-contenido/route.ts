@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { getAdminUser } from "@/lib/require-admin";
+import { getBrandManagerUser } from "@/lib/require-admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getBlyndtekContentBrand } from "@/lib/contenido/blyndtek";
 import type { ContenidoDatabase, PiezaContenido, PiezaContenidoEstado } from "@/types/contenido";
@@ -16,7 +16,7 @@ const VALID_ESTADOS = new Set<PiezaContenidoEstado>([
 
 export async function GET(request: Request) {
   try {
-    const admin = await getAdminUser();
+    const admin = await getBrandManagerUser();
     if (!admin) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
@@ -60,12 +60,12 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const admin = await getAdminUser();
+    const admin = await getBrandManagerUser();
     if (!admin) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const body = (await request.json()) as Partial<Pick<PiezaContenido, "titulo" | "pilar_id">>;
+    const body = (await request.json()) as Partial<Pick<PiezaContenido, "titulo" | "pilar_id" | "plataforma" | "tipo_pieza" | "fecha_programada">>;
     const supabase = createAdminClient() as unknown as SupabaseClient<ContenidoDatabase>;
     const marca = await getBlyndtekContentBrand(supabase);
 
@@ -79,7 +79,9 @@ export async function POST(request: Request) {
         marca_id: marca.id,
         titulo: body.titulo?.trim() || "Sin título",
         pilar_id: body.pilar_id || null,
-        tipo_pieza: null,
+        plataforma: body.plataforma || "instagram_feed",
+        tipo_pieza: body.tipo_pieza || null,
+        fecha_programada: body.fecha_programada || null,
         estado: "idea",
         creado_por: admin.id
       } as never)

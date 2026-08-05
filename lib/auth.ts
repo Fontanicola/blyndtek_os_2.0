@@ -22,6 +22,15 @@ const roleAllowedPrefixes: Record<Rol, readonly string[]> = {
     "/archivos",
     "/perfil",
     "/soporte"
+  ],
+  marketing: [
+    "/marca",
+    "/contenido",
+    "/marketing",
+    "/archivos",
+    "/calendario",
+    "/tareas",
+    "/notas"
   ]
 };
 
@@ -59,6 +68,10 @@ export function getDefaultRouteForRole(rol: Rol): string {
 
   if (rol === "comercial") {
     return "/mi-panel";
+  }
+
+  if (rol === "marketing") {
+    return "/marca";
   }
 
   return "/proyectos";

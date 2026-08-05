@@ -20,6 +20,12 @@ type PiezaEditorModalProps = {
   onSave: (piezaId: string, payload: Partial<PiezaContenido>) => Promise<void>;
   onUploadImage: (piezaId: string, file: File, slideIndex?: number | null) => Promise<void>;
   onGenerateComplete: (piezaId: string) => Promise<GenerarCompletoPiezaResult>;
+  onPublish?: (piezaId: string, red: "instagram" | "linkedin") => Promise<void>;
+};
+
+type EditableSlide = {
+  titulo_slide: string;
+  texto: string;
 };
 
 const EDITABLE_ESTADOS: PiezaContenidoEstado[] = ["idea", "en_diseno", "lista", "programada"];
@@ -42,6 +48,19 @@ function hasRenderableGuion(pieza: PiezaContenido | null) {
   return Array.isArray(guion.slides) || typeof guion.texto_principal === "string";
 }
 
+function getEditableSlides(pieza: PiezaContenido | null): EditableSlide[] {
+  if (!pieza) return [];
+  const guion = asRecord(pieza.guion);
+  if (!Array.isArray(guion.slides)) return [];
+  return guion.slides.map((slide) => {
+    const record = asRecord(slide);
+    return {
+      titulo_slide: typeof record.titulo_slide === "string" ? record.titulo_slide : "",
+      texto: typeof record.texto === "string" ? record.texto : ""
+    };
+  });
+}
+
 export function PiezaEditorModal({
   isOpen,
   pieza,
@@ -49,7 +68,8 @@ export function PiezaEditorModal({
   onClose,
   onSave,
   onUploadImage,
-  onGenerateComplete
+  onGenerateComplete,
+  onPublish
 }: PiezaEditorModalProps) {
   const [titulo, setTitulo] = useState("");
   const [pilarId, setPilarId] = useState("");
@@ -57,6 +77,7 @@ export function PiezaEditorModal({
   const [estado, setEstado] = useState<PiezaContenidoEstado>("idea");
   const [fechaProgramada, setFechaProgramada] = useState("");
   const [hashtags, setHashtags] = useState<string[]>([]);
+  const [slides, setSlides] = useState<EditableSlide[]>([]);
   const [tagInput, setTagInput] = useState("");
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -65,6 +86,7 @@ export function PiezaEditorModal({
   const [generatedPrompt, setGeneratedPrompt] = useState("");
   const [promptOpen, setPromptOpen] = useState(false);
   const [selectedGeneratedImage, setSelectedGeneratedImage] = useState<string | null>(null);
+  const [publishing, setPublishing] = useState(false);
   const readonlyState = pieza?.estado === "publicada" || pieza?.estado === "fallida";
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const replaceSlideInputRef = useRef<HTMLInputElement | null>(null);
@@ -80,6 +102,7 @@ export function PiezaEditorModal({
     setEstado(pieza.estado);
     setFechaProgramada(pieza.fecha_programada ? pieza.fecha_programada.slice(0, 16) : "");
     setHashtags(Array.isArray(pieza.hashtags) ? pieza.hashtags : []);
+    setSlides(getEditableSlides(pieza));
     setTagInput("");
     setGeneratedPrompt(pieza.prompt_fondo ?? "");
     setPromptOpen(false);
@@ -148,13 +171,19 @@ export function PiezaEditorModal({
 
     setSaving(true);
     try {
+      const currentGuion = asRecord(pieza.guion);
+      const nextGuion = slides.length > 0
+        ? { ...currentGuion, slides: slides.map((slide) => ({ titulo_slide: slide.titulo_slide, texto: slide.texto })) }
+        : pieza.guion;
+
       await onSave(pieza.id, {
         titulo,
         pilar_id: pilarId || null,
         caption,
         hashtags,
         estado,
-        fecha_programada: estado === "programada" && fechaProgramada ? fechaProgramada : null
+        fecha_programada: estado === "programada" && fechaProgramada ? fechaProgramada : null,
+        guion: nextGuion
       });
       onClose();
     } finally {
@@ -210,6 +239,17 @@ export function PiezaEditorModal({
       onClose();
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handlePublish() {
+    if (!pieza || !onPublish) return;
+    setPublishing(true);
+    try {
+      await onPublish(pieza.id, pieza.plataforma === "linkedin_post" ? "linkedin" : "instagram");
+      onClose();
+    } finally {
+      setPublishing(false);
     }
   }
 
@@ -295,6 +335,12 @@ export function PiezaEditorModal({
             {showMarkPublished ? (
               <Button variant="secondary" className="w-full" loading={saving} onClick={() => void handleMarkPublished()}>
                 Marcar como publicado
+              </Button>
+            ) : null}
+
+            {onPublish && pieza.estado === "lista" && (pieza.plataforma === "instagram_feed" || pieza.plataforma === "instagram_story" || pieza.plataforma === "linkedin_post") ? (
+              <Button className="w-full" loading={publishing} onClick={() => void handlePublish()}>
+                Publicar ahora en {pieza.plataforma === "linkedin_post" ? "LinkedIn" : "Instagram"}
               </Button>
             ) : null}
 
@@ -405,6 +451,37 @@ export function PiezaEditorModal({
                 ))}
               </select>
             </label>
+
+            {pieza.plataforma === "instagram_feed" && slides.length > 0 ? (
+              <section className="rounded-md border border-line-soft bg-paper p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <h3 className="font-title text-base text-carbon">Slides del carrusel</h3>
+                    <p className="mt-1 text-xs text-graphite">Editá el contenido real de cada slide. El orden se conserva en el render y en el feed.</p>
+                  </div>
+                  <Badge variant="ghost">{slides.length} slides</Badge>
+                </div>
+                <div className="mt-4 space-y-3">
+                  {slides.map((slide, index) => (
+                    <div key={`slide-${index}`} className="rounded-md border border-line-soft bg-white p-3">
+                      <div className="mb-2 flex items-center justify-between gap-3">
+                        <span className="text-xs font-label text-graphite">Slide {index + 1}</span>
+                        {slides.length > 1 ? (
+                          <button type="button" onClick={() => setSlides((current) => current.filter((_, itemIndex) => itemIndex !== index))} className="text-graphite transition-colors duration-fast hover:text-danger" aria-label={`Eliminar slide ${index + 1}`}>
+                            <XIcon size={15} />
+                          </button>
+                        ) : null}
+                      </div>
+                      <Input label="Título del slide" value={slide.titulo_slide} onChange={(event) => setSlides((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, titulo_slide: event.target.value } : item))} />
+                      <textarea value={slide.texto} onChange={(event) => setSlides((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, texto: event.target.value } : item))} placeholder="Texto del slide" className="mt-3 min-h-20 w-full rounded-component border border-line bg-white px-3 py-2 text-sm text-carbon outline-none focus:border-signal focus:ring-2 focus:ring-signal/20" />
+                    </div>
+                  ))}
+                </div>
+                <Button variant="secondary" size="sm" className="mt-3" onClick={() => setSlides((current) => [...current, { titulo_slide: "", texto: "" }])}>
+                  Agregar slide
+                </Button>
+              </section>
+            ) : null}
 
             <label className="block">
               <span className="mb-1 block text-sm font-label text-carbon">Caption</span>

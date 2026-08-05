@@ -3259,3 +3259,23 @@ Se completó la auditoría de código, búsqueda transversal, tipado, lint y bui
 - `app/api/egresos/route.ts` ahora deduplica defensivamente instancias recurrentes por plantilla/mes antes de devolverlas, priorizando la copia pagada si existiera una legacy.
 - `app/api/egresos/[id]/route.ts` elimina todas las copias del mismo mes de una instancia recurrente y devuelve un error 409 claro si existe una dependencia contable que impide borrar.
 - Verificación: `npm run lint` y `git diff --check` OK. La migración debe aplicarse en Supabase para activar la garantía a nivel de base.
+
+## 2026-08-05 — Base del espacio de Marca y contenido para Luli
+
+- Se agregó el rol `marketing` en tipos, navegación y control de acceso, con ruta inicial `/marca` y destino por defecto propio.
+- Se creó `app/(app)/marca/page.tsx` y `components/marca/MarcaWorkspace.tsx`: panel operativo con pendientes de revisión, piezas programadas/listas/publicadas, accesos a Content Studio, Marketing, Archivos, Calendario, Tareas y Notas, y prioridades de contenido reales.
+- Luli puede trabajar en Content Studio, atribución de Marketing, biblioteca de Archivos y herramientas de coordinación sin recibir acceso a Finanzas, Leads, Clientes, AI Hub ni configuración administrativa.
+- Las APIs de Content Studio, planes semanales y gestión de carpetas aceptan el rol `marketing` mediante `getBrandManagerUser`; las acciones de generación automática por cron conservan autorización administrativa.
+- No se agregaron tablas nuevas en esta etapa: el calendario editorial se apoya en `piezas_contenido.fecha_programada`, las tareas en `tareas`, los recursos en `archivos` y la medición en `marketing/atribucion`. La migración `024_rol_marketing.sql` sólo agrega el valor de rol requerido.
+
+## 2026-08-05 — Content Operations para Instagram y LinkedIn
+
+- Se agregó `components/marca/MarcaContentStudio.tsx` dentro de `/marca` con cuatro vistas: feed visual de Instagram/LinkedIn, laboratorio de historias, calendario editorial y manual de identidad editable.
+- El feed usa las piezas reales de `piezas_contenido`: muestra previews, estado y fecha al pasar el cursor, y abre `PiezaEditorModal` para editar caption, hashtags, programación, imágenes y generación visual. Las historias se mantienen como un laboratorio separado con formato vertical.
+- Se habilitó creación rápida de publicaciones de Instagram, LinkedIn e historias sin duplicar el modelo de piezas; la fecha programada se refleja en la agenda editorial del mismo espacio.
+- Se creó la migración `025_content_operations_luli.sql` con `marca_identidad_secciones`, `contenido_integraciones_sociales`, `contenido_publicaciones_log` y `contenido_metricas`.
+- Se agregaron APIs server-side para identidad, integraciones y métricas, más los tipos `types/contenidoOperacion.ts`. Los tokens sociales no se exponen al cliente.
+- Las cuentas se registran separadamente por red y quedan preparadas para publicación directa. La llamada real a Instagram/LinkedIn requiere completar OAuth, IDs de cuenta y permisos profesionales; no se simula una publicación sin esas credenciales.
+- Se agregó `app/api/piezas-contenido/[id]/publicar/route.ts`: publica imágenes/historias en Instagram mediante contenedor de medios y posts de texto en LinkedIn mediante Posts API; cada éxito o error queda trazado en `contenido_publicaciones_log` y sólo un éxito cambia la pieza a `publicada`.
+- El laboratorio ahora permite agregar, editar y eliminar slides de un carrusel, conservando `guion.slides` como fuente de verdad para preview y renderizado.
+- Verificación local: `npx tsc --noEmit`, `npm run lint` y `npm run build` OK. La aplicación compila con la migración pendiente de aplicar en Supabase.

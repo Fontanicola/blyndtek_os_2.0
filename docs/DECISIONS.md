@@ -733,3 +733,19 @@ El ciclo posterior al delivery se modela en tres objetos operativos: tickets par
 - Las tablas compactas, toolbars de una fila, acciones secundarias en menús de tres puntos y estados consistentes son el patrón por defecto para módulos operativos.
 - Se mantienen como reglas obligatorias de Blyndtek el registro centralizado de iconos lucide, `EmptyState`, `SavingIndicator` y `chartTheme`.
 - AI Hub conserva su identidad violeta como única excepción cromática de navegación.
+
+## 2026-08-05 — Espacio de Marca y contenido para Marketing
+
+- La gestión de redes, imagen de marca y contenidos se concentra en `/marca`, un espacio de trabajo para el rol `marketing` pensado inicialmente para Luli.
+- La primera versión no duplica fuentes de verdad: las piezas de `piezas_contenido` funcionan como calendario editorial, `tareas` como pendientes, `archivos` como biblioteca de recursos y `marketing/atribucion` como lectura de resultados.
+- Se reservan campañas, briefs, aprobaciones formales y métricas de plataformas para una segunda etapa cuando definamos sus campos de negocio; no se crean tablas paralelas sólo para alimentar una pantalla inicial.
+- El rol `marketing` tiene acceso acotado a marca, contenido, marketing, archivos, calendario, tareas y notas; no hereda permisos comerciales, financieros ni administrativos.
+
+## 2026-08-05 — Content Operations para Instagram y LinkedIn
+
+- La unidad editorial sigue siendo `piezas_contenido`: un post, carrusel o historia se edita y programa desde el mismo objeto, y el calendario no mantiene una copia paralela.
+- El feed visual y el laboratorio de historias son herramientas de trabajo para Luli, no una aprobación adicional: el rol `marketing` tiene libertad de publicar directamente cuando las cuentas profesionales estén conectadas.
+- La identidad se divide en secciones editables para poder mantener posicionamiento, quiénes somos, qué hacemos, propuesta de valor, tono, prueba y lineamientos sin esconder el manual dentro de un textarea único.
+- Instagram y LinkedIn se modelan como integraciones separadas. La publicación y las métricas sólo se consideran activas con OAuth, permisos y cuentas reales configuradas; hasta entonces la interfaz muestra claramente que falta conexión.
+- `contenido_publicaciones_log` y `contenido_metricas` dan trazabilidad a publicaciones y resultados sin mezclar métricas de redes con atribución de leads.
+- La publicación directa se ejecuta sólo después de que la red confirma el resultado; los errores de OAuth, permisos o contenido quedan visibles y trazados, sin falsificar el estado `publicada`.

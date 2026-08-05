@@ -112,7 +112,7 @@ export async function fetchPiezas(filtros: PiezasContenidoFiltros = {}) {
   return parseResponse<PiezaContenido[]>(response);
 }
 
-export async function createPieza(payload: Partial<Pick<PiezaContenido, "titulo" | "pilar_id">> = {}) {
+export async function createPieza(payload: Partial<Pick<PiezaContenido, "titulo" | "pilar_id" | "plataforma" | "tipo_pieza" | "fecha_programada">> = {}) {
   const response = await fetch("/api/piezas-contenido", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -179,6 +179,15 @@ export async function renderizarPieza(id: string) {
   return parseResponse<RenderizarPiezaResult>(response);
 }
 
+export async function publicarPieza(id: string, red: "instagram" | "linkedin") {
+  const response = await fetch(`/api/piezas-contenido/${id}/publicar`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ red })
+  });
+  return parseResponse<PiezaContenido>(response);
+}
+
 export async function fetchPlanSemanal(semanaInicio: string) {
   const params = new URLSearchParams({ semana_inicio: semanaInicio });
   const response = await fetch(`/api/planes-semanales?${params.toString()}`);
@@ -217,6 +226,7 @@ export function useContenido() {
     generarImagenPieza,
     generarCompletoPieza,
     renderizarPieza,
+    publicarPieza,
     fetchPlanSemanal,
     generarPlanSemanal
   };

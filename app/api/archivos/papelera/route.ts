@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
-import { getAdminUser } from "@/lib/require-admin";
+import { getBrandManagerUser } from "@/lib/require-admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Archivo } from "@/types/archivos";
 
 export async function GET() {
   try {
-    const admin = await getAdminUser();
+    const admin = await getBrandManagerUser();
 
     if (!admin) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });

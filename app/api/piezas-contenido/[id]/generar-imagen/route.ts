@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createHiggsfieldClient } from "@higgsfield/client/v2";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { getAdminUser } from "@/lib/require-admin";
+import { getBrandManagerUser } from "@/lib/require-admin";
 import { CONTENT_BUCKET, getBlyndtekContentBrand } from "@/lib/contenido/blyndtek";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { ContenidoDatabase, JsonValue, MarcaContenido, PiezaContenido } from "@/types/contenido";
@@ -270,7 +270,7 @@ export async function POST(_request: Request, { params }: RouteContext) {
   const supabase = createAdminClient() as unknown as SupabaseClient<ContenidoDatabase>;
 
   try {
-    const admin = await getAdminUser();
+    const admin = await getBrandManagerUser();
     if (!admin && !isServiceRoleAuthorized(_request)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }

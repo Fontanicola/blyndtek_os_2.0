@@ -2740,7 +2740,7 @@ export type Database = {
           id: string;
           nombre: string;
           email: string;
-          rol: "admin" | "miembro" | "comercial";
+          rol: "admin" | "miembro" | "comercial" | "marketing";
           google_calendar_token: string | null;
           foto_url: string | null;
           supervisor_id: string | null;
@@ -2751,7 +2751,7 @@ export type Database = {
           id: string;
           nombre: string;
           email: string;
-          rol?: "admin" | "miembro" | "comercial";
+          rol?: "admin" | "miembro" | "comercial" | "marketing";
           google_calendar_token?: string | null;
           foto_url?: string | null;
           supervisor_id?: string | null;
@@ -2762,7 +2762,7 @@ export type Database = {
           id?: string;
           nombre?: string;
           email?: string;
-          rol?: "admin" | "miembro" | "comercial";
+          rol?: "admin" | "miembro" | "comercial" | "marketing";
           google_calendar_token?: string | null;
           foto_url?: string | null;
           supervisor_id?: string | null;

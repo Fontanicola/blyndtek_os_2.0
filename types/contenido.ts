@@ -92,6 +92,34 @@ export type PiezaContenido = {
   plan?: PlanSemanal | null;
 };
 
+export type MarcaIdentidadSeccion = {
+  id: string;
+  marca_id: string;
+  clave: string;
+  titulo: string;
+  contenido: string;
+  orden: number;
+  visible: boolean;
+  updated_by: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type IntegracionContenido = {
+  id: string;
+  marca_id: string;
+  red: "instagram" | "linkedin";
+  nombre_cuenta: string;
+  cuenta_externa_id: string | null;
+  access_token: string | null;
+  refresh_token: string | null;
+  token_expires_at: string | null;
+  activa: boolean;
+  metadata: Record<string, JsonValue>;
+  created_at: string;
+  updated_at: string;
+};
+
 export type ContenidoDatabase = {
   public: {
     Tables: {
@@ -119,6 +147,16 @@ export type ContenidoDatabase = {
         Row: GeneracionAutomatica;
         Insert: Partial<GeneracionAutomatica> & Pick<GeneracionAutomatica, "estado">;
         Update: Partial<GeneracionAutomatica>;
+      };
+      marca_identidad_secciones: {
+        Row: MarcaIdentidadSeccion;
+        Insert: Partial<MarcaIdentidadSeccion> & Pick<MarcaIdentidadSeccion, "marca_id" | "clave" | "titulo">;
+        Update: Partial<MarcaIdentidadSeccion>;
+      };
+      contenido_integraciones_sociales: {
+        Row: IntegracionContenido;
+        Insert: Partial<IntegracionContenido> & Pick<IntegracionContenido, "marca_id" | "red" | "nombre_cuenta">;
+        Update: Partial<IntegracionContenido>;
       };
     };
     Views: Record<string, never>;

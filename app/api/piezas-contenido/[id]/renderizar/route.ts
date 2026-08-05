@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { readFile } from "fs/promises";
 import { join } from "path";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { getAdminUser } from "@/lib/require-admin";
+import { getBrandManagerUser } from "@/lib/require-admin";
 import { CONTENT_BUCKET, getBlyndtekContentBrand } from "@/lib/contenido/blyndtek";
 import { PlantillaSlide } from "@/lib/contenido/plantillaSlide";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -180,7 +180,7 @@ function isServiceRoleAuthorized(request: Request) {
 
 export async function POST(request: Request, { params }: RouteContext) {
   try {
-    const admin = await getAdminUser();
+    const admin = await getBrandManagerUser();
     if (!admin && !isServiceRoleAuthorized(request)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }

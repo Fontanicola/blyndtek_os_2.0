@@ -185,6 +185,9 @@ export const WalletIcon = createIcon(Wallet);
 export const WrenchIcon = createIcon(Wrench);
 export const ZapIcon = createIcon(Zap);
 export const XIcon = createIcon(X);
+export const StoriesIcon = ImageIcon;
+export const InstagramIcon = ImageIcon;
+export const LinkedinIcon = LinkIcon;
 
 // Legacy semantic aliases used throughout the app
 export const AgentesIcon = BotIcon;

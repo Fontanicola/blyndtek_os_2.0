@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { getAdminUser } from "@/lib/require-admin";
+import { getBrandManagerUser } from "@/lib/require-admin";
 import { getBlyndtekContentBrand } from "@/lib/contenido/blyndtek";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { AgentesDatabase } from "@/types/agentes";
@@ -137,7 +137,7 @@ async function registrarActividadGenerador({
 
 export async function POST(request: Request, { params }: RouteContext) {
   try {
-    const admin = await getAdminUser();
+    const admin = await getBrandManagerUser();
     const serviceRoleAuthorized = isServiceRoleAuthorized(request);
     if (!admin && !serviceRoleAuthorized) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });

@@ -72,7 +72,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "No autenticado." }, { status: 401 });
     }
 
-    if (currentUser.rol !== "admin") {
+    if (currentUser.rol !== "admin" && currentUser.rol !== "marketing") {
       return NextResponse.json({ error: "No autorizado." }, { status: 403 });
     }
 
@@ -206,4 +206,3 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
-

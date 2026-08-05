@@ -1156,6 +1156,8 @@ Nota: `usuarios` debe existir antes que `leads`, `proyectos`, `features`, `tarea
 
 ### Columnas nuevas registradas
 
+- `usuarios.rol` admite también `marketing`, rol operativo para gestionar marca, contenido, campañas y recursos sin acceso a Finanzas, Leads, Clientes ni configuración administrativa.
+
 - `proyectos.github_repo` texto nullable con formato `owner/repo`.
 - `fases_proyecto.ai_dev_estado` texto enumerado para el estado de AI Dev.
 - `fases_proyecto.ai_dev_iniciado_at` timestamptz nullable.
@@ -1188,6 +1190,15 @@ Nota: `usuarios` debe existir antes que `leads`, `proyectos`, `features`, `tarea
 - `preguntas_diagnostico` guarda el banco común de preguntas del diagnóstico, agrupadas por categoría y orden. `momento='formulario'` son las preguntas que responde el cliente desde el link público; `momento='sesion'` son las preguntas internas que recorre el consultor durante la reunión y nunca se exponen públicamente.
 - `diagnosticos` guarda un diagnóstico por lead con `token_publico`, respuestas JSON, estado, quién lo completó, informe generado, módulos sugeridos y precios calculados para la propuesta. `respuestas` reserva la clave interna `__contexto_adicional` para contexto de reunión/notas comerciales que orientan a la IA y no corresponde a una pregunta preset.
 - `modulos_catalogo` guarda el catálogo editable de módulos con precios ideal/mínimo e incremento mensual para usar en propuestas. La migración `019_seed_modulos_catalogo_defaults.sql` carga un catálogo base idempotente para que el diagnóstico pueda generar propuestas aunque el admin todavía no haya cargado módulos manualmente.
+
+### Operación de marca y redes
+
+- `marca_identidad_secciones` guarda el manual vivo de Blyndtek por bloques editables (`posicionamiento`, `quienes-somos`, `que-hacemos`, `propuesta-valor`, tono, prueba y lineamientos). Se vincula a `marcas_contenido` y ordena cada sección para su edición y presentación.
+- `contenido_integraciones_sociales` registra las cuentas profesionales de Instagram y LinkedIn. Los tokens permanecen server-side y nunca se devuelven al navegador; `activa` controla si una cuenta puede usarse para publicación.
+- `contenido_publicaciones_log` guarda cada intento de publicación directa, su red, estado, identificador externo, respuesta y error. La publicación directa queda habilitada sólo cuando la cuenta tiene OAuth y permisos reales configurados.
+- `contenido_metricas` guarda métricas por pieza, red y fecha para alimentar alcance, impresiones, interacción, clics y crecimiento. Es un histórico de plataforma, separado de la atribución comercial de leads.
+- La migración `025_content_operations_luli.sql` crea estas tablas idempotentemente. Las publicaciones, carruseles, historias y sus fechas siguen viviendo en `piezas_contenido`; no se duplica el calendario editorial.
+- La publicación directa requiere una fila activa con `access_token` y `cuenta_externa_id`; el token se consulta únicamente server-side. Instagram requiere además una imagen accesible y LinkedIn usa el identificador de autor de organización/persona según la cuenta configurada.
 
 ### Tabla nueva
 

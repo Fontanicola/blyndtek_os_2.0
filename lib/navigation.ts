@@ -41,6 +41,13 @@ export const navigationItems: NavItem[] = [
     section: "top-level"
   },
   {
+    label: "Marca y contenido",
+    href: "/marca",
+    icon: createElement(MegaphoneIcon),
+    roles: ["admin", "marketing"],
+    section: "top-level"
+  },
+  {
     label: "AI Hub",
     icon: createElement(SparklesIcon),
     roles: ["admin"],
@@ -88,14 +95,14 @@ export const navigationItems: NavItem[] = [
     label: "Marketing",
     href: "/marketing",
     icon: createElement(BarChartIcon),
-    roles: ["admin"],
+    roles: ["admin", "marketing"],
     section: "comercial"
   },
   {
     label: "Contenido",
     href: "/contenido",
     icon: createElement(FileTextIcon),
-    roles: ["admin"],
+    roles: ["admin", "marketing"],
     section: "comercial"
   },
   {
@@ -123,21 +130,21 @@ export const navigationItems: NavItem[] = [
     label: "Tareas",
     href: "/tareas",
     icon: createElement(TareasIcon),
-    roles: ["admin", "miembro", "comercial"],
+    roles: ["admin", "miembro", "comercial", "marketing"],
     section: "entrega"
   },
   {
     label: "Calendario",
     href: "/calendario",
     icon: createElement(CalendarioIcon),
-    roles: ["admin", "miembro", "comercial"],
+    roles: ["admin", "miembro", "comercial", "marketing"],
     section: "entrega"
   },
   {
     label: "Notas",
     href: "/notas",
     icon: createElement(NotasIcon),
-    roles: ["admin", "miembro", "comercial"],
+    roles: ["admin", "miembro", "comercial", "marketing"],
     section: "entrega"
   },
   {
@@ -158,7 +165,7 @@ export const navigationItems: NavItem[] = [
     label: "Archivos",
     href: "/archivos",
     icon: createElement(ArchivosIcon),
-    roles: ["admin", "comercial"],
+    roles: ["admin", "comercial", "marketing"],
     section: "control"
   },
   {

@@ -34,7 +34,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: "Archivo not found" }, { status: 404 });
     }
 
-    if (currentUser.rol !== "admin") {
+    if (currentUser.rol !== "admin" && currentUser.rol !== "marketing") {
       if (!archivo.carpeta_id) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { canUsuarioAccederCarpetaCompartida } from "@/lib/carpetas";
-import { getAdminUser } from "@/lib/require-admin";
+import { getBrandManagerUser } from "@/lib/require-admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Archivo } from "@/types/archivos";
 
@@ -36,7 +36,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: "Archivo not found" }, { status: 404 });
     }
 
-    if (currentUser.rol !== "admin") {
+    if (currentUser.rol !== "admin" && currentUser.rol !== "marketing") {
       if (!data.carpeta_id) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }
@@ -61,7 +61,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
 
 export async function PATCH(request: NextRequest, context: RouteContext) {
   try {
-    const admin = await getAdminUser();
+    const admin = await getBrandManagerUser();
 
     if (!admin) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -97,7 +97,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 
 export async function DELETE(_request: NextRequest, context: RouteContext) {
   try {
-    const admin = await getAdminUser();
+    const admin = await getBrandManagerUser();
 
     if (!admin) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });

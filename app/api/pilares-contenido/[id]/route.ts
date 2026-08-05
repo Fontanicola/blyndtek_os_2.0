@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { getAdminUser } from "@/lib/require-admin";
+import { getBrandManagerUser } from "@/lib/require-admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getBlyndtekContentBrand } from "@/lib/contenido/blyndtek";
 import type { ContenidoDatabase, PilarContenido } from "@/types/contenido";
@@ -30,7 +30,7 @@ async function assertBlyndtekPilar(supabase: SupabaseClient<ContenidoDatabase>, 
 
 export async function PATCH(request: Request, { params }: RouteContext) {
   try {
-    const admin = await getAdminUser();
+    const admin = await getBrandManagerUser();
     if (!admin) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
@@ -69,7 +69,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
 
 export async function DELETE(_request: Request, { params }: RouteContext) {
   try {
-    const admin = await getAdminUser();
+    const admin = await getBrandManagerUser();
     if (!admin) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }

@@ -12,6 +12,16 @@ export async function getAdminUser() {
   return usuario;
 }
 
+export async function getBrandManagerUser() {
+  const usuario = await getCurrentUser();
+
+  if (!usuario || (usuario.rol !== "admin" && usuario.rol !== "marketing")) {
+    return null;
+  }
+
+  return usuario;
+}
+
 export async function requireAdminResponse() {
   const usuario = await getAdminUser();
 

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
-import { getAdminUser } from "@/lib/require-admin";
+import { getBrandManagerUser } from "@/lib/require-admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { canUsuarioAccederCarpetaCompartida, getCarpetaContenido } from "@/lib/carpetas";
 import type { Carpeta } from "@/types/archivos";
@@ -19,7 +19,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: "No autenticado." }, { status: 401 });
     }
 
-    if (currentUser.rol !== "admin" && currentUser.rol !== "comercial") {
+    if (currentUser.rol !== "admin" && currentUser.rol !== "comercial" && currentUser.rol !== "marketing") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -48,7 +48,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
 
 export async function PATCH(request: NextRequest, context: RouteContext) {
   try {
-    const admin = await getAdminUser();
+    const admin = await getBrandManagerUser();
 
     if (!admin) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -103,7 +103,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 
 export async function DELETE(_request: NextRequest, context: RouteContext) {
   try {
-    const admin = await getAdminUser();
+    const admin = await getBrandManagerUser();
 
     if (!admin) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
