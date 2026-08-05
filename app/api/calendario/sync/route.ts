@@ -19,6 +19,8 @@ type GoogleCalendarEvent = {
   summary?: string;
   start?: { dateTime?: string; date?: string };
   end?: { dateTime?: string; date?: string };
+  hangoutLink?: string;
+  conferenceData?: { entryPoints?: { entryPointType?: string; uri?: string }[] };
 };
 
 function toIsoFromGoogleDate(value: string | undefined, end = false) {
@@ -68,7 +70,11 @@ async function upsertGoogleEvent(
     usuario_id: usuarioId,
     referencia_tipo: "lead" as const,
     referencia_id: usuarioId,
-    google_event_id: googleEvent.id
+    google_event_id: googleEvent.id,
+    enlace_reunion:
+      googleEvent.hangoutLink ??
+      googleEvent.conferenceData?.entryPoints?.find((entry) => entry.entryPointType === "video")?.uri ??
+      null
   };
 
   if (existing) {
@@ -134,12 +140,15 @@ export async function POST() {
         }
       );
 
-      const created = (await createResponse.json()) as { id?: string };
+      const created = (await createResponse.json()) as { id?: string; hangoutLink?: string };
       if (!created.id) {
         continue;
       }
 
-      await supabase.from("eventos").update({ google_event_id: created.id }).eq("id", evento.id);
+      await supabase
+        .from("eventos")
+        .update({ google_event_id: created.id, enlace_reunion: created.hangoutLink ?? null })
+        .eq("id", evento.id);
       pushed += 1;
     }
 

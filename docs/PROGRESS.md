@@ -3294,3 +3294,5 @@ Se completó la auditoría de código, búsqueda transversal, tipado, lint y bui
 - Se creó `POST /api/webhooks/calendly`, protegido por secreto en la URL, para procesar reservas y cancelaciones.
 - Las reservas se asocian al lead por el email guardado por el endpoint público, crean/actualizan un evento de calendario y generan una tarea de seguimiento sin duplicados.
 - Las credenciales permanecen fuera del repositorio: `CALENDLY_PERSONAL_ACCESS_TOKEN`, `CALENDLY_WEBHOOK_SECRET` y opcionalmente `CALENDLY_WEBHOOK_URL`.
+- Se agregó la sección `/reuniones` con cards de reuniones programadas, finalizadas y canceladas, fecha, horario, estado y enlace de videollamada. Las reservas de Calendly muestran su logo real y reutilizan el modal existente para ver/editar el evento.
+- Se hizo visible `/calendario` para admin y marketing, y se agregó `enlace_reunion` a `eventos` mediante `supabase/migrations/027_reuniones_enlace.sql`. El webhook de Calendly y la sincronización de Google Calendar persisten el enlace cuando el proveedor lo entrega.

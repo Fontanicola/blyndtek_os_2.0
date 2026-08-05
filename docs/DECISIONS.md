@@ -749,3 +749,4 @@ El ciclo posterior al delivery se modela en tres objetos operativos: tickets par
 - Instagram y LinkedIn se modelan como integraciones separadas. La publicación y las métricas sólo se consideran activas con OAuth, permisos y cuentas reales configuradas; hasta entonces la interfaz muestra claramente que falta conexión.
 - `contenido_publicaciones_log` y `contenido_metricas` dan trazabilidad a publicaciones y resultados sin mezclar métricas de redes con atribución de leads.
 - La publicación directa se ejecuta sólo después de que la red confirma el resultado; los errores de OAuth, permisos o contenido quedan visibles y trazados, sin falsificar el estado `publicada`.
+- Las reuniones tienen una vista operativa propia en `/reuniones`, pero conservan `eventos` como fuente única. `enlace_reunion` permite mostrar y editar el acceso a la videollamada; Calendly y Google Calendar lo completan cuando el proveedor lo entrega.

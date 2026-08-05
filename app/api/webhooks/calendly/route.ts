@@ -57,6 +57,9 @@ export async function POST(request: NextRequest) {
     }
 
     const eventUri = resource.event ?? body.payload?.event ?? null;
+    const location = resource.location;
+    const enlaceReunion =
+      typeof location === "string" ? location : location?.join_url ?? location?.url ?? null;
     const startTime = resource.start_time ?? null;
     const endTime = resource.end_time ?? null;
     const date = startTime?.slice(0, 10) ?? null;
@@ -96,7 +99,8 @@ export async function POST(request: NextRequest) {
       referencia_id: lead.id,
       google_event_id: existingEvent?.google_event_id ?? null,
       calendly_event_id: eventUri,
-      calendly_invitee_uri: inviteeUri
+      calendly_invitee_uri: inviteeUri,
+      enlace_reunion: enlaceReunion
     };
 
     if (existingEvent) {

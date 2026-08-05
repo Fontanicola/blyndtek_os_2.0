@@ -68,6 +68,7 @@ import {
   Upload,
   User,
   Users,
+  Video,
   Wallet,
   Wrench,
   Zap,
@@ -183,6 +184,7 @@ export const TrendingUpIcon = createIcon(TrendingUp);
 export const UploadIcon = createIcon(Upload);
 export const UserIcon = createIcon(User);
 export const UsersIcon = createIcon(Users);
+export const VideoIcon = createIcon(Video);
 export const WalletIcon = createIcon(Wallet);
 export const WrenchIcon = createIcon(Wrench);
 export const ZapIcon = createIcon(Zap);

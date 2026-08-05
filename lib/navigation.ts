@@ -11,6 +11,7 @@ import {
   FileTextIcon,
   GridIcon,
   FinanzasIcon,
+  VideoIcon,
   LayersIcon,
   LifeBuoyIcon,
   MegaphoneIcon,
@@ -145,7 +146,14 @@ export const navigationItems: NavItem[] = [
     label: "Calendario",
     href: "/calendario",
     icon: createElement(CalendarioIcon),
-    roles: ["miembro", "comercial"],
+    roles: ["admin", "miembro", "comercial", "marketing"],
+    section: "entrega"
+  },
+  {
+    label: "Reuniones",
+    href: "/reuniones",
+    icon: createElement(VideoIcon),
+    roles: ["admin", "miembro", "comercial", "marketing"],
     section: "entrega"
   },
   {

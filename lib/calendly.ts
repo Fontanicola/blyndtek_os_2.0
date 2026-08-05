@@ -88,6 +88,7 @@ export type CalendlyInvitee = {
     start_time?: string;
     end_time?: string;
     cancel_url?: string;
+    location?: { type?: string; join_url?: string; url?: string } | string;
   };
 };
 

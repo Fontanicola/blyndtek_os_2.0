@@ -34,6 +34,7 @@ export type Evento = {
   google_event_id: string | null;
   calendly_event_id: string | null;
   calendly_invitee_uri: string | null;
+  enlace_reunion: string | null;
   created_at: string;
 };
 
@@ -53,6 +54,7 @@ export type CreateEventoInput = {
   google_event_id?: string | null;
   calendly_event_id?: string | null;
   calendly_invitee_uri?: string | null;
+  enlace_reunion?: string | null;
   invited_user_ids?: string[];
 };
 

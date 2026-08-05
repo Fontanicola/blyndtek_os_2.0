@@ -26,6 +26,7 @@ type FormState = {
   tipo: TipoEvento;
   usuario_id: string;
   invited_user_ids: string[];
+  enlace_reunion: string;
 };
 
 function pad(value: number) {
@@ -51,7 +52,8 @@ function buildInitialForm(
       fecha_fin: toLocalInputValue(new Date(evento.fecha_fin)),
       tipo: evento.tipo,
       usuario_id: evento.usuario_id,
-      invited_user_ids: evento.invited_user_ids ?? []
+      invited_user_ids: evento.invited_user_ids ?? [],
+      enlace_reunion: evento.enlace_reunion ?? ""
     } satisfies FormState;
   }
 
@@ -66,7 +68,8 @@ function buildInitialForm(
     fecha_fin: toLocalInputValue(end),
     tipo: "reunion" as TipoEvento,
     usuario_id: currentUserId ?? usuarios[0]?.id ?? "",
-    invited_user_ids: []
+    invited_user_ids: [],
+    enlace_reunion: ""
   } satisfies FormState;
 }
 
@@ -166,7 +169,8 @@ export function EventoModal({
               usuario_id: form.usuario_id,
               referencia_tipo: evento?.referencia_tipo ?? "lead",
               referencia_id: evento?.referencia_id ?? form.usuario_id,
-              invited_user_ids: form.invited_user_ids
+              invited_user_ids: form.invited_user_ids,
+              enlace_reunion: form.enlace_reunion.trim() || null
             } satisfies CreateEventoInput;
 
             await onSave(payload);
@@ -202,6 +206,18 @@ export function EventoModal({
             disabled={readOnly}
           />
         </div>
+
+        {form.tipo === "reunion" ? (
+          <Input
+            label="Enlace de la reunión"
+            type="url"
+            placeholder="https://meet.google.com/..."
+            value={form.enlace_reunion}
+            onChange={(event) => setForm((current) => ({ ...current, enlace_reunion: event.target.value }))}
+            disabled={readOnly || Boolean(evento?.calendly_invitee_uri)}
+          />
+        ) : null}
+        {evento?.calendly_invitee_uri ? <p className="-mt-3 text-xs text-graphite">Enlace recibido desde Calendly.</p> : null}
 
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-1">

@@ -133,7 +133,8 @@ export async function POST(request: NextRequest) {
       usuario_id: usuarioId,
       referencia_tipo: body.referencia_tipo ?? "lead",
       referencia_id: body.referencia_id ?? usuarioId,
-      google_event_id: body.google_event_id ?? null
+      google_event_id: body.google_event_id ?? null,
+      enlace_reunion: body.enlace_reunion ?? null
     };
 
     const { data, error } = await supabase.from("eventos").insert(payload).select("*").single();

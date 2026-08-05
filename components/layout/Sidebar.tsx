@@ -204,26 +204,24 @@ function NavigationGroup({
           "grid transition-[grid-template-rows,opacity,margin] duration-normal ease-normal",
           showChildren ? "mt-1 grid-rows-[1fr] opacity-100" : "mt-0 grid-rows-[0fr] opacity-0"
         )}
+        aria-hidden={!showChildren}
       >
         <div className="min-h-0 overflow-hidden">
-          <div
-            className={cn(
-              "mx-2 space-y-1 rounded-card px-2 py-2",
-              "border border-line-soft/80 bg-white/45"
-            )}
-          >
-            {items.map((item) => (
-              <NavigationRow
-                key={item.href ?? item.label}
-                item={item}
-                pathname={pathname}
-                collapsed={collapsed}
-                mobile={mobile}
-                onClose={onClose}
-                level={1}
-              />
-            ))}
-          </div>
+          {showChildren ? (
+            <div className="mx-2 space-y-1 rounded-card border border-line-soft/80 bg-white/45 px-2 py-2">
+              {items.map((item) => (
+                <NavigationRow
+                  key={item.href ?? item.label}
+                  item={item}
+                  pathname={pathname}
+                  collapsed={collapsed}
+                  mobile={mobile}
+                  onClose={onClose}
+                  level={1}
+                />
+              ))}
+            </div>
+          ) : null}
         </div>
       </div>
     </div>
@@ -314,11 +312,11 @@ export function Sidebar({
         className={cn(
           "flex h-screen flex-col bg-canvas transition-[width] duration-normal ease-normal",
           collapsed ? "w-[76px]" : "w-[220px]",
-          "md:sticky md:top-0",
+          "relative z-30 md:sticky md:top-0",
           mobile
             ? "fixed inset-y-0 left-0 z-50 transition-transform duration-normal ease-normal md:hidden"
             : "hidden md:flex",
-          mobile && (isOpen ? "translate-x-0" : "-translate-x-full")
+          mobile && (isOpen ? "pointer-events-auto translate-x-0" : "pointer-events-none -translate-x-full")
         )}
         onMouseEnter={mobile ? undefined : onMouseEnter}
         onMouseLeave={mobile ? undefined : onMouseLeave}
