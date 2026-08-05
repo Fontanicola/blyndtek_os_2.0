@@ -127,9 +127,41 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
     }
 
     const supabase = createAdminClient();
-    const { error } = await supabase.from("egresos").delete().eq("id", context.params.id);
+    const { data: current, error: currentError } = await supabase
+      .from("egresos")
+      .select("id, recurrente_config_id, fecha, recurrente, concepto, categoria, monto, caja_id, cuenta_medio")
+      .eq("id", context.params.id)
+      .maybeSingle();
+
+    if (currentError) {
+      return NextResponse.json({ error: currentError.message }, { status: 500 });
+    }
+
+    if (!current) {
+      return NextResponse.json({ error: "No se encontró el egreso." }, { status: 404 });
+    }
+
+    let deleteQuery = supabase.from("egresos").delete();
+    if (current.recurrente_config_id || current.recurrente) {
+      const monthStart = `${current.fecha.slice(0, 7)}-01`;
+      const nextMonth = new Date(`${monthStart}T00:00:00Z`);
+      nextMonth.setUTCMonth(nextMonth.getUTCMonth() + 1);
+      const nextMonthStart = nextMonth.toISOString().slice(0, 10);
+      deleteQuery = deleteQuery.eq("recurrente", true).eq("concepto", current.concepto).eq("categoria", current.categoria).eq("monto", current.monto).eq("fecha", current.fecha).gte("fecha", monthStart).lt("fecha", nextMonthStart);
+    } else {
+      deleteQuery = deleteQuery.eq("id", context.params.id);
+    }
+
+    const { error } = await deleteQuery;
 
     if (error) {
+      if (error.code === "23503") {
+        return NextResponse.json(
+          { error: "No se puede eliminar este egreso porque está vinculado a otra operación." },
+          { status: 409 }
+        );
+      }
+
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 

@@ -89,7 +89,19 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ data: (data ?? []) as Egreso[] });
+    const unique = new Map<string, Egreso>();
+    for (const row of (data ?? []) as Egreso[]) {
+      const key = row.recurrente_config_id
+        ? ["recurrente", row.concepto.trim().toLowerCase(), row.categoria, row.monto, row.fecha, row.caja_id ?? row.cuenta_medio ?? ""].join(":")
+        : `egreso:${row.id}`;
+      const previous = unique.get(key);
+      // If a legacy race already left two instances, keep the paid one visible.
+      if (!previous || (!previous.pagado && row.pagado)) {
+        unique.set(key, row);
+      }
+    }
+
+    return NextResponse.json({ data: [...unique.values()] });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unexpected error";
     return NextResponse.json({ error: message }, { status: 500 });

@@ -3252,3 +3252,10 @@ $ find . -maxdepth 3 \( -name 'middleware.*' -o -name 'proxy.*' \) -not -path '.
 ### Alcance de verificación visual
 
 Se completó la auditoría de código, búsqueda transversal, tipado, lint y build para los 16 módulos. En este entorno no estuvo disponible una sesión de navegador autenticada para recorrer visualmente cada pantalla con datos reales; por eso la verificación visual pixel a pixel de los 16 módulos queda explícitamente pendiente, no se la considera asumida. Las correcciones fueron validadas por estructura renderizada, primitives compartidos y compilación de producción.
+## 2026-08-05 — Egresos duplicados y eliminación de instancias recurrentes
+
+- Se verificó Supabase directamente: 131 egresos totales, 119 recurrentes y un grupo duplicado real de “Alquiler oficina” para 2026-08-03, causado por dos plantillas activas idénticas. La causa intermitente era una combinación de plantillas duplicadas y condición de carrera entre el chequeo y el insert de instancias mensuales.
+- Se agregó `023_egresos_recurrentes_unicos.sql` con índice único por plantilla y mes, y manejo defensivo del conflicto concurrente en `lib/finanzas/egresosRecurrentes.ts`.
+- `app/api/egresos/route.ts` ahora deduplica defensivamente instancias recurrentes por plantilla/mes antes de devolverlas, priorizando la copia pagada si existiera una legacy.
+- `app/api/egresos/[id]/route.ts` elimina todas las copias del mismo mes de una instancia recurrente y devuelve un error 409 claro si existe una dependencia contable que impide borrar.
+- Verificación: `npm run lint` y `git diff --check` OK. La migración debe aplicarse en Supabase para activar la garantía a nivel de base.

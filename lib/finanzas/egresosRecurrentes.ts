@@ -120,6 +120,31 @@ export async function createRecurrenteConfig(
     : await getCajaBySlug(supabase, payload.cuenta_medio ?? null);
   const diaPago = clampDiaPago(new Date(`${payload.fecha}T00:00:00`).getDate());
 
+  let existingQuery = supabase
+    .from("egresos_recurrentes_config")
+    .select("*")
+    .eq("concepto", payload.concepto)
+    .eq("categoria", payload.categoria)
+    .eq("monto", payload.monto)
+    .eq("dia_pago", diaPago)
+    .eq("fecha_inicio", payload.fecha)
+    .eq("activo", true);
+
+  existingQuery = payload.caja_id
+    ? existingQuery.eq("caja_id", payload.caja_id)
+    : existingQuery.is("caja_id", null);
+  existingQuery = payload.cliente_id
+    ? existingQuery.eq("cliente_id", payload.cliente_id)
+    : existingQuery.is("cliente_id", null);
+  existingQuery = payload.proyecto_id
+    ? existingQuery.eq("proyecto_id", payload.proyecto_id)
+    : existingQuery.is("proyecto_id", null);
+
+  const { data: existing } = await existingQuery.order("created_at", { ascending: true }).limit(1).maybeSingle();
+  if (existing) {
+    return existing as EgresoRecurrenteConfig;
+  }
+
   const { data, error } = await supabase
     .from("egresos_recurrentes_config")
     .insert({
@@ -263,6 +288,24 @@ export async function ensureEgresoRecurrenteInstance(
 
   const { data, error } = await supabase.from("egresos").insert(patch).select("*").single();
   if (error || !data) {
+    // A concurrent cron/page request can win the unique month insert. Return
+    // that instance instead of surfacing a duplicate-generation error.
+    if (error?.code === "23505") {
+      const { data: concurrent } = await supabase
+        .from("egresos")
+        .select("*")
+        .eq("recurrente_config_id", config.id)
+        .gte("fecha", monthStart)
+        .lt("fecha", nextMonthStart)
+        .order("created_at", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+
+      if (concurrent) {
+        return { egreso: concurrent as Egreso, created: false };
+      }
+    }
+
     throw new Error(error?.message ?? "No se pudo crear la instancia recurrente.");
   }
 
