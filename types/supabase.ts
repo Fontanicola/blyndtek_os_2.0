@@ -1435,6 +1435,8 @@ export type Database = {
           referencia_tipo: "tarea" | "lead" | "cobro";
           referencia_id: string;
           google_event_id: string | null;
+          calendly_event_id: string | null;
+          calendly_invitee_uri: string | null;
           created_at: string;
         };
         Insert: {
@@ -1447,6 +1449,8 @@ export type Database = {
           referencia_tipo?: "tarea" | "lead" | "cobro";
           referencia_id?: string;
           google_event_id?: string | null;
+          calendly_event_id?: string | null;
+          calendly_invitee_uri?: string | null;
           created_at?: string;
         };
         Update: {
@@ -1459,6 +1463,8 @@ export type Database = {
           referencia_tipo?: "tarea" | "lead" | "cobro";
           referencia_id?: string;
           google_event_id?: string | null;
+          calendly_event_id?: string | null;
+          calendly_invitee_uri?: string | null;
           created_at?: string;
         };
         Relationships: [

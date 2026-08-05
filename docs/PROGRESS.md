@@ -3286,3 +3286,11 @@ Se completó la auditoría de código, búsqueda transversal, tipado, lint y bui
 - El Feed fue reorganizado como perfil editorial de Instagram: cabecera de cuenta, métricas operativas, bio, selector Instagram/LinkedIn y grilla 3xN de publicaciones con hover de fecha y apertura del lab editable.
 - Historias, calendario e identidad mantienen los mismos datos y APIs de Content Studio, pero cada uno tiene su propia entrada y URL.
 - Verificación: `npx tsc --noEmit` y `npm run lint` OK. La revisión visual se hizo contra la referencia adjunta; la grilla quedó en tres columnas para preservar el lenguaje de feed.
+# Calendly
+
+- Se agregó la migración `026_calendly_integration.sql` con identificadores externos idempotentes en `eventos`.
+- Se creó `lib/calendly.ts` para consultar la API v2 con el token privado configurado en Vercel.
+- Se creó `POST /api/calendly/setup`, restringido a administradores, para registrar una suscripción de webhook sin duplicarla.
+- Se creó `POST /api/webhooks/calendly`, protegido por secreto en la URL, para procesar reservas y cancelaciones.
+- Las reservas se asocian al lead por el email guardado por el endpoint público, crean/actualizan un evento de calendario y generan una tarea de seguimiento sin duplicados.
+- Las credenciales permanecen fuera del repositorio: `CALENDLY_PERSONAL_ACCESS_TOKEN`, `CALENDLY_WEBHOOK_SECRET` y opcionalmente `CALENDLY_WEBHOOK_URL`.

@@ -425,6 +425,8 @@ Protecciones activas: honeypot silencioso, CORS restringido a `MARKETING_SITE_UR
 | referencia_tipo | text | No especificado | `tarea|lead|cobro` |
 | referencia_id | uuid | No especificado | ID del objeto referenciado |
 | google_event_id | text | No especificado | para sincronización |
+| calendly_event_id | text | Sí | URI del evento externo de Calendly; índice único parcial |
+| calendly_invitee_uri | text | Sí | URI de la reserva/invitado de Calendly; índice único parcial |
 | created_at | timestamptz | No especificado |  |
 
 ## Tabla: eventos_invitados

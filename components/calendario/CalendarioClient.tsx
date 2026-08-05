@@ -66,6 +66,8 @@ export function CalendarioClient({ usuario, usuarios }: CalendarioClientProps) {
   const [modalOpen, setModalOpen] = useState(false);
   const [defaultDate, setDefaultDate] = useState<Date>(new Date());
   const [syncing, setSyncing] = useState(false);
+  const [settingUpCalendly, setSettingUpCalendly] = useState(false);
+  const [calendlyConnected, setCalendlyConnected] = useState(false);
   const [pendingInvitations, setPendingInvitations] = useState<InvitacionPendienteEvento[]>([]);
   const [loadingInvitations, setLoadingInvitations] = useState(true);
   const [proposalOpen, setProposalOpen] = useState(false);
@@ -175,6 +177,26 @@ export function CalendarioClient({ usuario, usuarios }: CalendarioClientProps) {
       });
     } finally {
       setSyncing(false);
+    }
+  }
+
+  async function handleCalendlySetup() {
+    setSettingUpCalendly(true);
+
+    try {
+      const response = await fetch("/api/calendly/setup", { method: "POST" });
+      const payload = (await response.json()) as { data?: { configured?: boolean }; error?: string };
+
+      if (!response.ok || !payload.data?.configured) {
+        throw new Error(payload.error ?? "No se pudo conectar Calendly.");
+      }
+
+      setCalendlyConnected(true);
+      setToast({ message: "Calendly conectado. Las nuevas reservas aparecerán en el calendario.", type: "success", visible: true });
+    } catch (error) {
+      setToast({ message: error instanceof Error ? error.message : "No se pudo conectar Calendly.", type: "error", visible: true });
+    } finally {
+      setSettingUpCalendly(false);
     }
   }
 
@@ -359,21 +381,28 @@ export function CalendarioClient({ usuario, usuarios }: CalendarioClientProps) {
       />
 
       <div className="flex justify-end">
-        {canSyncGoogle ? (
-          <Button variant="secondary" size="sm" onClick={handleGoogleSync} loading={syncing}>
-            Sincronizar ahora
-          </Button>
-        ) : (
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => {
-              window.location.href = "/api/auth/google";
-            }}
-          >
-            Conectar Google Calendar
-          </Button>
-        )}
+        <div className="flex flex-wrap justify-end gap-2">
+          {canSyncGoogle ? (
+            <Button variant="secondary" size="sm" onClick={handleGoogleSync} loading={syncing}>
+              Sincronizar ahora
+            </Button>
+          ) : (
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => {
+                window.location.href = "/api/auth/google";
+              }}
+            >
+              Conectar Google Calendar
+            </Button>
+          )}
+          {usuario?.rol === "admin" ? (
+            <Button variant="secondary" size="sm" onClick={handleCalendlySetup} loading={settingUpCalendly}>
+              {calendlyConnected ? "Calendly conectado" : "Conectar Calendly"}
+            </Button>
+          ) : null}
+        </div>
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
@@ -382,6 +411,7 @@ export function CalendarioClient({ usuario, usuarios }: CalendarioClientProps) {
         <Badge variant="danger">Vencimiento</Badge>
         <Badge variant="success">Reunión</Badge>
         {canSyncGoogle ? <Badge variant="success">Google conectado</Badge> : null}
+        {calendlyConnected ? <Badge variant="success">Calendly conectado</Badge> : null}
       </div>
 
       {loadingInvitations ? <div className="text-sm text-graphite">Cargando invitaciones...</div> : null}

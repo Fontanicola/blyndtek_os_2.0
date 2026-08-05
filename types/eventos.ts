@@ -32,6 +32,8 @@ export type Evento = {
   referencia_tipo: "tarea" | "lead" | "cobro";
   referencia_id: string;
   google_event_id: string | null;
+  calendly_event_id: string | null;
+  calendly_invitee_uri: string | null;
   created_at: string;
 };
 
@@ -49,6 +51,8 @@ export type CreateEventoInput = {
   referencia_tipo?: "tarea" | "lead" | "cobro";
   referencia_id?: string;
   google_event_id?: string | null;
+  calendly_event_id?: string | null;
+  calendly_invitee_uri?: string | null;
   invited_user_ids?: string[];
 };
 
