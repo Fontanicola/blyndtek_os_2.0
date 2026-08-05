@@ -15,6 +15,7 @@ import {
   LifeBuoyIcon,
   MegaphoneIcon,
   OutboundIcon,
+  PaletteIcon,
   SaasIcon,
   NotasIcon,
   SparklesIcon,
@@ -44,7 +45,7 @@ export const navigationItems: NavItem[] = [
   {
     label: "Marca",
     href: "/marca",
-    icon: createElement(MegaphoneIcon),
+    icon: createElement(PaletteIcon),
     roles: ["admin", "marketing"],
     section: "top-level",
     children: [

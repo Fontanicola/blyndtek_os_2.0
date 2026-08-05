@@ -244,12 +244,7 @@ export function Sidebar({
   const supabase = createClient();
   const menuRef = useRef<HTMLDivElement | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [expandedParents, setExpandedParents] = useState<Record<string, boolean>>({
-    "AI Hub": true,
-    comercial: true,
-    entrega: true,
-    control: true
-  });
+  const [expandedParents, setExpandedParents] = useState<Record<string, boolean>>({});
   const visibleItems = useMemo(
     () => filterItems(navigationItems, usuario?.rol ?? null),
     [usuario?.rol]
@@ -274,20 +269,22 @@ export function Sidebar({
   }, []);
 
   useEffect(() => {
-    if (pathname.startsWith("/ai-hub")) {
-      setExpandedParents((current) => ({ ...current, "AI Hub": true }));
-    }
-  }, [pathname]);
-
-  useEffect(() => {
+    const nextExpanded: Record<string, boolean> = {};
+    const activeTopLevel = topLevelItems.find((item) => hasActiveItem(pathname, [item]));
     const activeSection = navigationSections.find((section) =>
       visibleItems.some((item) => item.section === section.key && (isActivePath(pathname, item.href) || (item.children ? hasActiveItem(pathname, item.children) : false)))
     );
 
-    if (activeSection) {
-      setExpandedParents((current) => ({ ...current, [activeSection.key]: true }));
+    if (activeTopLevel?.children?.length) {
+      nextExpanded[activeTopLevel.label] = true;
     }
-  }, [pathname, visibleItems]);
+
+    if (activeSection) {
+      nextExpanded[activeSection.key] = true;
+    }
+
+    setExpandedParents(nextExpanded);
+  }, [pathname, visibleItems, topLevelItems]);
 
   async function handleLogout() {
     if (!usuario) {

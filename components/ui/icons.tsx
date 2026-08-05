@@ -51,6 +51,7 @@ import {
   MoreVertical,
   MoreHorizontal,
   Pause,
+  Palette,
   Play,
   Pencil,
   Phone,
@@ -165,6 +166,7 @@ export const MegaphoneIcon = createIcon(Megaphone);
 export const MoreVerticalIcon = createIcon(MoreVertical);
 export const MoreHorizontalIcon = createIcon(MoreHorizontal);
 export const PauseIcon = createIcon(Pause);
+export const PaletteIcon = createIcon(Palette);
 export const PlayIcon = createIcon(Play);
 export const PencilIcon = createIcon(Pencil);
 export const PhoneIcon = createIcon(Phone);
