@@ -1190,6 +1190,11 @@ Nota: `usuarios` debe existir antes que `leads`, `proyectos`, `features`, `tarea
 - `comisiones` no tiene `proyecto_id`; cualquier referencia de proyecto para reporting debe resolverse vía `cliente_id` / `cotizacion_id` y joins a `proyectos` según contexto.
 - `agentes`, `agente_config` y `agente_analisis` soportan el módulo de Agentes; `agente_analisis` guarda tanto la base determinística como la síntesis en lenguaje natural.
 - `cierres_mensuales` guarda el resumen financiero mensual generado por el agente `cierre-mensual`, con base numérica real y texto sintetizado por Claude.
+- `sistemas_gestionados` guarda el catálogo del control plane: URLs, endpoint/token de management server-side, vínculos opcionales a proyecto/cliente, configuración de Vercel/Supabase, stack, versión y estado de monitoreo. `management_token` es secreto y nunca se expone completo por API.
+- `sistemas_health_checks` guarda el histórico de disponibilidad por sistema, con estado, latencia, salud de base, detalle y timestamp.
+- `sistemas_incidentes` guarda incidentes de health check y errores reportados por sistemas clientes, con severidad, detalle y resolución.
+- `sistemas_deploys` guarda los últimos deploys sincronizados desde Vercel por sistema, incluyendo estado, commit y fecha.
+- Las cuatro tablas del control plane tienen RLS habilitado y policies admin-only. Las rutas server-side usan `service_role` acotado; Blyndtek OS nunca accede directamente a la base del cliente.
 - `preguntas_diagnostico` guarda el banco común de preguntas del diagnóstico, agrupadas por categoría y orden. `momento='formulario'` son las preguntas que responde el cliente desde el link público; `momento='sesion'` son las preguntas internas que recorre el consultor durante la reunión y nunca se exponen públicamente.
 - `diagnosticos` guarda un diagnóstico por lead con `token_publico`, respuestas JSON, estado, quién lo completó, informe generado, módulos sugeridos y precios calculados para la propuesta. `respuestas` reserva la clave interna `__contexto_adicional` para contexto de reunión/notas comerciales que orientan a la IA y no corresponde a una pregunta preset.
 - `modulos_catalogo` guarda el catálogo editable de módulos con precios ideal/mínimo e incremento mensual para usar en propuestas. La migración `019_seed_modulos_catalogo_defaults.sql` carga un catálogo base idempotente para que el diagnóstico pueda generar propuestas aunque el admin todavía no haya cargado módulos manualmente.
@@ -1214,6 +1219,7 @@ Nota: `usuarios` debe existir antes que `leads`, `proyectos`, `features`, `tarea
 - `diagnostico_metricas`: métricas cuantitativas internas asociadas a un diagnóstico y opcionalmente a un área. Guarda horas, cargas, errores, licencias, oportunidades y parámetros de cálculo según el tipo de pérdida. `costo_mensual_usd` y `costo_anual_usd` se calculan en código, no los inventa Claude.
 - Las respuestas de las preguntas de ambos momentos se guardan en el mismo `diagnosticos.respuestas`, indexadas por `pregunta_id`. El endpoint público sólo devuelve y acepta claves de preguntas `momento='formulario'` (más `__contexto_adicional`); la sesión interna lee y guarda las claves `momento='sesion'` con acceso autenticado de admin/comercial.
 - `cierres_mensuales`: histórico de cierres de caja mensuales con ingresos, egresos, margen, desvío versus el mes anterior, resumen generado y costo de IA.
+- `sistemas_gestionados`, `sistemas_health_checks`, `sistemas_incidentes` y `sistemas_deploys`: migración `020_control_plane.sql`, catálogo y telemetría del control plane. La automatización `/api/sistemas/check-todos` corre cada cinco minutos mediante pg_cron y actualiza `automatizaciones.ultima_ejecucion`.
 
 ### Diagnóstico pago
 
@@ -1224,6 +1230,12 @@ Nota: `usuarios` debe existir antes que `leads`, `proyectos`, `features`, `tarea
 - `comisiones.tipo` admite `diagnostico` además de `venta`.
 - `contratos.descuento_diagnostico_usd` numeric default `0` guarda el monto ya pagado por diagnóstico que se descontó del saldo del contrato final.
 - `config_comisiones.comision_diagnostico_usd` numeric define el monto fijo de comisión pendiente que se genera al registrar un diagnóstico pagado.
+
+### Preferencias de navegación
+
+- `preferencias_navegacion` guarda la preferencia individual de cada usuario para el modo foco. Tiene una fila por `usuario_id`, `secciones_ocultas` como array de claves de navegación y `modo_foco_activo` como flag de presentación.
+- La tabla referencia `usuarios.id` con `ON DELETE CASCADE`, tiene RLS habilitado y sus policies permiten seleccionar, insertar y actualizar únicamente la fila cuyo `usuario_id = auth.uid()`.
+- El modo foco no modifica roles, permisos ni acceso directo a rutas. Las secciones válidas se filtran server-side según el rol del usuario y `Dashboard` nunca se oculta del menú.
 
 ### Modelo de diagnóstico cuantitativo
 

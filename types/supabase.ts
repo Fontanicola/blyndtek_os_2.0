@@ -2744,6 +2744,214 @@ export type Database = {
           }
         ];
       };
+      sistemas_gestionados: {
+        Row: {
+          id: string;
+          proyecto_id: string | null;
+          cliente_id: string | null;
+          nombre: string;
+          url_produccion: string | null;
+          url_staging: string | null;
+          management_endpoint: string | null;
+          management_token: string | null;
+          vercel_project_id: string | null;
+          vercel_team_id: string | null;
+          supabase_project_ref: string | null;
+          stack: Json | null;
+          version_patrones: string | null;
+          estado: string;
+          monitoreo_activo: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          proyecto_id?: string | null;
+          cliente_id?: string | null;
+          nombre: string;
+          url_produccion?: string | null;
+          url_staging?: string | null;
+          management_endpoint?: string | null;
+          management_token?: string | null;
+          vercel_project_id?: string | null;
+          vercel_team_id?: string | null;
+          supabase_project_ref?: string | null;
+          stack?: Json | null;
+          version_patrones?: string | null;
+          estado?: string;
+          monitoreo_activo?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          proyecto_id?: string | null;
+          cliente_id?: string | null;
+          nombre?: string;
+          url_produccion?: string | null;
+          url_staging?: string | null;
+          management_endpoint?: string | null;
+          management_token?: string | null;
+          vercel_project_id?: string | null;
+          vercel_team_id?: string | null;
+          supabase_project_ref?: string | null;
+          stack?: Json | null;
+          version_patrones?: string | null;
+          estado?: string;
+          monitoreo_activo?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "sistemas_gestionados_proyecto_id_fkey";
+            columns: ["proyecto_id"];
+            isOneToOne: false;
+            referencedRelation: "proyectos";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "sistemas_gestionados_cliente_id_fkey";
+            columns: ["cliente_id"];
+            isOneToOne: false;
+            referencedRelation: "clientes";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      sistemas_health_checks: {
+        Row: {
+          id: string;
+          sistema_id: string;
+          estado: string;
+          latencia_ms: number | null;
+          db_ok: boolean | null;
+          detalle: string | null;
+          checked_at: string;
+        };
+        Insert: {
+          id?: string;
+          sistema_id: string;
+          estado: string;
+          latencia_ms?: number | null;
+          db_ok?: boolean | null;
+          detalle?: string | null;
+          checked_at?: string;
+        };
+        Update: {
+          id?: string;
+          sistema_id?: string;
+          estado?: string;
+          latencia_ms?: number | null;
+          db_ok?: boolean | null;
+          detalle?: string | null;
+          checked_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "sistemas_health_checks_sistema_id_fkey";
+            columns: ["sistema_id"];
+            isOneToOne: false;
+            referencedRelation: "sistemas_gestionados";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      sistemas_incidentes: {
+        Row: {
+          id: string;
+          sistema_id: string;
+          tipo: string;
+          severidad: string;
+          titulo: string;
+          detalle: string | null;
+          resuelto: boolean;
+          resuelto_at: string | null;
+          resuelto_por: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          sistema_id: string;
+          tipo: string;
+          severidad?: string;
+          titulo: string;
+          detalle?: string | null;
+          resuelto?: boolean;
+          resuelto_at?: string | null;
+          resuelto_por?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          sistema_id?: string;
+          tipo?: string;
+          severidad?: string;
+          titulo?: string;
+          detalle?: string | null;
+          resuelto?: boolean;
+          resuelto_at?: string | null;
+          resuelto_por?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "sistemas_incidentes_sistema_id_fkey";
+            columns: ["sistema_id"];
+            isOneToOne: false;
+            referencedRelation: "sistemas_gestionados";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "sistemas_incidentes_resuelto_por_fkey";
+            columns: ["resuelto_por"];
+            isOneToOne: false;
+            referencedRelation: "usuarios";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      sistemas_deploys: {
+        Row: {
+          id: string;
+          sistema_id: string;
+          vercel_deployment_id: string | null;
+          estado: string | null;
+          commit_sha: string | null;
+          commit_mensaje: string | null;
+          desplegado_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          sistema_id: string;
+          vercel_deployment_id?: string | null;
+          estado?: string | null;
+          commit_sha?: string | null;
+          commit_mensaje?: string | null;
+          desplegado_at?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          sistema_id?: string;
+          vercel_deployment_id?: string | null;
+          estado?: string | null;
+          commit_sha?: string | null;
+          commit_mensaje?: string | null;
+          desplegado_at?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "sistemas_deploys_sistema_id_fkey";
+            columns: ["sistema_id"];
+            isOneToOne: false;
+            referencedRelation: "sistemas_gestionados";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
       usuarios: {
         Row: {
           id: string;
@@ -2783,6 +2991,41 @@ export type Database = {
             foreignKeyName: "usuarios_supervisor_id_fkey";
             columns: ["supervisor_id"];
             isOneToOne: false;
+            referencedRelation: "usuarios";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      preferencias_navegacion: {
+        Row: {
+          id: string;
+          usuario_id: string;
+          secciones_ocultas: string[];
+          modo_foco_activo: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          usuario_id: string;
+          secciones_ocultas?: string[];
+          modo_foco_activo?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          usuario_id?: string;
+          secciones_ocultas?: string[];
+          modo_foco_activo?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "preferencias_navegacion_usuario_id_fkey";
+            columns: ["usuario_id"];
+            isOneToOne: true;
             referencedRelation: "usuarios";
             referencedColumns: ["id"];
           }

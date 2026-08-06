@@ -6,6 +6,7 @@ import { Badge, Button, Card, Input, Toast, UserAvatar } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { createClient } from "@/lib/supabase/client";
 import type { Usuario } from "@/types/auth";
+import { NavegacionPreferencias } from "@/components/perfil/NavegacionPreferencias";
 
 type PerfilClientProps = {
   usuario: Usuario;
@@ -600,6 +601,8 @@ export function PerfilClient({ usuario }: PerfilClientProps) {
             </div>
           </form>
         </Card>
+
+        <NavegacionPreferencias />
       </div>
 
       <Toast

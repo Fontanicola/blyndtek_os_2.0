@@ -5,12 +5,13 @@ import { usePathname, useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { UserAvatar } from "@/components/ui";
-import { ChevronDownIcon, LogoutIcon } from "@/components/ui/icons";
+import { ChevronDownIcon, EyeIcon, EyeOffIcon, LogoutIcon } from "@/components/ui/icons";
 import { cn } from "@/lib/cn";
 import { createClient } from "@/lib/supabase/client";
 import { navigationItems, navigationSections } from "@/lib/navigation";
 import type { Usuario } from "@/types/auth";
 import type { NavItem } from "@/types/navigation";
+import type { PreferenciaNavegacion } from "@/types/navegacion";
 
 type SidebarProps = {
   usuario: Usuario | null;
@@ -239,16 +240,42 @@ export function Sidebar({
   const menuRef = useRef<HTMLDivElement | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [expandedParents, setExpandedParents] = useState<Record<string, boolean>>({});
+  const [focusPreference, setFocusPreference] = useState<PreferenciaNavegacion | null>(null);
   const visibleItems = useMemo(
     () => filterItems(navigationItems, usuario?.rol ?? null),
     [usuario?.rol]
   );
+  const focusActive = focusPreference?.modo_foco_activo === true;
+  const hiddenSections = useMemo(() => focusPreference?.secciones_ocultas ?? [], [focusPreference?.secciones_ocultas]);
   const topLevelItems = useMemo(
-    () => visibleItems.filter((item) => item.section === "top-level"),
-    [visibleItems]
+    () => visibleItems.filter((item) => item.section === "top-level" && !(focusActive && item.focusKey && hiddenSections.includes(item.focusKey))),
+    [visibleItems, focusActive, hiddenSections]
   );
   const displayName = usuario?.nombre ?? "";
   const displayRole = usuario?.rol ?? "";
+
+  useEffect(() => {
+    let active = true;
+    async function loadPreference() {
+      try {
+        const response = await fetch("/api/preferencias-navegacion", { cache: "no-store" });
+        const payload = await response.json() as { data?: PreferenciaNavegacion };
+        if (active && response.ok && payload.data) setFocusPreference(payload.data);
+      } catch {
+        // La navegación conserva su estado completo si la preferencia no está disponible.
+      }
+    }
+    void loadPreference();
+    return () => { active = false; };
+  }, [usuario?.id]);
+
+  async function toggleFocusMode() {
+    if (!focusPreference) return;
+    const nextActive = !focusPreference.modo_foco_activo;
+    setFocusPreference({ ...focusPreference, modo_foco_activo: nextActive });
+    const response = await fetch("/api/preferencias-navegacion", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ modo_foco_activo: nextActive }) });
+    if (!response.ok) setFocusPreference({ ...focusPreference });
+  }
 
   useEffect(() => {
     function handlePointerDown(event: MouseEvent) {
@@ -383,7 +410,7 @@ export function Sidebar({
           {navigationSections.map((section, index) => {
             const sectionItems = visibleItems.filter((item) => item.section === section.key);
 
-            if (sectionItems.length === 0) {
+            if (sectionItems.length === 0 || (focusActive && hiddenSections.includes(section.key))) {
               return null;
             }
 
@@ -413,6 +440,19 @@ export function Sidebar({
         </nav>
 
         <div ref={menuRef} className={cn("relative border-t border-line-soft py-3", collapsed ? "px-2" : "px-3")}>
+          <div className={cn("mb-2 flex items-center", collapsed ? "justify-center" : "justify-between gap-2")}>
+            <button
+              type="button"
+              title={focusActive ? "Desactivar modo foco" : "Activar modo foco"}
+              aria-label={focusActive ? "Desactivar modo foco" : "Activar modo foco"}
+              onClick={() => void toggleFocusMode()}
+              className="relative inline-flex h-8 w-8 items-center justify-center rounded-md text-graphite transition-colors duration-fast ease-fast hover:bg-white/70 hover:text-signal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-signal/20"
+            >
+              {focusActive ? <EyeOffIcon size={17} /> : <EyeIcon size={17} />}
+              {focusActive && hiddenSections.length > 0 ? <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-pill bg-signal px-1 text-[10px] font-label text-white">{hiddenSections.length}</span> : null}
+            </button>
+            {!collapsed && focusActive && hiddenSections.length > 0 ? <span className="text-xs text-graphite">{hiddenSections.length} ocultas</span> : null}
+          </div>
           {collapsed ? (
             <Link href="/perfil" title={displayName || "Perfil"} className="flex justify-center rounded-md p-1.5 transition-colors duration-fast ease-fast hover:bg-white/70">
               <UserAvatar name={usuario?.nombre ?? null} fotoUrl={usuario?.foto_url ?? null} size="sm" />

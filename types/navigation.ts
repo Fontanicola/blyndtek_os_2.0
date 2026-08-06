@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import type { NavegacionSeccionKey } from "@/types/navegacion";
 
 export type NavItem = {
   label: string;
@@ -9,4 +10,5 @@ export type NavItem = {
   children?: NavItem[];
   iconClassName?: string;
   exact?: boolean;
+  focusKey?: NavegacionSeccionKey;
 };

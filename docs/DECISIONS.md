@@ -1,5 +1,14 @@
 # Decisions
 
+## 2026-08-06 — Management API estándar para flota de clientes
+
+- Blyndtek OS operará sistemas de clientes únicamente mediante un contrato HTTP autenticado y versionable; nunca accederá directamente a sus bases, Storage o infraestructura.
+- Cada sistema expone status, metrics, maintenance y announce bajo /api/blyndtek, con token propio, rate limiting y respuestas sin PII ni datos de negocio.
+- Mantenimiento, anuncios, actividad agregada y errores viven primero en el sistema cliente. El OS consume el contrato; no se crea una conexión privilegiada entre bases.
+- Los errores salientes usan payload mínimo y redaccionado; nunca se envían credenciales, tokens, PII, datos de negocio o payloads completos.
+- Se creó el playbook obligatorio docs/playbooks/MANAGEMENT_API.md con contrato, implementación de referencia y checklist.
+- docs/SECURITY.md fue solicitado como fuente de aislamiento, pero no existe en el checkout actual. El playbook no reemplaza ese documento y deja su creación como brecha documental pendiente.
+
 ## 2026-07-26 — Handoff de delivery derivado de la propuesta aprobada
 
 - El handoff no duplica el alcance comercial: lee la cotización aceptada y la estructura operativa materializada del proyecto.

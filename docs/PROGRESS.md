@@ -6,6 +6,16 @@ Stack: Next.js 14 (App Router) · TypeScript estricto · Tailwind CSS · Supabas
 
 Fecha de inicio: 2026-06-25
 
+## Actualización 2026-08-06 — Metodología canónica de construcción
+
+- Se creó `docs/METHODOLOGY.md` como documento canónico de cómo se construye software en Blyndtek.
+- El documento se extrajo del historial real de `docs/PROGRESS.md` y `docs/DECISIONS.md`, y consolida el flujo contexto → diagnóstico de causa raíz → implementación → verificación real → documentación.
+- Se documentaron como reglas permanentes los casos de `comisiones.lead_id`, `contratos.descuento_diagnostico_usd`, `cobros.lead_id`, fechas de egresos recurrentes, duplicación de movimientos por caja y `yAxisId`/padding del P&L.
+- También se dejó documentado el orden probado de construcción: cimientos, módulos de mayor ROI, operación secundaria y automatizaciones.
+- Se verificó que `docs/SECURITY.md` no existe actualmente en el repositorio. La metodología lo marca como brecha documental pendiente y no lo trata como fuente disponible ni permite reemplazarlo con supuestos.
+- Archivos creados/modificados: `docs/METHODOLOGY.md`, `docs/PROGRESS.md`.
+- Verificación: `git diff --check` y revisión del diff documental. No se modificó código ni esquema en esta unidad.
+
 ## Actualización 2026-07-26 — Capacidad de delivery y handoff
 
 - Se creó `GET /api/proyectos/[id]/handoff`, que reúne la propuesta aceptada, contrato activo, condiciones comerciales, responsables, equipo técnico, fases, features y tareas del proyecto.
@@ -3296,3 +3306,54 @@ Se completó la auditoría de código, búsqueda transversal, tipado, lint y bui
 - Las credenciales permanecen fuera del repositorio: `CALENDLY_PERSONAL_ACCESS_TOKEN`, `CALENDLY_WEBHOOK_SECRET` y opcionalmente `CALENDLY_WEBHOOK_URL`.
 - Se agregó la sección `/reuniones` con cards de reuniones programadas, finalizadas y canceladas, fecha, horario, estado y enlace de videollamada. Las reservas de Calendly muestran su logo real y reutilizan el modal existente para ver/editar el evento.
 - Se hizo visible `/calendario` para admin y marketing, y se agregó `enlace_reunion` a `eventos` mediante `supabase/migrations/027_reuniones_enlace.sql`. El webhook de Calendly y la sincronización de Google Calendar persisten el enlace cuando el proveedor lo entrega.
+## Actualización 2026-08-06 — Stack y convenciones canónicas
+
+- Se crearon docs/STACK.md y docs/CONVENTIONS.md como documentos autosuficientes para incorporar desarrolladores o IA sin depender de contexto informal.
+- STACK documenta versiones reales de package.json, dependencias aprobadas, integración HTTP de Claude, restricciones de middleware/Edge, fechas YYYY-MM-DD, fuentes estáticas para Satori, imports de Recharts desde el barrel, deploy Vercel y criterio para nuevas dependencias.
+- CONVENTIONS consolida nomenclatura, estructura de carpetas, API Routes, hooks cliente, acceso server/browser a Supabase, migraciones idempotentes, errores, loading, autosave, componentes y cierre de unidades.
+- Se verificó que docs/SECURITY.md no existe en el checkout actual. Los documentos lo registran como brecha documental explícita; no se inventaron reglas de seguridad ni se lo sustituyó con supuestos.
+- Archivos creados/modificados: docs/STACK.md, docs/CONVENTIONS.md, docs/PROGRESS.md.
+- Verificación: revisión contra package.json, SPEC, DATABASE, DECISIONS, METHODOLOGY, DESIGN_SYSTEM, ejemplos reales de API/hook/migración y git diff --check. No se modificó código ni esquema.
+## Actualización 2026-08-06 — Management API estándar para flota de clientes
+
+- Se creó docs/playbooks/MANAGEMENT_API.md, playbook obligatorio para que cada sistema desarrollado por Blyndtek exponga una interfaz de management HTTP autenticada.
+- El contrato define token propio rotatable en runtime, respuestas 401, rate limiting, status sin PII, métricas agregadas, modo mantenimiento, anuncios y reporte de errores saliente redaccionado.
+- Se documentó la implementación local del cliente: flag persistido, pantalla de mantenimiento con marca propia y excepción administrativa; el OS nunca accede directamente a la base o infraestructura del cliente.
+- Se incluyó una referencia copiable para Next.js + Supabase, con guard de token, comparación segura, rate limit, Route Handlers, tablas mínimas y checklist de incorporación y retrofit.
+- Se registró la decisión arquitectónica en docs/DECISIONS.md.
+- Se verificó nuevamente que docs/SECURITY.md no existe en el checkout actual; se dejó explicitado como brecha documental y no se inventaron reglas de seguridad.
+- Archivos creados/modificados: docs/playbooks/MANAGEMENT_API.md, docs/DECISIONS.md, docs/PROGRESS.md.
+- Verificación: revisión contra SPEC, METHODOLOGY, STACK, CONVENTIONS, acceso Supabase documentado y git diff --check. No se modificó código ni esquema del producto.
+
+## Actualización 2026-08-06 — Backend del control plane de sistemas gestionados
+
+- Se verificó el esquema real remoto mediante el OpenAPI de Supabase antes de escribir SQL. Las cuatro tablas ya existían y estaban vacías; se confirmaron sus columnas reales.
+- Se creó `supabase/migrations/020_control_plane.sql`, idempotente, con las cuatro tablas, FKs, RLS admin-only, el agente técnico `monitor-sistemas`, la automatización `/api/sistemas/check-todos` y el cron pg_cron cada cinco minutos. El job usa los placeholders de deploy ya establecidos en las migraciones del repo (`YOUR_APP_URL` y `YOUR_SERVICE_ROLE_KEY`).
+- Se agregaron `types/sistemas.ts` y las definiciones de las cuatro tablas en `types/supabase.ts`.
+- Se implementó CRUD admin en `app/api/sistemas/route.ts` y `app/api/sistemas/[id]/route.ts`, más rotación en `app/api/sistemas/[id]/rotate-token/route.ts`. Las respuestas devuelven sólo `management_token_masked` con los últimos cuatro caracteres; el token completo nunca alimenta la UI.
+- Se creó `lib/sistemas.ts` como capa server-side compartida para validación de URL, generación/enmascarado de tokens, timeout de cinco segundos, health checks, persistencia e incidentes. `app/api/sistemas/[id]/health/route.ts` ejecuta checks individuales y `app/api/sistemas/check-todos/route.ts` recorre sistemas con monitoreo activo sin detenerse si uno falla.
+- Los incidentes no se duplican para una misma causa abierta y se resuelven cuando el health check vuelve a `ok`; los errores reportados por aplicaciones cliente quedan fuera de esa resolución automática.
+- Se implementó sincronización de deploys de Vercel en `app/api/sistemas/[id]/deploys/route.ts`, con `VERCEL_API_TOKEN` server-side, manejo explícito de sistemas sin `vercel_project_id` y persistencia de los últimos diez deploys.
+- Se implementó `app/api/sistemas/reportar-error/route.ts`: autentica por `Authorization: Bearer <management-token>` (también acepta el header específico del contrato), valida estrictamente sólo `mensaje`, `stack`, `ruta` y `timestamp`, limita tamaños y registra el incidente sin devolver datos sensibles.
+- `docs/SECURITY.md` no existe en el checkout; se dejó como brecha documental previa y se aplicaron las reglas verificables del playbook `docs/playbooks/MANAGEMENT_API.md`.
+- Verificación: OpenAPI remoto confirmado, `npm run lint` OK y `npm run build` OK. No se ejecutó una llamada real a un sistema cliente porque no hay sistemas registrados actualmente.
+
+## Actualización 2026-08-06 — UI del control plane de Software
+
+- Se agregó `Software` al grupo `Entrega` del sidebar, visible únicamente para administradores, con acceso a `/software` y `/software/[id]`.
+- Se creó `components/software/SoftwarePage.tsx`: toolbar de búsqueda, KPIs de flota y listado compacto por filas con semáforo de estado, último check y menú de acciones.
+- Se creó `components/software/SoftwareDetailPage.tsx` con tabs de General, Stack, Salud, Incidentes, Deploys y Accesos. El stack y los datos generales son editables; los tokens siguen siempre enmascarados.
+- Se creó `components/software/AvailabilityChart.tsx` para disponibilidad de siete días usando Recharts y `chartTheme.ts`, más métricas de latencia y checks recientes.
+- Se completaron los controles de mantenimiento, anuncios, verificación manual, resolución de incidentes y rotación de token mediante endpoints server-side; el token completo nunca llega al navegador.
+- Se agregaron endpoints de historial de salud, incidentes y proxy de mantenimiento/anuncios bajo `app/api/sistemas/`.
+- Verificación: `npm run lint` y `npm run build` OK. No se ejecutó un health check contra un sistema cliente real porque la flota remota todavía no tiene sistemas registrados; el flujo queda preparado para mostrar error controlado ante sistema sin URL/token o cliente caído.
+
+## Actualización 2026-08-06 — Modo foco de navegación
+
+- Se creó `supabase/migrations/021_preferencias_navegacion.sql`, idempotente, con `preferencias_navegacion`, RLS y policies de lectura/escritura sobre la propia fila del usuario.
+- Se agregaron `types/navegacion.ts`, la definición de `preferencias_navegacion` en `types/supabase.ts` y `focusKey` en `types/navigation.ts`.
+- Se creó `app/api/preferencias-navegacion/route.ts`: GET crea defaults si faltan y PATCH valida las secciones contra el rol de la sesión server-side. El endpoint nunca acepta `usuario_id` del cliente ni permite configurar secciones sin acceso.
+- El sidebar incorpora `Eye`/`EyeOff`, persiste el modo foco, muestra cuántas secciones están ocultas y filtra únicamente la presentación del menú. El acceso directo a una ruta y los permisos no cambian.
+- Se agregó `components/perfil/NavegacionPreferencias.tsx` dentro de Perfil: lista sólo las secciones disponibles para el rol, guarda cada checkbox con `SavingIndicator` y mantiene Dashboard visible.
+- Archivos modificados: `components/layout/Sidebar.tsx`, `components/perfil/PerfilClient.tsx`, `lib/navigation.ts`, `types/navigation.ts`, `types/supabase.ts`, `docs/DATABASE.md`.
+- Decisión técnica: la preferencia es por usuario, no global; la validación de rol ocurre en el endpoint y el cliente sólo recibe sus propias opciones.

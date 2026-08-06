@@ -18,6 +18,7 @@ import {
   OutboundIcon,
   PaletteIcon,
   SaasIcon,
+  ServerIcon,
   NotasIcon,
   SparklesIcon,
   WalletIcon,
@@ -27,6 +28,7 @@ import {
   ZapIcon
 } from "@/components/ui/icons";
 import type { NavItem } from "@/types/navigation";
+import type { NavegacionSeccionKey } from "@/types/navegacion";
 
 export const navigationItems: NavItem[] = [
   {
@@ -49,6 +51,7 @@ export const navigationItems: NavItem[] = [
     icon: createElement(PaletteIcon),
     roles: ["admin", "marketing"],
     section: "top-level",
+    focusKey: "marca",
     children: [
       { label: "Feed", href: "/marca/feed", icon: createElement(GridIcon), roles: ["admin", "marketing"], section: "top-level" },
       { label: "Historias", href: "/marca/historias", icon: createElement(SparklesIcon), roles: ["admin", "marketing"], section: "top-level" },
@@ -61,6 +64,7 @@ export const navigationItems: NavItem[] = [
     icon: createElement(SparklesIcon),
     roles: ["admin"],
     section: "top-level",
+    focusKey: "ai_hub",
     children: [
       {
         label: "Centro IA",
@@ -126,6 +130,13 @@ export const navigationItems: NavItem[] = [
     href: "/proyectos",
     icon: createElement(ProyectosIcon),
     roles: ["admin", "miembro"],
+    section: "entrega"
+  },
+  {
+    label: "Software",
+    href: "/software",
+    icon: createElement(ServerIcon),
+    roles: ["admin"],
     section: "entrega"
   },
   {
@@ -205,6 +216,16 @@ export const navigationSections = [
   { key: "entrega", label: "Entrega", icon: createElement(LayersIcon) },
   { key: "control", label: "Control", icon: createElement(WalletIcon) }
 ] as const;
+
+export function getAvailableFocusSections(role: NavItem["roles"][number]): NavegacionSeccionKey[] {
+  const available: NavegacionSeccionKey[] = [];
+  if (navigationItems.some((item) => item.focusKey === "marca" && item.roles.includes(role))) available.push("marca");
+  if (navigationItems.some((item) => item.focusKey === "ai_hub" && item.roles.includes(role))) available.push("ai_hub");
+  for (const section of navigationSections) {
+    if (navigationItems.some((item) => item.section === section.key && item.roles.includes(role))) available.push(section.key);
+  }
+  return available;
+}
 
 export function getPageLabel(pathname: string) {
   if (pathname === "/perfil") {
