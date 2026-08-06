@@ -243,7 +243,10 @@ export function Sidebar({
     () => filterItems(navigationItems, usuario?.rol ?? null),
     [usuario?.rol]
   );
-  const topLevelItems = visibleItems.filter((item) => item.section === "top-level");
+  const topLevelItems = useMemo(
+    () => visibleItems.filter((item) => item.section === "top-level"),
+    [visibleItems]
+  );
   const displayName = usuario?.nombre ?? "";
   const displayRole = usuario?.rol ?? "";
 
