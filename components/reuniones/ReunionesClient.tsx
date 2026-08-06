@@ -60,7 +60,11 @@ export function ReunionesClient({ usuarios }: ReunionesClientProps) {
 
   const syncAndLoad = useCallback(async () => {
     try {
-      await fetch("/api/calendly/sync", { method: "POST" });
+      const response = await fetch("/api/calendly/sync", { method: "POST" });
+      if (!response.ok) {
+        const payload = (await response.json()) as { error?: string };
+        throw new Error(payload.error ?? "No se pudo sincronizar Calendly.");
+      }
     } finally {
       await load();
     }

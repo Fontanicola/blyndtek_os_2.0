@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCalendlyInvitee } from "@/lib/calendly";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { crearTareaConAdminClient } from "@/lib/tareas/crearTarea";
+import { findOrCreateCalendlyLead } from "@/lib/calendlyLeads";
+import type { Lead } from "@/types/leads";
 
 export const runtime = "nodejs";
 
@@ -9,11 +11,6 @@ type CalendlyWebhookBody = {
   event?: "invitee.created" | "invitee.canceled" | string;
   payload?: { event?: string; invitee?: string; uri?: string; scheduled_event?: string };
 };
-
-function extractEmail(notas: string | null) {
-  const match = notas?.match(/(?:^|\n)Email:\s*([^\n]+)/i);
-  return match?.[1]?.trim().toLowerCase() || null;
-}
 
 export async function POST(request: NextRequest) {
   const expectedSecret = process.env.CALENDLY_WEBHOOK_SECRET?.trim();
@@ -52,12 +49,6 @@ export async function POST(request: NextRequest) {
       throw new Error(leadsError.message);
     }
 
-    const lead = (leadRows ?? []).find((row) => extractEmail(row.notas) === email);
-
-    if (!lead) {
-      return NextResponse.json({ received: true, matched: false });
-    }
-
     const eventUri = resource.event ?? body.payload?.event ?? body.payload?.scheduled_event ?? null;
     const location = resource.location;
     const enlaceReunion =
@@ -65,9 +56,6 @@ export async function POST(request: NextRequest) {
     const startTime = resource.start_time ?? null;
     const endTime = resource.end_time ?? null;
     const date = startTime?.slice(0, 10) ?? null;
-    const titleBase = `Primera conversación · ${lead.empresa}`;
-    const title = eventType === "invitee.canceled" ? `Cancelada · ${titleBase}` : titleBase;
-
     const { data: existingEvent, error: existingEventError } = await supabase
       .from("eventos")
       .select("*")
@@ -85,7 +73,16 @@ export async function POST(request: NextRequest) {
       .eq("activo", true)
       .order("created_at", { ascending: true })
       .limit(1);
+    const leadResult = await findOrCreateCalendlyLead(supabase, (leadRows ?? []) as Lead[], {
+      email,
+      name: resource.name,
+      eventName: eventUri,
+      ownerId: admins?.[0]?.id ?? null
+    });
+    const lead = leadResult.lead;
     const ownerId = lead.vendedor_id ?? lead.responsable_id ?? admins?.[0]?.id;
+    const titleBase = `Primera conversación · ${lead.empresa}`;
+    const title = eventType === "invitee.canceled" ? `Cancelada · ${titleBase}` : titleBase;
 
     if (!ownerId || !startTime || !endTime || !date) {
       return NextResponse.json({ received: true, matched: true, event_created: false });

@@ -6,13 +6,10 @@ import {
   getCalendlyScheduledEvents
 } from "@/lib/calendly";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { findOrCreateCalendlyLead } from "@/lib/calendlyLeads";
+import type { Lead } from "@/types/leads";
 
 export const runtime = "nodejs";
-
-function extractEmail(notas: string | null) {
-  const match = notas?.match(/(?:^|\n)Email:\s*([^\n]+)/i);
-  return match?.[1]?.trim().toLowerCase() || null;
-}
 
 function getLocationUrl(location: { join_url?: string; url?: string } | string | undefined) {
   return typeof location === "string" ? location : location?.join_url ?? location?.url ?? null;
@@ -44,19 +41,31 @@ export async function POST() {
       .order("created_at", { ascending: true })
       .limit(1);
 
+    const leadList = (leads ?? []) as Lead[];
     let synced = 0;
+    let inviteesSeen = 0;
+    let leadsCreated = 0;
     for (const scheduledEvent of scheduledEvents.collection ?? []) {
       if (!scheduledEvent.uri || !scheduledEvent.start_time || !scheduledEvent.end_time) continue;
       const invitees = await getCalendlyEventInvitees(scheduledEvent.uri);
 
       for (const invitee of invitees.collection ?? []) {
+        inviteesSeen += 1;
         const email = invitee.email?.trim().toLowerCase();
         if (!invitee.uri || !email) continue;
-        const lead = (leads ?? []).find((row) => extractEmail(row.notas) === email);
-        if (!lead) continue;
-
-        const ownerId = lead.vendedor_id ?? lead.responsable_id ?? admins?.[0]?.id;
-        if (!ownerId) continue;
+        const ownerId = leadList.find((row) => row.notas?.toLowerCase().includes(`email: ${email}`))?.vendedor_id
+          ?? admins?.[0]?.id
+          ?? null;
+        const leadResult = await findOrCreateCalendlyLead(supabase, leadList, {
+          email,
+          name: invitee.name,
+          eventName: scheduledEvent.name,
+          ownerId
+        });
+        const lead = leadResult.lead;
+        if (leadResult.created) leadsCreated += 1;
+        const resolvedOwnerId = lead.vendedor_id ?? lead.responsable_id ?? ownerId;
+        if (!resolvedOwnerId) continue;
         const titleBase = `Primera conversación · ${lead.empresa}`;
         const { data: existing } = await supabase
           .from("eventos")
@@ -68,7 +77,7 @@ export async function POST() {
           fecha_inicio: scheduledEvent.start_time,
           fecha_fin: scheduledEvent.end_time,
           tipo: "reunion" as const,
-          usuario_id: ownerId,
+          usuario_id: resolvedOwnerId,
           referencia_tipo: "lead" as const,
           referencia_id: lead.id,
           calendly_event_id: scheduledEvent.uri,
@@ -86,7 +95,7 @@ export async function POST() {
       }
     }
 
-    return NextResponse.json({ data: { synced } });
+    return NextResponse.json({ data: { synced, scheduled_events: scheduledEvents.collection?.length ?? 0, invitees: inviteesSeen, leads_created: leadsCreated } });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "No se pudo sincronizar Calendly." }, { status: 500 });
   }

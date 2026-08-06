@@ -3365,3 +3365,11 @@ Se completó la auditoría de código, búsqueda transversal, tipado, lint y bui
 - Se agregaron consultas server-side a `/scheduled_events` y `/scheduled_events/{id}/invitees` en `lib/calendly.ts`, más `POST /api/calendly/sync` para recuperar reservas existentes y sincronizarlas con `eventos` sin duplicar por `calendly_invitee_uri`.
 - La pantalla `/reuniones` sincroniza Calendly al cargar y al presionar `Actualizar`, y luego consulta los eventos locales. Las tarjetas mantienen fecha, estado, enlace de videollamada y logo de Calendly.
 - Verificación local: `npm run lint` y `npx tsc --noEmit` OK. La verificación remota depende de que Vercel tenga `CALENDLY_PERSONAL_ACCESS_TOKEN`, `CALENDLY_WEBHOOK_SECRET` y la suscripción activa; el endpoint de sincronización devuelve error controlado si falta alguna credencial.
+
+## Actualización 2026-08-06 — Importación de reservas Calendly sin lead previo
+
+- Causa raíz adicional: `app/api/calendly/sync/route.ts` descartaba silenciosamente cualquier invitado cuyo email no coincidiera con una línea `Email:` de un lead existente. Una reserva hecha desde Calendly podía ser válida y aun así no llegar a `/reuniones`.
+- Se creó `lib/calendlyLeads.ts` para reutilizar la búsqueda por email y crear, sólo cuando hace falta, un lead inbound mínimo y trazable con origen Calendly. La reunión queda vinculada a ese lead, sin duplicarse en sincronizaciones posteriores.
+- El webhook y la sincronización manual comparten ahora este comportamiento. La respuesta de sincronización incluye conteos de eventos, invitados y leads creados para facilitar diagnóstico.
+- `components/reuniones/ReunionesClient.tsx` ya no oculta errores de `/api/calendly/sync`; los muestra al usuario y luego carga las reuniones locales.
+- Verificación local: `npm run lint`, `npx tsc --noEmit`, `npm run build` y `git diff --check` OK. La verificación contra Calendly depende de las credenciales configuradas en Vercel y debe hacerse pulsando `Actualizar` en `/reuniones`.
