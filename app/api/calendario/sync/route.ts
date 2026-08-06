@@ -9,6 +9,7 @@ import {
   googleApiRequest
 } from "@/lib/google-calendar";
 import { fechaStringAFechaLocal } from "@/lib/utils/fechas";
+import { randomUUID } from "crypto";
 import type { Evento } from "@/types/eventos";
 
 export const maxDuration = 30;
@@ -124,9 +125,16 @@ export async function POST() {
     let pushed = 0;
 
     for (const evento of localWithoutGoogle) {
+      const createUrl = new URL("https://www.googleapis.com/calendar/v3/calendars/primary/events");
+      const shouldCreateMeet = evento.tipo === "reunion" && !evento.calendly_invitee_uri;
+
+      if (shouldCreateMeet) {
+        createUrl.searchParams.set("conferenceDataVersion", "1");
+      }
+
       const createResponse = await googleApiRequest(
         validToken,
-        "https://www.googleapis.com/calendar/v3/calendars/primary/events",
+        createUrl,
         {
           method: "POST",
           headers: {
@@ -135,19 +143,35 @@ export async function POST() {
           body: JSON.stringify({
             summary: evento.titulo,
             start: { dateTime: evento.fecha_inicio },
-            end: { dateTime: evento.fecha_fin }
+            end: { dateTime: evento.fecha_fin },
+            ...(shouldCreateMeet
+              ? {
+                  conferenceData: {
+                    createRequest: {
+                      requestId: randomUUID(),
+                      conferenceSolutionKey: { type: "hangoutsMeet" }
+                    }
+                  }
+                }
+              : {})
           })
         }
       );
 
-      const created = (await createResponse.json()) as { id?: string; hangoutLink?: string };
+      const created = (await createResponse.json()) as GoogleCalendarEvent;
       if (!created.id) {
         continue;
       }
 
       await supabase
         .from("eventos")
-        .update({ google_event_id: created.id, enlace_reunion: created.hangoutLink ?? null })
+        .update({
+          google_event_id: created.id,
+          enlace_reunion:
+            created.hangoutLink ??
+            created.conferenceData?.entryPoints?.find((entry) => entry.entryPointType === "video")?.uri ??
+            null
+        })
         .eq("id", evento.id);
       pushed += 1;
     }

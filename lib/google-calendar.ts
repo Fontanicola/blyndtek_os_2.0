@@ -17,6 +17,18 @@ type GoogleTokenResponse = {
   token_type?: string;
 };
 
+export type GoogleCalendarEventWrite = {
+  summary: string;
+  start: { dateTime: string };
+  end: { dateTime: string };
+  conferenceData?: {
+    createRequest: {
+      requestId: string;
+      conferenceSolutionKey: { type: "hangoutsMeet" };
+    };
+  };
+};
+
 function getGoogleEnv() {
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
@@ -199,6 +211,41 @@ export async function googleApiRequest(
   }
 
   return response;
+}
+
+export async function createGoogleCalendarEvent(token: GoogleTokenPayload, input: GoogleCalendarEventWrite) {
+  const url = new URL("https://www.googleapis.com/calendar/v3/calendars/primary/events");
+  if (input.conferenceData) url.searchParams.set("conferenceDataVersion", "1");
+  const response = await googleApiRequest(token, url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input)
+  });
+  return (await response.json()) as {
+    id?: string;
+    hangoutLink?: string;
+    conferenceData?: { entryPoints?: { entryPointType?: string; uri?: string }[] };
+  };
+}
+
+export async function updateGoogleCalendarEvent(
+  token: GoogleTokenPayload,
+  eventId: string,
+  input: Pick<GoogleCalendarEventWrite, "summary" | "start" | "end">
+) {
+  const url = new URL(`https://www.googleapis.com/calendar/v3/calendars/primary/events/${encodeURIComponent(eventId)}`);
+  const response = await googleApiRequest(token, url, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input)
+  });
+  return (await response.json()) as { id?: string; hangoutLink?: string };
+}
+
+export async function deleteGoogleCalendarEvent(token: GoogleTokenPayload, eventId: string) {
+  await googleApiRequest(token, `https://www.googleapis.com/calendar/v3/calendars/primary/events/${encodeURIComponent(eventId)}`, {
+    method: "DELETE"
+  });
 }
 
 export type { GoogleTokenPayload };

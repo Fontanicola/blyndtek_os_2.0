@@ -1,4 +1,5 @@
 export type TipoEvento = "tarea" | "seguimiento" | "vencimiento" | "reunion";
+export type TipoRelacionEvento = "lead" | "cliente";
 export type EstadoEventoInvitado = "pendiente" | "aceptado" | "rechazado" | "propuesta_alternativa";
 
 export type EventoInvitado = {
@@ -35,6 +36,8 @@ export type Evento = {
   calendly_event_id: string | null;
   calendly_invitee_uri: string | null;
   enlace_reunion: string | null;
+  relacion_tipo: TipoRelacionEvento | null;
+  relacion_id: string | null;
   created_at: string;
 };
 
@@ -55,6 +58,9 @@ export type CreateEventoInput = {
   calendly_event_id?: string | null;
   calendly_invitee_uri?: string | null;
   enlace_reunion?: string | null;
+  relacion_tipo?: TipoRelacionEvento | null;
+  relacion_id?: string | null;
+  crear_meet?: boolean;
   invited_user_ids?: string[];
 };
 

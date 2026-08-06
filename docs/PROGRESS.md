@@ -6,6 +6,16 @@ Stack: Next.js 14 (App Router) · TypeScript estricto · Tailwind CSS · Supabas
 
 Fecha de inicio: 2026-06-25
 
+## Actualización 2026-08-06 — Reuniones con Google Meet y relación comercial
+
+- Las reuniones manuales de `/reuniones` generan automáticamente un evento de Google Calendar con conferencia Google Meet cuando Google Calendar está conectado; el enlace queda visible en la tarjeta y en el detalle.
+- La opción queda activada por defecto en reuniones nuevas, pero puede desactivarse antes de guardar. Sin conexión de Google Calendar, la UI explica el requisito y permite cargar un enlace manual.
+- Las reuniones creadas desde `/calendario` también solicitan Meet durante la sincronización, mientras que las reservas de Calendly conservan el enlace entregado por Calendly.
+- Se agregó la relación opcional con un `lead` o `cliente`, validada server-side contra las entidades existentes y visible/editable desde el modal de reunión.
+- Se agregaron actualización y eliminación del evento remoto de Google al editar o eliminar una reunión local, con limpieza ante errores de creación.
+- Archivos creados/modificados: `supabase/migrations/028_eventos_relacion.sql`, `types/eventos.ts`, `types/supabase.ts`, `lib/google-calendar.ts`, `lib/task-support.ts`, `app/api/eventos/route.ts`, `app/api/eventos/[id]/route.ts`, `app/api/calendario/sync/route.ts`, `components/calendario/EventoModal.tsx`, `components/reuniones/ReunionesClient.tsx`, `app/(app)/reuniones/page.tsx`, `docs/DATABASE.md`, `docs/DECISIONS.md`.
+- Verificación: `npm run lint`, `npx tsc --noEmit` y revisión de `git diff --check` OK. La prueba final contra Google Calendar requiere crear una reunión en el entorno con una cuenta OAuth conectada.
+
 ## Actualización 2026-08-06 — Metodología canónica de construcción
 
 - Se creó `docs/METHODOLOGY.md` como documento canónico de cómo se construye software en Blyndtek.

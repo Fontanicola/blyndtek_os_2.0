@@ -1438,6 +1438,8 @@ export type Database = {
           calendly_event_id: string | null;
           calendly_invitee_uri: string | null;
           enlace_reunion: string | null;
+          relacion_tipo: "lead" | "cliente" | null;
+          relacion_id: string | null;
           created_at: string;
         };
         Insert: {
@@ -1453,6 +1455,8 @@ export type Database = {
           calendly_event_id?: string | null;
           calendly_invitee_uri?: string | null;
           enlace_reunion?: string | null;
+          relacion_tipo?: "lead" | "cliente" | null;
+          relacion_id?: string | null;
           created_at?: string;
         };
         Update: {
@@ -1468,6 +1472,8 @@ export type Database = {
           calendly_event_id?: string | null;
           calendly_invitee_uri?: string | null;
           enlace_reunion?: string | null;
+          relacion_tipo?: "lead" | "cliente" | null;
+          relacion_id?: string | null;
           created_at?: string;
         };
         Relationships: [

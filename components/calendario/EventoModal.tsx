@@ -3,8 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Button, EntityMultiSelect, EntitySelect, Input, Modal } from "@/components/ui";
 import { cn } from "@/lib/cn";
-import type { TaskUserOption } from "@/lib/task-support";
-import type { CreateEventoInput, EventoConInvitados, TipoEvento, UpdateEventoInput } from "@/types/eventos";
+import type { TaskClientOption, TaskLeadOption, TaskUserOption } from "@/lib/task-support";
+import type { CreateEventoInput, EventoConInvitados, TipoEvento, TipoRelacionEvento, UpdateEventoInput } from "@/types/eventos";
 
 type EventoModalProps = {
   isOpen: boolean;
@@ -17,6 +17,9 @@ type EventoModalProps = {
   defaultDate?: Date;
   readOnly?: boolean;
   onResolveProposal?: (invitacionId: string, accion: "aceptar_nuevo_horario" | "mantener_original") => Promise<void>;
+  clientes?: TaskClientOption[];
+  leads?: TaskLeadOption[];
+  googleCalendarConnected?: boolean;
 };
 
 type FormState = {
@@ -27,6 +30,9 @@ type FormState = {
   usuario_id: string;
   invited_user_ids: string[];
   enlace_reunion: string;
+  relacion_tipo: TipoRelacionEvento | "";
+  relacion_id: string;
+  crear_meet: boolean;
 };
 
 function pad(value: number) {
@@ -43,7 +49,8 @@ function buildInitialForm(
   evento: EventoConInvitados | null | undefined,
   usuarios: TaskUserOption[],
   defaultDate?: Date,
-  currentUserId?: string | null
+  currentUserId?: string | null,
+  googleCalendarConnected = false
 ) {
   if (evento) {
     return {
@@ -53,7 +60,10 @@ function buildInitialForm(
       tipo: evento.tipo,
       usuario_id: evento.usuario_id,
       invited_user_ids: evento.invited_user_ids ?? [],
-      enlace_reunion: evento.enlace_reunion ?? ""
+      enlace_reunion: evento.enlace_reunion ?? "",
+      relacion_tipo: evento.relacion_tipo ?? "",
+      relacion_id: evento.relacion_id ?? "",
+      crear_meet: false
     } satisfies FormState;
   }
 
@@ -69,7 +79,10 @@ function buildInitialForm(
     tipo: "reunion" as TipoEvento,
     usuario_id: currentUserId ?? usuarios[0]?.id ?? "",
     invited_user_ids: [],
-    enlace_reunion: ""
+    enlace_reunion: "",
+    relacion_tipo: "",
+    relacion_id: "",
+    crear_meet: googleCalendarConnected
   } satisfies FormState;
 }
 
@@ -99,11 +112,14 @@ export function EventoModal({
   currentUserId,
   defaultDate,
   readOnly = false,
-  onResolveProposal
+  onResolveProposal,
+  clientes = [],
+  leads = [],
+  googleCalendarConnected = false
 }: EventoModalProps) {
   const initialForm = useMemo(
-    () => buildInitialForm(evento, usuarios, defaultDate, currentUserId),
-    [currentUserId, defaultDate, evento, usuarios]
+    () => buildInitialForm(evento, usuarios, defaultDate, currentUserId, googleCalendarConnected),
+    [currentUserId, defaultDate, evento, googleCalendarConnected, usuarios]
   );
   const [form, setForm] = useState<FormState>(initialForm);
   const [loading, setLoading] = useState(false);
@@ -170,7 +186,10 @@ export function EventoModal({
               referencia_tipo: evento?.referencia_tipo ?? "lead",
               referencia_id: evento?.referencia_id ?? form.usuario_id,
               invited_user_ids: form.invited_user_ids,
-              enlace_reunion: form.enlace_reunion.trim() || null
+              enlace_reunion: form.enlace_reunion.trim() || null,
+              relacion_tipo: form.relacion_tipo || null,
+              relacion_id: form.relacion_id || null,
+              crear_meet: !evento && form.tipo === "reunion" ? form.crear_meet : false
             } satisfies CreateEventoInput;
 
             await onSave(payload);
@@ -206,6 +225,57 @@ export function EventoModal({
             disabled={readOnly}
           />
         </div>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="space-y-1">
+            <label className="block text-sm font-label text-carbon">Relación opcional</label>
+            <select
+              value={form.relacion_tipo}
+              disabled={readOnly}
+              onChange={(event) => setForm((current) => ({
+                ...current,
+                relacion_tipo: event.target.value as TipoRelacionEvento | "",
+                relacion_id: ""
+              }))}
+              className={cn("w-full rounded-component border border-line bg-white px-3 py-2 text-sm text-carbon", "focus:border-signal focus:outline-none focus:ring-2 focus:ring-signal/20")}
+            >
+              <option value="">Sin relación</option>
+              <option value="lead">Lead</option>
+              <option value="cliente">Cliente</option>
+            </select>
+          </div>
+          {form.relacion_tipo ? (
+            <EntitySelect
+              label={form.relacion_tipo === "lead" ? "Lead" : "Cliente"}
+              value={form.relacion_id || null}
+              required
+              placeholder={form.relacion_tipo === "lead" ? "Seleccionar lead" : "Seleccionar cliente"}
+              options={form.relacion_tipo === "lead"
+                ? leads.map((item) => ({ id: item.id, label: item.empresa, sublabel: item.contacto_1_nombre ?? undefined }))
+                : clientes.map((item) => ({ id: item.id, label: item.empresa }))}
+              onChange={(id) => setForm((current) => ({ ...current, relacion_id: id ?? "" }))}
+              disabled={readOnly}
+            />
+          ) : null}
+        </div>
+
+        {!evento && form.tipo === "reunion" ? (
+          <label className="flex items-start gap-3 rounded-component border border-line-soft bg-paper p-3 text-sm text-carbon">
+            <input
+              type="checkbox"
+              checked={form.crear_meet}
+              onChange={(event) => setForm((current) => ({ ...current, crear_meet: event.target.checked }))}
+              disabled={readOnly || !googleCalendarConnected}
+              className="mt-0.5 h-4 w-4 accent-signal"
+            />
+            <span>
+              <span className="block font-label">Generar enlace de Google Meet automáticamente</span>
+              <span className="mt-0.5 block text-xs text-graphite">
+                {googleCalendarConnected ? "Se crea junto con el evento y aparece en la reunión." : "Conectá Google Calendar para habilitar esta opción."}
+              </span>
+            </span>
+          </label>
+        ) : null}
 
         {form.tipo === "reunion" ? (
           <Input

@@ -5,12 +5,15 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button, Card, EmptyState, Badge, Spinner } from "@/components/ui";
 import { CalendarIcon, ClockIcon, LinkIcon, PlusIcon, RefreshIcon, VideoIcon } from "@/components/ui/icons";
 import { EventoModal } from "@/components/calendario/EventoModal";
-import type { TaskUserOption } from "@/lib/task-support";
+import type { TaskClientOption, TaskLeadOption, TaskUserOption } from "@/lib/task-support";
 import type { EventoConInvitados, UpdateEventoInput } from "@/types/eventos";
 
 type ReunionesClientProps = {
   usuarios: TaskUserOption[];
   currentUserId?: string | null;
+  clientes: TaskClientOption[];
+  leads: TaskLeadOption[];
+  googleCalendarConnected: boolean;
 };
 
 type Filtro = "proximas" | "todas" | "pasadas";
@@ -36,7 +39,7 @@ function getEstado(evento: EventoConInvitados) {
 
 const estadoLabel = { programada: "Programada", finalizada: "Finalizada", cancelada: "Cancelada" } as const;
 
-export function ReunionesClient({ usuarios, currentUserId }: ReunionesClientProps) {
+export function ReunionesClient({ usuarios, currentUserId, clientes, leads, googleCalendarConnected }: ReunionesClientProps) {
   const [eventos, setEventos] = useState<EventoConInvitados[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -153,6 +156,11 @@ export function ReunionesClient({ usuarios, currentUserId }: ReunionesClientProp
           {visible.map((evento) => {
             const estado = getEstado(evento);
             const isCalendly = Boolean(evento.calendly_invitee_uri || evento.calendly_event_id);
+            const relacion = evento.relacion_tipo === "lead"
+              ? leads.find((lead) => lead.id === evento.relacion_id)
+              : evento.relacion_tipo === "cliente"
+                ? clientes.find((cliente) => cliente.id === evento.relacion_id)
+                : null;
             return (
               <Card key={evento.id} className="group cursor-pointer p-4 transition-colors hover:border-signal/40" onClick={() => void openEvent(evento)}>
                 <div className="flex items-start justify-between gap-3">
@@ -163,6 +171,11 @@ export function ReunionesClient({ usuarios, currentUserId }: ReunionesClientProp
                   <span className="text-xs text-graphite">{isCalendly ? "Calendly" : "Calendario"}</span>
                 </div>
                 <h2 className="mt-4 line-clamp-2 text-base font-title text-carbon">{evento.titulo.replace(/^Cancelada · /, "")}</h2>
+                {relacion ? (
+                  <div className="mt-2 text-sm text-graphite">
+                    {evento.relacion_tipo === "lead" ? "Lead" : "Cliente"}: {relacion.empresa}
+                  </div>
+                ) : null}
                 <div className="mt-4 space-y-2 text-sm text-graphite">
                   <div className="flex items-center gap-2"><CalendarIcon size={16} /> <span className="capitalize">{formatDate(evento.fecha_inicio)}</span></div>
                   <div className="flex items-center gap-2"><ClockIcon size={16} /> {formatTime(evento.fecha_inicio)} a {formatTime(evento.fecha_fin)}</div>
@@ -185,6 +198,9 @@ export function ReunionesClient({ usuarios, currentUserId }: ReunionesClientProp
           onDelete={deleteEvent}
           evento={selected}
           usuarios={usuarios}
+          clientes={clientes}
+          leads={leads}
+          googleCalendarConnected={googleCalendarConnected}
         />
       ) : null}
 
@@ -195,6 +211,9 @@ export function ReunionesClient({ usuarios, currentUserId }: ReunionesClientProp
         evento={null}
         usuarios={usuarios}
         currentUserId={currentUserId}
+        clientes={clientes}
+        leads={leads}
+        googleCalendarConnected={googleCalendarConnected}
       />
     </div>
   );

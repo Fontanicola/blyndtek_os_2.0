@@ -428,7 +428,11 @@ Protecciones activas: honeypot silencioso, CORS restringido a `MARKETING_SITE_UR
 | calendly_event_id | text | Sí | URI del evento externo de Calendly; índice único parcial |
 | calendly_invitee_uri | text | Sí | URI de la reserva/invitado de Calendly; índice único parcial |
 | enlace_reunion | text | Sí | URL de Google Meet, Calendly u otra videollamada asociada |
+| relacion_tipo | text | Sí | `lead` o `cliente`; relación comercial opcional de una reunión |
+| relacion_id | uuid | Sí | ID del lead o cliente según `relacion_tipo`; índice compuesto parcial |
 | created_at | timestamptz | No especificado |  |
+
+La migración `028_eventos_relacion.sql` agrega la relación comercial opcional sin alterar las referencias históricas de `referencia_tipo`/`referencia_id`. Las reuniones nuevas pueden solicitar un Google Meet mediante Google Calendar; el enlace devuelto se guarda en `enlace_reunion` junto con `google_event_id`.
 
 ## Tabla: eventos_invitados
 
