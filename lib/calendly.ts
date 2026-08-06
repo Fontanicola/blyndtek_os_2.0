@@ -19,6 +19,23 @@ type CalendlyWebhookSubscription = {
   };
 };
 
+export type CalendlyScheduledEvent = {
+  uri?: string;
+  name?: string;
+  status?: string;
+  start_time?: string;
+  end_time?: string;
+  location?: { type?: string; join_url?: string; url?: string } | string;
+};
+
+export type CalendlyScheduledInvitee = {
+  uri?: string;
+  email?: string;
+  name?: string;
+  status?: string;
+  event?: string;
+};
+
 function getCalendlyToken() {
   const token = process.env.CALENDLY_PERSONAL_ACCESS_TOKEN?.trim();
 
@@ -58,6 +75,22 @@ export async function getCalendlyWebhookSubscriptions(userUri: string) {
   const params = new URLSearchParams({ user: userUri, scope: "user" });
   const response = await calendlyApiRequest(`/webhook_subscriptions?${params.toString()}`);
   return (await response.json()) as { collection?: CalendlyWebhookSubscription["resource"][] };
+}
+
+export async function getCalendlyScheduledEvents(userUri: string) {
+  const params = new URLSearchParams({
+    user: userUri,
+    status: "active",
+    min_start_time: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
+  });
+  const response = await calendlyApiRequest(`/scheduled_events?${params.toString()}`);
+  return (await response.json()) as { collection?: CalendlyScheduledEvent[] };
+}
+
+export async function getCalendlyEventInvitees(eventUri: string) {
+  const parsed = new URL(eventUri);
+  const response = await calendlyApiRequest(`${parsed.pathname}/invitees`);
+  return (await response.json()) as { collection?: CalendlyScheduledInvitee[] };
 }
 
 export async function createCalendlyWebhookSubscription(input: {

@@ -7,7 +7,7 @@ export const runtime = "nodejs";
 
 type CalendlyWebhookBody = {
   event?: "invitee.created" | "invitee.canceled" | string;
-  payload?: { event?: string; invitee?: string };
+  payload?: { event?: string; invitee?: string; uri?: string; scheduled_event?: string };
 };
 
 function extractEmail(notas: string | null) {
@@ -26,7 +26,9 @@ export async function POST(request: NextRequest) {
   try {
     const body = (await request.json()) as CalendlyWebhookBody;
     const eventType = body.event;
-    const inviteeUri = body.payload?.invitee;
+    // Calendly uses payload.uri for the invitee resource. Keep invitee as a
+    // compatibility fallback for older/test payloads.
+    const inviteeUri = body.payload?.uri ?? body.payload?.invitee;
 
     if (!inviteeUri || (eventType !== "invitee.created" && eventType !== "invitee.canceled")) {
       return NextResponse.json({ received: true });
@@ -56,7 +58,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ received: true, matched: false });
     }
 
-    const eventUri = resource.event ?? body.payload?.event ?? null;
+    const eventUri = resource.event ?? body.payload?.event ?? body.payload?.scheduled_event ?? null;
     const location = resource.location;
     const enlaceReunion =
       typeof location === "string" ? location : location?.join_url ?? location?.url ?? null;

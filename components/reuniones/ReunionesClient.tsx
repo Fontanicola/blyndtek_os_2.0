@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button, Card, EmptyState, Badge, Spinner } from "@/components/ui";
 import { CalendarIcon, ClockIcon, LinkIcon, RefreshIcon, VideoIcon } from "@/components/ui/icons";
 import { EventoModal } from "@/components/calendario/EventoModal";
@@ -43,7 +43,7 @@ export function ReunionesClient({ usuarios }: ReunionesClientProps) {
   const [selected, setSelected] = useState<EventoConInvitados | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
 
-  async function load() {
+  const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -56,9 +56,17 @@ export function ReunionesClient({ usuarios }: ReunionesClientProps) {
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
 
-  useEffect(() => { void load(); }, []);
+  const syncAndLoad = useCallback(async () => {
+    try {
+      await fetch("/api/calendly/sync", { method: "POST" });
+    } finally {
+      await load();
+    }
+  }, [load]);
+
+  useEffect(() => { void syncAndLoad(); }, [syncAndLoad]);
 
   const visible = useMemo(() => eventos.filter((evento) => {
     const estado = getEstado(evento);
@@ -102,7 +110,7 @@ export function ReunionesClient({ usuarios }: ReunionesClientProps) {
           <h1 className="mt-1 text-2xl font-title text-carbon">Agenda de reuniones</h1>
           <p className="mt-1 text-sm text-graphite">Todas tus conversaciones, reservas y videollamadas en un solo lugar.</p>
         </div>
-        <Button variant="secondary" size="sm" onClick={() => void load()}>
+        <Button variant="secondary" size="sm" onClick={() => void syncAndLoad()}>
           <RefreshIcon size={16} /> Actualizar
         </Button>
       </div>

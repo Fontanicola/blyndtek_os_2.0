@@ -3357,3 +3357,11 @@ Se completó la auditoría de código, búsqueda transversal, tipado, lint y bui
 - Se agregó `components/perfil/NavegacionPreferencias.tsx` dentro de Perfil: lista sólo las secciones disponibles para el rol, guarda cada checkbox con `SavingIndicator` y mantiene Dashboard visible.
 - Archivos modificados: `components/layout/Sidebar.tsx`, `components/perfil/PerfilClient.tsx`, `lib/navigation.ts`, `types/navigation.ts`, `types/supabase.ts`, `docs/DATABASE.md`.
 - Decisión técnica: la preferencia es por usuario, no global; la validación de rol ocurre en el endpoint y el cliente sólo recibe sus propias opciones.
+
+## Actualización 2026-08-06 — Corrección de sincronización de Calendly
+
+- Causa raíz confirmada en `app/api/webhooks/calendly/route.ts`: el handler sólo leía `payload.invitee`, pero el payload real de Calendly entrega la URI del invitado en `payload.uri`. Por eso respondía correctamente al webhook sin crear el evento local.
+- El webhook ahora acepta `payload.uri` y conserva `payload.invitee` como compatibilidad para payloads anteriores/de prueba; también contempla `payload.scheduled_event` como fallback para la URI del evento.
+- Se agregaron consultas server-side a `/scheduled_events` y `/scheduled_events/{id}/invitees` en `lib/calendly.ts`, más `POST /api/calendly/sync` para recuperar reservas existentes y sincronizarlas con `eventos` sin duplicar por `calendly_invitee_uri`.
+- La pantalla `/reuniones` sincroniza Calendly al cargar y al presionar `Actualizar`, y luego consulta los eventos locales. Las tarjetas mantienen fecha, estado, enlace de videollamada y logo de Calendly.
+- Verificación local: `npm run lint` y `npx tsc --noEmit` OK. La verificación remota depende de que Vercel tenga `CALENDLY_PERSONAL_ACCESS_TOKEN`, `CALENDLY_WEBHOOK_SECRET` y la suscripción activa; el endpoint de sincronización devuelve error controlado si falta alguna credencial.
