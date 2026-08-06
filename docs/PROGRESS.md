@@ -3373,3 +3373,10 @@ Se completó la auditoría de código, búsqueda transversal, tipado, lint y bui
 - El webhook y la sincronización manual comparten ahora este comportamiento. La respuesta de sincronización incluye conteos de eventos, invitados y leads creados para facilitar diagnóstico.
 - `components/reuniones/ReunionesClient.tsx` ya no oculta errores de `/api/calendly/sync`; los muestra al usuario y luego carga las reuniones locales.
 - Verificación local: `npm run lint`, `npx tsc --noEmit`, `npm run build` y `git diff --check` OK. La verificación contra Calendly depende de las credenciales configuradas en Vercel y debe hacerse pulsando `Actualizar` en `/reuniones`.
+
+## Actualización 2026-08-06 — Refinamiento de reuniones
+
+- Se eliminó el header interno duplicado de `components/reuniones/ReunionesClient.tsx`; la ubicación queda expresada únicamente por el header global/breadcrumb.
+- La vista dejó de estar limitada a `max-w-6xl`: ahora usa el ancho disponible y una grilla responsive de hasta cuatro columnas para aprovechar mejor el espacio sin comprometer la lectura.
+- Se agregó `Nueva reunión`, que reutiliza `EventoModal` y `POST /api/eventos` para crear reuniones manuales con título, fecha, horario, organizador, invitados y enlace.
+- Verificación: `npm run lint`, `npx tsc --noEmit`, `npm run build` y `git diff --check` OK.

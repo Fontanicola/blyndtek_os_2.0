@@ -3,13 +3,14 @@
 import Image from "next/image";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button, Card, EmptyState, Badge, Spinner } from "@/components/ui";
-import { CalendarIcon, ClockIcon, LinkIcon, RefreshIcon, VideoIcon } from "@/components/ui/icons";
+import { CalendarIcon, ClockIcon, LinkIcon, PlusIcon, RefreshIcon, VideoIcon } from "@/components/ui/icons";
 import { EventoModal } from "@/components/calendario/EventoModal";
 import type { TaskUserOption } from "@/lib/task-support";
 import type { EventoConInvitados, UpdateEventoInput } from "@/types/eventos";
 
 type ReunionesClientProps = {
   usuarios: TaskUserOption[];
+  currentUserId?: string | null;
 };
 
 type Filtro = "proximas" | "todas" | "pasadas";
@@ -35,13 +36,14 @@ function getEstado(evento: EventoConInvitados) {
 
 const estadoLabel = { programada: "Programada", finalizada: "Finalizada", cancelada: "Cancelada" } as const;
 
-export function ReunionesClient({ usuarios }: ReunionesClientProps) {
+export function ReunionesClient({ usuarios, currentUserId }: ReunionesClientProps) {
   const [eventos, setEventos] = useState<EventoConInvitados[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filtro, setFiltro] = useState<Filtro>("proximas");
   const [selected, setSelected] = useState<EventoConInvitados | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -98,6 +100,17 @@ export function ReunionesClient({ usuarios }: ReunionesClientProps) {
     await load();
   }
 
+  async function createEvent(input: UpdateEventoInput) {
+    const response = await fetch("/api/eventos", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input)
+    });
+    const payload = (await response.json()) as { error?: string };
+    if (!response.ok) throw new Error(payload.error ?? "No se pudo crear la reunión.");
+    await load();
+  }
+
   async function deleteEvent() {
     if (!selected) return;
     const response = await fetch(`/api/eventos/${selected.id}`, { method: "DELETE" });
@@ -107,15 +120,13 @@ export function ReunionesClient({ usuarios }: ReunionesClientProps) {
   }
 
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-5 px-4 py-5 md:px-6">
-      <div className="flex flex-wrap items-end justify-between gap-3 border-b border-line-soft pb-4">
-        <div>
-          <div className="text-sm font-label text-signal">Reuniones</div>
-          <h1 className="mt-1 text-2xl font-title text-carbon">Agenda de reuniones</h1>
-          <p className="mt-1 text-sm text-graphite">Todas tus conversaciones, reservas y videollamadas en un solo lugar.</p>
-        </div>
+    <div className="w-full space-y-5 px-4 py-5 md:px-6">
+      <div className="flex flex-wrap items-center justify-end gap-2 border-b border-line-soft pb-4">
         <Button variant="secondary" size="sm" onClick={() => void syncAndLoad()}>
           <RefreshIcon size={16} /> Actualizar
+        </Button>
+        <Button size="sm" onClick={() => setCreateOpen(true)}>
+          <PlusIcon size={16} /> Nueva reunión
         </Button>
       </div>
 
@@ -138,7 +149,7 @@ export function ReunionesClient({ usuarios }: ReunionesClientProps) {
       ) : visible.length === 0 ? (
         <EmptyState icon={VideoIcon} titulo={filtro === "proximas" ? "No hay reuniones próximas" : "No hay reuniones para mostrar"} descripcion="Las reservas de Calendly y las reuniones del calendario aparecerán acá." />
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid min-w-0 gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
           {visible.map((evento) => {
             const estado = getEstado(evento);
             const isCalendly = Boolean(evento.calendly_invitee_uri || evento.calendly_event_id);
@@ -176,6 +187,15 @@ export function ReunionesClient({ usuarios }: ReunionesClientProps) {
           usuarios={usuarios}
         />
       ) : null}
+
+      <EventoModal
+        isOpen={createOpen}
+        onClose={() => setCreateOpen(false)}
+        onSave={createEvent}
+        evento={null}
+        usuarios={usuarios}
+        currentUserId={currentUserId}
+      />
     </div>
   );
 }
