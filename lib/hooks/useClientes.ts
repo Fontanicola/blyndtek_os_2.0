@@ -112,6 +112,21 @@ export function useClientes() {
     return payload.data;
   }, []);
 
+  const deleteCliente = useCallback(async (id: string) => {
+    setError(null);
+
+    const response = await fetch(`/api/clientes/${id}`, { method: "DELETE" });
+    const payload = (await response.json()) as { success?: boolean; error?: string };
+
+    if (!response.ok || !payload.success) {
+      const message = payload.error ?? "No se pudo eliminar el cliente.";
+      setError(message);
+      throw new Error(message);
+    }
+
+    setClientes((current) => current.filter((cliente) => cliente.id !== id));
+  }, []);
+
   useEffect(() => {
     void fetchClientes({ estado: "activo" });
   }, [fetchClientes]);
@@ -123,6 +138,7 @@ export function useClientes() {
     fetchClientes,
     fetchCliente,
     createCliente,
-    updateCliente
+    updateCliente,
+    deleteCliente
   };
 }

@@ -10,10 +10,14 @@ import { useClientes } from "@/lib/hooks/useClientes";
 import type { CreateClienteInput, EstadoCliente } from "@/types/clientes";
 import { useLeads } from "@/lib/hooks/useLeads";
 
-export default function ClientesPage() {
+type ClientesClientProps = {
+  isAdmin: boolean;
+};
+
+export default function ClientesPage({ isAdmin }: ClientesClientProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { clientes, loading, error, fetchClientes, createCliente, updateCliente } = useClientes();
+  const { clientes, loading, error, fetchClientes, createCliente, updateCliente, deleteCliente } = useClientes();
   const { leads: outboundLeads } = useLeads();
   const { leads: inboundLeads } = useInboundLeads();
   const [estado, setEstado] = useState<EstadoCliente>("activo");
@@ -92,6 +96,15 @@ export default function ClientesPage() {
     selectCliente(cliente.id);
   }
 
+  async function handleDeleteCliente() {
+    if (!selectedCliente) return;
+    await deleteCliente(selectedCliente.id);
+    setSelectedClienteId(null);
+    setMobileView("list");
+    router.replace("/clientes", { scroll: false });
+    await fetchClientes({ estado });
+  }
+
   return (
     <div className="h-full">
       <div className="grid h-full gap-4 lg:grid-cols-[320px_minmax(0,1fr)]">
@@ -168,6 +181,7 @@ export default function ClientesPage() {
                 <ClienteFicha
                   cliente={selectedCliente}
                   onUpdate={(input) => void updateCliente(selectedCliente.id, input)}
+                  onDelete={isAdmin ? handleDeleteCliente : undefined}
                 />
               </div>
             </div>

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Badge, Button, Card, EmptyState, Input, Modal, OverdueIndicator, Toast } from "@/components/ui";
 import { CobroModal, EgresoModal, MetricaCard } from "@/components/finanzas";
-import { ChevronDownIcon, DashboardIcon, DollarSignIcon, FileTextIcon, FinanzasIcon } from "@/components/ui/icons";
+import { ChevronDownIcon, DashboardIcon, DollarSignIcon, FileTextIcon, FinanzasIcon, TrashIcon } from "@/components/ui/icons";
 import { NotasVinculadasSection } from "@/components/notas";
 import { ProyectoCard } from "@/components/proyectos";
 import { isCobroVencido } from "@/lib/finanzas";
@@ -31,6 +31,7 @@ import { ClienteSoporteSection } from "./ClienteSoporteSection";
 type ClienteFichaProps = {
   cliente: Cliente;
   onUpdate: (input: UpdateClienteInput) => void | Promise<void>;
+  onDelete?: () => void | Promise<void>;
 };
 
 type TabKey = "datos" | "proyectos" | "contrato" | "financiero" | "cobros" | "suscripcion" | "soporte" | "historial";
@@ -244,7 +245,7 @@ const egresoCategoriaLabels: Record<Egreso["categoria"], string> = {
   transferencia: "Transferencia"
 };
 
-export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
+export function ClienteFicha({ cliente, onUpdate, onDelete }: ClienteFichaProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const currentSearchParams = searchParams ?? new URLSearchParams();
@@ -269,6 +270,10 @@ export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
   const [planes, setPlanes] = useState<ProductoPlan[]>([]);
   const [leadOrigen, setLeadOrigen] = useState<Lead | null>(null);
   const [productoSeleccionadoId, setProductoSeleccionadoId] = useState("");
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [deletingCliente, setDeletingCliente] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   function changeActiveTab(tab: TabKey) {
     setActiveTab(tab);
@@ -1148,22 +1153,29 @@ export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
 
   return (
     <div className="flex h-full flex-col gap-4">
-      <div className="flex flex-wrap gap-2 border-b border-line-soft pb-2">
-        {tabs.map((tab) => (
-          <button
-            key={tab.key}
-            type="button"
-            onClick={() => changeActiveTab(tab.key)}
-            className={[
-              "rounded-pill px-3 py-1.5 text-sm font-label transition-colors duration-fast ease-fast",
-              activeTab === tab.key
-                ? "bg-signal-light text-signal"
-                : "text-graphite hover:bg-white hover:text-carbon"
-            ].join(" ")}
-          >
-            {tab.label}
-          </button>
-        ))}
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line-soft pb-2">
+        <div className="flex flex-wrap gap-2">
+          {tabs.map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => changeActiveTab(tab.key)}
+              className={[
+                "rounded-pill px-3 py-1.5 text-sm font-label transition-colors duration-fast ease-fast",
+                activeTab === tab.key
+                  ? "bg-signal-light text-signal"
+                  : "text-graphite hover:bg-white hover:text-carbon"
+              ].join(" ")}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+        {onDelete ? (
+          <Button variant="ghost" size="sm" className="text-danger hover:bg-danger-light hover:text-danger" onClick={() => { setDeleteError(null); setDeleteConfirmText(""); setDeleteConfirmOpen(true); }}>
+            <TrashIcon size={15} /> Eliminar cliente
+          </Button>
+        ) : null}
       </div>
 
       {tabError ? (
@@ -1171,6 +1183,8 @@ export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
           {tabError}
         </div>
       ) : null}
+
+      {deleteError ? <div className="rounded-card border border-danger bg-danger-light px-4 py-3 text-sm text-danger">{deleteError}</div> : null}
 
       {activeTab === "datos" ? (
         <div className="grid gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)]">
@@ -1969,6 +1983,55 @@ export function ClienteFicha({ cliente, onUpdate }: ClienteFichaProps) {
         cajas={cajasActivas}
         saving={creatingCosto}
       />
+
+      <Modal
+        isOpen={deleteConfirmOpen}
+        onClose={() => {
+          if (!deletingCliente) setDeleteConfirmOpen(false);
+        }}
+        title="Eliminar cliente definitivamente"
+        size="md"
+      >
+        <div className="space-y-4">
+          <div className="rounded-card border border-danger/30 bg-danger-light px-4 py-3 text-sm text-danger">
+            Esta acción es irreversible. Se eliminarán los datos del cliente, proyectos, archivos, notas, reuniones, cobros, contratos, suscripciones, soporte y demás información relacionada.
+          </div>
+          <p className="text-sm text-carbon">
+            Para confirmar, escribí exactamente <strong>{cliente.empresa}</strong>.
+          </p>
+          <Input
+            autoFocus
+            value={deleteConfirmText}
+            onChange={(event) => setDeleteConfirmText(event.target.value)}
+            placeholder={cliente.empresa}
+          />
+          <div className="flex justify-end gap-2 border-t border-line-soft pt-4">
+            <Button variant="ghost" disabled={deletingCliente} onClick={() => setDeleteConfirmOpen(false)}>
+              Cancelar
+            </Button>
+            <Button
+              variant="danger"
+              loading={deletingCliente}
+              disabled={deleteConfirmText !== cliente.empresa}
+              onClick={async () => {
+                if (!onDelete || deleteConfirmText !== cliente.empresa) return;
+                setDeletingCliente(true);
+                setDeleteError(null);
+                try {
+                  await onDelete();
+                  setDeleteConfirmOpen(false);
+                } catch (error) {
+                  setDeleteError(error instanceof Error ? error.message : "No se pudo eliminar el cliente.");
+                } finally {
+                  setDeletingCliente(false);
+                }
+              }}
+            >
+              Eliminar definitivamente
+            </Button>
+          </div>
+        </div>
+      </Modal>
 
       <Toast
         message={toast.message}
