@@ -18,6 +18,9 @@ Configurá estas variables en Vercel en los entornos `Production` y `Preview` si
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY`
 - `ANTHROPIC_API_KEY`
+- `RESEND_API_KEY`
+- `RESEND_FROM_EMAIL`
+- `CRONISTA_SOCIOS_EMAILS`
 - `GOOGLE_CLIENT_ID`
 - `GOOGLE_CLIENT_SECRET`
 - `GOOGLE_REDIRECT_URI`
@@ -28,9 +31,17 @@ Configurá estas variables en Vercel en los entornos `Production` y `Preview` si
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`: anon key pública.
 - `SUPABASE_SERVICE_ROLE_KEY`: service role key, solo server-side.
 - `ANTHROPIC_API_KEY`: clave de Claude API.
+- `RESEND_API_KEY`: clave server-side de Resend con permiso de envío.
+- `RESEND_FROM_EMAIL`: remitente de un dominio verificado en Resend.
+- `CRONISTA_SOCIOS_EMAILS`: emails de los socios separados por coma; no se expone al cliente.
 - `GOOGLE_CLIENT_ID`: client ID de Google OAuth.
 - `GOOGLE_CLIENT_SECRET`: client secret de Google OAuth.
 - `GOOGLE_REDIRECT_URI`: URL de callback de producción.
+
+Estas tres variables son obligatorias para conectar Google Calendar. Deben
+existir en los entornos `Production` y `Preview` de Vercel. Si falta alguna,
+el botón vuelve al calendario con un mensaje accionable y el detalle técnico
+queda registrado únicamente en los logs server-side.
 
 ## 3. Dominio
 

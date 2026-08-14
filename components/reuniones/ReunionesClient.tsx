@@ -1,9 +1,9 @@
 "use client";
 
 import Image from "next/image";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button, Card, EmptyState, Badge, Spinner } from "@/components/ui";
-import { CalendarIcon, ClockIcon, LinkIcon, PlusIcon, RefreshIcon, VideoIcon } from "@/components/ui/icons";
+import { CalendarIcon, CheckIcon, ClockIcon, FilterIcon, LinkIcon, PlusIcon, RefreshIcon, VideoIcon } from "@/components/ui/icons";
 import { EventoModal } from "@/components/calendario/EventoModal";
 import type { TaskClientOption, TaskLeadOption, TaskUserOption } from "@/lib/task-support";
 import type { EventoConInvitados, UpdateEventoInput } from "@/types/eventos";
@@ -47,6 +47,29 @@ export function ReunionesClient({ usuarios, currentUserId, clientes, leads, goog
   const [selected, setSelected] = useState<EventoConInvitados | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const filtersRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function closeOnOutside(event: MouseEvent) {
+      if (filtersRef.current && !filtersRef.current.contains(event.target as Node)) {
+        setFiltersOpen(false);
+      }
+    }
+
+    function closeOnEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setFiltersOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", closeOnOutside);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("mousedown", closeOnOutside);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -124,26 +147,52 @@ export function ReunionesClient({ usuarios, currentUserId, clientes, leads, goog
 
   return (
     <div className="w-full space-y-5 px-4 py-5 md:px-6">
-      <div className="flex flex-wrap items-center justify-end gap-2 border-b border-line-soft pb-4">
-        <Button variant="secondary" size="sm" onClick={() => void syncAndLoad()}>
-          <RefreshIcon size={16} /> Actualizar
-        </Button>
-        <Button size="sm" onClick={() => setCreateOpen(true)}>
-          <PlusIcon size={16} /> Nueva reunión
-        </Button>
-      </div>
-
-      <div className="flex flex-wrap gap-2" role="tablist" aria-label="Filtrar reuniones">
-        {(["proximas", "todas", "pasadas"] as Filtro[]).map((value) => (
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line-soft pb-4">
+        <div ref={filtersRef} className="relative">
           <button
-            key={value}
             type="button"
-            onClick={() => setFiltro(value)}
-            className={`rounded-md px-3 py-2 text-sm font-label transition-colors ${filtro === value ? "bg-signal text-white" : "border border-line bg-white text-graphite hover:bg-paper"}`}
+            aria-expanded={filtersOpen}
+            aria-haspopup="menu"
+            onClick={() => setFiltersOpen((open) => !open)}
+            className="inline-flex items-center gap-2 rounded-md border border-line bg-white px-3 py-2 text-sm font-label text-graphite transition-colors hover:bg-paper"
           >
-            {value === "proximas" ? "Próximas" : value === "todas" ? "Todas" : "Pasadas"}
+            <FilterIcon size={16} />
+            Filtros
+            <span className="rounded-full bg-paper px-1.5 py-0.5 text-xs text-graphite">
+              {filtro === "proximas" ? "Próximas" : filtro === "pasadas" ? "Pasadas" : "Todas"}
+            </span>
           </button>
-        ))}
+          {filtersOpen ? (
+            <div className="absolute left-0 top-full z-20 mt-2 w-48 rounded-md border border-line bg-white p-2 shadow-modal" role="menu">
+              <div className="px-2 pb-1 text-xs font-label text-graphite">Mostrar</div>
+              {(["proximas", "todas", "pasadas"] as Filtro[]).map((value) => (
+                <button
+                  key={value}
+                  type="button"
+                  role="menuitemradio"
+                  aria-checked={filtro === value}
+                  onClick={() => {
+                    setFiltro(value);
+                    setFiltersOpen(false);
+                  }}
+                  className={`flex w-full items-center justify-between rounded-md px-2.5 py-2 text-left text-sm transition-colors ${filtro === value ? "bg-signal text-white" : "text-graphite hover:bg-paper"}`}
+                >
+                  {value === "proximas" ? "Próximas" : value === "todas" ? "Todas" : "Pasadas"}
+                  {filtro === value ? <CheckIcon size={15} aria-hidden="true" /> : null}
+                </button>
+              ))}
+            </div>
+          ) : null}
+        </div>
+
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <Button variant="secondary" size="sm" onClick={() => void syncAndLoad()}>
+            <RefreshIcon size={16} /> Actualizar
+          </Button>
+          <Button size="sm" onClick={() => setCreateOpen(true)}>
+            <PlusIcon size={16} /> Nueva reunión
+          </Button>
+        </div>
       </div>
 
       {error ? <div className="rounded-md border border-danger/20 bg-danger-light p-3 text-sm text-danger">{error}</div> : null}

@@ -101,6 +101,24 @@ type CierreMensualRow = {
   generado_at: string;
 };
 
+type CronistaLogRow = {
+  id: string;
+  fecha: string;
+  estado: "sin_contexto_humano" | "procesando" | "completado" | "fallido";
+  costo_estimado_usd: number | null;
+  updated_at: string;
+};
+
+type CronistaReporteRow = {
+  id: string;
+  tipo: "semanal" | "mensual";
+  periodo_inicio: string;
+  periodo_fin: string;
+  estado: "procesando" | "completado" | "fallido";
+  costo_estimado_usd: number | null;
+  updated_at: string;
+};
+
 function monthKey(date = new Date()) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
 }
@@ -280,6 +298,43 @@ function buildAgenteFeedFromClosures(rows: CierreMensualRow[]): AgentesHubFeedIt
   }));
 }
 
+function buildAgenteFeedFromCronista(rows: CronistaLogRow[]): AgentesHubFeedItem[] {
+  return rows.map((row) => ({
+    id: `cronista-${row.id}`,
+    agente: "Cronista",
+    agente_slug: "cronista",
+    tipo: "analista" as const,
+    resumen:
+      row.estado === "completado"
+        ? `Log diario del ${row.fecha} completado con contexto humano`
+        : row.estado === "fallido"
+          ? `El log diario del ${row.fecha} requiere revisión`
+          : `Log diario del ${row.fecha} preparado sin contexto humano`,
+    fecha: row.updated_at,
+    costo_usd: row.costo_estimado_usd,
+    pr_url: null,
+    items_generados: null
+  }));
+}
+
+function buildAgenteFeedFromCronistaReportes(rows: CronistaReporteRow[]): AgentesHubFeedItem[] {
+  return rows.map((row) => ({
+    id: `cronista-reporte-${row.id}`,
+    agente: "Cronista",
+    agente_slug: "cronista",
+    tipo: "analista" as const,
+    resumen: row.estado === "completado"
+      ? `Reporte ${row.tipo} de socios enviado · ${row.periodo_inicio} a ${row.periodo_fin}`
+      : row.estado === "fallido"
+        ? `Falló el reporte ${row.tipo} de socios · ${row.periodo_inicio} a ${row.periodo_fin}`
+        : `Reporte ${row.tipo} de socios en proceso`,
+    fecha: row.updated_at,
+    costo_usd: row.costo_estimado_usd,
+    pr_url: null,
+    items_generados: null
+  }));
+}
+
 export async function fetchAgentesFeed(supabase: SupabaseClient<AgentesDatabase>, limit = 30) {
   const fetchLimit = Math.max(10, Math.min(limit * 3, 500));
 
@@ -288,7 +343,9 @@ export async function fetchAgentesFeed(supabase: SupabaseClient<AgentesDatabase>
     { data: checklistData, error: checklistError },
     { data: aiDevData, error: aiDevError },
     { data: contentGenerationsData, error: contentGenerationsError },
-    { data: closuresData, error: closuresError }
+    { data: closuresData, error: closuresError },
+    { data: cronistaData, error: cronistaError },
+    { data: cronistaReportesData, error: cronistaReportesError }
   ] =
     await Promise.all([
       supabase
@@ -373,10 +430,20 @@ export async function fetchAgentesFeed(supabase: SupabaseClient<AgentesDatabase>
           `
         )
         .order("generado_at", { ascending: false })
+        .limit(fetchLimit),
+      supabase
+        .from("logs_diarios")
+        .select("id,fecha,estado,costo_estimado_usd,updated_at")
+        .order("updated_at", { ascending: false })
+        .limit(fetchLimit),
+      supabase
+        .from("reportes_cronista")
+        .select("id,tipo,periodo_inicio,periodo_fin,estado,costo_estimado_usd,updated_at")
+        .order("updated_at", { ascending: false })
         .limit(fetchLimit)
     ]);
 
-  const errors = [analysesError, checklistError, aiDevError, contentGenerationsError, closuresError].filter(Boolean);
+  const errors = [analysesError, checklistError, aiDevError, contentGenerationsError, closuresError, cronistaError, cronistaReportesError].filter(Boolean);
   if (errors.length > 0) {
     throw new Error(errors[0]?.message ?? "No se pudo cargar la actividad de los agentes.");
   }
@@ -386,8 +453,10 @@ export async function fetchAgentesFeed(supabase: SupabaseClient<AgentesDatabase>
   const aiDev = buildAgenteFeedFromAiDev((aiDevData ?? []) as AiDevExecutionRow[]);
   const contentGenerations = buildAgenteFeedFromContentGenerations((contentGenerationsData ?? []) as GeneracionAutomaticaRow[]);
   const closures = buildAgenteFeedFromClosures((closuresData ?? []) as CierreMensualRow[]);
+  const cronista = buildAgenteFeedFromCronista((cronistaData ?? []) as CronistaLogRow[]);
+  const cronistaReportes = buildAgenteFeedFromCronistaReportes((cronistaReportesData ?? []) as CronistaReporteRow[]);
 
-  return [...analyses, ...checklists, ...aiDev, ...contentGenerations, ...closures]
+  return [...analyses, ...checklists, ...aiDev, ...contentGenerations, ...closures, ...cronista, ...cronistaReportes]
     .sort((left, right) => new Date(right.fecha).getTime() - new Date(left.fecha).getTime())
     .slice(0, limit);
 }
@@ -404,7 +473,9 @@ export async function fetchAgentesCostoTotal(
     { data: analysesData, error: analysesError },
     { data: aiDevData, error: aiDevError },
     { data: contentData, error: contentError },
-    { data: closuresData, error: closuresError }
+    { data: closuresData, error: closuresError },
+    { data: cronistaData, error: cronistaError },
+    { data: cronistaReportesData, error: cronistaReportesError }
   ] = await Promise.all([
     supabase
       .from("agente_analisis")
@@ -445,10 +516,18 @@ export async function fetchAgentesCostoTotal(
           generado_at
         `
       )
-      .gte("generado_at", periodStartIso)
+      .gte("generado_at", periodStartIso),
+    supabase
+      .from("logs_diarios")
+      .select("costo_estimado_usd,updated_at")
+      .gte("updated_at", periodStartIso),
+    supabase
+      .from("reportes_cronista")
+      .select("costo_estimado_usd,updated_at")
+      .gte("updated_at", periodStartIso)
   ]);
 
-  const errors = [analysesError, aiDevError, contentError, closuresError].filter(Boolean);
+  const errors = [analysesError, aiDevError, contentError, closuresError, cronistaError, cronistaReportesError].filter(Boolean);
   if (errors.length > 0) {
     throw new Error(errors[0]?.message ?? "No se pudo calcular el costo de IA.");
   }
@@ -492,6 +571,22 @@ export async function fetchAgentesCostoTotal(
     breakdown.set("Cierre de Caja Mensual", (breakdown.get("Cierre de Caja Mensual") ?? 0) + costo);
   }
 
+  for (const row of (cronistaData ?? []) as Array<{ costo_estimado_usd: number | null }>) {
+    const costo = Number(row.costo_estimado_usd ?? 0);
+    if (costo <= 0) {
+      continue;
+    }
+
+    breakdown.set("Cronista", (breakdown.get("Cronista") ?? 0) + costo);
+  }
+
+  for (const row of (cronistaReportesData ?? []) as Array<{ costo_estimado_usd: number | null }>) {
+    const costo = Number(row.costo_estimado_usd ?? 0);
+    if (costo > 0) {
+      breakdown.set("Cronista", (breakdown.get("Cronista") ?? 0) + costo);
+    }
+  }
+
   const desglose = Array.from(breakdown.entries()).map(([agente, costo_usd]) => ({
     agente,
     costo_usd: Number(costo_usd.toFixed(6))
@@ -525,7 +620,7 @@ export async function fetchAgentesCostoHistorico(
   const periodStart = new Date(parseMonthKey(monthKeys[0] ?? monthKey(referenceDate)).getTime());
   const periodStartIso = periodStart.toISOString();
 
-  const [analysesResult, aiDevResult, contentResult, closuresResult] = await Promise.all([
+  const [analysesResult, aiDevResult, contentResult, closuresResult, cronistaResult, cronistaReportesResult] = await Promise.all([
     supabase
       .from("agente_analisis")
       .select(
@@ -567,10 +662,18 @@ export async function fetchAgentesCostoHistorico(
           generado_at
         `
       )
-      .gte("generado_at", periodStartIso)
+      .gte("generado_at", periodStartIso),
+    supabase
+      .from("logs_diarios")
+      .select("costo_estimado_usd,updated_at")
+      .gte("updated_at", periodStartIso),
+    supabase
+      .from("reportes_cronista")
+      .select("costo_estimado_usd,updated_at")
+      .gte("updated_at", periodStartIso)
   ]);
 
-  const errors = [analysesResult.error, aiDevResult.error, contentResult.error, closuresResult.error].filter(Boolean);
+  const errors = [analysesResult.error, aiDevResult.error, contentResult.error, closuresResult.error, cronistaResult.error, cronistaReportesResult.error].filter(Boolean);
   if (errors.length > 0) {
     throw new Error(errors[0]?.message ?? "No se pudo cargar el histórico de costos.");
   }
@@ -593,6 +696,20 @@ export async function fetchAgentesCostoHistorico(
       iniciado_at: undefined,
       agente_slug: "cierre-mensual",
       agente_nombre: "Cierre de Caja Mensual"
+    }) satisfies HistoricalCostRow),
+    ...((cronistaResult.data ?? []) as Array<{ costo_estimado_usd: number | null; updated_at: string }>).map((row) => ({
+      costo_estimado_usd: row.costo_estimado_usd,
+      created_at: row.updated_at,
+      iniciado_at: undefined,
+      agente_slug: "cronista",
+      agente_nombre: "Cronista"
+    }) satisfies HistoricalCostRow),
+    ...((cronistaReportesResult.data ?? []) as Array<{ costo_estimado_usd: number | null; updated_at: string }>).map((row) => ({
+      costo_estimado_usd: row.costo_estimado_usd,
+      created_at: row.updated_at,
+      iniciado_at: undefined,
+      agente_slug: "cronista",
+      agente_nombre: "Cronista"
     }) satisfies HistoricalCostRow)
   ];
 

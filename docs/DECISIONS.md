@@ -1,5 +1,15 @@
 # Decisions
 
+## 2026-08-11 — Reportes de Cronista: evidencia persistida y distribución idempotente
+
+- El consolidado se persiste en `reportes_cronista` como Markdown, métricas y referencias de fuente; el PDF es un artefacto de distribución generado desde esa misma estructura y no una segunda fuente de verdad.
+- Las métricas de movimiento pertenecen al período. Pipeline, caja y runway son snapshots fechados porque el esquema no conserva snapshots históricos suficientes; no se inventa una comparación retroactiva.
+- El semanal se envía el domingo a las 20:00 de Argentina. El mensual consolida el mes cerrado el día 1 a las 08:00 de Argentina; la hora se fijó como criterio operativo al no venir especificada.
+- Resend se consume por REST desde servidor, con `RESEND_API_KEY`, `RESEND_FROM_EMAIL` y `CRONISTA_SOCIOS_EMAILS` fuera del código. La lista de destinatarios se toma sólo de esa variable y nunca del cliente.
+- El envío usa una clave de idempotencia estable por reporte. El flujo intenta como máximo dos veces, persiste cada fallo y reutiliza el contenido/PDF ya generado cuando sólo falló el correo.
+- El Markdown mantiene el estado `sin contexto humano` de los diarios y Claude tiene prohibido convertir ausencia o ambigüedad en criterio. El reporte previo sólo se compara cuando existe como evidencia persistida.
+- `docs/SECURITY.md` fue solicitado, pero no existe en el checkout. Esta implementación no lo reemplaza con supuestos y deja la brecha documental explícita.
+
 ## 2026-08-06 — Management API estándar para flota de clientes
 
 - Blyndtek OS operará sistemas de clientes únicamente mediante un contrato HTTP autenticado y versionable; nunca accederá directamente a sus bases, Storage o infraestructura.
@@ -761,3 +771,8 @@ El ciclo posterior al delivery se modela en tres objetos operativos: tickets par
 - Las reuniones tienen una vista operativa propia en `/reuniones`, pero conservan `eventos` como fuente única. `enlace_reunion` permite mostrar y editar el acceso a la videollamada; Calendly y Google Calendar lo completan cuando el proveedor lo entrega.
 - Las reuniones creadas desde `/reuniones` generan un Google Meet automáticamente cuando la cuenta de Google Calendar está conectada. Las reuniones creadas desde el calendario también reciben Meet durante la sincronización; las reservas de Calendly conservan el enlace provisto por Calendly y no se duplican como videollamadas de Google.
 - La relación comercial de una reunión es opcional y vive en `eventos.relacion_tipo`/`eventos.relacion_id`: puede apuntar a un lead o cliente sin forzar la reutilización de las referencias históricas de tareas, leads o cobros.
+
+## 2026-08-06 — Egresos recurrentes y logs operativos
+
+- Eliminar una instancia recurrente desde Finanzas significa detener su plantilla (`egresos_recurrentes_config.activo = false`) y eliminar las instancias del mismo mes, incluyendo duplicados históricos de esa plantilla. Esto evita que el refresco de la vista la regenere inmediatamente; el usuario recibe una confirmación explícita de ese efecto.
+- La observabilidad server-side se implementa con logs JSON en `stdout`/`stderr` y `instrumentation.ts` para excepciones no controladas. No se reintroduce middleware Edge: Vercel ya captura los logs de las funciones Node y el middleware fue eliminado por incidentes históricos de runtime.

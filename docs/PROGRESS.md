@@ -6,6 +6,48 @@ Stack: Next.js 14 (App Router) · TypeScript estricto · Tailwind CSS · Supabas
 
 Fecha de inicio: 2026-06-25
 
+## Actualización 2026-08-11 — Reportes consolidados de Cronista para socios
+
+- Se creó `supabase/migrations/030_cronista_reportes.sql` con `reportes_cronista`, RLS admin-only, estado, dos intentos máximos, error explícito, tokens, costo y trazabilidad de Resend.
+- El reporte semanal corre los domingos a las 20:00 de Argentina y el mensual el día 1 a las 08:00, consolidando respectivamente diarios y reportes semanales del período cerrado.
+- Las métricas comerciales, financieras y de delivery se calculan desde datos reales. Pipeline, caja y runway se etiquetan como snapshots fechados; no se reconstruyen snapshots históricos inexistentes.
+- Claude recibe métricas, logs y el reporte previo disponible, y tiene una instrucción explícita de no inventar criterio ni completar días `sin contexto humano`.
+- Cada ejecución produce Markdown compatible con Blyndtek Memoria, un PDF A4 con identidad Blyndtek y un email confidencial enviado sólo a `CRONISTA_SOCIOS_EMAILS` mediante Resend.
+- El envío usa `Idempotency-Key` estable por reporte para que el único reintento no duplique el correo. Cualquier fallo de generación, persistencia o envío queda en `error_detalle` y la ruta devuelve error después del segundo intento.
+- Se agregó `GET /api/agentes/cronista/reportes/[id]/markdown`, privado y sin caché, para descargar el consolidado e incorporarlo al repo de memoria.
+- Los reportes aparecen en el feed y suman su costo real al consolidado del AI Hub.
+- `docs/SECURITY.md` continúa ausente en este checkout. No se inventaron reglas: se conservaron los controles verificables del proyecto y se documenta esta brecha.
+
+## Actualización 2026-08-11 — Agente Cronista y captura diaria de contexto
+
+- Se creó `supabase/migrations/029_cronista.sql` con `logs_diarios`, estados explícitos, métricas de tokens/costo, RLS admin-only y una fila única por fecha.
+- La migración registra el agente `cronista`, su automatización diaria a las 21:00 de Argentina y el cron HTTP idempotente con los placeholders establecidos para producción.
+- Para no inferir cambios desde estados actuales, `cronista_eventos_estado` y sus triggers capturan desde la migración en adelante cambios reales de etapa de leads, estado de features y estado de fases. No se hace backfill especulativo.
+- `POST /api/agentes/cronista/generar-preguntas` reúne leads, cobros, egresos, delivery, diagnósticos e incidentes; genera 3 a 5 preguntas con Claude y usa preguntas determinísticas basadas en los mismos datos si la IA no está disponible.
+- `POST /api/agentes/cronista/procesar-respuesta` conserva la respuesta cruda y la clasifica sin completar causas ni criterio ausente. El fallback seguro deja la respuesta textual como contexto y marca la revisión pendiente.
+- `GET /api/agentes/cronista/logs/[fecha]/markdown` expone el log sólo a administradores, como `text/markdown`, con frontmatter y secciones compatibles con Blyndtek Memoria.
+- Se agregó `/ai-hub/cronista`: una vista compacta para responder en texto libre, revisar las preguntas y abrir el Markdown resultante. Cronista también alimenta el feed y el costo agregado del AI Hub.
+- La regla crítica queda aplicada en código: una jornada sin respuesta mantiene los datos duros y la marca literal `sin contexto humano`; no genera decisiones ni aprendizajes supuestos.
+- `docs/SECURITY.md` sigue ausente en este checkout. Se aplicaron únicamente controles verificables existentes: sesión admin, service role server-side, RLS admin-only, no exposición de JSON interno y respuesta Markdown con `private, no-store`.
+
+## Actualización 2026-08-06 — Diagnóstico de conexión Google Calendar
+
+- Se confirmó con `vercel env ls` que producción no tenía `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` ni `GOOGLE_REDIRECT_URI`; la falla no era del callback ni de Supabase.
+- Los endpoints OAuth ahora registran el error server-side y redirigen al calendario en vez de mostrar JSON crudo en el navegador.
+- La UI muestra un mensaje claro cuando falta configuración de Google y limpia los parámetros técnicos de la URL.
+- Se actualizó `docs/DEPLOY.md` con el requisito de configurar las tres variables en Production y Preview.
+- Archivos modificados: `app/api/auth/google/route.ts`, `app/api/auth/google/callback/route.ts`, `components/calendario/CalendarioClient.tsx`, `docs/DEPLOY.md`, `docs/PROGRESS.md`.
+- Decisión operativa: las credenciales OAuth no se inventan ni se guardan en el repositorio; deben cargarse como variables cifradas de Vercel.
+
+## Actualización 2026-08-06 — Fix de egresos recurrentes y observabilidad server-side
+
+- Se corrigió el egreso que desaparecía y volvía a aparecer: la eliminación de una instancia vinculada a `egresos_recurrentes_config` ahora desactiva primero la plantilla y elimina todas las instancias duplicadas de esa plantilla en el mismo mes. La regeneración automática mensual ya no puede reponerlas.
+- La confirmación de la UI aclara que eliminar un egreso recurrente también detiene su recurrencia.
+- Se creó `lib/observability/logger.ts` para emitir eventos y errores estructurados en JSON con timestamp, scope, mensaje y stack completo, sin registrar montos, conceptos ni PII.
+- Se creó `instrumentation.ts` para capturar excepciones no controladas y rechazos de promesas en el runtime Node de las funciones server-side. Vercel captura automáticamente esos logs de `stdout`/`stderr`; no se reintrodujo middleware Edge.
+- Archivos modificados/creados: `app/api/egresos/[id]/route.ts`, `components/finanzas/EgresosTabla.tsx`, `lib/observability/logger.ts`, `instrumentation.ts`, `docs/PROGRESS.md`.
+- Verificación: lint, TypeScript, build y `git diff --check` deben ejecutarse antes de publicar; la causa funcional fue confirmada en el flujo `delete → refresh → ensureEgresosMonthGenerated`.
+
 ## Actualización 2026-08-06 — Reuniones con Google Meet y relación comercial
 
 - Las reuniones manuales de `/reuniones` generan automáticamente un evento de Google Calendar con conferencia Google Meet cuando Google Calendar está conectado; el enlace queda visible en la tarjeta y en el detalle.

@@ -93,6 +93,120 @@ export type AgenteAnalisisConAutor = AgenteAnalisis & {
   generado_por_usuario?: Pick<Usuario, "nombre"> | null;
 };
 
+export type CronistaLogEstado = "sin_contexto_humano" | "procesando" | "completado" | "fallido";
+
+export type CronistaPregunta = {
+  id: string;
+  texto: string;
+};
+
+export type CronistaDatosDuros = {
+  leads_nuevos: Array<{
+    id: string;
+    empresa: string;
+    canal: string;
+    etapa: string;
+  }>;
+  cambios_etapa_leads: Array<{
+    lead_id: string;
+    empresa: string;
+    desde: string;
+    hasta: string;
+    ocurrido_at: string;
+  }>;
+  cobros: Array<{
+    id: string;
+    concepto: string;
+    monto: number;
+    estado: string;
+    fecha_cobro: string | null;
+    cliente: string | null;
+  }>;
+  egresos: Array<{
+    id: string;
+    concepto: string;
+    monto: number;
+    categoria: string;
+    pagado: boolean;
+    cliente: string | null;
+  }>;
+  features_completadas: Array<{
+    feature_id: string;
+    nombre: string;
+    proyecto: string;
+    ocurrido_at: string;
+  }>;
+  fases_movidas: Array<{
+    fase_id: string;
+    nombre: string;
+    proyecto: string;
+    desde: string;
+    hasta: string;
+    ocurrido_at: string;
+  }>;
+  diagnosticos_ejecutados: Array<{
+    diagnostico_id: string;
+    empresa: string;
+    estado: string;
+    fecha_completado: string;
+  }>;
+  incidentes_sistemas: Array<{
+    incidente_id: string;
+    sistema: string;
+    titulo: string;
+    severidad: string;
+    detalle: string | null;
+    ocurrido_at: string;
+  }>;
+};
+
+export type CronistaLogDiario = {
+  id: string;
+  fecha: string;
+  datos_duros: CronistaDatosDuros;
+  preguntas: CronistaPregunta[];
+  respuesta_cruda: string | null;
+  log_estructurado: string | null;
+  estado: CronistaLogEstado;
+  tokens_entrada: number | null;
+  tokens_salida: number | null;
+  costo_estimado_usd: number | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type CronistaEventoEstado = {
+  id: string;
+  entidad_tipo: "lead" | "feature" | "fase_proyecto";
+  entidad_id: string;
+  estado_anterior: string;
+  estado_nuevo: string;
+  ocurrido_at: string;
+};
+
+export type CronistaReporteTipo = "semanal" | "mensual";
+export type CronistaReporteEstado = "procesando" | "completado" | "fallido";
+
+export type CronistaReporte = {
+  id: string;
+  tipo: CronistaReporteTipo;
+  periodo_inicio: string;
+  periodo_fin: string;
+  metricas_duras: Json;
+  fuentes: Json;
+  reporte_markdown: string | null;
+  estado: CronistaReporteEstado;
+  intentos: number;
+  error_detalle: string | null;
+  tokens_entrada: number | null;
+  tokens_salida: number | null;
+  costo_estimado_usd: number | null;
+  resend_email_id: string | null;
+  enviado_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 export type AgentesDatabase = Database & {
   public: {
     Tables: Database["public"]["Tables"] & {
@@ -154,6 +268,52 @@ export type AgentesDatabase = Database & {
         Row: PiezaContenidoCostoAgente;
         Insert: Partial<PiezaContenidoCostoAgente>;
         Update: Partial<PiezaContenidoCostoAgente>;
+        Relationships: [];
+      };
+      logs_diarios: {
+        Row: CronistaLogDiario;
+        Insert: Pick<CronistaLogDiario, "fecha" | "datos_duros" | "preguntas"> & {
+          id?: string;
+          respuesta_cruda?: string | null;
+          log_estructurado?: string | null;
+          estado?: CronistaLogEstado;
+          tokens_entrada?: number | null;
+          tokens_salida?: number | null;
+          costo_estimado_usd?: number | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<CronistaLogDiario>;
+        Relationships: [];
+      };
+      cronista_eventos_estado: {
+        Row: CronistaEventoEstado;
+        Insert: Omit<CronistaEventoEstado, "id" | "ocurrido_at"> & {
+          id?: string;
+          ocurrido_at?: string;
+        };
+        Update: Partial<CronistaEventoEstado>;
+        Relationships: [];
+      };
+      reportes_cronista: {
+        Row: CronistaReporte;
+        Insert: Pick<CronistaReporte, "tipo" | "periodo_inicio" | "periodo_fin"> & {
+          id?: string;
+          metricas_duras?: Json;
+          fuentes?: Json;
+          reporte_markdown?: string | null;
+          estado?: CronistaReporteEstado;
+          intentos?: number;
+          error_detalle?: string | null;
+          tokens_entrada?: number | null;
+          tokens_salida?: number | null;
+          costo_estimado_usd?: number | null;
+          resend_email_id?: string | null;
+          enviado_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<CronistaReporte>;
         Relationships: [];
       };
     };

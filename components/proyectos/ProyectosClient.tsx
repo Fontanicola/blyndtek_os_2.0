@@ -161,6 +161,7 @@ export function ProyectosClient({
         <TimelineProyectos
           proyectos={proyectos}
           clientes={clientes}
+          currentUserId={usuario?.id}
           onSelectProject={(id) => {
             setMainView("projects");
             selectProject(id);

@@ -33,11 +33,13 @@ La función de Google Calendar además depende de las variables ya documentadas 
 
 ## 2. Migraciones SQL
 
-Hay dos migraciones nuevas:
+Migraciones relevantes:
 
 - `supabase/migrations/003_automatizaciones.sql`
 - `supabase/migrations/004_cron_jobs.sql`
 - `supabase/migrations/008_agentes_asesor_financiero.sql`
+- `supabase/migrations/029_cronista.sql`
+- `supabase/migrations/030_cronista_reportes.sql`
 
 ### Cómo aplicarlas
 
@@ -67,6 +69,18 @@ O bien, manualmente desde Supabase SQL Editor copiando cada archivo.
 - Programa el análisis mensual del agente `asesor-financiero` contra `POST /api/agentes/asesor-financiero/analizar`.
 - El route del análisis decide en runtime si genera o no el resumen automático leyendo su fila en `automatizaciones` por `endpoint_trigger`.
 
+`029_cronista.sql`
+
+- Registra el agente `cronista` y la automatización diaria en `automatizaciones`.
+- Programa `POST /api/agentes/cronista/generar-preguntas` a las 21:00 de Argentina. El cron usa `00:00 UTC` y el endpoint resuelve la fecha calendario en `America/Argentina/Buenos_Aires`.
+- Crea `logs_diarios` con RLS admin-only y el historial mínimo de cambios de estado necesario para no inferir actividad.
+
+`030_cronista_reportes.sql`
+
+- Programa el reporte semanal de socios el domingo a las 20:00 de Argentina (`23:00 UTC`).
+- Programa el reporte mensual del mes cerrado el día 1 a las 08:00 de Argentina (`11:00 UTC`).
+- Crea `reportes_cronista` con RLS admin-only, dos intentos máximos, error, tokens, costo, Markdown e ID de Resend.
+
 ## 3. Placeholders a reemplazar
 
 Antes de correr `004_cron_jobs.sql`, reemplazá:
@@ -82,6 +96,15 @@ Antes de correr `008_agentes_asesor_financiero.sql`, reemplazá:
 - `YOUR_SERVICE_ROLE_KEY`
 
 Usá la URL real de producción del sitio y una service role key válida.
+
+Antes de correr `029_cronista.sql`, reemplazá:
+
+- `YOUR_APP_URL`
+- `YOUR_SERVICE_ROLE_KEY`
+
+El endpoint cron requiere la service role en `Authorization`. La vista y los endpoints manuales siguen exigiendo una sesión admin.
+
+Antes de correr `030_cronista_reportes.sql`, reemplazá `YOUR_APP_URL` y `YOUR_SERVICE_ROLE_KEY`. Configurá además en el runtime server-side `RESEND_API_KEY`, `RESEND_FROM_EMAIL` y `CRONISTA_SOCIOS_EMAILS`.
 
 ## 4. Verificación
 
@@ -101,6 +124,9 @@ Buscá:
 - `cobros-mensuales-diario-6am`
 - `marcar-vencidos-diario-630am`
 - `sync-google-calendar-cada-5-min` cuando se habilite
+- `cronista-diario-21hs-argentina`
+- `cronista-reporte-semanal-domingo-20hs-ar`
+- `cronista-reporte-mensual-dia-1-08hs-ar`
 
 ### Señales de que todo quedó bien
 
@@ -109,6 +135,9 @@ Buscá:
 - Las features completadas recalculan el avance del proyecto.
 - Los toques de leads agendan el siguiente recordatorio automáticamente.
 - El asesor financiero genera un análisis mensual sólo cuando su automatización está `activa=true`.
+- Cronista crea una única fila diaria, genera entre 3 y 5 preguntas y deja el Markdown marcado como `sin contexto humano` hasta recibir una respuesta.
+- `cronista_eventos_estado` empieza a registrar cambios reales después de aplicar la migración; no existe backfill inferido.
+- Los reportes semanales y mensuales quedan `completado` con `resend_email_id`, o `fallido` con `error_detalle` después de un único reintento.
 
 ## 5. Nota sobre Google Calendar
 

@@ -3,6 +3,7 @@ import { normalizeCajaSlug } from "@/lib/cajas";
 import { syncRecurrenteConfigFromInstance } from "@/lib/finanzas/egresosRecurrentes";
 import { getAdminUser } from "@/lib/require-admin";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { logServerError, logServerEvent } from "@/lib/observability/logger";
 import type { Egreso, UpdateEgresoInput } from "@/types/egresos";
 
 type RouteContext = {
@@ -147,7 +148,25 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
       const nextMonth = new Date(`${monthStart}T00:00:00Z`);
       nextMonth.setUTCMonth(nextMonth.getUTCMonth() + 1);
       const nextMonthStart = nextMonth.toISOString().slice(0, 10);
-      deleteQuery = deleteQuery.eq("recurrente", true).eq("concepto", current.concepto).eq("categoria", current.categoria).eq("monto", current.monto).eq("fecha", current.fecha).gte("fecha", monthStart).lt("fecha", nextMonthStart);
+      if (current.recurrente_config_id) {
+        const { error: deactivateError } = await supabase
+          .from("egresos_recurrentes_config")
+          .update({ activo: false })
+          .eq("id", current.recurrente_config_id);
+
+        if (deactivateError) {
+          logServerError("egresos.delete", deactivateError, {
+            event: "deactivate_recurrente_config_failed",
+            egreso_id: context.params.id,
+            recurrente_config_id: current.recurrente_config_id
+          });
+          return NextResponse.json({ error: deactivateError.message }, { status: 500 });
+        }
+
+        deleteQuery = deleteQuery.eq("recurrente_config_id", current.recurrente_config_id).eq("fecha", current.fecha);
+      } else {
+        deleteQuery = deleteQuery.eq("recurrente", true).eq("concepto", current.concepto).eq("categoria", current.categoria).eq("monto", current.monto).eq("fecha", current.fecha).gte("fecha", monthStart).lt("fecha", nextMonthStart);
+      }
     } else {
       deleteQuery = deleteQuery.eq("id", context.params.id);
     }
@@ -155,6 +174,11 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
     const { error } = await deleteQuery;
 
     if (error) {
+      logServerError("egresos.delete", error, {
+        event: "delete_failed",
+        egreso_id: context.params.id,
+        recurrente_config_id: current.recurrente_config_id
+      });
       if (error.code === "23503") {
         return NextResponse.json(
           { error: "No se puede eliminar este egreso porque está vinculado a otra operación." },
@@ -165,8 +189,16 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
+    logServerEvent("egresos.delete", {
+      event: "deleted",
+      egreso_id: context.params.id,
+      recurrente_config_id: current.recurrente_config_id,
+      recurrente_config_deactivated: Boolean(current.recurrente_config_id)
+    });
+
     return NextResponse.json({ success: true });
   } catch (error) {
+    logServerError("egresos.delete", error, { event: "unexpected_failure", egreso_id: context.params.id });
     const message = error instanceof Error ? error.message : "Unexpected error";
     return NextResponse.json({ error: message }, { status: 500 });
   }

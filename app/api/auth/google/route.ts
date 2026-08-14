@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { buildGoogleCalendarAuthUrl } from "@/lib/google-calendar";
+import { logServerError } from "@/lib/observability/logger";
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,6 +14,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(buildGoogleCalendarAuthUrl(usuario.id));
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unexpected error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    logServerError("google.oauth.start", error);
+    const reason = message.startsWith("Missing environment variable:") ? "config" : "oauth";
+    return NextResponse.redirect(new URL(`/calendario?google=error&reason=${reason}`, request.url));
   }
 }

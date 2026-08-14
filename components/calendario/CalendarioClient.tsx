@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Badge, Button, Card, Input, Modal, Toast } from "@/components/ui";
 import { EVENTOS_REFRESH_EVENT_NAME, useEventos } from "@/lib/hooks/useEventos";
 import {
@@ -57,6 +58,7 @@ function getRange(date: Date, mode: CalendarViewMode) {
 }
 
 export function CalendarioClient({ usuario, usuarios }: CalendarioClientProps) {
+  const searchParams = useSearchParams();
   const { createEvento, updateEvento, deleteEvento, fetchEvento } = useEventos();
   const [currentDate, setCurrentDate] = useState(() => new Date());
   const [viewMode, setViewMode] = useState<CalendarViewMode>("month");
@@ -141,6 +143,23 @@ export function CalendarioClient({ usuario, usuarios }: CalendarioClientProps) {
   useEffect(() => {
     void fetchPendingInvitations();
   }, [fetchPendingInvitations]);
+
+  useEffect(() => {
+    if (!searchParams || searchParams.get("google") !== "error") {
+      return;
+    }
+
+    const reason = searchParams.get("reason");
+    setToast({
+      message: reason === "config"
+        ? "Google Calendar todavía no está configurado en producción. Un administrador debe completar las credenciales de Google en Vercel."
+        : "No se pudo conectar Google Calendar. Revisá la configuración OAuth e intentá nuevamente.",
+      type: "error",
+      visible: true
+    });
+
+    window.history.replaceState({}, "", "/calendario");
+  }, [searchParams]);
 
   useEffect(() => {
     function handleRefresh() {

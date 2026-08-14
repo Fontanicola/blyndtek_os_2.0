@@ -33,7 +33,7 @@ export function EgresosTabla({ egresos, cajas = [], onEdit, onDelete, onTogglePa
               <DataTableCell className="whitespace-nowrap font-label text-carbon">{formatUSD(egreso.monto)}</DataTableCell>
               <DataTableCell className="whitespace-nowrap">{formatFecha(egreso.fecha)}</DataTableCell>
               {showRecurrenteColumn ? <DataTableCell>{egreso.recurrente ? "Sí" : "No"}</DataTableCell> : null}
-              <DataTableCell className="text-right"><RowActions actions={[...(onEdit ? [{ kind: "edit" as const, label: "Editar", onClick: () => onEdit(egreso) }] : []), ...(onDelete ? [{ kind: "destructive" as const, label: "Eliminar", onClick: async () => { if (window.confirm("¿Eliminar este egreso?")) await onDelete(egreso); } }] : [])]} /></DataTableCell>
+              <DataTableCell className="text-right"><RowActions actions={[...(onEdit ? [{ kind: "edit" as const, label: "Editar", onClick: () => onEdit(egreso) }] : []), ...(onDelete ? [{ kind: "destructive" as const, label: "Eliminar", onClick: async () => { if (window.confirm(egreso.recurrente_config_id ? "¿Eliminar este egreso y detener su recurrencia?" : "¿Eliminar este egreso?")) await onDelete(egreso); } }] : [])]} /></DataTableCell>
             </DataTableRow>; })}
             {egresos.length === 0 ? <DataTableRow><DataTableCell className="py-8 text-center" colSpan={showRecurrenteColumn ? 8 : 7}><EmptyState icon={WalletIcon} titulo={emptyTitle} descripcion={emptyDescription} className="mx-auto max-w-xl" /></DataTableCell></DataTableRow> : null}
           </DataTableBody>

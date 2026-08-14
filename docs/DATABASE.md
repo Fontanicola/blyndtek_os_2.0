@@ -973,7 +973,7 @@ Nota operativa:
 
 **PK:** `id`
 
-**Uso:** catálogo de agentes de Blyndtek OS. Por ahora contiene el agente `asesor-financiero`, pero la estructura queda lista para escalar a más agentes.
+**Uso:** catálogo de agentes de Blyndtek OS. Incluye, entre otros, `asesor-financiero` y `cronista`; la estructura queda lista para escalar a más agentes.
 
 | Campo | Tipo | Nullable | Notas |
 | --- | --- | --- | --- |
@@ -1065,6 +1065,74 @@ Nota operativa:
 | costo_estimado_usd | numeric | Sí | costo estimado con precio de Sonnet |
 | generado_por | uuid | Sí | FK → `usuarios` cuando fue manual |
 | created_at | timestamptz | No |  |
+
+## Tabla: logs_diarios
+
+**PK:** `id`
+
+**Uso:** captura diaria del agente `cronista`. Conserva la evidencia operativa, las preguntas realizadas, la respuesta textual de Felipe y el Markdown estructurado listo para incorporar a Blyndtek Memoria.
+
+**RLS esperada:** acceso para `admin` sí; acceso para `miembro`, `comercial` y `marketing` no.
+
+| Campo | Tipo | Nullable | Notas |
+| --- | --- | --- | --- |
+| id | uuid | No | PK, default `gen_random_uuid()` |
+| fecha | date | No | Una fila por día; índice único |
+| datos_duros | jsonb | No | Snapshot determinístico de leads, movimientos financieros, delivery, diagnósticos e incidentes |
+| preguntas | jsonb | No | Array de 3 a 5 preguntas contextualizadas |
+| respuesta_cruda | text | Sí | Texto de Felipe sin reescritura |
+| log_estructurado | text | Sí | Markdown con el contrato de log diario de Blyndtek Memoria |
+| estado | text | No | `sin_contexto_humano`, `procesando`, `completado` o `fallido` |
+| tokens_entrada | integer | Sí | Tokens acumulados de preguntas y estructuración |
+| tokens_salida | integer | Sí | Tokens acumulados de preguntas y estructuración |
+| costo_estimado_usd | numeric | Sí | Costo acumulado estimado de Claude |
+| created_at | timestamptz | No | Default `now()` |
+| updated_at | timestamptz | No | Última generación o procesamiento |
+
+## Tabla: cronista_eventos_estado
+
+**PK:** `id`
+
+**Uso:** historial técnico mínimo para que Cronista pueda afirmar cambios de etapa de leads, features completadas y movimientos de fases sin inferirlos desde el estado actual. Empieza a capturar eventos desde la aplicación de la migración `029_cronista.sql`; no reconstruye historia previa.
+
+**RLS esperada:** acceso para `admin` sí; el trigger `security definer` registra cambios realizados por roles operativos sin abrir acceso directo a la tabla.
+
+| Campo | Tipo | Nullable | Notas |
+| --- | --- | --- | --- |
+| id | uuid | No | PK, default `gen_random_uuid()` |
+| entidad_tipo | text | No | `lead`, `feature` o `fase_proyecto` |
+| entidad_id | uuid | No | Identificador de la entidad; referencia polimórfica sin FK |
+| estado_anterior | text | No | Estado confirmado antes del update |
+| estado_nuevo | text | No | Estado confirmado después del update |
+| ocurrido_at | timestamptz | No | Momento real del cambio, default `now()` |
+
+## Tabla: reportes_cronista
+
+**PK:** `id`
+
+**Uso:** ejecución consolidada semanal o mensual de Cronista. Guarda evidencia, métricas duras, Markdown listo para Blyndtek Memoria, envío a socios y costo de Claude sin persistir el PDF como una fuente paralela.
+
+**RLS esperada:** acceso para `admin` sí; acceso para `miembro`, `comercial` y `marketing` no. Los jobs usan `service_role` sólo en servidor.
+
+| Campo | Tipo | Nullable | Notas |
+| --- | --- | --- | --- |
+| id | uuid | No | PK, default `gen_random_uuid()` |
+| tipo | text | No | `semanal` o `mensual` |
+| periodo_inicio | date | No | Inicio inclusivo; único junto con `tipo` |
+| periodo_fin | date | No | Fin inclusivo |
+| metricas_duras | jsonb | No | Flujos del período y snapshots fechados de pipeline/caja/runway |
+| fuentes | jsonb | No | IDs, estados y contenido de logs/reportes consolidados; incluye referencia previa si existe |
+| reporte_markdown | text | Sí | Documento autocontenido con frontmatter para la memoria |
+| estado | text | No | `procesando`, `completado` o `fallido` |
+| intentos | integer | No | Entre 0 y 2; permite un único reintento |
+| error_detalle | text | Sí | Fallo real de generación, persistencia, PDF o envío |
+| tokens_entrada | integer | Sí | Tokens usados por Claude |
+| tokens_salida | integer | Sí | Tokens generados por Claude |
+| costo_estimado_usd | numeric | Sí | Costo estimado del consolidado |
+| resend_email_id | text | Sí | ID confirmado por Resend |
+| enviado_at | timestamptz | Sí | Momento del envío confirmado |
+| created_at | timestamptz | No | Default `now()` |
+| updated_at | timestamptz | No | Último intento o cierre |
 
 ## Relaciones
 
@@ -1158,6 +1226,9 @@ Orden sugerido respetando dependencias de FK:
 30. `automatizaciones`
 31. `cierres_mensuales`
 32. `agente_analisis`
+33. `logs_diarios`
+34. `cronista_eventos_estado`
+35. `reportes_cronista`
 
 Nota: `usuarios` debe existir antes que `leads`, `proyectos`, `features`, `tareas`, `eventos` y `eventos_invitados`. `contratos`, `suscripciones` y `cobros` se apoyan en `clientes` y deben poder crearse con FKs nullable o deferrable según el orden de carga.
 
@@ -1194,6 +1265,9 @@ Nota: `usuarios` debe existir antes que `leads`, `proyectos`, `features`, `tarea
 - `comisiones` no tiene `proyecto_id`; cualquier referencia de proyecto para reporting debe resolverse vía `cliente_id` / `cotizacion_id` y joins a `proyectos` según contexto.
 - `agentes`, `agente_config` y `agente_analisis` soportan el módulo de Agentes; `agente_analisis` guarda tanto la base determinística como la síntesis en lenguaje natural.
 - `cierres_mensuales` guarda el resumen financiero mensual generado por el agente `cierre-mensual`, con base numérica real y texto sintetizado por Claude.
+- `logs_diarios` guarda la captura de Cronista. Una fila sin respuesta conserva los datos duros y un Markdown con la marca explícita `sin contexto humano`; nunca se completa criterio por inferencia.
+- `cronista_eventos_estado` registra mediante triggers los cambios de `leads.etapa`, `features.estado` y `fases_proyecto.estado` desde la migración `029_cronista.sql` en adelante.
+- `reportes_cronista` registra los consolidados semanales y mensuales, su evidencia, Markdown, tokens/costo, errores e ID de envío. La migración `030_cronista_reportes.sql` no guarda una copia binaria del PDF.
 - `sistemas_gestionados` guarda el catálogo del control plane: URLs, endpoint/token de management server-side, vínculos opcionales a proyecto/cliente, configuración de Vercel/Supabase, stack, versión y estado de monitoreo. `management_token` es secreto y nunca se expone completo por API.
 - `sistemas_health_checks` guarda el histórico de disponibilidad por sistema, con estado, latencia, salud de base, detalle y timestamp.
 - `sistemas_incidentes` guarda incidentes de health check y errores reportados por sistemas clientes, con severidad, detalle y resolución.
