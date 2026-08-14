@@ -2,6 +2,7 @@ import { createElement } from "react";
 import {
   BotIcon,
   BarChartIcon,
+  BookOpenIcon,
   BrainIcon,
   BriefcaseIcon,
   CalendarioIcon,
@@ -73,6 +74,13 @@ export const navigationItems: NavItem[] = [
         roles: ["admin"],
         section: "top-level",
         exact: true
+      },
+      {
+        label: "Cronista",
+        href: "/ai-hub/cronista",
+        icon: createElement(BookOpenIcon),
+        roles: ["admin"],
+        section: "top-level"
       },
       {
         label: "Agentes",
@@ -186,6 +194,13 @@ export const navigationItems: NavItem[] = [
     href: "/finanzas",
     icon: createElement(FinanzasIcon),
     roles: ["admin"],
+    section: "control"
+  },
+  {
+    label: "Objetivos",
+    href: "/objetivos",
+    icon: createElement(BarChartIcon),
+    roles: ["admin", "comercial"],
     section: "control"
   },
   {
