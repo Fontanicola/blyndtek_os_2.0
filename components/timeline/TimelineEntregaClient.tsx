@@ -14,7 +14,7 @@ type TimelineEntregaClientProps = {
 
 export function TimelineEntregaClient({ usuario, clientes }: TimelineEntregaClientProps) {
   const router = useRouter();
-  const { proyectos, loading, error } = useProyectos();
+  const { proyectos, loading, error, updateProyecto } = useProyectos();
 
   if (loading && proyectos.length === 0) {
     return <PageSkeleton />;
@@ -31,6 +31,7 @@ export function TimelineEntregaClient({ usuario, clientes }: TimelineEntregaClie
         clientes={clientes}
         currentUserId={usuario?.id}
         onSelectProject={(id) => router.push(`/proyectos?project_id=${encodeURIComponent(id)}`)}
+        onUpdateProject={updateProyecto}
       />
     </div>
   );

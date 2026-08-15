@@ -11,6 +11,7 @@ type TimelineProyectosProps = {
   clientes: Array<Pick<{ id: string; empresa: string }, "id" | "empresa">>;
   currentUserId?: string | null;
   onSelectProject: (id: string) => void;
+  onUpdateProject: (id: string, input: { fecha_inicio?: string | null; entrega_comprometida?: string | null }) => Promise<Proyecto>;
 };
 
 type EventType = "pago" | "reunion";
@@ -28,6 +29,8 @@ type TimelineEvent = {
 const WEEKS_PER_MONTH = 4;
 const TOTAL_MONTHS = 12;
 const TOTAL_WEEKS = WEEKS_PER_MONTH * TOTAL_MONTHS;
+const TOTAL_DAYS = TOTAL_WEEKS * 7;
+const DAY_MS = 24 * 60 * 60 * 1000;
 const WEEK_PERCENT = 100 / TOTAL_WEEKS;
 const weeks = Array.from({ length: TOTAL_WEEKS }, (_, index) => index);
 const seedEvents: TimelineEvent[] = [
@@ -57,37 +60,51 @@ function toDateInputValue(date: Date) {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 }
 
+function addDays(value: Date, days: number) {
+  const date = new Date(value);
+  date.setDate(date.getDate() + days);
+  return date;
+}
+
+function parseProjectDate(value: string) {
+  return new Date(value.length === 10 ? `${value}T10:00:00` : value);
+}
+
+function getTimelinePercent(value: Date, timelineStart: Date) {
+  return Math.max(0, Math.min(100, ((value.getTime() - timelineStart.getTime()) / (TOTAL_DAYS * DAY_MS)) * 100));
+}
+
 function getWeekIndex(value: string | Date, timelineStart: Date) {
   const date = new Date(value);
   return Math.max(0, Math.min(TOTAL_WEEKS - 1, Math.floor((date.getTime() - timelineStart.getTime()) / (7 * 24 * 60 * 60 * 1000))));
 }
 
-function projectPosition(project: Proyecto, index: number, timelineStart: Date) {
-  const fallbackStarts = [0, 0, 4, 8, 12];
-  const fallbackLengths = [4, 8, 12, 8, 6];
-  const fallbackStart = fallbackStarts[index % fallbackStarts.length] ?? 0;
-  const fallbackLength = fallbackLengths[index % fallbackLengths.length] ?? 4;
-  const startDate = project.fecha_inicio ? new Date(project.fecha_inicio) : getWeekDate(fallbackStart, timelineStart);
-  const endDate = project.entrega_comprometida
-    ? new Date(project.entrega_comprometida)
-    : new Date(startDate.getTime() + fallbackLength * 7 * 24 * 60 * 60 * 1000);
-  const start = getWeekIndex(startDate, timelineStart);
-  const end = Math.max(start + 1, getWeekIndex(endDate, timelineStart));
-  const length = Math.min(TOTAL_WEEKS - start, Math.max(1, end - start));
+function projectPosition(project: Proyecto, timelineStart: Date, dateOffsetWeeks = 0, resizeOffsetWeeks = 0) {
   const hasSchedule = Boolean(project.fecha_inicio && project.entrega_comprometida);
+  const originalStartDate = hasSchedule ? parseProjectDate(project.fecha_inicio as string) : timelineStart;
+  const originalEndDate = hasSchedule ? parseProjectDate(project.entrega_comprometida as string) : timelineStart;
+  const startDate = addDays(originalStartDate, dateOffsetWeeks * 7);
+  const endDate = addDays(originalEndDate, (dateOffsetWeeks + resizeOffsetWeeks) * 7);
+  const startPercent = getTimelinePercent(startDate, timelineStart);
+  const endPercent = Math.max(startPercent + (100 / TOTAL_DAYS), getTimelinePercent(endDate, timelineStart));
+  const widthPercent = hasSchedule ? Math.min(100 - startPercent, endPercent - startPercent) : 0;
   const now = Date.now();
   const totalDuration = endDate.getTime() - startDate.getTime();
   const progressPct = hasSchedule && totalDuration > 0
     ? Math.max(0, Math.min(100, ((now - startDate.getTime()) / totalDuration) * 100))
     : 0;
   const daysRemaining = (endDate.getTime() - now) / (24 * 60 * 60 * 1000);
-  const remainingClass = !hasSchedule || daysRemaining >= 30
-    ? "border-emerald-200 bg-emerald-100"
-    : daysRemaining > 14
-      ? "border-orange-200 bg-orange-100"
-      : "border-red-200 bg-red-100";
+  const remainingClass = !hasSchedule
+    ? "border-slate-200 bg-slate-100"
+    : daysRemaining < 0
+      ? "border-slate-300 bg-slate-200"
+      : daysRemaining >= 30
+        ? "border-emerald-200 bg-emerald-100"
+        : daysRemaining > 14
+          ? "border-orange-200 bg-orange-100"
+          : "border-red-200 bg-red-100";
 
-  return { start, length, progressPct, remainingClass };
+  return { startPercent, widthPercent, progressPct, remainingClass, startDate, endDate, hasSchedule };
 }
 
 function getWeekDate(week: number, timelineStart: Date) {
@@ -97,7 +114,7 @@ function getWeekDate(week: number, timelineStart: Date) {
   return date;
 }
 
-export function TimelineProyectos({ proyectos, clientes, currentUserId, onSelectProject }: TimelineProyectosProps) {
+export function TimelineProyectos({ proyectos, clientes, currentUserId, onSelectProject, onUpdateProject }: TimelineProyectosProps) {
   const timelineStart = useMemo(() => {
     const date = new Date();
     return new Date(date.getFullYear(), date.getMonth(), 1);
@@ -115,6 +132,9 @@ export function TimelineProyectos({ proyectos, clientes, currentUserId, onSelect
   const [eventDate, setEventDate] = useState("");
   const [eventSaving, setEventSaving] = useState(false);
   const [eventError, setEventError] = useState<string | null>(null);
+  const [scheduleDrag, setScheduleDrag] = useState<{ projectId: string; mode: "move" | "resize"; originX: number; deltaWeeks: number } | null>(null);
+  const [scheduleSaving, setScheduleSaving] = useState<string | null>(null);
+  const [scheduleError, setScheduleError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -199,6 +219,54 @@ export function TimelineProyectos({ proyectos, clientes, currentUserId, onSelect
     }
   }
 
+  function beginScheduleDrag(event: React.PointerEvent<HTMLElement>, project: Proyecto, mode: "move" | "resize") {
+    if (!project.fecha_inicio || !project.entrega_comprometida || scheduleSaving) return;
+    event.preventDefault();
+    event.stopPropagation();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    setScheduleError(null);
+    setScheduleDrag({ projectId: project.id, mode, originX: event.clientX, deltaWeeks: 0 });
+  }
+
+  function updateScheduleDrag(event: React.PointerEvent<HTMLElement>) {
+    if (!scheduleDrag) return;
+    const rawDelta = Math.round((event.clientX - scheduleDrag.originX) / (72 / 7));
+    const project = projectRows.find((item) => item.id === scheduleDrag.projectId);
+    if (!project || !project.fecha_inicio || !project.entrega_comprometida) return;
+    const startDay = Math.floor((parseProjectDate(project.fecha_inicio).getTime() - timelineStart.getTime()) / DAY_MS);
+    const endDay = Math.floor((parseProjectDate(project.entrega_comprometida).getTime() - timelineStart.getTime()) / DAY_MS);
+    const deltaWeeks = scheduleDrag.mode === "move"
+      ? Math.max(-startDay, Math.min(TOTAL_DAYS - 1 - endDay, rawDelta))
+      : Math.max(startDay + 1 - endDay, Math.min(TOTAL_DAYS - endDay, rawDelta));
+    setScheduleDrag((current) => current ? { ...current, deltaWeeks } : null);
+  }
+
+  async function finishScheduleDrag(event: React.PointerEvent<HTMLElement>, project: Proyecto) {
+    if (!scheduleDrag || scheduleDrag.projectId !== project.id) return;
+    event.stopPropagation();
+    event.currentTarget.releasePointerCapture(event.pointerId);
+    const { mode, deltaWeeks } = scheduleDrag;
+    setScheduleDrag(null);
+    if (deltaWeeks === 0 || !project.fecha_inicio || !project.entrega_comprometida) return;
+
+    const startDate = parseProjectDate(project.fecha_inicio);
+    const endDate = parseProjectDate(project.entrega_comprometida);
+    const nextStart = mode === "move" ? addDays(startDate, deltaWeeks) : startDate;
+    const nextEnd = addDays(endDate, deltaWeeks);
+    setScheduleSaving(project.id);
+    setScheduleError(null);
+    try {
+      await onUpdateProject(project.id, {
+        ...(mode === "move" ? { fecha_inicio: toDateInputValue(nextStart) } : {}),
+        entrega_comprometida: toDateInputValue(nextEnd)
+      });
+    } catch (error) {
+      setScheduleError(error instanceof Error ? error.message : "No se pudo actualizar el cronograma.");
+    } finally {
+      setScheduleSaving(null);
+    }
+  }
+
   return (
     <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-card border border-line-soft bg-white shadow-card">
       <div className="flex flex-wrap items-center justify-end gap-3 border-b border-line-soft px-5 py-3 text-xs text-graphite">
@@ -217,7 +285,9 @@ export function TimelineProyectos({ proyectos, clientes, currentUserId, onSelect
             {weeks.map((week) => <div key={week} className={cn("relative border-b-2 border-l border-line py-2 text-center text-[10px] text-graphite", week % WEEKS_PER_MONTH === 0 && "border-l-slate-300", week === currentWeek && "bg-signal-light/50 font-title text-signal")}><span>{(week % WEEKS_PER_MONTH) + 1}</span>{week === currentWeek ? <span className="absolute -top-1 left-1/2 h-2 w-2 -translate-x-1/2 rounded-full bg-signal" title="Semana actual" /> : null}</div>)}
 
             {projectRows.map((project, index) => {
-              const position = projectPosition(project, index, timelineStart);
+              const dragOffset = scheduleDrag?.projectId === project.id && scheduleDrag.mode === "move" ? scheduleDrag.deltaWeeks : 0;
+              const resizeOffset = scheduleDrag?.projectId === project.id && scheduleDrag.mode === "resize" ? scheduleDrag.deltaWeeks : 0;
+              const position = projectPosition(project, timelineStart, dragOffset / 7, resizeOffset / 7);
               const resolvedClientName = getClientName(project.cliente_id, clientes);
               const clientName = resolvedClientName === "Cliente" ? ["Funes", "HA", "ABC"][index] ?? "Cliente" : resolvedClientName;
               const alias = ["funes", "ha", "abc"][index];
@@ -229,7 +299,20 @@ export function TimelineProyectos({ proyectos, clientes, currentUserId, onSelect
                 </div>
                 <div className="relative h-[168px] border-l-2 border-b-2 border-line" style={{ gridColumn: `2 / span ${TOTAL_WEEKS}` }}>
                   {weeks.map((week) => <button key={`${project.id}-${week}`} type="button" onClick={() => openCell(project, week)} aria-label={`Agregar evento en semana ${week + 1}`} className={cn("absolute top-0 h-full border-l border-line-soft/70 hover:bg-signal-light/30", week === 0 && "border-l-0", week === currentWeek && "bg-signal-light/20")} style={{ left: `${week * WEEK_PERCENT}%`, width: `${WEEK_PERCENT}%` }} />)}
-                  <div className="pointer-events-none absolute left-0 right-0 top-2 h-10"><div className={`absolute h-10 overflow-hidden rounded-component border px-3 py-2 text-sm font-label text-carbon shadow-sm ${position.remainingClass}`} style={{ left: `${position.start * WEEK_PERCENT}%`, width: `${position.length * WEEK_PERCENT}%` }}><div className="absolute inset-y-0 left-0 bg-signal-light" style={{ width: `${position.progressPct}%` }} /><span className="relative truncate">{project.nombre}</span></div></div>
+                  <div className="absolute left-0 right-0 top-2 h-10">
+                    <div
+                      className={cn("group absolute h-10 overflow-hidden rounded-component border px-3 py-2 text-sm font-label text-carbon shadow-sm", position.remainingClass, position.hasSchedule ? "cursor-grab active:cursor-grabbing" : "cursor-default")}
+                      style={{ left: `${position.startPercent}%`, width: `${position.widthPercent}%` }}
+                      onPointerDown={(event) => beginScheduleDrag(event, project, "move")}
+                      onPointerMove={updateScheduleDrag}
+                      onPointerUp={(event) => void finishScheduleDrag(event, project)}
+                      title={position.hasSchedule ? `Inicio: ${toDateInputValue(position.startDate)} · Entrega: ${toDateInputValue(position.endDate)}` : "Definí las fechas del proyecto para editarlo desde acá"}
+                    >
+                      <div className="absolute inset-y-0 left-0 bg-slate-300/80" style={{ width: `${position.progressPct}%` }} />
+                      <span className="relative truncate">{project.nombre}</span>
+                      {position.hasSchedule ? <button type="button" aria-label="Cambiar fecha de entrega" className="absolute inset-y-0 right-0 z-10 w-2 cursor-ew-resize bg-carbon/10 opacity-0 transition-opacity group-hover:opacity-100" onPointerDown={(event) => beginScheduleDrag(event, project, "resize")} onPointerMove={updateScheduleDrag} onPointerUp={(event) => void finishScheduleDrag(event, project)} /> : null}
+                    </div>
+                  </div>
                   <div className="pointer-events-none absolute left-0 right-0 top-[64px] h-10">{projectEvents.filter((event) => event.type === "pago").map((event) => <span key={event.id} title={event.label} className="absolute flex h-10 min-w-0 overflow-hidden items-center justify-center rounded-component border border-emerald-200 bg-emerald-50 px-1 text-[10px] font-label text-emerald-800 shadow-sm" style={{ left: `calc(${event.week * WEEK_PERCENT}% + 2px)`, width: `calc(${WEEK_PERCENT}% - 4px)` }}><span className="min-w-0 truncate">{event.amount != null ? formatMoney(event.amount) : "$ —"}</span></span>)}</div>
                   <div className="pointer-events-none absolute left-0 right-0 top-[120px] h-10">{projectEvents.filter((event) => event.type === "reunion").map((event) => <span key={event.id} title={event.date ? formatEventDate(event.date) : "Reunión"} className="absolute flex h-10 min-w-0 overflow-hidden items-center justify-center gap-1 rounded-component border border-violet-200 bg-violet-50 px-1 text-[10px] font-label text-violet-800 shadow-sm" style={{ left: `calc(${event.week * WEEK_PERCENT}% + 2px)`, width: `calc(${WEEK_PERCENT}% - 4px)` }}><VideoIcon size={12} className="shrink-0" /><span className="min-w-0 truncate">{event.date ? formatEventDate(event.date) : "Sin fecha"}</span></span>)}</div>
                 </div>
@@ -238,6 +321,8 @@ export function TimelineProyectos({ proyectos, clientes, currentUserId, onSelect
           </div>
         </div>
       </div>
+
+      {scheduleError ? <div className="border-t border-danger/20 bg-danger-light px-5 py-2 text-xs text-danger">{scheduleError}</div> : null}
 
       {activeCell ? <div className="fixed inset-0 z-50 flex items-center justify-center bg-carbon/20 p-4" onMouseDown={() => setActiveCell(null)}><div className="w-full max-w-sm rounded-card border border-line-soft bg-white p-5 shadow-modal" onMouseDown={(event) => event.stopPropagation()}><h3 className="text-base font-title text-carbon">Agregar al timeline</h3><p className="mt-1 text-sm text-graphite">Semana {activeCell.week + 1} · {months[Math.floor(activeCell.week / WEEKS_PER_MONTH)]}</p><div className="mt-4 space-y-3"><select value={eventType} onChange={(event) => setEventType(event.target.value as EventType)} className="w-full rounded-component border border-line bg-white px-3 py-2 text-sm text-carbon focus:border-signal focus:outline-none focus:ring-2 focus:ring-signal/20"><option value="reunion">Reunión</option><option value="pago">Hito de pago</option></select>{eventType === "reunion" ? <label className="block space-y-1 text-sm font-label text-carbon">Fecha de la reunión<input type="date" value={eventDate} onChange={(event) => setEventDate(event.target.value)} className="mt-1 w-full rounded-component border border-line px-3 py-2 text-sm font-normal text-carbon outline-none focus:border-signal focus:ring-2 focus:ring-signal/20" /></label> : null}<input autoFocus value={eventLabel} onChange={(event) => setEventLabel(event.target.value)} onKeyDown={(event) => event.key === "Enter" && void saveEvent()} placeholder={eventType === "pago" ? "Ej. Cuota 2" : "Ej. Demo con cliente"} className="w-full rounded-component border border-line px-3 py-2 text-sm text-carbon outline-none focus:border-signal focus:ring-2 focus:ring-signal/20" />{eventType === "pago" ? <input value={eventAmount} onChange={(event) => setEventAmount(event.target.value)} type="number" min="0" placeholder="Monto a pagar (USD)" className="w-full rounded-component border border-line px-3 py-2 text-sm text-carbon outline-none focus:border-signal focus:ring-2 focus:ring-signal/20" /> : null}{eventError ? <p className="text-xs text-danger">{eventError}</p> : null}<div className="flex justify-end gap-2 pt-2"><button type="button" onClick={() => setActiveCell(null)} className="rounded-component px-3 py-2 text-sm text-graphite hover:bg-paper">Cancelar</button><button type="button" onClick={() => void saveEvent()} disabled={!eventLabel.trim() || eventSaving} className="rounded-component bg-signal px-3 py-2 text-sm font-label text-white disabled:cursor-not-allowed disabled:opacity-50">{eventSaving ? "Guardando..." : "Agregar"}</button></div></div></div></div> : null}
     </section>
