@@ -141,6 +141,13 @@ export const navigationItems: NavItem[] = [
     section: "entrega"
   },
   {
+    label: "Timeline de entrega",
+    href: "/timeline",
+    icon: createElement(CalendarioIcon),
+    roles: ["admin", "miembro"],
+    section: "entrega"
+  },
+  {
     label: "Software",
     href: "/software",
     icon: createElement(ServerIcon),

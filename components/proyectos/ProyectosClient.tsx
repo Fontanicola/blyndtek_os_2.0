@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Card, EmptyState, EntityMultiSelect, EntitySelect, Input, Modal, PageSkeleton } from "@/components/ui";
-import { CalendarIcon, ProyectosIcon } from "@/components/ui/icons";
+import { ProyectosIcon } from "@/components/ui/icons";
 import { cn } from "@/lib/cn";
 import { useFeatures } from "@/lib/hooks/useFeatures";
 import { useProyectos } from "@/lib/hooks/useProyectos";
@@ -13,7 +13,6 @@ import type { CreateProyectoInput, Proyecto } from "@/types/proyectos";
 import type { Usuario } from "@/types/auth";
 import { ProyectoCard } from "./ProyectoCard";
 import { ProyectoFicha } from "./ProyectoFicha";
-import { TimelineProyectos } from "./TimelineProyectos";
 
 type ProyectosClientProps = {
   usuario: Usuario | null;
@@ -24,8 +23,6 @@ type ProyectosClientProps = {
 };
 
 type ProyectosViewMode = "list" | "detail";
-type MainViewMode = "projects" | "timeline";
-
 function getClienteNombre(clienteId: string, clientes: ProyectosClientProps["clientes"]) {
   return clientes.find((cliente) => cliente.id === clienteId)?.empresa ?? "Cliente";
 }
@@ -60,7 +57,6 @@ export function ProyectosClient({
   const [mobileMode, setMobileMode] = useState<ProyectosViewMode>(initialSelectedProjectId ? "detail" : "list");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [newProjectOpen, setNewProjectOpen] = useState(false);
-  const [mainView, setMainView] = useState<MainViewMode>(initialSelectedProjectId ? "projects" : "timeline");
   const [projectForm, setProjectForm] = useState<CreateProyectoInput>({
     cotizacion_id: "",
     cliente_id: "",
@@ -142,14 +138,6 @@ export function ProyectosClient({
           <p className="text-xs font-label uppercase tracking-[0.14em] text-graphite">Operaciones</p>
           <h1 className="mt-1 text-2xl font-title text-carbon">Proyectos</h1>
         </div>
-        <div className="flex rounded-pill border border-line-soft bg-white p-1 shadow-soft">
-          <button type="button" onClick={() => setMainView("timeline")} className={cn("flex items-center gap-2 rounded-pill px-3 py-1.5 text-sm font-label", mainView === "timeline" ? "bg-signal text-white" : "text-graphite hover:text-carbon")}>
-            <CalendarIcon size={15} /> Timeline
-          </button>
-          <button type="button" onClick={() => setMainView("projects")} className={cn("rounded-pill px-3 py-1.5 text-sm font-label", mainView === "projects" ? "bg-signal text-white" : "text-graphite hover:text-carbon")}>
-            Gestión
-          </button>
-        </div>
       </div>
       {error ? (
         <div className="rounded-card border border-danger bg-danger-light px-4 py-3 text-sm text-danger">
@@ -157,19 +145,7 @@ export function ProyectosClient({
         </div>
       ) : null}
 
-      {mainView === "timeline" ? (
-        <TimelineProyectos
-          proyectos={proyectos}
-          clientes={clientes}
-          currentUserId={usuario?.id}
-          onSelectProject={(id) => {
-            setMainView("projects");
-            selectProject(id);
-          }}
-        />
-      ) : null}
-
-      {mainView === "projects" ? <div
+      <div
         className={
           sidebarCollapsed
             ? "grid flex-1 min-h-0 gap-4 md:grid-cols-[88px_minmax(0,1fr)]"
@@ -304,7 +280,7 @@ export function ProyectosClient({
             </Card>
           )}
         </div>
-      </div> : null}
+      </div>
 
       <Modal
         isOpen={newProjectOpen}
