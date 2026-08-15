@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { FileTextIcon, VideoIcon } from "@/components/ui/icons";
+import { ClockIcon, FileTextIcon, VideoIcon } from "@/components/ui/icons";
 import { cn } from "@/lib/cn";
 import { buildRecurrenceOccurrences, type FrecuenciaReunion } from "@/lib/eventos/recurrencia";
 import type { Evento } from "@/types/eventos";
@@ -384,7 +384,7 @@ export function TimelineProyectos({ proyectos, clientes, currentUserId, onSelect
               return <div key={project.id} className="contents">
                 <div className="sticky left-0 z-10 grid h-[224px] grid-cols-[minmax(0,1fr)_48px] grid-rows-[56px_56px_56px_56px] border-b-2 border-r-2 border-line bg-white">
                   <button type="button" onClick={() => onSelectProject(project.id)} className="group row-span-4 flex min-w-0 flex-col justify-center px-3 text-left hover:bg-paper"><span className="text-sm font-title text-carbon group-hover:text-signal">{clientName}</span><span className="mt-1 truncate text-xs text-graphite">{project.nombre}</span><span className="mt-2 flex items-center gap-1.5 text-[10px] text-graphite"><span className="h-1.5 w-1.5 rounded-full bg-signal" />{project.avance_pct ?? 0}% avance</span></button>
-                  <div className="row-span-4 grid grid-rows-[56px_56px_56px_56px] border-l border-line text-graphite"><span className="flex items-center justify-center border-b border-line-soft text-sm" title="Duración">■</span><span className="flex items-center justify-center border-b border-line-soft text-base" title="Hitos de pago">$</span><span className="flex items-center justify-center border-b border-line-soft text-base" title="Reuniones"><VideoIcon size={18} /></span><span className="flex items-center justify-center text-base" title="Notas"><FileTextIcon size={18} /></span></div>
+                  <div className="row-span-4 grid grid-rows-[56px_56px_56px_56px] border-l border-line text-graphite"><span className="flex items-center justify-center border-b border-line-soft text-sm" title="Duración"><ClockIcon size={18} /></span><span className="flex items-center justify-center border-b border-line-soft text-base" title="Hitos de pago">$</span><span className="flex items-center justify-center border-b border-line-soft text-base" title="Reuniones"><VideoIcon size={18} /></span><span className="flex items-center justify-center text-base" title="Notas"><FileTextIcon size={18} /></span></div>
                 </div>
                 <div className="relative h-[224px] border-b-2 border-line" style={{ gridColumn: `2 / span ${TOTAL_WEEKS}` }}>
                   {weeks.map((week) => <button key={`${project.id}-${week}`} type="button" onClick={() => openCell(project, week)} aria-label={`Agregar evento en semana ${week + 1}`} className={cn("absolute top-0 h-full border-l border-line-soft/70 hover:bg-signal-light/30", week === 0 && "border-l-0", week === currentWeek && "bg-signal-light/20")} style={{ left: `${week * WEEK_PERCENT}%`, width: `${WEEK_PERCENT}%` }} />)}
