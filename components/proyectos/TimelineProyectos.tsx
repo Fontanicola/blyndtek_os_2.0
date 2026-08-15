@@ -286,10 +286,10 @@ export function TimelineProyectos({ proyectos, clientes, currentUserId, onSelect
       <div className="overflow-x-auto overscroll-x-contain pb-3">
         <div className="min-w-[3716px]">
           <div className="grid grid-cols-[260px_repeat(48,minmax(72px,1fr))]">
-            <div className="sticky left-0 z-20 border-b-2 border-r-2 border-line bg-white px-3 pb-3 text-[11px] font-label uppercase tracking-wider text-graphite">Proyecto</div>
-            {months.map((month, index) => <div key={month} className={cn("border-b-2 border-line px-2 pb-3 text-center text-xs font-title capitalize text-carbon", index > 0 && "border-l")} style={{ gridColumn: `span ${WEEKS_PER_MONTH}` }}>{month}</div>)}
-            <div className="sticky left-0 z-20 border-b-2 border-r-2 border-line bg-white px-3 py-2 text-[11px] text-graphite">Semanas</div>
-            {weeks.map((week) => <div key={week} className={cn("relative border-b-2 border-line py-2 text-center text-[10px] text-graphite", week !== 0 && "border-l", week % WEEKS_PER_MONTH === 0 && week !== 0 && "border-l-slate-300", week === currentWeek && "bg-signal-light/50 font-title text-signal")}><span>{(week % WEEKS_PER_MONTH) + 1}</span>{week === currentWeek ? <span className="absolute -top-1 left-1/2 h-2 w-2 -translate-x-1/2 rounded-full bg-signal" title="Semana actual" /> : null}</div>)}
+            <div className="sticky left-0 z-20 flex h-14 items-center border-b-2 border-r-2 border-line bg-white px-3 text-[11px] font-label uppercase tracking-wider text-graphite">Proyecto</div>
+            {months.map((month, index) => <div key={month} className={cn("flex h-14 items-center justify-center border-b-2 border-line px-2 text-center text-xs font-title capitalize text-carbon", index > 0 && "border-l")} style={{ gridColumn: `span ${WEEKS_PER_MONTH}` }}>{month}</div>)}
+            <div className="sticky left-0 z-20 flex h-12 items-center border-b-2 border-r-2 border-line bg-white px-3 text-[11px] text-graphite">Semanas</div>
+            {weeks.map((week) => <div key={week} className={cn("relative flex h-12 items-center justify-center border-b-2 border-line text-[10px] text-graphite", week !== 0 && "border-l", week % WEEKS_PER_MONTH === 0 && week !== 0 && "border-l-slate-300", week === currentWeek && "bg-signal-light/50 font-title text-signal")}><span>{(week % WEEKS_PER_MONTH) + 1}</span>{week === currentWeek ? <span className="absolute -top-1 left-1/2 h-2 w-2 -translate-x-1/2 rounded-full bg-signal" title="Semana actual" /> : null}</div>)}
 
             {projectRows.map((project, index) => {
               const dragOffset = scheduleDrag?.projectId === project.id && scheduleDrag.mode === "move" ? scheduleDrag.deltaWeeks : 0;
