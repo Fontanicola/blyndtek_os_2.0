@@ -61,6 +61,10 @@ function toDateInputValue(date: Date) {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 }
 
+function formatTimelineDate(date: Date) {
+  return new Intl.DateTimeFormat("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" }).format(date);
+}
+
 function addDays(value: Date, days: number) {
   const date = new Date(value);
   date.setDate(date.getDate() + days);
@@ -310,6 +314,7 @@ export function TimelineProyectos({ proyectos, clientes, currentUserId, onSelect
                 <div className="relative h-[168px] border-l-2 border-b-2 border-line" style={{ gridColumn: `2 / span ${TOTAL_WEEKS}` }}>
                   {weeks.map((week) => <button key={`${project.id}-${week}`} type="button" onClick={() => openCell(project, week)} aria-label={`Agregar evento en semana ${week + 1}`} className={cn("absolute top-0 h-full border-l border-line-soft/70 hover:bg-signal-light/30", week === 0 && "border-l-0", week === currentWeek && "bg-signal-light/20")} style={{ left: `${week * WEEK_PERCENT}%`, width: `${WEEK_PERCENT}%` }} />)}
                   <div className="absolute left-0 right-0 top-2 h-10">
+                    {scheduleDrag?.projectId === project.id ? <div className="absolute -top-8 z-30 whitespace-nowrap rounded-sm bg-carbon px-2 py-1 text-[11px] font-label text-white shadow-sm" style={{ left: `${position.startPercent}%` }}>Inicio: {formatTimelineDate(position.startDate)} · Entrega: {formatTimelineDate(position.endDate)}</div> : null}
                     <div
                       className={cn("group absolute h-10 overflow-hidden rounded-component border px-3 py-2 text-sm font-label text-carbon shadow-sm", position.remainingClass, position.hasSchedule ? "cursor-grab active:cursor-grabbing" : "cursor-default")}
                       style={{ left: `${position.startPercent}%`, width: `${position.widthPercent}%` }}
