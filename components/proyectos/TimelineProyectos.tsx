@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { DollarSignIcon, PlusIcon, VideoIcon } from "@/components/ui/icons";
+import { DollarSignIcon, VideoIcon } from "@/components/ui/icons";
 import { cn } from "@/lib/cn";
 import type { Evento } from "@/types/eventos";
 import type { Proyecto } from "@/types/proyectos";
@@ -186,7 +186,7 @@ export function TimelineProyectos({ proyectos, clientes, currentUserId, onSelect
       </div>
 
       <div className="overflow-x-auto overscroll-x-contain pb-3">
-        <div className="min-w-[2756px] p-4">
+        <div className="min-w-[2756px]">
           <div className="grid grid-cols-[260px_repeat(48,minmax(52px,1fr))]">
             <div className="sticky left-0 z-20 border-b-2 border-line bg-white px-3 pb-3 text-[11px] font-label uppercase tracking-wider text-graphite">Proyecto</div>
             {months.map((month) => <div key={month} className="border-b-2 border-l border-line px-2 pb-3 text-center text-xs font-title capitalize text-carbon" style={{ gridColumn: `span ${WEEKS_PER_MONTH}` }}>{month}</div>)}
@@ -213,7 +213,6 @@ export function TimelineProyectos({ proyectos, clientes, currentUserId, onSelect
               </div>;
             })}
           </div>
-          <p className="mt-3 flex items-center gap-1.5 text-xs text-graphite"><PlusIcon size={13} />Hacé click en una semana para agregar un pago o una reunión.</p>
         </div>
       </div>
 
