@@ -1,5 +1,7 @@
--- Eliminación física y atómica de toda la información vinculada a un cliente.
--- La API valida que la operación sólo pueda ser iniciada por un administrador.
+-- Repara la función de eliminación para instalaciones donde las tablas de
+-- soporte todavía no fueron creadas y comisiones no tiene proyecto_id.
+-- Ejecutar en Supabase SQL Editor o via CLI.
+
 CREATE OR REPLACE FUNCTION public.eliminar_cliente_completo(target_cliente_id uuid)
 RETURNS void
 LANGUAGE plpgsql
@@ -27,163 +29,85 @@ BEGIN
     RAISE EXCEPTION 'El cliente es obligatorio.' USING ERRCODE = '22004';
   END IF;
 
-  SELECT COALESCE(array_agg(id), ARRAY[]::uuid[])
-    INTO project_ids
-    FROM public.proyectos
-   WHERE cliente_id = target_cliente_id;
-
-  SELECT COALESCE(array_agg(lead_id), ARRAY[]::uuid[])
-    INTO candidate_lead_ids
-    FROM public.clientes
-   WHERE id = target_cliente_id
-     AND lead_id IS NOT NULL;
-
-  SELECT COALESCE(array_agg(id), ARRAY[]::uuid[])
-    INTO phase_ids
-    FROM public.fases_proyecto
-   WHERE proyecto_id = ANY(project_ids);
-
-  SELECT COALESCE(array_agg(id), ARRAY[]::uuid[])
-    INTO feature_ids
-    FROM public.features
-   WHERE proyecto_id = ANY(project_ids);
-
-  WITH RECURSIVE folder_tree AS (
-    SELECT id
-      FROM public.carpetas
-     WHERE cliente_id = target_cliente_id
-        OR proyecto_id = ANY(project_ids)
-    UNION
-    SELECT child.id
-      FROM public.carpetas child
-      JOIN folder_tree parent ON child.carpeta_padre_id = parent.id
-  )
-  SELECT COALESCE(array_agg(id), ARRAY[]::uuid[])
-    INTO folder_ids
-    FROM folder_tree;
-
-   SELECT COALESCE(array_agg(id), ARRAY[]::uuid[])
-    INTO note_ids
+  SELECT COALESCE(array_agg(id), ARRAY[]::uuid[]) INTO project_ids
+    FROM public.proyectos WHERE cliente_id = target_cliente_id;
+  SELECT COALESCE(array_agg(lead_id), ARRAY[]::uuid[]) INTO candidate_lead_ids
+    FROM public.clientes WHERE id = target_cliente_id AND lead_id IS NOT NULL;
+  SELECT COALESCE(array_agg(id), ARRAY[]::uuid[]) INTO phase_ids
+    FROM public.fases_proyecto WHERE proyecto_id = ANY(project_ids);
+  SELECT COALESCE(array_agg(id), ARRAY[]::uuid[]) INTO feature_ids
+    FROM public.features WHERE proyecto_id = ANY(project_ids);
+  SELECT COALESCE(array_agg(id), ARRAY[]::uuid[]) INTO folder_ids
+    FROM public.carpetas
+   WHERE cliente_id = target_cliente_id OR proyecto_id = ANY(project_ids);
+  SELECT COALESCE(array_agg(id), ARRAY[]::uuid[]) INTO note_ids
     FROM public.notas
-   WHERE cliente_id = target_cliente_id
-      OR proyecto_id = ANY(project_ids)
+   WHERE cliente_id = target_cliente_id OR proyecto_id = ANY(project_ids)
       OR lead_id = ANY(candidate_lead_ids);
-
-  SELECT COALESCE(array_agg(id), ARRAY[]::uuid[])
-    INTO quote_ids
+  SELECT COALESCE(array_agg(id), ARRAY[]::uuid[]) INTO quote_ids
     FROM public.cotizaciones
-   WHERE cliente_id = target_cliente_id
-      OR lead_id = ANY(lead_ids);
-
-  SELECT candidate_lead_ids || COALESCE(array_agg(lead_id) FILTER (WHERE lead_id IS NOT NULL), ARRAY[]::uuid[])
-    INTO lead_ids
-    FROM public.cotizaciones
-   WHERE id = ANY(quote_ids);
-
-  -- Nunca eliminar un lead que también esté vinculado a otro cliente.
-  SELECT COALESCE(array_agg(candidate), ARRAY[]::uuid[])
-    INTO lead_ids
+   WHERE cliente_id = target_cliente_id OR lead_id = ANY(candidate_lead_ids);
+  SELECT COALESCE(candidate_lead_ids || COALESCE(array_agg(lead_id) FILTER (WHERE lead_id IS NOT NULL), ARRAY[]::uuid[]), candidate_lead_ids)
+    INTO lead_ids FROM public.cotizaciones WHERE id = ANY(quote_ids);
+  SELECT COALESCE(array_agg(candidate), ARRAY[]::uuid[]) INTO lead_ids
     FROM unnest(lead_ids) AS candidate
    WHERE NOT EXISTS (
-     SELECT 1
-       FROM public.clientes other_client
-      WHERE other_client.id <> target_cliente_id
-        AND other_client.lead_id = candidate
+     SELECT 1 FROM public.clientes other_client
+      WHERE other_client.id <> target_cliente_id AND other_client.lead_id = candidate
    );
-
-  SELECT COALESCE(array_agg(id), ARRAY[]::uuid[])
-    INTO diagnostico_ids
-    FROM public.diagnosticos
-   WHERE lead_id = ANY(lead_ids);
-
-  SELECT COALESCE(array_agg(id), ARRAY[]::uuid[])
-    INTO contract_ids
-    FROM public.contratos
-   WHERE cliente_id = target_cliente_id;
-
-  SELECT COALESCE(array_agg(id), ARRAY[]::uuid[])
-    INTO subscription_ids
+  SELECT COALESCE(array_agg(id), ARRAY[]::uuid[]) INTO diagnostico_ids
+    FROM public.diagnosticos WHERE lead_id = ANY(lead_ids);
+  SELECT COALESCE(array_agg(id), ARRAY[]::uuid[]) INTO contract_ids
+    FROM public.contratos WHERE cliente_id = target_cliente_id;
+  SELECT COALESCE(array_agg(id), ARRAY[]::uuid[]) INTO subscription_ids
     FROM public.suscripciones
-   WHERE cliente_id = target_cliente_id
-      OR proyecto_id = ANY(project_ids);
-
-   SELECT COALESCE(array_agg(id), ARRAY[]::uuid[])
-    INTO commission_ids
+   WHERE cliente_id = target_cliente_id OR proyecto_id = ANY(project_ids);
+  SELECT COALESCE(array_agg(id), ARRAY[]::uuid[]) INTO commission_ids
     FROM public.comisiones
-   WHERE cliente_id = target_cliente_id
-      OR lead_id = ANY(lead_ids);
-
-  SELECT COALESCE(array_agg(id), ARRAY[]::uuid[])
-    INTO cobro_ids
+   WHERE cliente_id = target_cliente_id OR lead_id = ANY(lead_ids);
+  SELECT COALESCE(array_agg(id), ARRAY[]::uuid[]) INTO cobro_ids
     FROM public.cobros
-   WHERE cliente_id = target_cliente_id
-      OR proyecto_id = ANY(project_ids)
-      OR lead_id = ANY(lead_ids)
-      OR contrato_id = ANY(contract_ids)
-      OR suscripcion_id = ANY(subscription_ids)
-      OR cotizacion_id = ANY(quote_ids);
-
-  SELECT COALESCE(array_agg(id), ARRAY[]::uuid[])
-    INTO egreso_ids
+   WHERE cliente_id = target_cliente_id OR proyecto_id = ANY(project_ids)
+      OR lead_id = ANY(lead_ids) OR contrato_id = ANY(contract_ids)
+      OR suscripcion_id = ANY(subscription_ids) OR cotizacion_id = ANY(quote_ids);
+  SELECT COALESCE(array_agg(id), ARRAY[]::uuid[]) INTO egreso_ids
     FROM public.egresos
-   WHERE cliente_id = target_cliente_id
-      OR proyecto_id = ANY(project_ids)
+   WHERE cliente_id = target_cliente_id OR proyecto_id = ANY(project_ids)
       OR comision_id = ANY(commission_ids);
-
-  SELECT COALESCE(array_agg(id), ARRAY[]::uuid[])
-    INTO event_ids
+  SELECT COALESCE(array_agg(id), ARRAY[]::uuid[]) INTO event_ids
     FROM public.eventos
    WHERE (relacion_tipo = 'cliente' AND relacion_id = target_cliente_id)
       OR (relacion_tipo = 'lead' AND relacion_id = ANY(lead_ids));
 
-  -- Primero se limpian tablas dependientes sin ON DELETE CASCADE.
   DELETE FROM public.eventos_invitados WHERE evento_id = ANY(event_ids);
   DELETE FROM public.eventos WHERE id = ANY(event_ids);
-
   DELETE FROM public.diagnostico_metricas WHERE diagnostico_id = ANY(diagnostico_ids);
   DELETE FROM public.diagnostico_areas WHERE diagnostico_id = ANY(diagnostico_ids);
   DELETE FROM public.diagnostico_sesiones WHERE diagnostico_id = ANY(diagnostico_ids);
   DELETE FROM public.diagnosticos WHERE id = ANY(diagnostico_ids);
-
   DELETE FROM public.notas_compartidas WHERE nota_id = ANY(note_ids);
   DELETE FROM public.notas WHERE id = ANY(note_ids);
-  DELETE FROM public.notas_compartidas
-   WHERE nota_id IN (SELECT id FROM public.notas WHERE lead_id = ANY(lead_ids));
-  DELETE FROM public.notas WHERE lead_id = ANY(lead_ids);
-
   DELETE FROM public.archivos WHERE carpeta_id = ANY(folder_ids);
   DELETE FROM public.carpetas_compartidas WHERE carpeta_id = ANY(folder_ids);
   UPDATE public.carpetas SET carpeta_padre_id = NULL WHERE id = ANY(folder_ids);
   DELETE FROM public.carpetas WHERE id = ANY(folder_ids);
-
-  DELETE FROM public.transferencias_caja
-   WHERE cobro_id = ANY(cobro_ids)
-      OR egreso_id = ANY(egreso_ids);
+  DELETE FROM public.transferencias_caja WHERE cobro_id = ANY(cobro_ids) OR egreso_id = ANY(egreso_ids);
   DELETE FROM public.cobros_historial_cambios WHERE cobro_id = ANY(cobro_ids);
-
   DELETE FROM public.ai_dev_ejecuciones WHERE fase_id = ANY(phase_ids);
   DELETE FROM public.checklist_qa WHERE fase_id = ANY(phase_ids);
   DELETE FROM public.sesiones_tiempo WHERE fase_id = ANY(phase_ids);
-  DELETE FROM public.tareas
-   WHERE proyecto_id = ANY(project_ids)
-      OR feature_id = ANY(feature_ids)
-      OR lead_id = ANY(lead_ids);
+  DELETE FROM public.tareas WHERE proyecto_id = ANY(project_ids) OR feature_id = ANY(feature_ids) OR lead_id = ANY(lead_ids);
   DELETE FROM public.features WHERE id = ANY(feature_ids);
   DELETE FROM public.fases_proyecto WHERE id = ANY(phase_ids);
   DELETE FROM public.cuentas_servicios WHERE proyecto_id = ANY(project_ids);
-
   DELETE FROM public.producto_features WHERE solicitado_por_cliente_id = target_cliente_id;
-  DELETE FROM public.sistemas_gestionados
-   WHERE cliente_id = target_cliente_id
-      OR proyecto_id = ANY(project_ids);
+  DELETE FROM public.sistemas_gestionados WHERE cliente_id = target_cliente_id OR proyecto_id = ANY(project_ids);
   DELETE FROM public.egresos WHERE id = ANY(egreso_ids);
   DELETE FROM public.cobros WHERE id = ANY(cobro_ids);
   DELETE FROM public.comisiones WHERE id = ANY(commission_ids);
   DELETE FROM public.suscripciones WHERE id = ANY(subscription_ids);
   DELETE FROM public.contratos WHERE id = ANY(contract_ids);
-  DELETE FROM public.egresos_recurrentes_config
-   WHERE cliente_id = target_cliente_id
-      OR proyecto_id = ANY(project_ids);
+  DELETE FROM public.egresos_recurrentes_config WHERE cliente_id = target_cliente_id OR proyecto_id = ANY(project_ids);
   DELETE FROM public.proyectos WHERE id = ANY(project_ids);
   DELETE FROM public.cotizaciones WHERE id = ANY(quote_ids);
   DELETE FROM public.leads_negociaciones WHERE lead_id = ANY(lead_ids);
