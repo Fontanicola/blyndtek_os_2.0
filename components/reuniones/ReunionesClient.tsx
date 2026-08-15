@@ -5,8 +5,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button, Card, EmptyState, Badge, Spinner } from "@/components/ui";
 import { CalendarIcon, CheckIcon, ClockIcon, FilterIcon, LinkIcon, PlusIcon, RefreshIcon, VideoIcon } from "@/components/ui/icons";
 import { EventoModal } from "@/components/calendario/EventoModal";
+import { buildRecurrenceOccurrences } from "@/lib/eventos/recurrencia";
 import type { TaskClientOption, TaskLeadOption, TaskUserOption } from "@/lib/task-support";
-import type { EventoConInvitados, UpdateEventoInput } from "@/types/eventos";
+import type { CreateEventoInput, EventoConInvitados, UpdateEventoInput } from "@/types/eventos";
 
 type ReunionesClientProps = {
   usuarios: TaskUserOption[];
@@ -127,13 +128,19 @@ export function ReunionesClient({ usuarios, currentUserId, clientes, leads, goog
   }
 
   async function createEvent(input: UpdateEventoInput) {
-    const response = await fetch("/api/eventos", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(input)
-    });
-    const payload = (await response.json()) as { error?: string };
-    if (!response.ok) throw new Error(payload.error ?? "No se pudo crear la reunión.");
+    const { recurrencia, ...eventInput } = input as CreateEventoInput;
+    const occurrences = buildRecurrenceOccurrences(eventInput.fecha_inicio, eventInput.fecha_fin, recurrencia);
+
+    for (const occurrence of occurrences) {
+      const response = await fetch("/api/eventos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...eventInput, ...occurrence })
+      });
+      const payload = (await response.json()) as { error?: string };
+      if (!response.ok) throw new Error(payload.error ?? "No se pudo crear la reunión.");
+    }
+
     await load();
   }
 

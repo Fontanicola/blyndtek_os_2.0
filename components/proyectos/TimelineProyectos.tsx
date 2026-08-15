@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { DollarSignIcon, VideoIcon } from "@/components/ui/icons";
 import { cn } from "@/lib/cn";
+import { buildRecurrenceOccurrences, type FrecuenciaReunion } from "@/lib/eventos/recurrencia";
 import type { Evento } from "@/types/eventos";
 import type { Proyecto } from "@/types/proyectos";
 
@@ -130,6 +131,8 @@ export function TimelineProyectos({ proyectos, clientes, currentUserId, onSelect
   const [eventLabel, setEventLabel] = useState("");
   const [eventAmount, setEventAmount] = useState("");
   const [eventDate, setEventDate] = useState("");
+  const [recurrenceFrequency, setRecurrenceFrequency] = useState<FrecuenciaReunion | null>(null);
+  const [recurrenceUntil, setRecurrenceUntil] = useState("");
   const [eventSaving, setEventSaving] = useState(false);
   const [eventError, setEventError] = useState<string | null>(null);
   const [scheduleDrag, setScheduleDrag] = useState<{ projectId: string; mode: "move" | "resize"; originX: number; deltaWeeks: number } | null>(null);
@@ -176,6 +179,8 @@ export function TimelineProyectos({ proyectos, clientes, currentUserId, onSelect
     setEventLabel("");
     setEventAmount("");
     setEventDate(toDateInputValue(getWeekDate(week, timelineStart)));
+    setRecurrenceFrequency(null);
+    setRecurrenceUntil(toDateInputValue(getWeekDate(week, timelineStart)));
     setEventError(null);
   }
 
@@ -194,23 +199,31 @@ export function TimelineProyectos({ proyectos, clientes, currentUserId, onSelect
     try {
       const end = new Date(date);
       end.setHours(end.getHours() + 1);
-      const response = await fetch("/api/eventos", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          titulo: eventLabel.trim(),
-          fecha_inicio: date.toISOString(),
-          fecha_fin: end.toISOString(),
-          tipo: "reunion",
-          usuario_id: currentUserId ?? undefined,
-          relacion_tipo: activeCell.clientId ? "cliente" : null,
-          relacion_id: activeCell.clientId || null,
-          crear_meet: false
-        })
-      });
-      const payload = (await response.json()) as { data?: Evento; error?: string };
-      if (!response.ok || !payload.data) throw new Error(payload.error ?? "No se pudo crear la reunión.");
-      setEvents((current) => [...current, { id: payload.data!.id, ...activeCell, type: "reunion", label: eventLabel.trim(), date: payload.data!.fecha_inicio }]);
+      const occurrences = buildRecurrenceOccurrences(
+        date.toISOString(),
+        end.toISOString(),
+        recurrenceFrequency && recurrenceUntil ? { frecuencia: recurrenceFrequency, hasta: recurrenceUntil } : null
+      );
+      const createdMeetings: TimelineEvent[] = [];
+      for (const occurrence of occurrences) {
+        const response = await fetch("/api/eventos", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            titulo: eventLabel.trim(),
+            ...occurrence,
+            tipo: "reunion",
+            usuario_id: currentUserId ?? undefined,
+            relacion_tipo: activeCell.clientId ? "cliente" : null,
+            relacion_id: activeCell.clientId || null,
+            crear_meet: false
+          })
+        });
+        const payload = (await response.json()) as { data?: Evento; error?: string };
+        if (!response.ok || !payload.data) throw new Error(payload.error ?? "No se pudo crear la reunión.");
+        createdMeetings.push({ id: payload.data.id, ...activeCell, type: "reunion", label: eventLabel.trim(), date: payload.data.fecha_inicio });
+      }
+      setEvents((current) => [...current, ...createdMeetings]);
       setActiveCell(null);
     } catch (error) {
       setEventError(error instanceof Error ? error.message : "No se pudo crear la reunión.");
@@ -324,7 +337,7 @@ export function TimelineProyectos({ proyectos, clientes, currentUserId, onSelect
 
       {scheduleError ? <div className="border-t border-danger/20 bg-danger-light px-5 py-2 text-xs text-danger">{scheduleError}</div> : null}
 
-      {activeCell ? <div className="fixed inset-0 z-50 flex items-center justify-center bg-carbon/20 p-4" onMouseDown={() => setActiveCell(null)}><div className="w-full max-w-sm rounded-card border border-line-soft bg-white p-5 shadow-modal" onMouseDown={(event) => event.stopPropagation()}><h3 className="text-base font-title text-carbon">Agregar al timeline</h3><p className="mt-1 text-sm text-graphite">Semana {activeCell.week + 1} · {months[Math.floor(activeCell.week / WEEKS_PER_MONTH)]}</p><div className="mt-4 space-y-3"><select value={eventType} onChange={(event) => setEventType(event.target.value as EventType)} className="w-full rounded-component border border-line bg-white px-3 py-2 text-sm text-carbon focus:border-signal focus:outline-none focus:ring-2 focus:ring-signal/20"><option value="reunion">Reunión</option><option value="pago">Hito de pago</option></select>{eventType === "reunion" ? <label className="block space-y-1 text-sm font-label text-carbon">Fecha de la reunión<input type="date" value={eventDate} onChange={(event) => setEventDate(event.target.value)} className="mt-1 w-full rounded-component border border-line px-3 py-2 text-sm font-normal text-carbon outline-none focus:border-signal focus:ring-2 focus:ring-signal/20" /></label> : null}<input autoFocus value={eventLabel} onChange={(event) => setEventLabel(event.target.value)} onKeyDown={(event) => event.key === "Enter" && void saveEvent()} placeholder={eventType === "pago" ? "Ej. Cuota 2" : "Ej. Demo con cliente"} className="w-full rounded-component border border-line px-3 py-2 text-sm text-carbon outline-none focus:border-signal focus:ring-2 focus:ring-signal/20" />{eventType === "pago" ? <input value={eventAmount} onChange={(event) => setEventAmount(event.target.value)} type="number" min="0" placeholder="Monto a pagar (USD)" className="w-full rounded-component border border-line px-3 py-2 text-sm text-carbon outline-none focus:border-signal focus:ring-2 focus:ring-signal/20" /> : null}{eventError ? <p className="text-xs text-danger">{eventError}</p> : null}<div className="flex justify-end gap-2 pt-2"><button type="button" onClick={() => setActiveCell(null)} className="rounded-component px-3 py-2 text-sm text-graphite hover:bg-paper">Cancelar</button><button type="button" onClick={() => void saveEvent()} disabled={!eventLabel.trim() || eventSaving} className="rounded-component bg-signal px-3 py-2 text-sm font-label text-white disabled:cursor-not-allowed disabled:opacity-50">{eventSaving ? "Guardando..." : "Agregar"}</button></div></div></div></div> : null}
+      {activeCell ? <div className="fixed inset-0 z-50 flex items-center justify-center bg-carbon/20 p-4" onMouseDown={() => setActiveCell(null)}><div className="w-full max-w-sm rounded-card border border-line-soft bg-white p-5 shadow-modal" onMouseDown={(event) => event.stopPropagation()}><h3 className="text-base font-title text-carbon">Agregar al timeline</h3><p className="mt-1 text-sm text-graphite">Semana {activeCell.week + 1} · {months[Math.floor(activeCell.week / WEEKS_PER_MONTH)]}</p><div className="mt-4 space-y-3"><select value={eventType} onChange={(event) => setEventType(event.target.value as EventType)} className="w-full rounded-component border border-line bg-white px-3 py-2 text-sm text-carbon focus:border-signal focus:outline-none focus:ring-2 focus:ring-signal/20"><option value="reunion">Reunión</option><option value="pago">Hito de pago</option></select>{eventType === "reunion" ? <><label className="block space-y-1 text-sm font-label text-carbon">Fecha de la reunión<input type="date" value={eventDate} onChange={(event) => setEventDate(event.target.value)} className="mt-1 w-full rounded-component border border-line px-3 py-2 text-sm font-normal text-carbon outline-none focus:border-signal focus:ring-2 focus:ring-signal/20" /></label><label className="flex items-center gap-2 text-sm font-label text-carbon"><input type="checkbox" checked={Boolean(recurrenceFrequency)} onChange={(event) => setRecurrenceFrequency(event.target.checked ? "semanal" : null)} className="h-4 w-4 accent-signal" /> Repetir reunión</label>{recurrenceFrequency ? <div className="grid grid-cols-2 gap-2"><select value={recurrenceFrequency} onChange={(event) => setRecurrenceFrequency(event.target.value as FrecuenciaReunion)} className="rounded-component border border-line bg-white px-2 py-2 text-sm text-carbon"><option value="semanal">Cada semana</option><option value="quincenal">Cada 2 semanas</option><option value="mensual">Cada mes</option></select><input type="date" min={eventDate} value={recurrenceUntil} onChange={(event) => setRecurrenceUntil(event.target.value)} className="rounded-component border border-line px-2 py-2 text-sm text-carbon" /></div> : null}</> : null}<input autoFocus value={eventLabel} onChange={(event) => setEventLabel(event.target.value)} onKeyDown={(event) => event.key === "Enter" && void saveEvent()} placeholder={eventType === "pago" ? "Ej. Cuota 2" : "Ej. Demo con cliente"} className="w-full rounded-component border border-line px-3 py-2 text-sm text-carbon outline-none focus:border-signal focus:ring-2 focus:ring-signal/20" />{eventType === "pago" ? <input value={eventAmount} onChange={(event) => setEventAmount(event.target.value)} type="number" min="0" placeholder="Monto a pagar (USD)" className="w-full rounded-component border border-line px-3 py-2 text-sm text-carbon outline-none focus:border-signal focus:ring-2 focus:ring-signal/20" /> : null}{eventError ? <p className="text-xs text-danger">{eventError}</p> : null}<div className="flex justify-end gap-2 pt-2"><button type="button" onClick={() => setActiveCell(null)} className="rounded-component px-3 py-2 text-sm text-graphite hover:bg-paper">Cancelar</button><button type="button" onClick={() => void saveEvent()} disabled={!eventLabel.trim() || eventSaving} className="rounded-component bg-signal px-3 py-2 text-sm font-label text-white disabled:cursor-not-allowed disabled:opacity-50">{eventSaving ? "Guardando..." : "Agregar"}</button></div></div></div></div> : null}
     </section>
   );
 }

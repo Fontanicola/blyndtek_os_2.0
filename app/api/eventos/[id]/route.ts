@@ -79,10 +79,10 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
       return NextResponse.json({ error: "No autorizado." }, { status: 403 });
     }
 
-    const { invited_user_ids: nextInvitedUserIds, ...rest } = body;
+    const { invited_user_ids: nextInvitedUserIds, recurrencia: _recurrencia, ...rest } = body;
     const updatePayload = Object.fromEntries(
       Object.entries(rest).filter(([key]) => key !== "crear_meet")
-    ) as Omit<UpdateEventoInput, "crear_meet" | "invited_user_ids">;
+    ) as Omit<UpdateEventoInput, "crear_meet" | "invited_user_ids" | "recurrencia">;
 
     if (typeof body.relacion_tipo !== "undefined" && body.relacion_tipo !== null && body.relacion_tipo !== "lead" && body.relacion_tipo !== "cliente") {
       return NextResponse.json({ error: "La relación seleccionada no es válida." }, { status: 400 });

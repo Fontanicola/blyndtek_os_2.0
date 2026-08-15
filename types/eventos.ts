@@ -1,3 +1,5 @@
+import type { ConfiguracionRecurrencia } from "@/lib/eventos/recurrencia";
+
 export type TipoEvento = "tarea" | "seguimiento" | "vencimiento" | "reunion";
 export type TipoRelacionEvento = "lead" | "cliente";
 export type EstadoEventoInvitado = "pendiente" | "aceptado" | "rechazado" | "propuesta_alternativa";
@@ -62,6 +64,7 @@ export type CreateEventoInput = {
   relacion_id?: string | null;
   crear_meet?: boolean;
   invited_user_ids?: string[];
+  recurrencia?: ConfiguracionRecurrencia | null;
 };
 
 export type UpdateEventoInput = Partial<CreateEventoInput>;

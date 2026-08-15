@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Button, EntityMultiSelect, EntitySelect, Input, Modal } from "@/components/ui";
 import { cn } from "@/lib/cn";
+import type { ConfiguracionRecurrencia, FrecuenciaReunion } from "@/lib/eventos/recurrencia";
 import type { TaskClientOption, TaskLeadOption, TaskUserOption } from "@/lib/task-support";
 import type { CreateEventoInput, EventoConInvitados, TipoEvento, TipoRelacionEvento, UpdateEventoInput } from "@/types/eventos";
 
@@ -33,6 +34,7 @@ type FormState = {
   relacion_tipo: TipoRelacionEvento | "";
   relacion_id: string;
   crear_meet: boolean;
+  recurrencia: ConfiguracionRecurrencia | null;
 };
 
 function pad(value: number) {
@@ -63,7 +65,8 @@ function buildInitialForm(
       enlace_reunion: evento.enlace_reunion ?? "",
       relacion_tipo: evento.relacion_tipo ?? "",
       relacion_id: evento.relacion_id ?? "",
-      crear_meet: false
+      crear_meet: false,
+      recurrencia: null
     } satisfies FormState;
   }
 
@@ -82,7 +85,8 @@ function buildInitialForm(
     enlace_reunion: "",
     relacion_tipo: "",
     relacion_id: "",
-    crear_meet: googleCalendarConnected
+    crear_meet: googleCalendarConnected,
+    recurrencia: null
   } satisfies FormState;
 }
 
@@ -189,7 +193,8 @@ export function EventoModal({
               enlace_reunion: form.enlace_reunion.trim() || null,
               relacion_tipo: form.relacion_tipo || null,
               relacion_id: form.relacion_id || null,
-              crear_meet: !evento && form.tipo === "reunion" ? form.crear_meet : false
+              crear_meet: !evento && form.tipo === "reunion" && !form.recurrencia ? form.crear_meet : false,
+              recurrencia: !evento && form.tipo === "reunion" ? form.recurrencia : null
             } satisfies CreateEventoInput;
 
             await onSave(payload);
@@ -225,6 +230,52 @@ export function EventoModal({
             disabled={readOnly}
           />
         </div>
+
+        {!evento && form.tipo === "reunion" ? (
+          <div className="space-y-3 rounded-component border border-line-soft bg-paper p-3">
+            <label className="flex items-center gap-3 text-sm font-label text-carbon">
+              <input
+                type="checkbox"
+                checked={Boolean(form.recurrencia)}
+                onChange={(event) => setForm((current) => ({
+                  ...current,
+                  recurrencia: event.target.checked
+                    ? { frecuencia: "semanal", hasta: current.fecha_inicio.slice(0, 10) }
+                    : null
+                }))}
+                disabled={readOnly}
+                className="h-4 w-4 accent-signal"
+              />
+              Repetir reunión
+            </label>
+            {form.recurrencia ? (
+              <div className="grid gap-3 sm:grid-cols-2">
+                <label className="space-y-1 text-sm font-label text-carbon">
+                  Frecuencia
+                  <select
+                    value={form.recurrencia.frecuencia}
+                    onChange={(event) => setForm((current) => ({ ...current, recurrencia: { ...current.recurrencia!, frecuencia: event.target.value as FrecuenciaReunion } }))}
+                    className="w-full rounded-component border border-line bg-white px-3 py-2 text-sm font-normal text-carbon focus:border-signal focus:outline-none focus:ring-2 focus:ring-signal/20"
+                  >
+                    <option value="semanal">Cada semana</option>
+                    <option value="quincenal">Cada 2 semanas</option>
+                    <option value="mensual">Cada mes</option>
+                  </select>
+                </label>
+                <label className="space-y-1 text-sm font-label text-carbon">
+                  Repetir hasta
+                  <input
+                    type="date"
+                    min={form.fecha_inicio.slice(0, 10)}
+                    value={form.recurrencia.hasta}
+                    onChange={(event) => setForm((current) => ({ ...current, recurrencia: { ...current.recurrencia!, hasta: event.target.value } }))}
+                    className="w-full rounded-component border border-line bg-white px-3 py-2 text-sm font-normal text-carbon focus:border-signal focus:outline-none focus:ring-2 focus:ring-signal/20"
+                  />
+                </label>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
 
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-1">
