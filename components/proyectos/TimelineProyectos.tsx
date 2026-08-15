@@ -319,7 +319,7 @@ export function TimelineProyectos({ proyectos, clientes, currentUserId, onSelect
                       title={position.hasSchedule ? `Inicio: ${toDateInputValue(position.startDate)} · Entrega: ${toDateInputValue(position.endDate)}` : "Definí las fechas del proyecto para editarlo desde acá"}
                     >
                       <div className="absolute inset-y-0 left-0 bg-slate-300/80" style={{ width: `${position.progressPct}%` }} />
-                      <span className="relative truncate">{project.nombre}</span>
+                      <span className="sr-only">{project.nombre}</span>
                       {position.hasSchedule ? <button type="button" aria-label="Cambiar fecha de entrega" className="absolute inset-y-0 right-0 z-10 w-2 cursor-ew-resize bg-carbon/10 opacity-0 transition-opacity group-hover:opacity-100" onPointerDown={(event) => beginScheduleDrag(event, project, "resize")} onPointerMove={updateScheduleDrag} onPointerUp={(event) => void finishScheduleDrag(event, project)} /> : null}
                     </div>
                   </div>
