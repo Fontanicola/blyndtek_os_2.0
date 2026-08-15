@@ -25,7 +25,11 @@ type TimelineEvent = {
   date?: string;
 };
 
-const weeks = Array.from({ length: 16 }, (_, index) => index);
+const WEEKS_PER_MONTH = 4;
+const TOTAL_MONTHS = 12;
+const TOTAL_WEEKS = WEEKS_PER_MONTH * TOTAL_MONTHS;
+const WEEK_PERCENT = 100 / TOTAL_WEEKS;
+const weeks = Array.from({ length: TOTAL_WEEKS }, (_, index) => index);
 const seedEvents: TimelineEvent[] = [
   { id: "funes-pago-1", proyectoId: "funes", week: 0, type: "pago", label: "Inicial", amount: 1500 },
   { id: "funes-reunion-1", proyectoId: "funes", week: 1, type: "reunion", label: "Kickoff" },
@@ -41,8 +45,8 @@ const seedEvents: TimelineEvent[] = [
 ];
 
 function projectPosition(index: number) {
-  const starts = [0, 0, 1, 2, 5];
-  const lengths = [3, 7, 9, 6, 5];
+  const starts = [0, 0, 4, 8, 12];
+  const lengths = [4, 8, 12, 8, 6];
   return { start: starts[index % starts.length] ?? 0, length: lengths[index % lengths.length] ?? 4 };
 }
 
@@ -60,7 +64,7 @@ function formatEventDate(value: Date | string) {
 
 function getWeekIndex(value: string | Date, timelineStart: Date) {
   const date = new Date(value);
-  return Math.max(0, Math.min(15, Math.floor((date.getTime() - timelineStart.getTime()) / (7 * 24 * 60 * 60 * 1000))));
+  return Math.max(0, Math.min(TOTAL_WEEKS - 1, Math.floor((date.getTime() - timelineStart.getTime()) / (7 * 24 * 60 * 60 * 1000))));
 }
 
 function getWeekDate(week: number, timelineStart: Date) {
@@ -75,7 +79,7 @@ export function TimelineProyectos({ proyectos, clientes, currentUserId, onSelect
     const date = new Date();
     return new Date(date.getFullYear(), date.getMonth(), 1);
   }, []);
-  const months = useMemo(() => Array.from({ length: 4 }, (_, index) => {
+  const months = useMemo(() => Array.from({ length: TOTAL_MONTHS }, (_, index) => {
     const date = new Date(timelineStart.getFullYear(), timelineStart.getMonth() + index, 1);
     return new Intl.DateTimeFormat("es-AR", { month: "long" }).format(date);
   }), [timelineStart]);
@@ -181,13 +185,13 @@ export function TimelineProyectos({ proyectos, clientes, currentUserId, onSelect
         <span className="ml-2 flex items-center gap-1.5 font-label text-signal"><span className="h-2.5 w-2.5 rounded-full bg-signal" />Semana actual</span>
       </div>
 
-      <div className="overflow-x-auto">
-        <div className="min-w-[1080px] p-4">
-          <div className="grid grid-cols-[180px_repeat(16,minmax(52px,1fr))]">
-            <div className="border-b border-line-soft px-3 pb-3 text-[11px] font-label uppercase tracking-wider text-graphite">Proyecto</div>
-            {months.map((month) => <div key={month} className="border-b border-l border-line-soft px-2 pb-3 text-center text-xs font-title capitalize text-carbon" style={{ gridColumn: "span 4" }}>{month}</div>)}
-            <div className="border-b border-line-soft px-3 py-2 text-[11px] text-graphite">Semanas</div>
-            {weeks.map((week) => <div key={week} className={cn("relative border-b border-l border-line-soft py-2 text-center text-[10px] text-graphite", week % 4 === 0 && "border-l-slate-300", week === currentWeek && "bg-signal-light/50 font-title text-signal")}><span>{(week % 4) + 1}</span>{week === currentWeek ? <span className="absolute -top-1 left-1/2 h-2 w-2 -translate-x-1/2 rounded-full bg-signal" title="Semana actual" /> : null}</div>)}
+      <div className="overflow-x-auto overscroll-x-contain pb-3">
+        <div className="min-w-[2676px] p-4">
+          <div className="grid grid-cols-[180px_repeat(48,minmax(52px,1fr))]">
+            <div className="sticky left-0 z-20 border-b-2 border-line bg-white px-3 pb-3 text-[11px] font-label uppercase tracking-wider text-graphite">Proyecto</div>
+            {months.map((month) => <div key={month} className="border-b-2 border-l border-line px-2 pb-3 text-center text-xs font-title capitalize text-carbon" style={{ gridColumn: `span ${WEEKS_PER_MONTH}` }}>{month}</div>)}
+            <div className="sticky left-0 z-20 border-b-2 border-line bg-white px-3 py-2 text-[11px] text-graphite">Semanas</div>
+            {weeks.map((week) => <div key={week} className={cn("relative border-b-2 border-l border-line py-2 text-center text-[10px] text-graphite", week % WEEKS_PER_MONTH === 0 && "border-l-slate-300", week === currentWeek && "bg-signal-light/50 font-title text-signal")}><span>{(week % WEEKS_PER_MONTH) + 1}</span>{week === currentWeek ? <span className="absolute -top-1 left-1/2 h-2 w-2 -translate-x-1/2 rounded-full bg-signal" title="Semana actual" /> : null}</div>)}
 
             {projectRows.map((project, index) => {
               const position = projectPosition(index);
@@ -196,12 +200,12 @@ export function TimelineProyectos({ proyectos, clientes, currentUserId, onSelect
               const alias = ["funes", "ha", "abc"][index];
               const projectEvents = events.filter((event) => event.proyectoId === project.id || event.proyectoId === alias || event.clientId === project.cliente_id);
               return <div key={project.id} className="contents">
-                <button type="button" onClick={() => onSelectProject(project.id)} className="group flex min-h-[150px] flex-col justify-center border-b border-line-soft px-3 text-left hover:bg-paper"><span className="text-sm font-title text-carbon group-hover:text-signal">{clientName}</span><span className="mt-1 truncate text-xs text-graphite">{project.nombre}</span><span className="mt-2 flex items-center gap-1.5 text-[10px] text-graphite"><span className="h-1.5 w-1.5 rounded-full bg-signal" />{project.avance_pct ?? 0}% avance</span></button>
-                <div className="relative col-span-16 border-b border-line-soft" style={{ gridColumn: "2 / span 16" }}>
-                  {weeks.map((week) => <button key={`${project.id}-${week}`} type="button" onClick={() => openCell(project, week)} aria-label={`Agregar evento en semana ${week + 1}`} className={cn("absolute top-0 h-full border-l border-line-soft/70 hover:bg-signal-light/30", week === 0 && "border-l-0", week === currentWeek && "bg-signal-light/20")} style={{ left: `${(week / 16) * 100}%`, width: `${100 / 16}%` }} />)}
-                  <div className="pointer-events-none absolute left-0 right-0 top-2 h-7"><div className="absolute h-7 rounded-component bg-signal px-3 py-1.5 text-xs font-label text-white shadow-sm" style={{ left: `${(position.start / 16) * 100}%`, width: `${(position.length / 16) * 100}%` }}><span className="truncate">{project.nombre}</span></div></div>
-                  <div className="pointer-events-none absolute left-0 right-0 top-[44px] h-8">{projectEvents.filter((event) => event.type === "pago").map((event) => <span key={event.id} title={event.label} className="absolute flex h-8 min-w-0 overflow-hidden items-center justify-center rounded-component border border-emerald-200 bg-emerald-50 px-1 text-[9px] font-label text-emerald-800 shadow-sm" style={{ left: `calc(${event.week * 6.25}% + 2px)`, width: "calc(6.25% - 4px)" }}><span className="min-w-0 truncate">{event.amount != null ? formatMoney(event.amount) : "$ —"}</span></span>)}</div>
-                  <div className="pointer-events-none absolute left-0 right-0 top-[88px] h-8">{projectEvents.filter((event) => event.type === "reunion").map((event) => <span key={event.id} title={event.label} className="absolute flex h-8 min-w-0 overflow-hidden items-center justify-center gap-0.5 rounded-component border border-violet-200 bg-violet-50 px-1 text-[9px] font-label text-violet-800 shadow-sm" style={{ left: `calc(${event.week * 6.25}% + 2px)`, width: "calc(6.25% - 4px)" }}><VideoIcon size={11} className="shrink-0" /><span className="min-w-0 truncate">{event.date ? formatEventDate(event.date) : event.label}</span></span>)}</div>
+                <button type="button" onClick={() => onSelectProject(project.id)} className="group sticky left-0 z-10 flex min-h-[150px] flex-col justify-center border-b-2 border-line bg-white px-3 text-left hover:bg-paper"><span className="text-sm font-title text-carbon group-hover:text-signal">{clientName}</span><span className="mt-1 truncate text-xs text-graphite">{project.nombre}</span><span className="mt-2 flex items-center gap-1.5 text-[10px] text-graphite"><span className="h-1.5 w-1.5 rounded-full bg-signal" />{project.avance_pct ?? 0}% avance</span></button>
+                <div className="relative border-b-2 border-line" style={{ gridColumn: `2 / span ${TOTAL_WEEKS}` }}>
+                  {weeks.map((week) => <button key={`${project.id}-${week}`} type="button" onClick={() => openCell(project, week)} aria-label={`Agregar evento en semana ${week + 1}`} className={cn("absolute top-0 h-full border-l border-line-soft/70 hover:bg-signal-light/30", week === 0 && "border-l-0", week === currentWeek && "bg-signal-light/20")} style={{ left: `${week * WEEK_PERCENT}%`, width: `${WEEK_PERCENT}%` }} />)}
+                  <div className="pointer-events-none absolute left-0 right-0 top-2 h-7"><div className="absolute h-7 rounded-component bg-signal px-3 py-1.5 text-xs font-label text-white shadow-sm" style={{ left: `${position.start * WEEK_PERCENT}%`, width: `${position.length * WEEK_PERCENT}%` }}><span className="truncate">{project.nombre}</span></div></div>
+                  <div className="pointer-events-none absolute left-0 right-0 top-[44px] h-8">{projectEvents.filter((event) => event.type === "pago").map((event) => <span key={event.id} title={event.label} className="absolute flex h-8 min-w-0 overflow-hidden items-center justify-center rounded-component border border-emerald-200 bg-emerald-50 px-1 text-[9px] font-label text-emerald-800 shadow-sm" style={{ left: `calc(${event.week * WEEK_PERCENT}% + 2px)`, width: `calc(${WEEK_PERCENT}% - 4px)` }}><span className="min-w-0 truncate">{event.amount != null ? formatMoney(event.amount) : "$ —"}</span></span>)}</div>
+                  <div className="pointer-events-none absolute left-0 right-0 top-[88px] h-8">{projectEvents.filter((event) => event.type === "reunion").map((event) => <span key={event.id} title={event.label} className="absolute flex h-8 min-w-0 overflow-hidden items-center justify-center gap-0.5 rounded-component border border-violet-200 bg-violet-50 px-1 text-[9px] font-label text-violet-800 shadow-sm" style={{ left: `calc(${event.week * WEEK_PERCENT}% + 2px)`, width: `calc(${WEEK_PERCENT}% - 4px)` }}><VideoIcon size={11} className="shrink-0" /><span className="min-w-0 truncate">{event.date ? formatEventDate(event.date) : event.label}</span></span>)}</div>
                 </div>
               </div>;
             })}
@@ -210,7 +214,7 @@ export function TimelineProyectos({ proyectos, clientes, currentUserId, onSelect
         </div>
       </div>
 
-      {activeCell ? <div className="fixed inset-0 z-50 flex items-center justify-center bg-carbon/20 p-4" onMouseDown={() => setActiveCell(null)}><div className="w-full max-w-sm rounded-card border border-line-soft bg-white p-5 shadow-modal" onMouseDown={(event) => event.stopPropagation()}><h3 className="text-base font-title text-carbon">Agregar al timeline</h3><p className="mt-1 text-sm text-graphite">Semana {activeCell.week + 1} · {months[Math.floor(activeCell.week / 4)]} · {formatEventDate(getWeekDate(activeCell.week, timelineStart))}</p><div className="mt-4 space-y-3"><select value={eventType} onChange={(event) => setEventType(event.target.value as EventType)} className="w-full rounded-component border border-line bg-white px-3 py-2 text-sm text-carbon focus:border-signal focus:outline-none focus:ring-2 focus:ring-signal/20"><option value="reunion">Reunión</option><option value="pago">Hito de pago</option></select><input autoFocus value={eventLabel} onChange={(event) => setEventLabel(event.target.value)} onKeyDown={(event) => event.key === "Enter" && void saveEvent()} placeholder={eventType === "pago" ? "Ej. Cuota 2" : "Ej. Demo con cliente"} className="w-full rounded-component border border-line px-3 py-2 text-sm text-carbon outline-none focus:border-signal focus:ring-2 focus:ring-signal/20" />{eventType === "pago" ? <input value={eventAmount} onChange={(event) => setEventAmount(event.target.value)} type="number" min="0" placeholder="Monto a pagar (USD)" className="w-full rounded-component border border-line px-3 py-2 text-sm text-carbon outline-none focus:border-signal focus:ring-2 focus:ring-signal/20" /> : null}{eventError ? <p className="text-xs text-danger">{eventError}</p> : null}<div className="flex justify-end gap-2 pt-2"><button type="button" onClick={() => setActiveCell(null)} className="rounded-component px-3 py-2 text-sm text-graphite hover:bg-paper">Cancelar</button><button type="button" onClick={() => void saveEvent()} disabled={!eventLabel.trim() || eventSaving} className="rounded-component bg-signal px-3 py-2 text-sm font-label text-white disabled:cursor-not-allowed disabled:opacity-50">{eventSaving ? "Guardando..." : "Agregar"}</button></div></div></div></div> : null}
+      {activeCell ? <div className="fixed inset-0 z-50 flex items-center justify-center bg-carbon/20 p-4" onMouseDown={() => setActiveCell(null)}><div className="w-full max-w-sm rounded-card border border-line-soft bg-white p-5 shadow-modal" onMouseDown={(event) => event.stopPropagation()}><h3 className="text-base font-title text-carbon">Agregar al timeline</h3><p className="mt-1 text-sm text-graphite">Semana {activeCell.week + 1} · {months[Math.floor(activeCell.week / WEEKS_PER_MONTH)]} · {formatEventDate(getWeekDate(activeCell.week, timelineStart))}</p><div className="mt-4 space-y-3"><select value={eventType} onChange={(event) => setEventType(event.target.value as EventType)} className="w-full rounded-component border border-line bg-white px-3 py-2 text-sm text-carbon focus:border-signal focus:outline-none focus:ring-2 focus:ring-signal/20"><option value="reunion">Reunión</option><option value="pago">Hito de pago</option></select><input autoFocus value={eventLabel} onChange={(event) => setEventLabel(event.target.value)} onKeyDown={(event) => event.key === "Enter" && void saveEvent()} placeholder={eventType === "pago" ? "Ej. Cuota 2" : "Ej. Demo con cliente"} className="w-full rounded-component border border-line px-3 py-2 text-sm text-carbon outline-none focus:border-signal focus:ring-2 focus:ring-signal/20" />{eventType === "pago" ? <input value={eventAmount} onChange={(event) => setEventAmount(event.target.value)} type="number" min="0" placeholder="Monto a pagar (USD)" className="w-full rounded-component border border-line px-3 py-2 text-sm text-carbon outline-none focus:border-signal focus:ring-2 focus:ring-signal/20" /> : null}{eventError ? <p className="text-xs text-danger">{eventError}</p> : null}<div className="flex justify-end gap-2 pt-2"><button type="button" onClick={() => setActiveCell(null)} className="rounded-component px-3 py-2 text-sm text-graphite hover:bg-paper">Cancelar</button><button type="button" onClick={() => void saveEvent()} disabled={!eventLabel.trim() || eventSaving} className="rounded-component bg-signal px-3 py-2 text-sm font-label text-white disabled:cursor-not-allowed disabled:opacity-50">{eventSaving ? "Guardando..." : "Agregar"}</button></div></div></div></div> : null}
     </section>
   );
 }
