@@ -133,12 +133,6 @@ export function ProyectosClient({
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <p className="text-xs font-label uppercase tracking-[0.14em] text-graphite">Operaciones</p>
-          <h1 className="mt-1 text-2xl font-title text-carbon">Proyectos</h1>
-        </div>
-      </div>
       {error ? (
         <div className="rounded-card border border-danger bg-danger-light px-4 py-3 text-sm text-danger">
           {error}

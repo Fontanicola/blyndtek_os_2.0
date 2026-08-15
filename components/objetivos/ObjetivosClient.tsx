@@ -91,12 +91,7 @@ export function ObjetivosClient() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <p className="text-xs font-label uppercase tracking-[0.14em] text-graphite">Control</p>
-          <h1 className="mt-1 text-2xl font-title text-carbon">Objetivos</h1>
-          <p className="mt-1 text-sm text-graphite">Planteá el objetivo del mes y comparalo contra el resultado actual.</p>
-        </div>
+      <div className="flex flex-wrap items-end justify-end gap-4">
         <div className="flex items-center gap-3">
           <label className="text-xs font-label text-graphite" htmlFor="objetivos-mes">Período</label>
           <select id="objetivos-mes" value={selectedMonth} onChange={(event) => setSelectedMonth(event.target.value)} className="rounded-component border border-line bg-white px-3 py-2 text-sm font-label capitalize text-carbon focus:border-signal focus:outline-none focus:ring-2 focus:ring-signal/20">
