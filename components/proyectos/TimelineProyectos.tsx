@@ -44,12 +44,6 @@ const seedEvents: TimelineEvent[] = [
   { id: "abc-reunion-1", proyectoId: "abc", week: 6, type: "reunion", label: "Demo" }
 ];
 
-function projectPosition(index: number) {
-  const starts = [0, 0, 4, 8, 12];
-  const lengths = [4, 8, 12, 8, 6];
-  return { start: starts[index % starts.length] ?? 0, length: lengths[index % lengths.length] ?? 4 };
-}
-
 function getClientName(id: string, clients: TimelineProyectosProps["clientes"]) {
   return clients.find((client) => client.id === id)?.empresa ?? "Cliente";
 }
@@ -65,6 +59,34 @@ function formatEventDate(value: Date | string) {
 function getWeekIndex(value: string | Date, timelineStart: Date) {
   const date = new Date(value);
   return Math.max(0, Math.min(TOTAL_WEEKS - 1, Math.floor((date.getTime() - timelineStart.getTime()) / (7 * 24 * 60 * 60 * 1000))));
+}
+
+function projectPosition(project: Proyecto, index: number, timelineStart: Date) {
+  const fallbackStarts = [0, 0, 4, 8, 12];
+  const fallbackLengths = [4, 8, 12, 8, 6];
+  const fallbackStart = fallbackStarts[index % fallbackStarts.length] ?? 0;
+  const fallbackLength = fallbackLengths[index % fallbackLengths.length] ?? 4;
+  const startDate = project.fecha_inicio ? new Date(project.fecha_inicio) : getWeekDate(fallbackStart, timelineStart);
+  const endDate = project.entrega_comprometida
+    ? new Date(project.entrega_comprometida)
+    : new Date(startDate.getTime() + fallbackLength * 7 * 24 * 60 * 60 * 1000);
+  const start = getWeekIndex(startDate, timelineStart);
+  const end = Math.max(start + 1, getWeekIndex(endDate, timelineStart));
+  const length = Math.min(TOTAL_WEEKS - start, Math.max(1, end - start));
+  const hasSchedule = Boolean(project.fecha_inicio && project.entrega_comprometida);
+  const now = Date.now();
+  const totalDuration = endDate.getTime() - startDate.getTime();
+  const progressPct = hasSchedule && totalDuration > 0
+    ? Math.max(0, Math.min(100, ((now - startDate.getTime()) / totalDuration) * 100))
+    : 0;
+  const daysRemaining = (endDate.getTime() - now) / (24 * 60 * 60 * 1000);
+  const remainingClass = !hasSchedule || daysRemaining >= 30
+    ? "border-emerald-200 bg-emerald-100"
+    : daysRemaining > 14
+      ? "border-orange-200 bg-orange-100"
+      : "border-red-200 bg-red-100";
+
+  return { start, length, progressPct, remainingClass };
 }
 
 function getWeekDate(week: number, timelineStart: Date) {
@@ -194,7 +216,7 @@ export function TimelineProyectos({ proyectos, clientes, currentUserId, onSelect
             {weeks.map((week) => <div key={week} className={cn("relative border-b-2 border-l border-line py-2 text-center text-[10px] text-graphite", week % WEEKS_PER_MONTH === 0 && "border-l-slate-300", week === currentWeek && "bg-signal-light/50 font-title text-signal")}><span>{(week % WEEKS_PER_MONTH) + 1}</span>{week === currentWeek ? <span className="absolute -top-1 left-1/2 h-2 w-2 -translate-x-1/2 rounded-full bg-signal" title="Semana actual" /> : null}</div>)}
 
             {projectRows.map((project, index) => {
-              const position = projectPosition(index);
+              const position = projectPosition(project, index, timelineStart);
               const resolvedClientName = getClientName(project.cliente_id, clientes);
               const clientName = resolvedClientName === "Cliente" ? ["Funes", "HA", "ABC"][index] ?? "Cliente" : resolvedClientName;
               const alias = ["funes", "ha", "abc"][index];
@@ -206,7 +228,7 @@ export function TimelineProyectos({ proyectos, clientes, currentUserId, onSelect
                 </div>
                 <div className="relative h-[168px] border-l-2 border-b-2 border-line" style={{ gridColumn: `2 / span ${TOTAL_WEEKS}` }}>
                   {weeks.map((week) => <button key={`${project.id}-${week}`} type="button" onClick={() => openCell(project, week)} aria-label={`Agregar evento en semana ${week + 1}`} className={cn("absolute top-0 h-full border-l border-line-soft/70 hover:bg-signal-light/30", week === 0 && "border-l-0", week === currentWeek && "bg-signal-light/20")} style={{ left: `${week * WEEK_PERCENT}%`, width: `${WEEK_PERCENT}%` }} />)}
-                  <div className="pointer-events-none absolute left-0 right-0 top-2 h-10"><div className="absolute h-10 rounded-component bg-signal px-3 py-2 text-sm font-label text-white shadow-sm" style={{ left: `${position.start * WEEK_PERCENT}%`, width: `${position.length * WEEK_PERCENT}%` }}><span className="truncate">{project.nombre}</span></div></div>
+                  <div className="pointer-events-none absolute left-0 right-0 top-2 h-10"><div className={`absolute h-10 overflow-hidden rounded-component border px-3 py-2 text-sm font-label text-carbon shadow-sm ${position.remainingClass}`} style={{ left: `${position.start * WEEK_PERCENT}%`, width: `${position.length * WEEK_PERCENT}%` }}><div className="absolute inset-y-0 left-0 bg-signal-light" style={{ width: `${position.progressPct}%` }} /><span className="relative truncate">{project.nombre}</span></div></div>
                   <div className="pointer-events-none absolute left-0 right-0 top-[64px] h-10">{projectEvents.filter((event) => event.type === "pago").map((event) => <span key={event.id} title={event.label} className="absolute flex h-10 min-w-0 overflow-hidden items-center justify-center rounded-component border border-emerald-200 bg-emerald-50 px-1 text-[10px] font-label text-emerald-800 shadow-sm" style={{ left: `calc(${event.week * WEEK_PERCENT}% + 2px)`, width: `calc(${WEEK_PERCENT}% - 4px)` }}><span className="min-w-0 truncate">{event.amount != null ? formatMoney(event.amount) : "$ —"}</span></span>)}</div>
                   <div className="pointer-events-none absolute left-0 right-0 top-[120px] h-10">{projectEvents.filter((event) => event.type === "reunion").map((event) => <span key={event.id} title={event.label} className="absolute flex h-10 min-w-0 overflow-hidden items-center justify-center gap-1 rounded-component border border-violet-200 bg-violet-50 px-1 text-[10px] font-label text-violet-800 shadow-sm" style={{ left: `calc(${event.week * WEEK_PERCENT}% + 2px)`, width: `calc(${WEEK_PERCENT}% - 4px)` }}><VideoIcon size={12} className="shrink-0" /><span className="min-w-0 truncate">{event.date ? formatEventDate(event.date) : event.label}</span></span>)}</div>
                 </div>
