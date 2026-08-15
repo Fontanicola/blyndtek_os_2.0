@@ -26,7 +26,6 @@ type TimelineEvent = {
 };
 
 const weeks = Array.from({ length: 16 }, (_, index) => index);
-const monthColors = ["#D9E5FF", "#E8E2FF", "#DDF4EB", "#FFF0D5"];
 const seedEvents: TimelineEvent[] = [
   { id: "funes-pago-1", proyectoId: "funes", week: 0, type: "pago", label: "Inicial", amount: 1500 },
   { id: "funes-reunion-1", proyectoId: "funes", week: 1, type: "reunion", label: "Kickoff" },
@@ -186,7 +185,7 @@ export function TimelineProyectos({ proyectos, clientes, currentUserId, onSelect
         <div className="min-w-[1080px] p-4">
           <div className="grid grid-cols-[180px_repeat(16,minmax(52px,1fr))]">
             <div className="border-b border-line-soft px-3 pb-3 text-[11px] font-label uppercase tracking-wider text-graphite">Proyecto</div>
-            {months.map((month, index) => <div key={month} className="border-b border-l border-line-soft px-2 pb-3 text-center text-xs font-title capitalize text-carbon" style={{ gridColumn: "span 4" }}><span className="rounded-pill px-2 py-1" style={{ backgroundColor: monthColors[index] }}>{month}</span></div>)}
+            {months.map((month) => <div key={month} className="border-b border-l border-line-soft px-2 pb-3 text-center text-xs font-title capitalize text-carbon" style={{ gridColumn: "span 4" }}>{month}</div>)}
             <div className="border-b border-line-soft px-3 py-2 text-[11px] text-graphite">Semanas</div>
             {weeks.map((week) => <div key={week} className={cn("relative border-b border-l border-line-soft py-2 text-center text-[10px] text-graphite", week % 4 === 0 && "border-l-slate-300", week === currentWeek && "bg-signal-light/50 font-title text-signal")}><span>{(week % 4) + 1}</span>{week === currentWeek ? <span className="absolute -top-1 left-1/2 h-2 w-2 -translate-x-1/2 rounded-full bg-signal" title="Semana actual" /> : null}</div>)}
 
