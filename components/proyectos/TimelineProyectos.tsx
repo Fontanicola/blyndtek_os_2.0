@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { DollarSignIcon, VideoIcon } from "@/components/ui/icons";
+import { VideoIcon } from "@/components/ui/icons";
 import { cn } from "@/lib/cn";
 import { buildRecurrenceOccurrences, type FrecuenciaReunion } from "@/lib/eventos/recurrencia";
 import type { Evento } from "@/types/eventos";
