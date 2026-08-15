@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { VideoIcon } from "@/components/ui/icons";
+import { FileTextIcon, VideoIcon } from "@/components/ui/icons";
 import { cn } from "@/lib/cn";
 import { buildRecurrenceOccurrences, type FrecuenciaReunion } from "@/lib/eventos/recurrencia";
 import type { Evento } from "@/types/eventos";
 import type { Cobro } from "@/types/cobros";
+import type { Nota } from "@/types/notas";
 import type { Proyecto } from "@/types/proyectos";
 
 type TimelineProyectosProps = {
@@ -21,10 +22,12 @@ type TimelineEvent = {
   proyectoId: string;
   clientId?: string | null;
   week: number;
-  type: "pago" | "reunion";
+  type: "pago" | "reunion" | "nota";
   label: string;
   amount?: number;
   date?: string;
+  priority?: "alta" | "media" | "baja";
+  noteText?: string;
 };
 
 const WEEKS_PER_MONTH = 4;
@@ -53,6 +56,30 @@ function toDateInputValue(date: Date) {
 
 function formatTimelineDate(date: Date) {
   return new Intl.DateTimeFormat("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" }).format(date);
+}
+
+function getNoteText(content: unknown) {
+  if (!content || typeof content !== "object") return "";
+  const blocks = (content as { content?: unknown[] }).content;
+  if (!Array.isArray(blocks)) return "";
+  return blocks.map((block) => {
+    if (!block || typeof block !== "object") return "";
+    const parts = (block as { content?: unknown[] }).content;
+    if (!Array.isArray(parts)) return "";
+    return parts.map((part) => (part && typeof part === "object" && typeof (part as { text?: unknown }).text === "string" ? (part as { text: string }).text : "")).join("");
+  }).filter(Boolean).join("\n");
+}
+
+function getTimelineNotePriority(note: Nota) {
+  const tag = note.tags?.find((item) => item.startsWith("timeline-prioridad:"));
+  const priority = tag?.split(":")[1];
+  return priority === "alta" || priority === "media" || priority === "baja" ? priority : "media";
+}
+
+function getTimelineNoteWeek(note: Nota) {
+  const tag = note.tags?.find((item) => item.startsWith("timeline-semana:"));
+  const week = Number(tag?.split(":")[1]);
+  return Number.isInteger(week) ? Math.max(0, Math.min(TOTAL_WEEKS - 1, week)) : null;
 }
 
 function addDays(value: Date, days: number) {
@@ -128,6 +155,11 @@ export function TimelineProyectos({ proyectos, clientes, currentUserId, onSelect
   const [recurrenceUntil, setRecurrenceUntil] = useState("");
   const [eventSaving, setEventSaving] = useState(false);
   const [eventError, setEventError] = useState<string | null>(null);
+  const [activeNote, setActiveNote] = useState<{ proyectoId: string; clientId: string; week: number } | null>(null);
+  const [noteText, setNoteText] = useState("");
+  const [notePriority, setNotePriority] = useState<"alta" | "media" | "baja">("media");
+  const [noteSaving, setNoteSaving] = useState(false);
+  const [noteError, setNoteError] = useState<string | null>(null);
   const [scheduleDrag, setScheduleDrag] = useState<{ projectId: string; mode: "move" | "resize"; originX: number; deltaWeeks: number } | null>(null);
   const [scheduleSaving, setScheduleSaving] = useState<string | null>(null);
   const [scheduleError, setScheduleError] = useState<string | null>(null);
@@ -137,12 +169,14 @@ export function TimelineProyectos({ proyectos, clientes, currentUserId, onSelect
 
     async function loadTimelineEvents() {
       try {
-        const [meetingsResponse, cobrosResponse] = await Promise.all([
+        const [meetingsResponse, cobrosResponse, notesResponse] = await Promise.all([
           fetch("/api/eventos?tipo=reunion", { cache: "no-store" }),
-          fetch("/api/cobros", { cache: "no-store" })
+          fetch("/api/cobros", { cache: "no-store" }),
+          fetch("/api/notas?papelera=false", { cache: "no-store" })
         ]);
         const meetingsPayload = (await meetingsResponse.json()) as { data?: Evento[] };
         const cobrosPayload = (await cobrosResponse.json()) as { data?: Cobro[] };
+        const notesPayload = (await notesResponse.json()) as { data?: Nota[] };
         if (cancelled) return;
 
         const cobros = (cobrosPayload.data ?? []).map((cobro) => ({
@@ -155,7 +189,21 @@ export function TimelineProyectos({ proyectos, clientes, currentUserId, onSelect
           amount: cobro.monto,
           date: cobro.fecha_vencimiento
         }));
-        setEvents([...cobros, ...(meetingsPayload.data ?? []).map((meeting) => ({
+        const notes = (notesPayload.data ?? []).map((note) => {
+          const week = getTimelineNoteWeek(note);
+          if (!note.proyecto_id || week === null) return null;
+          return {
+            id: note.id,
+            proyectoId: note.proyecto_id,
+            clientId: note.cliente_id,
+            week,
+            type: "nota" as const,
+            label: note.titulo,
+            priority: getTimelineNotePriority(note),
+            noteText: getNoteText(note.contenido)
+          };
+        }).filter((note) => note !== null) as TimelineEvent[];
+        setEvents([...cobros, ...notes, ...(meetingsPayload.data ?? []).map((meeting) => ({
           id: meeting.id,
           proyectoId: "",
           clientId: meeting.relacion_id,
@@ -188,6 +236,40 @@ export function TimelineProyectos({ proyectos, clientes, currentUserId, onSelect
     setRecurrenceFrequency(null);
     setRecurrenceUntil(toDateInputValue(getWeekDate(week, timelineStart)));
     setEventError(null);
+  }
+
+  function openNote(project: Proyecto, week: number) {
+    setActiveNote({ proyectoId: project.id, clientId: project.cliente_id, week });
+    setNoteText("");
+    setNotePriority("media");
+    setNoteError(null);
+  }
+
+  async function saveNote() {
+    if (!activeNote || !noteText.trim() || noteSaving) return;
+    setNoteSaving(true);
+    setNoteError(null);
+    try {
+      const response = await fetch("/api/notas", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          titulo: (noteText.trim().split("\n")[0] ?? "Nota").slice(0, 80),
+          contenido: { type: "doc", content: [{ type: "paragraph", content: [{ type: "text", text: noteText.trim() }] }] },
+          proyecto_id: activeNote.proyectoId,
+          cliente_id: activeNote.clientId,
+          tags: [`timeline-prioridad:${notePriority}`, `timeline-semana:${activeNote.week}`]
+        })
+      });
+      const payload = (await response.json()) as { data?: Nota; error?: string };
+      if (!response.ok || !payload.data) throw new Error(payload.error ?? "No se pudo guardar la nota.");
+      setEvents((current) => [...current, { id: payload.data!.id, ...activeNote, type: "nota", label: payload.data!.titulo, priority: notePriority, noteText: noteText.trim() }]);
+      setActiveNote(null);
+    } catch (error) {
+      setNoteError(error instanceof Error ? error.message : "No se pudo guardar la nota.");
+    } finally {
+      setNoteSaving(false);
+    }
   }
 
   async function saveEvent() {
@@ -300,12 +382,13 @@ export function TimelineProyectos({ proyectos, clientes, currentUserId, onSelect
               const alias = ["funes", "ha", "abc"][index];
               const projectEvents = events.filter((event) => event.proyectoId === project.id || event.proyectoId === alias || (!event.proyectoId && event.clientId === project.cliente_id));
               return <div key={project.id} className="contents">
-                <div className="sticky left-0 z-10 grid h-[168px] grid-cols-[minmax(0,1fr)_48px] grid-rows-[56px_56px_56px] border-b-2 border-r-2 border-line bg-white">
-                  <button type="button" onClick={() => onSelectProject(project.id)} className="group row-span-3 flex min-w-0 flex-col justify-center px-3 text-left hover:bg-paper"><span className="text-sm font-title text-carbon group-hover:text-signal">{clientName}</span><span className="mt-1 truncate text-xs text-graphite">{project.nombre}</span><span className="mt-2 flex items-center gap-1.5 text-[10px] text-graphite"><span className="h-1.5 w-1.5 rounded-full bg-signal" />{project.avance_pct ?? 0}% avance</span></button>
-                  <div className="row-span-3 grid grid-rows-[56px_56px_56px] border-l border-line text-graphite"><span className="flex items-center justify-center border-b border-line-soft text-sm" title="Duración">■</span><span className="flex items-center justify-center border-b border-line-soft text-base" title="Hitos de pago">$</span><span className="flex items-center justify-center text-base" title="Reuniones"><VideoIcon size={18} /></span></div>
+                <div className="sticky left-0 z-10 grid h-[224px] grid-cols-[minmax(0,1fr)_48px] grid-rows-[56px_56px_56px_56px] border-b-2 border-r-2 border-line bg-white">
+                  <button type="button" onClick={() => onSelectProject(project.id)} className="group row-span-4 flex min-w-0 flex-col justify-center px-3 text-left hover:bg-paper"><span className="text-sm font-title text-carbon group-hover:text-signal">{clientName}</span><span className="mt-1 truncate text-xs text-graphite">{project.nombre}</span><span className="mt-2 flex items-center gap-1.5 text-[10px] text-graphite"><span className="h-1.5 w-1.5 rounded-full bg-signal" />{project.avance_pct ?? 0}% avance</span></button>
+                  <div className="row-span-4 grid grid-rows-[56px_56px_56px_56px] border-l border-line text-graphite"><span className="flex items-center justify-center border-b border-line-soft text-sm" title="Duración">■</span><span className="flex items-center justify-center border-b border-line-soft text-base" title="Hitos de pago">$</span><span className="flex items-center justify-center border-b border-line-soft text-base" title="Reuniones"><VideoIcon size={18} /></span><span className="flex items-center justify-center text-base" title="Notas"><FileTextIcon size={18} /></span></div>
                 </div>
-                <div className="relative h-[168px] border-b-2 border-line" style={{ gridColumn: `2 / span ${TOTAL_WEEKS}` }}>
+                <div className="relative h-[224px] border-b-2 border-line" style={{ gridColumn: `2 / span ${TOTAL_WEEKS}` }}>
                   {weeks.map((week) => <button key={`${project.id}-${week}`} type="button" onClick={() => openCell(project, week)} aria-label={`Agregar evento en semana ${week + 1}`} className={cn("absolute top-0 h-full border-l border-line-soft/70 hover:bg-signal-light/30", week === 0 && "border-l-0", week === currentWeek && "bg-signal-light/20")} style={{ left: `${week * WEEK_PERCENT}%`, width: `${WEEK_PERCENT}%` }} />)}
+                  {weeks.map((week) => <button key={`${project.id}-note-${week}`} type="button" onClick={() => openNote(project, week)} aria-label={`Agregar nota en semana ${week + 1}`} className="absolute top-[168px] z-10 h-14 border-l border-line-soft/70 hover:bg-signal-light/20" style={{ left: `${week * WEEK_PERCENT}%`, width: `${WEEK_PERCENT}%` }} />)}
                   <div className="absolute left-0 right-0 top-2 h-10">
                     {scheduleDrag?.projectId === project.id ? <div className="absolute -top-8 z-30 whitespace-nowrap rounded-sm bg-carbon px-2 py-1 text-[11px] font-label text-white shadow-sm" style={{ left: `${position.startPercent}%` }}>Inicio: {formatTimelineDate(position.startDate)} · Entrega: {formatTimelineDate(position.endDate)}</div> : null}
                     <div
@@ -323,6 +406,7 @@ export function TimelineProyectos({ proyectos, clientes, currentUserId, onSelect
                   </div>
                   <div className="pointer-events-none absolute left-0 right-0 top-[64px] h-10">{projectEvents.filter((event) => event.type === "pago").map((event) => <span key={event.id} title={event.label} className="absolute flex h-10 min-w-0 overflow-hidden items-center justify-center rounded-component border border-emerald-200 bg-emerald-50 px-1 text-[10px] font-label text-emerald-800 shadow-sm" style={{ left: `calc(${event.week * WEEK_PERCENT}% + 2px)`, width: `calc(${WEEK_PERCENT}% - 4px)` }}><span className="min-w-0 truncate">{event.amount != null ? formatMoney(event.amount) : "$ —"}</span></span>)}</div>
                   <div className="pointer-events-none absolute left-0 right-0 top-[120px] h-10">{projectEvents.filter((event) => event.type === "reunion").map((event) => <span key={event.id} title={event.date ? formatEventDate(event.date) : "Reunión"} className="absolute flex h-10 min-w-0 overflow-hidden items-center justify-center gap-1 rounded-component border border-violet-200 bg-violet-50 px-1 text-[10px] font-label text-violet-800 shadow-sm" style={{ left: `calc(${event.week * WEEK_PERCENT}% + 2px)`, width: `calc(${WEEK_PERCENT}% - 4px)` }}><VideoIcon size={12} className="shrink-0" /><span className="min-w-0 truncate">{event.date ? formatEventDate(event.date) : "Sin fecha"}</span></span>)}</div>
+                  <div className="pointer-events-none absolute left-0 right-0 top-[176px] h-10">{projectEvents.filter((event) => event.type === "nota").map((event) => <span key={event.id} className="group pointer-events-auto absolute h-10 min-w-0" style={{ left: `calc(${event.week * WEEK_PERCENT}% + 2px)`, width: `calc(${WEEK_PERCENT}% - 4px)` }}><span className={cn("flex h-10 w-full items-center justify-center rounded-component border px-1 text-[10px] font-label shadow-sm", event.priority === "alta" ? "border-red-200 bg-red-100 text-red-800" : event.priority === "baja" ? "border-slate-200 bg-slate-100 text-slate-700" : "border-amber-200 bg-amber-100 text-amber-800")}>Nota</span><span className="absolute left-0 top-11 z-40 hidden w-64 rounded-card border border-line-soft bg-white p-3 text-left text-xs text-carbon shadow-modal group-hover:block"><span className="block font-label">{event.label}</span><span className="mt-1 block whitespace-pre-wrap text-graphite">{event.noteText || "Sin contenido"}</span></span></span>)}</div>
                 </div>
               </div>;
             })}
@@ -333,6 +417,7 @@ export function TimelineProyectos({ proyectos, clientes, currentUserId, onSelect
       {scheduleError ? <div className="border-t border-danger/20 bg-danger-light px-5 py-2 text-xs text-danger">{scheduleError}</div> : null}
 
       {activeCell ? <div className="fixed inset-0 z-50 flex items-center justify-center bg-carbon/20 p-4" onMouseDown={() => setActiveCell(null)}><div className="w-full max-w-sm rounded-card border border-line-soft bg-white p-5 shadow-modal" onMouseDown={(event) => event.stopPropagation()}><h3 className="text-base font-title text-carbon">Agregar al timeline</h3><p className="mt-1 text-sm text-graphite">Semana {activeCell.week + 1} · {months[Math.floor(activeCell.week / WEEKS_PER_MONTH)]}</p><div className="mt-4 space-y-3"><div className="grid grid-cols-2 gap-2"><label className="block space-y-1 text-sm font-label text-carbon">Fecha<input type="date" value={eventDate} onChange={(event) => setEventDate(event.target.value)} className="mt-1 w-full rounded-component border border-line px-2 py-2 text-sm font-normal text-carbon outline-none focus:border-signal focus:ring-2 focus:ring-signal/20" /></label><label className="block space-y-1 text-sm font-label text-carbon">Horario<input type="time" value={eventTime} onChange={(event) => setEventTime(event.target.value)} className="mt-1 w-full rounded-component border border-line px-2 py-2 text-sm font-normal text-carbon outline-none focus:border-signal focus:ring-2 focus:ring-signal/20" /></label></div><label className="flex items-center gap-2 text-sm font-label text-carbon"><input type="checkbox" checked={Boolean(recurrenceFrequency)} onChange={(event) => setRecurrenceFrequency(event.target.checked ? "semanal" : null)} className="h-4 w-4 accent-signal" /> Repetir reunión</label>{recurrenceFrequency ? <div className="grid grid-cols-2 gap-2"><select value={recurrenceFrequency} onChange={(event) => setRecurrenceFrequency(event.target.value as FrecuenciaReunion)} className="rounded-component border border-line bg-white px-2 py-2 text-sm text-carbon"><option value="semanal">Cada semana</option><option value="quincenal">Cada 2 semanas</option><option value="mensual">Cada mes</option></select><input type="date" min={eventDate} value={recurrenceUntil} onChange={(event) => setRecurrenceUntil(event.target.value)} className="rounded-component border border-line px-2 py-2 text-sm text-carbon" /></div> : null}<input autoFocus value={eventLabel} onChange={(event) => setEventLabel(event.target.value)} onKeyDown={(event) => event.key === "Enter" && void saveEvent()} placeholder="Título opcional (Reunión)" className="w-full rounded-component border border-line px-3 py-2 text-sm text-carbon outline-none focus:border-signal focus:ring-2 focus:ring-signal/20" />{eventError ? <p className="text-xs text-danger">{eventError}</p> : null}<div className="flex justify-end gap-2 pt-2"><button type="button" onClick={() => setActiveCell(null)} className="rounded-component px-3 py-2 text-sm text-graphite hover:bg-paper">Cancelar</button><button type="button" onClick={() => void saveEvent()} disabled={eventSaving} className="rounded-component bg-signal px-3 py-2 text-sm font-label text-white disabled:cursor-not-allowed disabled:opacity-50">{eventSaving ? "Guardando..." : "Agregar"}</button></div></div></div></div> : null}
+      {activeNote ? <div className="fixed inset-0 z-50 flex items-center justify-center bg-carbon/20 p-4" onMouseDown={() => setActiveNote(null)}><div className="w-full max-w-sm rounded-card border border-line-soft bg-white p-5 shadow-modal" onMouseDown={(event) => event.stopPropagation()}><h3 className="text-base font-title text-carbon">Agregar nota</h3><p className="mt-1 text-sm text-graphite">Semana {activeNote.week + 1} · {months[Math.floor(activeNote.week / WEEKS_PER_MONTH)]}</p><div className="mt-4 space-y-3"><textarea autoFocus value={noteText} onChange={(event) => setNoteText(event.target.value)} placeholder="Escribí la nota..." rows={4} className="w-full resize-none rounded-component border border-line px-3 py-2 text-sm text-carbon outline-none focus:border-signal focus:ring-2 focus:ring-signal/20" /><label className="block space-y-1 text-sm font-label text-carbon">Prioridad<select value={notePriority} onChange={(event) => setNotePriority(event.target.value as "alta" | "media" | "baja")} className="mt-1 w-full rounded-component border border-line bg-white px-3 py-2 text-sm font-normal text-carbon focus:border-signal focus:outline-none focus:ring-2 focus:ring-signal/20"><option value="alta">Alta</option><option value="media">Media</option><option value="baja">Baja</option></select></label>{noteError ? <p className="text-xs text-danger">{noteError}</p> : null}<div className="flex justify-end gap-2"><button type="button" onClick={() => setActiveNote(null)} className="rounded-component px-3 py-2 text-sm text-graphite hover:bg-paper">Cancelar</button><button type="button" onClick={() => void saveNote()} disabled={!noteText.trim() || noteSaving} className="rounded-component bg-signal px-3 py-2 text-sm font-label text-white disabled:cursor-not-allowed disabled:opacity-50">{noteSaving ? "Guardando..." : "Guardar nota"}</button></div></div></div></div> : null}
     </section>
   );
 }
