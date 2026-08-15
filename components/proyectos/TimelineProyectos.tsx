@@ -286,13 +286,6 @@ export function TimelineProyectos({ proyectos, clientes, currentUserId, onSelect
 
   return (
     <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-card border border-line-soft bg-white shadow-card">
-      <div className="flex flex-wrap items-center justify-end gap-3 border-b border-line-soft px-5 py-3 text-xs text-graphite">
-        <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-signal" />Duración</span>
-        <span className="flex items-center gap-1.5"><DollarSignIcon size={14} className="text-emerald-600" />Pago</span>
-        <span className="flex items-center gap-1.5"><VideoIcon size={14} className="text-violet-600" />Reunión</span>
-        <span className="ml-2 flex items-center gap-1.5 font-label text-signal"><span className="h-2.5 w-2.5 rounded-full bg-signal" />Semana actual</span>
-      </div>
-
       <div className="overflow-x-auto overscroll-x-contain pb-3">
         <div className="min-w-[3716px]">
           <div className="grid grid-cols-[260px_repeat(48,minmax(72px,1fr))]">
