@@ -289,9 +289,9 @@ export function TimelineProyectos({ proyectos, clientes, currentUserId, onSelect
       <div className="overflow-x-auto overscroll-x-contain pb-3">
         <div className="min-w-[3716px]">
           <div className="grid grid-cols-[260px_repeat(48,minmax(72px,1fr))]">
-            <div className="sticky left-0 z-20 border-b-2 border-line bg-white px-3 pb-3 text-[11px] font-label uppercase tracking-wider text-graphite">Proyecto</div>
+            <div className="sticky left-0 z-20 border-b-2 border-r-2 border-line bg-white px-3 pb-3 text-[11px] font-label uppercase tracking-wider text-graphite">Proyecto</div>
             {months.map((month) => <div key={month} className="border-b-2 border-l border-line px-2 pb-3 text-center text-xs font-title capitalize text-carbon" style={{ gridColumn: `span ${WEEKS_PER_MONTH}` }}>{month}</div>)}
-            <div className="sticky left-0 z-20 border-b-2 border-line bg-white px-3 py-2 text-[11px] text-graphite">Semanas</div>
+            <div className="sticky left-0 z-20 border-b-2 border-r-2 border-line bg-white px-3 py-2 text-[11px] text-graphite">Semanas</div>
             {weeks.map((week) => <div key={week} className={cn("relative border-b-2 border-l border-line py-2 text-center text-[10px] text-graphite", week % WEEKS_PER_MONTH === 0 && "border-l-slate-300", week === currentWeek && "bg-signal-light/50 font-title text-signal")}><span>{(week % WEEKS_PER_MONTH) + 1}</span>{week === currentWeek ? <span className="absolute -top-1 left-1/2 h-2 w-2 -translate-x-1/2 rounded-full bg-signal" title="Semana actual" /> : null}</div>)}
 
             {projectRows.map((project, index) => {
@@ -303,7 +303,7 @@ export function TimelineProyectos({ proyectos, clientes, currentUserId, onSelect
               const alias = ["funes", "ha", "abc"][index];
               const projectEvents = events.filter((event) => event.proyectoId === project.id || event.proyectoId === alias || event.clientId === project.cliente_id);
               return <div key={project.id} className="contents">
-                <div className="sticky left-0 z-10 grid h-[168px] grid-cols-[minmax(0,1fr)_48px] grid-rows-[56px_56px_56px] border-b-2 border-line bg-white">
+                <div className="sticky left-0 z-10 grid h-[168px] grid-cols-[minmax(0,1fr)_48px] grid-rows-[56px_56px_56px] border-b-2 border-r-2 border-line bg-white">
                   <button type="button" onClick={() => onSelectProject(project.id)} className="group row-span-3 flex min-w-0 flex-col justify-center px-3 text-left hover:bg-paper"><span className="text-sm font-title text-carbon group-hover:text-signal">{clientName}</span><span className="mt-1 truncate text-xs text-graphite">{project.nombre}</span><span className="mt-2 flex items-center gap-1.5 text-[10px] text-graphite"><span className="h-1.5 w-1.5 rounded-full bg-signal" />{project.avance_pct ?? 0}% avance</span></button>
                   <div className="row-span-3 grid grid-rows-[56px_56px_56px] border-l border-line text-graphite"><span className="flex items-center justify-center border-b border-line-soft text-sm" title="Duración">■</span><span className="flex items-center justify-center border-b border-line-soft text-base" title="Hitos de pago">$</span><span className="flex items-center justify-center text-base" title="Reuniones"><VideoIcon size={18} /></span></div>
                 </div>
