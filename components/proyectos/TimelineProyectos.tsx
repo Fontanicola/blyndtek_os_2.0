@@ -32,16 +32,12 @@ const WEEK_PERCENT = 100 / TOTAL_WEEKS;
 const weeks = Array.from({ length: TOTAL_WEEKS }, (_, index) => index);
 const seedEvents: TimelineEvent[] = [
   { id: "funes-pago-1", proyectoId: "funes", week: 0, type: "pago", label: "Inicial", amount: 1500 },
-  { id: "funes-reunion-1", proyectoId: "funes", week: 1, type: "reunion", label: "Kickoff" },
   { id: "ha-pago-1", proyectoId: "ha", week: 0, type: "pago", label: "Inicial", amount: 2200 },
-  { id: "ha-reunion-1", proyectoId: "ha", week: 4, type: "reunion", label: "Seguimiento" },
   { id: "ha-pago-2", proyectoId: "ha", week: 8, type: "pago", label: "Cuota 2", amount: 1800 },
-  { id: "ha-reunion-2", proyectoId: "ha", week: 12, type: "reunion", label: "Revisión" },
   { id: "abc-pago-1", proyectoId: "abc", week: 0, type: "pago", label: "Inicial", amount: 1000 },
   { id: "abc-pago-2", proyectoId: "abc", week: 4, type: "pago", label: "Cuota 2", amount: 1000 },
   { id: "abc-pago-3", proyectoId: "abc", week: 8, type: "pago", label: "Cuota 3", amount: 1000 },
-  { id: "abc-pago-4", proyectoId: "abc", week: 12, type: "pago", label: "Cuota 4", amount: 1000 },
-  { id: "abc-reunion-1", proyectoId: "abc", week: 6, type: "reunion", label: "Demo" }
+  { id: "abc-pago-4", proyectoId: "abc", week: 12, type: "pago", label: "Cuota 4", amount: 1000 }
 ];
 
 function getClientName(id: string, clients: TimelineProyectosProps["clientes"]) {
@@ -54,6 +50,11 @@ function formatMoney(value: number) {
 
 function formatEventDate(value: Date | string) {
   return new Intl.DateTimeFormat("es-AR", { day: "2-digit", month: "short" }).format(new Date(value)).replace(".", "");
+}
+
+function toDateInputValue(date: Date) {
+  const pad = (value: number) => value.toString().padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 }
 
 function getWeekIndex(value: string | Date, timelineStart: Date) {
@@ -111,6 +112,7 @@ export function TimelineProyectos({ proyectos, clientes, currentUserId, onSelect
   const [eventType, setEventType] = useState<EventType>("reunion");
   const [eventLabel, setEventLabel] = useState("");
   const [eventAmount, setEventAmount] = useState("");
+  const [eventDate, setEventDate] = useState("");
   const [eventSaving, setEventSaving] = useState(false);
   const [eventError, setEventError] = useState<string | null>(null);
 
@@ -132,7 +134,7 @@ export function TimelineProyectos({ proyectos, clientes, currentUserId, onSelect
           label: meeting.titulo.replace(/^Cancelada · /, ""),
           date: meeting.fecha_inicio
         }));
-        setEvents((current) => [...current.filter((event) => event.type !== "reunion" || event.proyectoId), ...meetings]);
+        setEvents((current) => [...current.filter((event) => event.type !== "reunion"), ...meetings]);
       } catch {
         // El timeline mantiene sus hitos locales si el calendario no está disponible.
       }
@@ -153,12 +155,13 @@ export function TimelineProyectos({ proyectos, clientes, currentUserId, onSelect
     setActiveCell({ proyectoId: project.id, clientId: project.cliente_id, week });
     setEventLabel("");
     setEventAmount("");
+    setEventDate(toDateInputValue(getWeekDate(week, timelineStart)));
     setEventError(null);
   }
 
   async function saveEvent() {
     if (!activeCell || !eventLabel.trim() || eventSaving) return;
-    const date = getWeekDate(activeCell.week, timelineStart);
+    const date = eventDate ? new Date(`${eventDate}T10:00:00`) : getWeekDate(activeCell.week, timelineStart);
 
     if (eventType === "pago") {
       setEvents((current) => [...current, { id: `${Date.now()}`, ...activeCell, type: "pago", label: eventLabel.trim(), amount: Number(eventAmount) || 0, date: date.toISOString() }]);
@@ -182,8 +185,6 @@ export function TimelineProyectos({ proyectos, clientes, currentUserId, onSelect
           usuario_id: currentUserId ?? undefined,
           relacion_tipo: activeCell.clientId ? "cliente" : null,
           relacion_id: activeCell.clientId || null,
-          referencia_tipo: "lead",
-          referencia_id: currentUserId ?? undefined,
           crear_meet: false
         })
       });
@@ -230,7 +231,7 @@ export function TimelineProyectos({ proyectos, clientes, currentUserId, onSelect
                   {weeks.map((week) => <button key={`${project.id}-${week}`} type="button" onClick={() => openCell(project, week)} aria-label={`Agregar evento en semana ${week + 1}`} className={cn("absolute top-0 h-full border-l border-line-soft/70 hover:bg-signal-light/30", week === 0 && "border-l-0", week === currentWeek && "bg-signal-light/20")} style={{ left: `${week * WEEK_PERCENT}%`, width: `${WEEK_PERCENT}%` }} />)}
                   <div className="pointer-events-none absolute left-0 right-0 top-2 h-10"><div className={`absolute h-10 overflow-hidden rounded-component border px-3 py-2 text-sm font-label text-carbon shadow-sm ${position.remainingClass}`} style={{ left: `${position.start * WEEK_PERCENT}%`, width: `${position.length * WEEK_PERCENT}%` }}><div className="absolute inset-y-0 left-0 bg-signal-light" style={{ width: `${position.progressPct}%` }} /><span className="relative truncate">{project.nombre}</span></div></div>
                   <div className="pointer-events-none absolute left-0 right-0 top-[64px] h-10">{projectEvents.filter((event) => event.type === "pago").map((event) => <span key={event.id} title={event.label} className="absolute flex h-10 min-w-0 overflow-hidden items-center justify-center rounded-component border border-emerald-200 bg-emerald-50 px-1 text-[10px] font-label text-emerald-800 shadow-sm" style={{ left: `calc(${event.week * WEEK_PERCENT}% + 2px)`, width: `calc(${WEEK_PERCENT}% - 4px)` }}><span className="min-w-0 truncate">{event.amount != null ? formatMoney(event.amount) : "$ —"}</span></span>)}</div>
-                  <div className="pointer-events-none absolute left-0 right-0 top-[120px] h-10">{projectEvents.filter((event) => event.type === "reunion").map((event) => <span key={event.id} title={event.label} className="absolute flex h-10 min-w-0 overflow-hidden items-center justify-center gap-1 rounded-component border border-violet-200 bg-violet-50 px-1 text-[10px] font-label text-violet-800 shadow-sm" style={{ left: `calc(${event.week * WEEK_PERCENT}% + 2px)`, width: `calc(${WEEK_PERCENT}% - 4px)` }}><VideoIcon size={12} className="shrink-0" /><span className="min-w-0 truncate">{event.date ? formatEventDate(event.date) : event.label}</span></span>)}</div>
+                  <div className="pointer-events-none absolute left-0 right-0 top-[120px] h-10">{projectEvents.filter((event) => event.type === "reunion").map((event) => <span key={event.id} title={event.date ? formatEventDate(event.date) : "Reunión"} className="absolute flex h-10 min-w-0 overflow-hidden items-center justify-center gap-1 rounded-component border border-violet-200 bg-violet-50 px-1 text-[10px] font-label text-violet-800 shadow-sm" style={{ left: `calc(${event.week * WEEK_PERCENT}% + 2px)`, width: `calc(${WEEK_PERCENT}% - 4px)` }}><VideoIcon size={12} className="shrink-0" /><span className="min-w-0 truncate">{event.date ? formatEventDate(event.date) : "Sin fecha"}</span></span>)}</div>
                 </div>
               </div>;
             })}
@@ -238,7 +239,7 @@ export function TimelineProyectos({ proyectos, clientes, currentUserId, onSelect
         </div>
       </div>
 
-      {activeCell ? <div className="fixed inset-0 z-50 flex items-center justify-center bg-carbon/20 p-4" onMouseDown={() => setActiveCell(null)}><div className="w-full max-w-sm rounded-card border border-line-soft bg-white p-5 shadow-modal" onMouseDown={(event) => event.stopPropagation()}><h3 className="text-base font-title text-carbon">Agregar al timeline</h3><p className="mt-1 text-sm text-graphite">Semana {activeCell.week + 1} · {months[Math.floor(activeCell.week / WEEKS_PER_MONTH)]} · {formatEventDate(getWeekDate(activeCell.week, timelineStart))}</p><div className="mt-4 space-y-3"><select value={eventType} onChange={(event) => setEventType(event.target.value as EventType)} className="w-full rounded-component border border-line bg-white px-3 py-2 text-sm text-carbon focus:border-signal focus:outline-none focus:ring-2 focus:ring-signal/20"><option value="reunion">Reunión</option><option value="pago">Hito de pago</option></select><input autoFocus value={eventLabel} onChange={(event) => setEventLabel(event.target.value)} onKeyDown={(event) => event.key === "Enter" && void saveEvent()} placeholder={eventType === "pago" ? "Ej. Cuota 2" : "Ej. Demo con cliente"} className="w-full rounded-component border border-line px-3 py-2 text-sm text-carbon outline-none focus:border-signal focus:ring-2 focus:ring-signal/20" />{eventType === "pago" ? <input value={eventAmount} onChange={(event) => setEventAmount(event.target.value)} type="number" min="0" placeholder="Monto a pagar (USD)" className="w-full rounded-component border border-line px-3 py-2 text-sm text-carbon outline-none focus:border-signal focus:ring-2 focus:ring-signal/20" /> : null}{eventError ? <p className="text-xs text-danger">{eventError}</p> : null}<div className="flex justify-end gap-2 pt-2"><button type="button" onClick={() => setActiveCell(null)} className="rounded-component px-3 py-2 text-sm text-graphite hover:bg-paper">Cancelar</button><button type="button" onClick={() => void saveEvent()} disabled={!eventLabel.trim() || eventSaving} className="rounded-component bg-signal px-3 py-2 text-sm font-label text-white disabled:cursor-not-allowed disabled:opacity-50">{eventSaving ? "Guardando..." : "Agregar"}</button></div></div></div></div> : null}
+      {activeCell ? <div className="fixed inset-0 z-50 flex items-center justify-center bg-carbon/20 p-4" onMouseDown={() => setActiveCell(null)}><div className="w-full max-w-sm rounded-card border border-line-soft bg-white p-5 shadow-modal" onMouseDown={(event) => event.stopPropagation()}><h3 className="text-base font-title text-carbon">Agregar al timeline</h3><p className="mt-1 text-sm text-graphite">Semana {activeCell.week + 1} · {months[Math.floor(activeCell.week / WEEKS_PER_MONTH)]}</p><div className="mt-4 space-y-3"><select value={eventType} onChange={(event) => setEventType(event.target.value as EventType)} className="w-full rounded-component border border-line bg-white px-3 py-2 text-sm text-carbon focus:border-signal focus:outline-none focus:ring-2 focus:ring-signal/20"><option value="reunion">Reunión</option><option value="pago">Hito de pago</option></select>{eventType === "reunion" ? <label className="block space-y-1 text-sm font-label text-carbon">Fecha de la reunión<input type="date" value={eventDate} onChange={(event) => setEventDate(event.target.value)} className="mt-1 w-full rounded-component border border-line px-3 py-2 text-sm font-normal text-carbon outline-none focus:border-signal focus:ring-2 focus:ring-signal/20" /></label> : null}<input autoFocus value={eventLabel} onChange={(event) => setEventLabel(event.target.value)} onKeyDown={(event) => event.key === "Enter" && void saveEvent()} placeholder={eventType === "pago" ? "Ej. Cuota 2" : "Ej. Demo con cliente"} className="w-full rounded-component border border-line px-3 py-2 text-sm text-carbon outline-none focus:border-signal focus:ring-2 focus:ring-signal/20" />{eventType === "pago" ? <input value={eventAmount} onChange={(event) => setEventAmount(event.target.value)} type="number" min="0" placeholder="Monto a pagar (USD)" className="w-full rounded-component border border-line px-3 py-2 text-sm text-carbon outline-none focus:border-signal focus:ring-2 focus:ring-signal/20" /> : null}{eventError ? <p className="text-xs text-danger">{eventError}</p> : null}<div className="flex justify-end gap-2 pt-2"><button type="button" onClick={() => setActiveCell(null)} className="rounded-component px-3 py-2 text-sm text-graphite hover:bg-paper">Cancelar</button><button type="button" onClick={() => void saveEvent()} disabled={!eventLabel.trim() || eventSaving} className="rounded-component bg-signal px-3 py-2 text-sm font-label text-white disabled:cursor-not-allowed disabled:opacity-50">{eventSaving ? "Guardando..." : "Agregar"}</button></div></div></div></div> : null}
     </section>
   );
 }
