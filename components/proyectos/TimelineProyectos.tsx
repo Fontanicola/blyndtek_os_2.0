@@ -5,6 +5,7 @@ import { VideoIcon } from "@/components/ui/icons";
 import { cn } from "@/lib/cn";
 import { buildRecurrenceOccurrences, type FrecuenciaReunion } from "@/lib/eventos/recurrencia";
 import type { Evento } from "@/types/eventos";
+import type { Cobro } from "@/types/cobros";
 import type { Proyecto } from "@/types/proyectos";
 
 type TimelineProyectosProps = {
@@ -15,13 +16,12 @@ type TimelineProyectosProps = {
   onUpdateProject: (id: string, input: { fecha_inicio?: string | null; entrega_comprometida?: string | null }) => Promise<Proyecto>;
 };
 
-type EventType = "pago" | "reunion";
 type TimelineEvent = {
   id: string;
   proyectoId: string;
   clientId?: string | null;
   week: number;
-  type: EventType;
+  type: "pago" | "reunion";
   label: string;
   amount?: number;
   date?: string;
@@ -34,16 +34,6 @@ const TOTAL_DAYS = TOTAL_WEEKS * 7;
 const DAY_MS = 24 * 60 * 60 * 1000;
 const WEEK_PERCENT = 100 / TOTAL_WEEKS;
 const weeks = Array.from({ length: TOTAL_WEEKS }, (_, index) => index);
-const seedEvents: TimelineEvent[] = [
-  { id: "funes-pago-1", proyectoId: "funes", week: 0, type: "pago", label: "Inicial", amount: 1500 },
-  { id: "ha-pago-1", proyectoId: "ha", week: 0, type: "pago", label: "Inicial", amount: 2200 },
-  { id: "ha-pago-2", proyectoId: "ha", week: 8, type: "pago", label: "Cuota 2", amount: 1800 },
-  { id: "abc-pago-1", proyectoId: "abc", week: 0, type: "pago", label: "Inicial", amount: 1000 },
-  { id: "abc-pago-2", proyectoId: "abc", week: 4, type: "pago", label: "Cuota 2", amount: 1000 },
-  { id: "abc-pago-3", proyectoId: "abc", week: 8, type: "pago", label: "Cuota 3", amount: 1000 },
-  { id: "abc-pago-4", proyectoId: "abc", week: 12, type: "pago", label: "Cuota 4", amount: 1000 }
-];
-
 function getClientName(id: string, clients: TimelineProyectosProps["clientes"]) {
   return clients.find((client) => client.id === id)?.empresa ?? "Cliente";
 }
@@ -80,7 +70,7 @@ function getTimelinePercent(value: Date, timelineStart: Date) {
 }
 
 function getWeekIndex(value: string | Date, timelineStart: Date) {
-  const date = new Date(value);
+  const date = typeof value === "string" && value.length === 10 ? parseProjectDate(value) : new Date(value);
   return Math.max(0, Math.min(TOTAL_WEEKS - 1, Math.floor((date.getTime() - timelineStart.getTime()) / (7 * 24 * 60 * 60 * 1000))));
 }
 
@@ -129,11 +119,9 @@ export function TimelineProyectos({ proyectos, clientes, currentUserId, onSelect
     return new Intl.DateTimeFormat("es-AR", { month: "long" }).format(date);
   }), [timelineStart]);
   const currentWeek = getWeekIndex(new Date(), timelineStart);
-  const [events, setEvents] = useState<TimelineEvent[]>(seedEvents);
+  const [events, setEvents] = useState<TimelineEvent[]>([]);
   const [activeCell, setActiveCell] = useState<{ proyectoId: string; clientId: string; week: number } | null>(null);
-  const [eventType, setEventType] = useState<EventType>("reunion");
   const [eventLabel, setEventLabel] = useState("");
-  const [eventAmount, setEventAmount] = useState("");
   const [eventDate, setEventDate] = useState("");
   const [eventTime, setEventTime] = useState("10:00");
   const [recurrenceFrequency, setRecurrenceFrequency] = useState<FrecuenciaReunion | null>(null);
@@ -147,13 +135,27 @@ export function TimelineProyectos({ proyectos, clientes, currentUserId, onSelect
   useEffect(() => {
     let cancelled = false;
 
-    async function loadMeetings() {
+    async function loadTimelineEvents() {
       try {
-        const response = await fetch("/api/eventos?tipo=reunion", { cache: "no-store" });
-        const payload = (await response.json()) as { data?: Evento[] };
-        if (!response.ok || cancelled) return;
+        const [meetingsResponse, cobrosResponse] = await Promise.all([
+          fetch("/api/eventos?tipo=reunion", { cache: "no-store" }),
+          fetch("/api/cobros", { cache: "no-store" })
+        ]);
+        const meetingsPayload = (await meetingsResponse.json()) as { data?: Evento[] };
+        const cobrosPayload = (await cobrosResponse.json()) as { data?: Cobro[] };
+        if (cancelled) return;
 
-        const meetings = (payload.data ?? []).map((meeting) => ({
+        const cobros = (cobrosPayload.data ?? []).map((cobro) => ({
+          id: cobro.id,
+          proyectoId: cobro.proyecto_id ?? "",
+          clientId: cobro.cliente_id,
+          week: getWeekIndex(cobro.fecha_vencimiento, timelineStart),
+          type: "pago" as const,
+          label: cobro.concepto,
+          amount: cobro.monto,
+          date: cobro.fecha_vencimiento
+        }));
+        setEvents([...cobros, ...(meetingsPayload.data ?? []).map((meeting) => ({
           id: meeting.id,
           proyectoId: "",
           clientId: meeting.relacion_id,
@@ -161,14 +163,13 @@ export function TimelineProyectos({ proyectos, clientes, currentUserId, onSelect
           type: "reunion" as const,
           label: meeting.titulo.replace(/^Cancelada · /, ""),
           date: meeting.fecha_inicio
-        }));
-        setEvents((current) => [...current.filter((event) => event.type !== "reunion"), ...meetings]);
+        }))]);
       } catch {
-        // El timeline mantiene sus hitos locales si el calendario no está disponible.
+        // El timeline queda vacío si las fuentes reales no están disponibles.
       }
     }
 
-    void loadMeetings();
+    void loadTimelineEvents();
     return () => { cancelled = true; };
   }, [timelineStart]);
 
@@ -182,7 +183,6 @@ export function TimelineProyectos({ proyectos, clientes, currentUserId, onSelect
   function openCell(project: Proyecto, week: number) {
     setActiveCell({ proyectoId: project.id, clientId: project.cliente_id, week });
     setEventLabel("");
-    setEventAmount("");
     setEventDate(toDateInputValue(getWeekDate(week, timelineStart)));
     setEventTime("10:00");
     setRecurrenceFrequency(null);
@@ -192,15 +192,8 @@ export function TimelineProyectos({ proyectos, clientes, currentUserId, onSelect
 
   async function saveEvent() {
     if (!activeCell || eventSaving) return;
-    const label = eventLabel.trim() || (eventType === "reunion" ? "Reunión" : "");
-    if (!label) return;
+    const label = eventLabel.trim() || "Reunión";
     const date = eventDate ? new Date(`${eventDate}T${eventTime || "10:00"}:00`) : getWeekDate(activeCell.week, timelineStart);
-
-    if (eventType === "pago") {
-      setEvents((current) => [...current, { id: `${Date.now()}`, ...activeCell, type: "pago", label, amount: Number(eventAmount) || 0, date: date.toISOString() }]);
-      setActiveCell(null);
-      return;
-    }
 
     setEventSaving(true);
     setEventError(null);
@@ -305,7 +298,7 @@ export function TimelineProyectos({ proyectos, clientes, currentUserId, onSelect
               const resolvedClientName = getClientName(project.cliente_id, clientes);
               const clientName = resolvedClientName === "Cliente" ? ["Funes", "HA", "ABC"][index] ?? "Cliente" : resolvedClientName;
               const alias = ["funes", "ha", "abc"][index];
-              const projectEvents = events.filter((event) => event.proyectoId === project.id || event.proyectoId === alias || event.clientId === project.cliente_id);
+              const projectEvents = events.filter((event) => event.proyectoId === project.id || event.proyectoId === alias || (!event.proyectoId && event.clientId === project.cliente_id));
               return <div key={project.id} className="contents">
                 <div className="sticky left-0 z-10 grid h-[168px] grid-cols-[minmax(0,1fr)_48px] grid-rows-[56px_56px_56px] border-b-2 border-r-2 border-line bg-white">
                   <button type="button" onClick={() => onSelectProject(project.id)} className="group row-span-3 flex min-w-0 flex-col justify-center px-3 text-left hover:bg-paper"><span className="text-sm font-title text-carbon group-hover:text-signal">{clientName}</span><span className="mt-1 truncate text-xs text-graphite">{project.nombre}</span><span className="mt-2 flex items-center gap-1.5 text-[10px] text-graphite"><span className="h-1.5 w-1.5 rounded-full bg-signal" />{project.avance_pct ?? 0}% avance</span></button>
@@ -339,7 +332,7 @@ export function TimelineProyectos({ proyectos, clientes, currentUserId, onSelect
 
       {scheduleError ? <div className="border-t border-danger/20 bg-danger-light px-5 py-2 text-xs text-danger">{scheduleError}</div> : null}
 
-      {activeCell ? <div className="fixed inset-0 z-50 flex items-center justify-center bg-carbon/20 p-4" onMouseDown={() => setActiveCell(null)}><div className="w-full max-w-sm rounded-card border border-line-soft bg-white p-5 shadow-modal" onMouseDown={(event) => event.stopPropagation()}><h3 className="text-base font-title text-carbon">Agregar al timeline</h3><p className="mt-1 text-sm text-graphite">Semana {activeCell.week + 1} · {months[Math.floor(activeCell.week / WEEKS_PER_MONTH)]}</p><div className="mt-4 space-y-3"><select value={eventType} onChange={(event) => setEventType(event.target.value as EventType)} className="w-full rounded-component border border-line bg-white px-3 py-2 text-sm text-carbon focus:border-signal focus:outline-none focus:ring-2 focus:ring-signal/20"><option value="reunion">Reunión</option><option value="pago">Hito de pago</option></select>{eventType === "reunion" ? <><div className="grid grid-cols-2 gap-2"><label className="block space-y-1 text-sm font-label text-carbon">Fecha<input type="date" value={eventDate} onChange={(event) => setEventDate(event.target.value)} className="mt-1 w-full rounded-component border border-line px-2 py-2 text-sm font-normal text-carbon outline-none focus:border-signal focus:ring-2 focus:ring-signal/20" /></label><label className="block space-y-1 text-sm font-label text-carbon">Horario<input type="time" value={eventTime} onChange={(event) => setEventTime(event.target.value)} className="mt-1 w-full rounded-component border border-line px-2 py-2 text-sm font-normal text-carbon outline-none focus:border-signal focus:ring-2 focus:ring-signal/20" /></label></div><label className="flex items-center gap-2 text-sm font-label text-carbon"><input type="checkbox" checked={Boolean(recurrenceFrequency)} onChange={(event) => setRecurrenceFrequency(event.target.checked ? "semanal" : null)} className="h-4 w-4 accent-signal" /> Repetir reunión</label>{recurrenceFrequency ? <div className="grid grid-cols-2 gap-2"><select value={recurrenceFrequency} onChange={(event) => setRecurrenceFrequency(event.target.value as FrecuenciaReunion)} className="rounded-component border border-line bg-white px-2 py-2 text-sm text-carbon"><option value="semanal">Cada semana</option><option value="quincenal">Cada 2 semanas</option><option value="mensual">Cada mes</option></select><input type="date" min={eventDate} value={recurrenceUntil} onChange={(event) => setRecurrenceUntil(event.target.value)} className="rounded-component border border-line px-2 py-2 text-sm text-carbon" /></div> : null}</> : null}<input autoFocus value={eventLabel} onChange={(event) => setEventLabel(event.target.value)} onKeyDown={(event) => event.key === "Enter" && void saveEvent()} placeholder={eventType === "pago" ? "Ej. Cuota 2" : "Título opcional (Reunión)"} className="w-full rounded-component border border-line px-3 py-2 text-sm text-carbon outline-none focus:border-signal focus:ring-2 focus:ring-signal/20" />{eventType === "pago" ? <input value={eventAmount} onChange={(event) => setEventAmount(event.target.value)} type="number" min="0" placeholder="Monto a pagar (USD)" className="w-full rounded-component border border-line px-3 py-2 text-sm text-carbon outline-none focus:border-signal focus:ring-2 focus:ring-signal/20" /> : null}{eventError ? <p className="text-xs text-danger">{eventError}</p> : null}<div className="flex justify-end gap-2 pt-2"><button type="button" onClick={() => setActiveCell(null)} className="rounded-component px-3 py-2 text-sm text-graphite hover:bg-paper">Cancelar</button><button type="button" onClick={() => void saveEvent()} disabled={(eventType === "pago" && !eventLabel.trim()) || eventSaving} className="rounded-component bg-signal px-3 py-2 text-sm font-label text-white disabled:cursor-not-allowed disabled:opacity-50">{eventSaving ? "Guardando..." : "Agregar"}</button></div></div></div></div> : null}
+      {activeCell ? <div className="fixed inset-0 z-50 flex items-center justify-center bg-carbon/20 p-4" onMouseDown={() => setActiveCell(null)}><div className="w-full max-w-sm rounded-card border border-line-soft bg-white p-5 shadow-modal" onMouseDown={(event) => event.stopPropagation()}><h3 className="text-base font-title text-carbon">Agregar al timeline</h3><p className="mt-1 text-sm text-graphite">Semana {activeCell.week + 1} · {months[Math.floor(activeCell.week / WEEKS_PER_MONTH)]}</p><div className="mt-4 space-y-3"><div className="grid grid-cols-2 gap-2"><label className="block space-y-1 text-sm font-label text-carbon">Fecha<input type="date" value={eventDate} onChange={(event) => setEventDate(event.target.value)} className="mt-1 w-full rounded-component border border-line px-2 py-2 text-sm font-normal text-carbon outline-none focus:border-signal focus:ring-2 focus:ring-signal/20" /></label><label className="block space-y-1 text-sm font-label text-carbon">Horario<input type="time" value={eventTime} onChange={(event) => setEventTime(event.target.value)} className="mt-1 w-full rounded-component border border-line px-2 py-2 text-sm font-normal text-carbon outline-none focus:border-signal focus:ring-2 focus:ring-signal/20" /></label></div><label className="flex items-center gap-2 text-sm font-label text-carbon"><input type="checkbox" checked={Boolean(recurrenceFrequency)} onChange={(event) => setRecurrenceFrequency(event.target.checked ? "semanal" : null)} className="h-4 w-4 accent-signal" /> Repetir reunión</label>{recurrenceFrequency ? <div className="grid grid-cols-2 gap-2"><select value={recurrenceFrequency} onChange={(event) => setRecurrenceFrequency(event.target.value as FrecuenciaReunion)} className="rounded-component border border-line bg-white px-2 py-2 text-sm text-carbon"><option value="semanal">Cada semana</option><option value="quincenal">Cada 2 semanas</option><option value="mensual">Cada mes</option></select><input type="date" min={eventDate} value={recurrenceUntil} onChange={(event) => setRecurrenceUntil(event.target.value)} className="rounded-component border border-line px-2 py-2 text-sm text-carbon" /></div> : null}<input autoFocus value={eventLabel} onChange={(event) => setEventLabel(event.target.value)} onKeyDown={(event) => event.key === "Enter" && void saveEvent()} placeholder="Título opcional (Reunión)" className="w-full rounded-component border border-line px-3 py-2 text-sm text-carbon outline-none focus:border-signal focus:ring-2 focus:ring-signal/20" />{eventError ? <p className="text-xs text-danger">{eventError}</p> : null}<div className="flex justify-end gap-2 pt-2"><button type="button" onClick={() => setActiveCell(null)} className="rounded-component px-3 py-2 text-sm text-graphite hover:bg-paper">Cancelar</button><button type="button" onClick={() => void saveEvent()} disabled={eventSaving} className="rounded-component bg-signal px-3 py-2 text-sm font-label text-white disabled:cursor-not-allowed disabled:opacity-50">{eventSaving ? "Guardando..." : "Agregar"}</button></div></div></div></div> : null}
     </section>
   );
 }
