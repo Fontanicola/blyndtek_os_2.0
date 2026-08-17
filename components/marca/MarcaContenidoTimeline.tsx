@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { Button } from "@/components/ui";
 import { CalendarIcon, ClockIcon, PlusIcon } from "@/components/ui/icons";
 import { cn } from "@/lib/cn";
@@ -53,6 +53,16 @@ export function MarcaContenidoTimeline({ canales, piezas, onOpen, onCreate, onAd
     return Array.from({ length: 32 }, (_, index) => new Date(first.getTime() + index * WEEK_MS));
   }, []);
   const todayKey = toDateKey(new Date());
+  const currentWeekIndex = useMemo(() => weeks.findIndex((week) => toDateKey(week) === todayKey), [todayKey, weeks]);
+
+  useEffect(() => {
+    if (!scrollerRef.current || currentWeekIndex < 0) return;
+    const frame = window.requestAnimationFrame(() => {
+      if (scrollerRef.current) scrollerRef.current.scrollLeft = currentWeekIndex * WEEK_WIDTH;
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [currentWeekIndex]);
+
   const monthGroups = useMemo(() => {
     const groups: Array<{ key: string; label: string; start: number; count: number }> = [];
     weeks.forEach((week, index) => {
