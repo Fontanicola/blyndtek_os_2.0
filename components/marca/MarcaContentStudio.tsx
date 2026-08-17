@@ -117,8 +117,12 @@ export function MarcaContentStudio({ initialTab = "feed" }: MarcaContentStudioPr
   async function handleAddChannel() {
     const name = window.prompt("Nombre del nuevo canal");
     if (!name?.trim()) return;
-    await createCanal({ nombre: name.trim() });
-    await load();
+    try {
+      await createCanal({ nombre: name.trim() });
+      await load();
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : "No se pudo crear el canal.");
+    }
   }
 
   async function handleSave(id: string, payload: Partial<PiezaContenido>) {
