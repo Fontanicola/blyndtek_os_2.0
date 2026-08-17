@@ -36,6 +36,40 @@ function normalizeHashtag(value: string) {
   return trimmed ? `#${trimmed}` : "";
 }
 
+async function prepareFeedImage(file: File) {
+  if (typeof window === "undefined" || !file.type.startsWith("image/")) return file;
+
+  const sourceUrl = URL.createObjectURL(file);
+  try {
+    const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const element = new Image();
+      element.onload = () => resolve(element);
+      element.onerror = () => reject(new Error("No se pudo leer la imagen."));
+      element.src = sourceUrl;
+    });
+    const canvas = document.createElement("canvas");
+    canvas.width = 1080;
+    canvas.height = 1350;
+    const context = canvas.getContext("2d");
+    if (!context) return file;
+
+    const scale = Math.max(canvas.width / image.naturalWidth, canvas.height / image.naturalHeight);
+    const width = image.naturalWidth * scale;
+    const height = image.naturalHeight * scale;
+    context.drawImage(image, (canvas.width - width) / 2, (canvas.height - height) / 2, width, height);
+
+    let quality = 0.86;
+    let blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", quality));
+    while (blob && blob.size > 4 * 1024 * 1024 && quality > 0.55) {
+      quality -= 0.08;
+      blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", quality));
+    }
+    return blob ? new File([blob], `${file.name.replace(/\.[^.]+$/, "") || "feed"}.jpg`, { type: "image/jpeg" }) : file;
+  } finally {
+    URL.revokeObjectURL(sourceUrl);
+  }
+}
+
 function asRecord(value: JsonValue | null): Record<string, JsonValue | undefined> {
   return typeof value === "object" && value !== null && !Array.isArray(value) ? value : {};
 }
@@ -142,7 +176,7 @@ export function PiezaEditorModal({
 
     setUploading(true);
     try {
-      await onUploadImage(pieza.id, file);
+      await onUploadImage(pieza.id, pieza.plataforma === "instagram_feed" ? await prepareFeedImage(file) : file);
     } finally {
       setUploading(false);
     }

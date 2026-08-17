@@ -8,7 +8,10 @@ type ApiResponse<T> = {
 };
 
 async function parseResponse<T>(response: Response): Promise<T> {
-  const payload = (await response.json()) as ApiResponse<T>;
+  const contentType = response.headers.get("content-type") ?? "";
+  const payload = contentType.includes("application/json")
+    ? ((await response.json()) as ApiResponse<T>)
+    : { error: (await response.text()).trim() };
 
   if (!response.ok || !payload.data) {
     throw new Error(payload.error ?? "No se pudo completar la operación.");
