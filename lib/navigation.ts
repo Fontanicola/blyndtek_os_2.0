@@ -11,6 +11,8 @@ import {
   ArchivosIcon,
   FileTextIcon,
   GridIcon,
+  InstagramIcon,
+  LinkedinIcon,
   FinanzasIcon,
   VideoIcon,
   LayersIcon,
@@ -54,8 +56,13 @@ export const navigationItems: NavItem[] = [
     section: "top-level",
     focusKey: "marca",
     children: [
-      { label: "Feed", href: "/marca/feed", icon: createElement(GridIcon), roles: ["admin", "marketing"], section: "top-level" },
-      { label: "Historias", href: "/marca/historias", icon: createElement(SparklesIcon), roles: ["admin", "marketing"], section: "top-level" },
+      { label: "Instagram", icon: createElement(InstagramIcon), roles: ["admin", "marketing"], section: "top-level", children: [
+        { label: "Feed", href: "/marca/feed", icon: createElement(GridIcon), roles: ["admin", "marketing"], section: "top-level" },
+        { label: "Historias", href: "/marca/historias", icon: createElement(SparklesIcon), roles: ["admin", "marketing"], section: "top-level" }
+      ] },
+      { label: "LinkedIn", icon: createElement(LinkedinIcon), roles: ["admin", "marketing"], section: "top-level", children: [
+        { label: "Feed", href: "/marca/linkedin/feed", icon: createElement(GridIcon), roles: ["admin", "marketing"], section: "top-level" }
+      ] },
       { label: "Calendario", href: "/marca/calendario", icon: createElement(CalendarioIcon), roles: ["admin", "marketing"], section: "top-level" },
       { label: "Identidad de marca", href: "/marca/identidad", icon: createElement(FileTextIcon), roles: ["admin", "marketing"], section: "top-level" }
     ]

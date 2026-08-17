@@ -137,6 +137,20 @@ type NavigationGroupProps = {
   iconClassName?: string;
 };
 
+function NestedNavigationGroup({ item, pathname, collapsed, mobile, onClose }: { item: NavItem; pathname: string; collapsed: boolean; mobile: boolean; onClose?: () => void }) {
+  const [expanded, setExpanded] = useState(true);
+  const isActive = isNavItemActive(pathname, item) || hasActiveItem(pathname, item.children ?? []);
+
+  return <div className="space-y-1">
+    <button type="button" onClick={() => setExpanded((current) => !current)} className={cn("group relative z-10 mx-2 flex w-[calc(100%-1rem)] items-center gap-3 rounded-component px-3 py-2 text-left", "[&_svg]:h-5 [&_svg]:w-5", isActive ? "bg-white/80 text-carbon" : "hover:bg-white/70", collapsed && "justify-center px-0")} aria-expanded={expanded} title={collapsed ? item.label : undefined}>
+      <span className={cn("text-graphite group-hover:text-carbon", isActive && "text-signal")}>{item.icon}</span>
+      {collapsed ? null : <span className={cn("text-sm font-label", isActive ? "text-signal" : "text-graphite group-hover:text-carbon")}>{item.label}</span>}
+      {!collapsed ? <ChevronDownIcon className={cn("ml-auto h-4 w-4 text-graphite transition-transform", expanded ? "rotate-180" : "")} /> : null}
+    </button>
+    {!collapsed && expanded ? <div className="space-y-1">{item.children?.map((child) => <NavigationRow key={child.href ?? child.label} item={child} pathname={pathname} collapsed={collapsed} mobile={mobile} onClose={onClose} level={1} />)}</div> : null}
+  </div>;
+}
+
 function NavigationGroup({
   groupKey,
   label,
@@ -206,17 +220,7 @@ function NavigationGroup({
         >
           <div className="min-h-0 overflow-hidden">
             <div className="mx-2 space-y-1 rounded-card border border-line-soft/80 bg-white/45 px-2 py-2">
-              {items.map((item) => (
-                <NavigationRow
-                  key={item.href ?? item.label}
-                  item={item}
-                  pathname={pathname}
-                  collapsed={collapsed}
-                  mobile={mobile}
-                  onClose={onClose}
-                  level={1}
-                />
-              ))}
+              {items.map((item) => item.children?.length ? <NestedNavigationGroup key={item.href ?? item.label} item={item} pathname={pathname} collapsed={collapsed} mobile={mobile} onClose={onClose} /> : <NavigationRow key={item.href ?? item.label} item={item} pathname={pathname} collapsed={collapsed} mobile={mobile} onClose={onClose} level={1} />)}
             </div>
           </div>
         </div>

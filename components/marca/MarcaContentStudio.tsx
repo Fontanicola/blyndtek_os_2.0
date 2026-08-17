@@ -18,6 +18,7 @@ type SocialFilter = "instagram" | "linkedin";
 
 type MarcaContentStudioProps = {
   initialTab?: StudioTab;
+  initialSocialFilter?: SocialFilter;
 };
 
 const sectionDefaults = [
@@ -97,9 +98,9 @@ function StudioTile({ pieza, onOpen, onDelete, onWorkspace, onDragStart, onDrop,
   );
 }
 
-export function MarcaContentStudio({ initialTab = "feed" }: MarcaContentStudioProps) {
+export function MarcaContentStudio({ initialTab = "feed", initialSocialFilter = "instagram" }: MarcaContentStudioProps) {
   const [tab, setTab] = useState<StudioTab>(initialTab);
-  const [socialFilter, setSocialFilter] = useState<SocialFilter>("instagram");
+  const [socialFilter, setSocialFilter] = useState<SocialFilter>(initialSocialFilter);
   const [piezas, setPiezas] = useState<PiezaContenido[]>([]);
   const [canales, setCanales] = useState<CanalContenido[]>([]);
   const [feedSlots, setFeedSlots] = useState<FeedSlotContenido[]>([]);
