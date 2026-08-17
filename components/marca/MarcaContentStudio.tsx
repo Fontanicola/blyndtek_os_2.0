@@ -35,6 +35,22 @@ function formatDate(value: string | null) {
   return new Intl.DateTimeFormat("es-AR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }).format(new Date(value));
 }
 
+function startOfWeek(value: Date) {
+  const date = new Date(value.getFullYear(), value.getMonth(), value.getDate());
+  const day = date.getDay();
+  date.setDate(date.getDate() - (day === 0 ? 6 : day - 1));
+  date.setHours(0, 0, 0, 0);
+  return date;
+}
+
+function weekKey(value: Date) {
+  return startOfWeek(value).toISOString().slice(0, 10);
+}
+
+function weekLabel(value: string) {
+  return `Semana del ${new Intl.DateTimeFormat("es-AR", { day: "2-digit", month: "2-digit" }).format(new Date(`${value}T12:00:00`))}`;
+}
+
 function isInstagramFeed(pieza: PiezaContenido) {
   return pieza.plataforma === "instagram_feed" || pieza.plataforma === "linkedin_post";
 }
@@ -96,6 +112,7 @@ export function MarcaContentStudio({ initialTab = "feed" }: MarcaContentStudioPr
   const [loading, setLoading] = useState(true);
   const [savingIdentity, setSavingIdentity] = useState<"idle" | "saving" | "saved">("idle");
   const [connecting, setConnecting] = useState<"instagram" | "linkedin" | null>(null);
+  const [manualWeeks, setManualWeeks] = useState<Record<SocialFilter, string[]>>({ instagram: [], linkedin: [] });
 
   async function load(showLoading = false) {
     if (showLoading) setLoading(true);
@@ -114,8 +131,43 @@ export function MarcaContentStudio({ initialTab = "feed" }: MarcaContentStudioPr
 
   useEffect(() => { void load(true); }, []);
 
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem("blyndtek-marca-feed-weeks");
+      if (saved) setManualWeeks(JSON.parse(saved) as Record<SocialFilter, string[]>);
+    } catch {
+      // La planificación visual puede continuar aunque el almacenamiento local no esté disponible.
+    }
+  }, []);
+
   const feedPieces = useMemo(() => piezas.filter((pieza) => isInstagramFeed(pieza) && (socialFilter === "instagram" ? pieza.plataforma === "instagram_feed" : pieza.plataforma === "linkedin_post")).sort((a, b) => Number(b.feed_pineado) - Number(a.feed_pineado) || (a.feed_orden ?? Number.MAX_SAFE_INTEGER) - (b.feed_orden ?? Number.MAX_SAFE_INTEGER) || a.created_at.localeCompare(b.created_at)), [piezas, socialFilter]);
   const storyPieces = useMemo(() => piezas.filter((pieza) => pieza.plataforma === "instagram_story"), [piezas]);
+  const currentWeek = weekKey(new Date());
+  const activeFeedPlatform = socialFilter === "instagram" ? "instagram_feed" : "linkedin_post";
+  const feedWeeks = useMemo(() => {
+    const dates = feedPieces.map((pieza, index) => {
+      const slotDate = feedSlots.find((slot) => slot.plataforma === activeFeedPlatform && slot.slot_orden === index)?.fecha_programada;
+      return slotDate ? weekKey(new Date(slotDate)) : pieza.fecha_programada ? weekKey(new Date(pieza.fecha_programada)) : null;
+    });
+    const keys = new Set<string>(manualWeeks[socialFilter] ?? []);
+    for (let index = 0; index < Math.ceil(feedPieces.length / 3); index += 1) {
+      const dated = dates.slice(index * 3, index * 3 + 3).find(Boolean);
+      keys.add(dated ?? `sin-fecha-${index}`);
+    }
+    return Array.from(keys).sort((a, b) => a.localeCompare(b));
+  }, [activeFeedPlatform, feedPieces, feedSlots, manualWeeks, socialFilter]);
+
+  function handleCreateWeek(afterWeek?: string) {
+    const suggested = afterWeek ? new Date(new Date(`${afterWeek}T12:00:00`).getTime() + 7 * 24 * 60 * 60 * 1000) : startOfWeek(new Date());
+    const value = window.prompt("Inicio de la semana (AAAA-MM-DD)", weekKey(suggested));
+    if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return;
+    const normalized = weekKey(new Date(`${value}T12:00:00`));
+    setManualWeeks((current) => {
+      const next = { ...current, [socialFilter]: Array.from(new Set([...(current[socialFilter] ?? []), normalized])).sort() };
+      window.localStorage.setItem("blyndtek-marca-feed-weeks", JSON.stringify(next));
+      return next;
+    });
+  }
   async function handleCreate(platform: "instagram_feed" | "instagram_story" | "linkedin_post") {
     const created = await createPieza({ plataforma: platform, tipo_pieza: platform === "instagram_story" ? "historia" : null, titulo: platform === "instagram_story" ? "Nueva historia" : "Nueva publicación" });
     await load();
@@ -217,9 +269,18 @@ export function MarcaContentStudio({ initialTab = "feed" }: MarcaContentStudioPr
 
       {tab === "feed" ? <section className="mx-auto max-w-3xl space-y-5">
         <div className="flex flex-wrap items-center justify-end gap-2"><div className="flex gap-1 rounded-md border border-slate-200 bg-white p-1"><button type="button" onClick={() => setSocialFilter("instagram")} className={cn("flex items-center gap-2 rounded-md px-3 py-2 text-sm font-label", socialFilter === "instagram" ? "bg-signal text-white" : "text-slate-600 hover:bg-slate-50")}><InstagramIcon size={15} /> Instagram</button><button type="button" onClick={() => setSocialFilter("linkedin")} className={cn("flex items-center gap-2 rounded-md px-3 py-2 text-sm font-label", socialFilter === "linkedin" ? "bg-signal text-white" : "text-slate-600 hover:bg-slate-50")}><LinkedinIcon size={15} /> LinkedIn</button></div></div>
-        <div className="grid grid-cols-3 gap-4">
-          {feedPieces.map((pieza) => <div key={pieza.id}><StudioTile ratio="portrait" pieza={pieza} onOpen={setSelected} onDelete={handleDelete} onWorkspace={setWorkspacePieza} onDragStart={setDraggedPieza} onDrop={(target) => void (draggedPieza ? handleReorder(target) : handleTogglePin(target))} /></div>)}
-          <button type="button" onClick={() => void handleCreate(socialFilter === "instagram" ? "instagram_feed" : "linkedin_post")} className="flex aspect-[4/5] items-center justify-center rounded-md border-2 border-dashed border-slate-300 bg-slate-50 text-slate-400 transition-colors hover:border-signal hover:bg-signal-light/30 hover:text-signal" aria-label="Agregar publicación"><PlusIcon size={32} /></button>
+        <div className="space-y-3">
+          {feedWeeks.map((week, weekIndex) => <div key={week} className={cn("rounded-md border p-3 transition-colors", week === currentWeek ? "border-amber-300 bg-amber-50/70" : "border-slate-200 bg-white")}>
+            <div className="mb-3 flex items-center justify-between"><span className="text-xs font-label uppercase tracking-wide text-graphite">{week.startsWith("sin-fecha") ? "Semana sin fecha" : weekLabel(week)}</span>{week === currentWeek ? <span className="rounded-pill bg-amber-200 px-2 py-1 text-[10px] font-label text-amber-900">Semana actual</span> : null}</div>
+            <div className="grid grid-cols-3 gap-4">
+              {[0, 1, 2].map((slotIndex) => {
+                const pieza = feedPieces[weekIndex * 3 + slotIndex];
+                return pieza ? <div key={pieza.id}><StudioTile ratio="portrait" pieza={pieza} onOpen={setSelected} onDelete={handleDelete} onWorkspace={setWorkspacePieza} onDragStart={setDraggedPieza} onDrop={(target) => void (draggedPieza ? handleReorder(target) : handleTogglePin(target))} /></div> : <button key={`${week}-empty-${slotIndex}`} type="button" onClick={() => void handleCreate(activeFeedPlatform)} className="flex aspect-[4/5] items-center justify-center rounded-md border-2 border-dashed border-slate-300 bg-slate-50 text-slate-400 transition-colors hover:border-signal hover:bg-signal-light/30 hover:text-signal" aria-label={`Agregar publicación ${slotIndex + 1}`}><PlusIcon size={28} /></button>;
+              })}
+            </div>
+          </div>)}
+          {feedWeeks.map((week, index) => index < feedWeeks.length - 1 ? <button key={`${week}-divider`} type="button" onClick={() => handleCreateWeek(week.startsWith("sin-fecha") ? undefined : week)} className="group flex h-5 w-full items-center justify-center" aria-label="Crear semana entre filas"><span className="flex h-5 w-5 items-center justify-center rounded-full border border-slate-300 bg-white text-slate-400 opacity-0 transition-opacity group-hover:opacity-100 group-hover:text-signal"><PlusIcon size={14} /></span></button> : null)}
+          <button type="button" onClick={() => handleCreateWeek(feedWeeks.at(-1)?.startsWith("sin-fecha") ? undefined : feedWeeks.at(-1))} className="flex h-14 w-full items-center justify-center rounded-md border-2 border-dashed border-slate-300 bg-slate-50 text-slate-400 transition-colors hover:border-signal hover:bg-signal-light/30 hover:text-signal" aria-label="Crear nueva semana"><PlusIcon size={24} /></button>
         </div>
       </section> : null}
 
