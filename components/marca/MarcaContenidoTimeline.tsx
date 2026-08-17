@@ -48,6 +48,7 @@ type Props = {
 
 export function MarcaContenidoTimeline({ canales, piezas, onOpen, onCreate, onAddChannel }: Props) {
   const scrollerRef = useRef<HTMLDivElement>(null);
+  const currentWeekRef = useRef<HTMLDivElement>(null);
   const weeks = useMemo(() => {
     const first = startOfWeek(new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1));
     return Array.from({ length: 32 }, (_, index) => new Date(first.getTime() + index * WEEK_MS));
@@ -56,9 +57,9 @@ export function MarcaContenidoTimeline({ canales, piezas, onOpen, onCreate, onAd
   const currentWeekIndex = useMemo(() => weeks.findIndex((week) => toDateKey(week) === todayKey), [todayKey, weeks]);
 
   useEffect(() => {
-    if (!scrollerRef.current || currentWeekIndex < 0) return;
+    if (!scrollerRef.current || !currentWeekRef.current || currentWeekIndex < 0) return;
     const frame = window.requestAnimationFrame(() => {
-      if (scrollerRef.current) scrollerRef.current.scrollLeft = currentWeekIndex * WEEK_WIDTH;
+      currentWeekRef.current?.scrollIntoView({ block: "nearest", inline: "center" });
     });
     return () => window.cancelAnimationFrame(frame);
   }, [currentWeekIndex]);
@@ -106,7 +107,7 @@ export function MarcaContenidoTimeline({ canales, piezas, onOpen, onCreate, onAd
                 <div className="flex h-9">
                   {weeks.map((week) => {
                     const key = toDateKey(week);
-                    return <div key={key} className={cn("relative flex items-center justify-center border-r border-slate-200 text-xs font-label text-graphite", key === todayKey && "bg-amber-50 text-amber-800")} style={{ width: WEEK_WIDTH }}><span>Sem. {week.getDate()}</span>{key === todayKey ? <span className="absolute -top-1 h-2 w-2 rounded-full bg-amber-500" /> : null}</div>;
+                    return <div ref={key === todayKey ? currentWeekRef : undefined} key={key} className={cn("relative flex items-center justify-center border-r border-slate-200 text-xs font-label text-graphite", key === todayKey && "bg-amber-50 text-amber-800")} style={{ width: WEEK_WIDTH }}><span>Sem. {week.getDate()}</span>{key === todayKey ? <span className="absolute -top-1 h-2 w-2 rounded-full bg-amber-500" /> : null}</div>;
                   })}
                 </div>
               </div>
