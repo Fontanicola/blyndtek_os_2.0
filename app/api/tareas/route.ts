@@ -64,6 +64,8 @@ export async function GET(request: NextRequest) {
           )
         `
       )
+      // Las subtareas vinculadas a Features se gestionan desde el proyecto.
+      .is("feature_id", null)
       .order("fecha_limite", { ascending: true, nullsFirst: false });
 
     if (proyectoId) {
