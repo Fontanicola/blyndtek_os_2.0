@@ -1,6 +1,6 @@
 "use client";
 
-import type { MarcaContenido, PiezaContenido, PiezaContenidoEstado, PilarContenido, PlanSemanal } from "@/types/contenido";
+import type { CanalContenido, MarcaContenido, PiezaContenido, PiezaContenidoEstado, PilarContenido, PlanSemanal } from "@/types/contenido";
 
 type ApiResponse<T> = {
   data?: T;
@@ -112,6 +112,20 @@ export async function fetchPiezas(filtros: PiezasContenidoFiltros = {}) {
   return parseResponse<PiezaContenido[]>(response);
 }
 
+export async function fetchCanales() {
+  const response = await fetch("/api/marca/canales");
+  return parseResponse<CanalContenido[]>(response);
+}
+
+export async function createCanal(payload: Pick<CanalContenido, "nombre"> & Partial<Pick<CanalContenido, "plataforma" | "color">>) {
+  const response = await fetch("/api/marca/canales", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+  return parseResponse<CanalContenido>(response);
+}
+
 export async function createPieza(payload: Partial<Pick<PiezaContenido, "titulo" | "pilar_id" | "plataforma" | "tipo_pieza" | "fecha_programada">> = {}) {
   const response = await fetch("/api/piezas-contenido", {
     method: "POST",
@@ -218,6 +232,8 @@ export function useContenido() {
     updatePilar,
     deletePilar,
     fetchPiezas,
+    fetchCanales,
+    createCanal,
     createPieza,
     updatePieza,
     deletePieza,

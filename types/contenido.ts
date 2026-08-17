@@ -15,6 +15,18 @@ export type MarcaContenido = {
   created_at: string;
 };
 
+export type CanalContenido = {
+  id: string;
+  marca_id: string;
+  nombre: string;
+  slug: string;
+  plataforma: string;
+  color: string;
+  orden: number;
+  activo: boolean;
+  created_at: string;
+};
+
 export type PilarContenido = {
   id: string;
   marca_id: string;
@@ -127,6 +139,11 @@ export type ContenidoDatabase = {
         Row: MarcaContenido;
         Insert: Partial<MarcaContenido> & Pick<MarcaContenido, "nombre" | "slug">;
         Update: Partial<MarcaContenido>;
+      };
+      canales_contenido: {
+        Row: CanalContenido;
+        Insert: Partial<CanalContenido> & Pick<CanalContenido, "marca_id" | "nombre" | "slug" | "plataforma">;
+        Update: Partial<CanalContenido>;
       };
       planes_semanales: {
         Row: PlanSemanal;

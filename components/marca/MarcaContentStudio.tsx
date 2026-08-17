@@ -3,12 +3,13 @@
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { Badge, Button, Card, EmptyState, RowActions, SavingIndicator } from "@/components/ui";
-import { CalendarIcon, ImageIcon, InstagramIcon, LinkedinIcon, PencilIcon, PlusIcon, StoriesIcon, TrashIcon } from "@/components/ui/icons";
+import { ImageIcon, InstagramIcon, LinkedinIcon, PencilIcon, PlusIcon, StoriesIcon, TrashIcon } from "@/components/ui/icons";
 import { PiezaEditorModal } from "@/components/contenido/PiezaEditorModal";
+import { MarcaContenidoTimeline } from "@/components/marca/MarcaContenidoTimeline";
 import { getPiezaImageUrl } from "@/components/contenido/PiezaCard";
-import { createPieza, deletePieza, fetchPilares, fetchPiezas, generarCompletoPieza, publicarPieza, subirImagenPieza, updatePieza } from "@/lib/hooks/useContenido";
+import { createCanal, createPieza, deletePieza, fetchCanales, fetchPilares, fetchPiezas, generarCompletoPieza, publicarPieza, subirImagenPieza, updatePieza } from "@/lib/hooks/useContenido";
 import { createIntegracionSocial, fetchIdentidadSecciones, fetchIntegracionesSociales, saveIdentidadSecciones } from "@/lib/hooks/useMarcaOperacion";
-import type { PiezaContenido, PilarContenido } from "@/types/contenido";
+import type { CanalContenido, PiezaContenido, PilarContenido } from "@/types/contenido";
 import type { IntegracionSocial, MarcaIdentidadSeccion } from "@/types/contenidoOperacion";
 import { cn } from "@/lib/cn";
 
@@ -74,6 +75,7 @@ export function MarcaContentStudio({ initialTab = "feed" }: MarcaContentStudioPr
   const [tab, setTab] = useState<StudioTab>(initialTab);
   const [socialFilter, setSocialFilter] = useState<SocialFilter>("instagram");
   const [piezas, setPiezas] = useState<PiezaContenido[]>([]);
+  const [canales, setCanales] = useState<CanalContenido[]>([]);
   const [pilares, setPilares] = useState<PilarContenido[]>([]);
   const [selected, setSelected] = useState<PiezaContenido | null>(null);
   const [sections, setSections] = useState<MarcaIdentidadSeccion[]>([]);
@@ -85,8 +87,9 @@ export function MarcaContentStudio({ initialTab = "feed" }: MarcaContentStudioPr
   async function load() {
     setLoading(true);
     try {
-      const [pieces, pillars, identity, social] = await Promise.all([fetchPiezas(), fetchPilares(), fetchIdentidadSecciones().catch(() => []), fetchIntegracionesSociales().catch(() => [])]);
+      const [pieces, pillars, identity, social, channelList] = await Promise.all([fetchPiezas(), fetchPilares(), fetchIdentidadSecciones().catch(() => []), fetchIntegracionesSociales().catch(() => []), fetchCanales()]);
       setPiezas(pieces);
+      setCanales(channelList);
       setPilares(pillars);
       setSections(identity.length ? identity : sectionDefaults.map(([clave, titulo]) => ({ id: clave, marca_id: "", clave, titulo, contenido: "", orden: 0, visible: true, updated_by: null, created_at: "", updated_at: "" })));
       setIntegraciones(social);
@@ -99,12 +102,23 @@ export function MarcaContentStudio({ initialTab = "feed" }: MarcaContentStudioPr
 
   const feedPieces = useMemo(() => piezas.filter((pieza) => isInstagramFeed(pieza) && (socialFilter === "instagram" ? pieza.plataforma === "instagram_feed" : pieza.plataforma === "linkedin_post")), [piezas, socialFilter]);
   const storyPieces = useMemo(() => piezas.filter((pieza) => pieza.plataforma === "instagram_story"), [piezas]);
-  const scheduled = useMemo(() => piezas.filter((pieza) => pieza.fecha_programada).sort((a, b) => String(a.fecha_programada).localeCompare(String(b.fecha_programada))), [piezas]);
-
   async function handleCreate(platform: "instagram_feed" | "instagram_story" | "linkedin_post") {
     const created = await createPieza({ plataforma: platform, tipo_pieza: platform === "instagram_story" ? "historia" : null, titulo: platform === "instagram_story" ? "Nueva historia" : "Nueva publicación" });
     await load();
     setSelected(created);
+  }
+
+  async function handleCreateFromTimeline(canal: CanalContenido, date: Date) {
+    const created = await createPieza({ plataforma: canal.plataforma, tipo_pieza: canal.plataforma === "instagram_story" ? "historia" : null, titulo: "Nueva pieza", fecha_programada: `${date.toISOString().slice(0, 10)}T09:00` });
+    await load();
+    setSelected(created);
+  }
+
+  async function handleAddChannel() {
+    const name = window.prompt("Nombre del nuevo canal");
+    if (!name?.trim()) return;
+    await createCanal({ nombre: name.trim() });
+    await load();
   }
 
   async function handleSave(id: string, payload: Partial<PiezaContenido>) {
@@ -175,7 +189,7 @@ export function MarcaContentStudio({ initialTab = "feed" }: MarcaContentStudioPr
 
       {tab === "historias" ? <section className="space-y-4"><div className="flex flex-wrap items-end justify-between gap-3"><div><p className="text-sm font-label text-signal">Laboratorio vertical</p><h2 className="font-title text-xl text-carbon">Historias listas para ejecutar</h2><p className="mt-1 text-sm text-graphite">Organizá secuencias, textos y horarios de historias desde un único lugar.</p></div><Button size="sm" onClick={() => void handleCreate("instagram_story")}><PlusIcon size={16} /> Nueva historia</Button></div>{storyPieces.length === 0 ? <EmptyState icon={StoriesIcon} titulo="Todavía no hay historias" descripcion="Creá una historia para empezar a armar la secuencia de Instagram." accion={{ label: "Crear historia", onClick: () => void handleCreate("instagram_story") }} /> : <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6">{storyPieces.map((pieza) => <div key={pieza.id} className="aspect-[9/16]"><StudioTile pieza={pieza} onOpen={setSelected} onDelete={handleDelete} /></div>)}</div>}</section> : null}
 
-      {tab === "calendario" ? <section className="space-y-4"><div><p className="text-sm font-label text-signal">Agenda editorial</p><h2 className="font-title text-xl text-carbon">Calendario de publicaciones</h2><p className="mt-1 text-sm text-graphite">La fecha que editás en cada pieza es la misma que se refleja acá.</p></div>{scheduled.length === 0 ? <EmptyState icon={CalendarIcon} titulo="No hay publicaciones programadas" descripcion="Asigná una fecha desde el lab de cualquier pieza para verla en la agenda." /> : <div className="divide-y divide-slate-200 rounded-md border border-slate-200 bg-white">{scheduled.map((pieza) => <button key={pieza.id} type="button" onClick={() => setSelected(pieza)} className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition-colors duration-fast hover:bg-slate-50"><span className="min-w-0"><span className="block truncate text-sm font-label text-carbon">{pieza.titulo}</span><span className="mt-1 block text-xs text-graphite">{formatDate(pieza.fecha_programada)} · {pieza.plataforma === "linkedin_post" ? "LinkedIn" : pieza.plataforma === "instagram_story" ? "Historia" : "Instagram"}</span></span><Badge variant={pieza.estado === "publicada" ? "success" : "signal"}>{pieza.estado === "publicada" ? "Publicada" : "Programada"}</Badge></button>)}</div>}</section> : null}
+      {tab === "calendario" ? <MarcaContenidoTimeline canales={canales} piezas={piezas} onOpen={setSelected} onCreate={(canal, date) => void handleCreateFromTimeline(canal, date)} onAddChannel={() => void handleAddChannel()} /> : null}
 
       {tab === "identidad" ? (
         <section className="grid gap-5 lg:grid-cols-[1fr_340px]">
