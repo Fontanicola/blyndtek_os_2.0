@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui";
+import { Modal } from "@/components/ui/Modal";
 import { CalendarIcon, ClockIcon, PlusIcon } from "@/components/ui/icons";
 import { getPiezaImageUrl } from "@/components/contenido/PiezaCard";
 import { cn } from "@/lib/cn";
@@ -57,6 +58,7 @@ export function MarcaContenidoTimeline({ canales, piezas, feedSlots, onOpen, onC
   const scrollerRef = useRef<HTMLDivElement>(null);
   const currentWeekRef = useRef<HTMLDivElement>(null);
   const [expandedWeekKey, setExpandedWeekKey] = useState<string | null>(null);
+  const [selectedQuadrant, setSelectedQuadrant] = useState<{ canal: CanalContenido; dateKey: string; pieces: PiezaContenido[] } | null>(null);
   const weeks = useMemo(() => {
     const first = startOfWeek(new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1));
     return Array.from({ length: 32 }, (_, index) => new Date(first.getTime() + index * WEEK_MS));
@@ -152,7 +154,7 @@ export function MarcaContenidoTimeline({ canales, piezas, feedSlots, onOpen, onC
                   const days = expanded ? Array.from({ length: 7 }, (_, dayIndex) => addDays(week, dayIndex)) : [week];
                   return <div key={`${canal.id}-${toDateKey(week)}`} className="grid h-[132px] shrink-0" style={{ width: expanded ? DAY_WIDTH * 7 : WEEK_WIDTH, gridTemplateColumns: `repeat(${days.length}, minmax(0, 1fr))` }}>
                     {days.map((day) => { const dateKey = toDateKey(day); const cellPieces = piecesByChannelAndDate.get(`${canal.plataforma}:${dateKey}`) ?? []; return <div key={`${canal.id}-${dateKey}`} className={cn("group relative h-[132px] border-r border-slate-200 p-2", dateKey === todayKey && "bg-amber-50/60")}>
-                      <button type="button" aria-label={`Agregar contenido en ${canal.nombre}, día ${dateKey}`} onClick={() => onCreate(canal, day)} className="absolute inset-0 z-0 opacity-0 transition-opacity group-hover:opacity-100"><span className="absolute right-2 top-2 rounded-md bg-white px-2 py-1 text-[11px] font-label text-signal shadow-sm">+ Agregar</span></button>
+                      <button type="button" aria-label={`${cellPieces.length ? "Ver" : "Agregar"} contenido en ${canal.nombre}, día ${dateKey}`} onClick={() => cellPieces.length ? setSelectedQuadrant({ canal, dateKey, pieces: cellPieces }) : onCreate(canal, day)} className="absolute inset-0 z-0 opacity-0 transition-opacity group-hover:opacity-100"><span className="absolute right-2 top-2 rounded-md bg-white px-2 py-1 text-[11px] font-label text-signal shadow-sm">{cellPieces.length ? "Ver cuadrante" : "+ Agregar"}</span></button>
                       <div className={cn("relative z-10", cellPieces.length > 1 ? "grid grid-cols-2 gap-1" : "space-y-1")}>
                         {cellPieces.slice(0, 4).map((pieza) => {
                         const imageUrl = getPiezaImageUrl(pieza);
@@ -175,6 +177,22 @@ export function MarcaContenidoTimeline({ canales, piezas, feedSlots, onOpen, onC
           </div>
         </div>
       </div>
+      <Modal isOpen={Boolean(selectedQuadrant)} onClose={() => setSelectedQuadrant(null)} title={selectedQuadrant ? `${selectedQuadrant.canal.nombre} · ${new Intl.DateTimeFormat("es-AR", { dateStyle: "long" }).format(new Date(`${selectedQuadrant.dateKey}T12:00:00`))}` : "Contenido del día"} size="lg">
+        <div className="grid gap-4 sm:grid-cols-2">
+          {selectedQuadrant?.pieces.map((pieza) => {
+            const imageUrl = getPiezaImageUrl(pieza);
+            return <button key={pieza.id} type="button" onClick={() => { setSelectedQuadrant(null); onOpen(pieza); }} className={cn("overflow-hidden rounded-md border text-left shadow-sm transition-shadow hover:shadow-md", selectedQuadrant ? channelColor(selectedQuadrant.canal) : "border-line-soft bg-white") }>
+              <div className="aspect-[4/3] bg-paper">
+                {imageUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={imageUrl} alt={pieza.titulo} className="h-full w-full object-cover" />
+                ) : <div className="flex h-full items-center justify-center p-4 text-center text-sm">{pieza.titulo}</div>}
+              </div>
+              <div className="space-y-1 p-3"><p className="truncate text-sm font-title text-carbon">{pieza.titulo}</p><p className="text-xs text-graphite">{pieceLabel(pieza)}</p></div>
+            </button>;
+          })}
+        </div>
+      </Modal>
     </div>
   );
 }
