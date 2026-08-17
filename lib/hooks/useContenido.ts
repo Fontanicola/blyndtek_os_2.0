@@ -1,6 +1,6 @@
 "use client";
 
-import type { CanalContenido, MarcaContenido, PiezaContenido, PiezaContenidoEstado, PilarContenido, PlanSemanal } from "@/types/contenido";
+import type { CanalContenido, FeedSlotContenido, MarcaContenido, PiezaContenido, PiezaContenidoEstado, PilarContenido, PlanSemanal } from "@/types/contenido";
 
 type ApiResponse<T> = {
   data?: T;
@@ -126,6 +126,16 @@ export async function createCanal(payload: Pick<CanalContenido, "nombre"> & Part
   return parseResponse<CanalContenido>(response);
 }
 
+export async function fetchFeedSlots(plataforma = "instagram_feed") {
+  const response = await fetch(`/api/marca/feed-slots?plataforma=${encodeURIComponent(plataforma)}`);
+  return parseResponse<FeedSlotContenido[]>(response);
+}
+
+export async function updateFeedSlot(payload: Pick<FeedSlotContenido, "plataforma" | "slot_orden"> & Partial<Pick<FeedSlotContenido, "fecha_programada">>) {
+  const response = await fetch("/api/marca/feed-slots", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+  return parseResponse<FeedSlotContenido>(response);
+}
+
 export async function createPieza(payload: Partial<Pick<PiezaContenido, "titulo" | "pilar_id" | "plataforma" | "tipo_pieza" | "fecha_programada">> = {}) {
   const response = await fetch("/api/piezas-contenido", {
     method: "POST",
@@ -234,6 +244,8 @@ export function useContenido() {
     fetchPiezas,
     fetchCanales,
     createCanal,
+    fetchFeedSlots,
+    updateFeedSlot,
     createPieza,
     updatePieza,
     deletePieza,

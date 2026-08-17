@@ -112,6 +112,16 @@ export type WorkspaceContenido = {
   texts: Array<{ x: number; y: number; text: string; color: string }>;
 };
 
+export type FeedSlotContenido = {
+  id: string;
+  marca_id: string;
+  plataforma: string;
+  slot_orden: number;
+  fecha_programada: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 export type MarcaIdentidadSeccion = {
   id: string;
   marca_id: string;
@@ -152,6 +162,11 @@ export type ContenidoDatabase = {
         Row: CanalContenido;
         Insert: Partial<CanalContenido> & Pick<CanalContenido, "marca_id" | "nombre" | "slug" | "plataforma">;
         Update: Partial<CanalContenido>;
+      };
+      contenido_feed_slots: {
+        Row: FeedSlotContenido;
+        Insert: Partial<FeedSlotContenido> & Pick<FeedSlotContenido, "marca_id" | "plataforma" | "slot_orden">;
+        Update: Partial<FeedSlotContenido>;
       };
       planes_semanales: {
         Row: PlanSemanal;
