@@ -48,10 +48,6 @@ function weekKey(value: Date) {
   return startOfWeek(value).toISOString().slice(0, 10);
 }
 
-function weekLabel(value: string) {
-  return `Semana del ${new Intl.DateTimeFormat("es-AR", { day: "2-digit", month: "2-digit" }).format(new Date(`${value}T12:00:00`))}`;
-}
-
 function isInstagramFeed(pieza: PiezaContenido) {
   return pieza.plataforma === "instagram_feed" || pieza.plataforma === "linkedin_post";
 }
@@ -114,6 +110,8 @@ export function MarcaContentStudio({ initialTab = "feed", initialSocialFilter = 
   const [savingIdentity, setSavingIdentity] = useState<"idle" | "saving" | "saved">("idle");
   const [connecting, setConnecting] = useState<"instagram" | "linkedin" | null>(null);
   const [manualWeeks, setManualWeeks] = useState<Record<SocialFilter, string[]>>({ instagram: [], linkedin: [] });
+  const [currentWeekOverrides, setCurrentWeekOverrides] = useState<Record<SocialFilter, string | null>>({ instagram: null, linkedin: null });
+  const [draggingWeekMarker, setDraggingWeekMarker] = useState(false);
 
   async function load(showLoading = false) {
     if (showLoading) setLoading(true);
@@ -136,6 +134,8 @@ export function MarcaContentStudio({ initialTab = "feed", initialSocialFilter = 
     try {
       const saved = window.localStorage.getItem("blyndtek-marca-feed-weeks");
       if (saved) setManualWeeks(JSON.parse(saved) as Record<SocialFilter, string[]>);
+      const savedMarker = window.localStorage.getItem("blyndtek-marca-current-week");
+      if (savedMarker) setCurrentWeekOverrides(JSON.parse(savedMarker) as Record<SocialFilter, string | null>);
     } catch {
       // La planificación visual puede continuar aunque el almacenamiento local no esté disponible.
     }
@@ -157,6 +157,19 @@ export function MarcaContentStudio({ initialTab = "feed", initialSocialFilter = 
     }
     return Array.from(keys).sort((a, b) => a.localeCompare(b));
   }, [activeFeedPlatform, feedPieces, feedSlots, manualWeeks, socialFilter]);
+  const selectedCurrentWeek = currentWeekOverrides[socialFilter] ?? currentWeek;
+  const currentWeekIndex = feedWeeks.findIndex((week) => week === selectedCurrentWeek);
+
+  function moveCurrentWeek(targetIndex: number) {
+    if (feedWeeks.length === 0) return;
+    const targetWeek = feedWeeks[Math.min(targetIndex, feedWeeks.length - 1)];
+    if (!targetWeek || targetWeek.startsWith("sin-fecha")) return;
+    setCurrentWeekOverrides((current) => {
+      const next = { ...current, [socialFilter]: targetWeek };
+      window.localStorage.setItem("blyndtek-marca-current-week", JSON.stringify(next));
+      return next;
+    });
+  }
 
   function handleCreateWeek(afterWeek?: string) {
     const suggested = afterWeek ? new Date(new Date(`${afterWeek}T12:00:00`).getTime() + 7 * 24 * 60 * 60 * 1000) : startOfWeek(new Date());
@@ -271,17 +284,17 @@ export function MarcaContentStudio({ initialTab = "feed", initialSocialFilter = 
       {tab === "feed" ? <section className="mx-auto max-w-3xl space-y-5">
         <div className="flex flex-wrap items-center justify-end gap-2"><div className="flex gap-1 rounded-md border border-slate-200 bg-white p-1"><button type="button" onClick={() => setSocialFilter("instagram")} className={cn("flex items-center gap-2 rounded-md px-3 py-2 text-sm font-label", socialFilter === "instagram" ? "bg-signal text-white" : "text-slate-600 hover:bg-slate-50")}><InstagramIcon size={15} /> Instagram</button><button type="button" onClick={() => setSocialFilter("linkedin")} className={cn("flex items-center gap-2 rounded-md px-3 py-2 text-sm font-label", socialFilter === "linkedin" ? "bg-signal text-white" : "text-slate-600 hover:bg-slate-50")}><LinkedinIcon size={15} /> LinkedIn</button></div></div>
         <div className="space-y-3">
-          {feedWeeks.map((week, weekIndex) => <div key={week} className={cn("rounded-md border p-3 transition-colors", week === currentWeek ? "border-amber-300 bg-amber-50/70" : "border-slate-200 bg-white")}>
-            <div className="mb-3 flex items-center justify-between"><span className="text-xs font-label uppercase tracking-wide text-graphite">{week.startsWith("sin-fecha") ? "Semana sin fecha" : weekLabel(week)}</span>{week === currentWeek ? <span className="rounded-pill bg-amber-200 px-2 py-1 text-[10px] font-label text-amber-900">Semana actual</span> : null}</div>
-            <div className="grid grid-cols-3 gap-4">
+          {feedWeeks.map((week, weekIndex) => <div key={week}>
+            {currentWeekIndex === weekIndex ? <div draggable onDragStart={() => setDraggingWeekMarker(true)} onDragEnd={() => setDraggingWeekMarker(false)} className={cn("group relative my-2 flex h-5 cursor-grab items-center", draggingWeekMarker && "opacity-40")} title="Arrastrá para elegir la semana actual"><div className="h-1 w-full rounded-full bg-amber-400" /><span className="absolute left-1/2 flex h-4 w-4 -translate-x-1/2 items-center justify-center rounded-full bg-amber-500 shadow-sm"><span className="h-1.5 w-1.5 rounded-full bg-white" /></span><span className="absolute right-0 -top-1 rounded-pill bg-amber-100 px-2 py-0.5 text-[10px] font-label text-amber-900 opacity-0 transition-opacity group-hover:opacity-100">Semana actual</span></div> : null}
+            <div className={cn("grid grid-cols-3 gap-4 rounded-md p-2 transition-colors", currentWeekIndex === weekIndex && "bg-amber-50/45")} onDragOver={(event) => { if (draggingWeekMarker) event.preventDefault(); }} onDrop={() => { if (draggingWeekMarker) { moveCurrentWeek(weekIndex); setDraggingWeekMarker(false); } }}>
               {[0, 1, 2].map((slotIndex) => {
                 const pieza = feedPieces[weekIndex * 3 + slotIndex];
                 return pieza ? <div key={pieza.id}><StudioTile ratio="portrait" pieza={pieza} onOpen={setSelected} onDelete={handleDelete} onWorkspace={setWorkspacePieza} onDragStart={setDraggedPieza} onDrop={(target) => void (draggedPieza ? handleReorder(target) : handleTogglePin(target))} /></div> : <button key={`${week}-empty-${slotIndex}`} type="button" onClick={() => void handleCreate(activeFeedPlatform)} className="flex aspect-[4/5] items-center justify-center rounded-md border-2 border-dashed border-slate-300 bg-slate-50 text-slate-400 transition-colors hover:border-signal hover:bg-signal-light/30 hover:text-signal" aria-label={`Agregar publicación ${slotIndex + 1}`}><PlusIcon size={28} /></button>;
               })}
             </div>
+            {weekIndex < feedWeeks.length - 1 ? <button type="button" onClick={() => handleCreateWeek(week.startsWith("sin-fecha") ? undefined : week)} className="group flex h-8 w-full items-center justify-center" aria-label="Crear semana entre filas"><span className="flex h-5 w-5 items-center justify-center rounded-full border border-slate-300 bg-white text-slate-400 opacity-0 transition-opacity group-hover:opacity-100 group-hover:text-signal"><PlusIcon size={14} /></span></button> : null}
           </div>)}
-          {feedWeeks.map((week, index) => index < feedWeeks.length - 1 ? <button key={`${week}-divider`} type="button" onClick={() => handleCreateWeek(week.startsWith("sin-fecha") ? undefined : week)} className="group flex h-5 w-full items-center justify-center" aria-label="Crear semana entre filas"><span className="flex h-5 w-5 items-center justify-center rounded-full border border-slate-300 bg-white text-slate-400 opacity-0 transition-opacity group-hover:opacity-100 group-hover:text-signal"><PlusIcon size={14} /></span></button> : null)}
-          <button type="button" onClick={() => handleCreateWeek(feedWeeks.at(-1)?.startsWith("sin-fecha") ? undefined : feedWeeks.at(-1))} className="flex h-14 w-full items-center justify-center rounded-md border-2 border-dashed border-slate-300 bg-slate-50 text-slate-400 transition-colors hover:border-signal hover:bg-signal-light/30 hover:text-signal" aria-label="Crear nueva semana"><PlusIcon size={24} /></button>
+          {feedWeeks.length > 0 ? <div onDragOver={(event) => { if (draggingWeekMarker) event.preventDefault(); }} onDrop={() => { if (draggingWeekMarker) { moveCurrentWeek(feedWeeks.length - 1); setDraggingWeekMarker(false); } }}><button type="button" onClick={() => handleCreateWeek(feedWeeks.at(-1)?.startsWith("sin-fecha") ? undefined : feedWeeks.at(-1))} className="group flex h-8 w-full items-center justify-center" aria-label="Crear nueva semana"><span className="flex h-5 w-5 items-center justify-center rounded-full border border-slate-300 bg-white text-slate-400 opacity-0 transition-opacity group-hover:opacity-100 group-hover:text-signal"><PlusIcon size={14} /></span></button></div> : <button type="button" onClick={() => handleCreateWeek()} className="group flex h-14 w-full items-center justify-center rounded-md border-2 border-dashed border-slate-300 bg-slate-50 text-slate-400 hover:border-signal hover:text-signal" aria-label="Crear primera semana"><PlusIcon size={24} /></button>}
         </div>
       </section> : null}
 
