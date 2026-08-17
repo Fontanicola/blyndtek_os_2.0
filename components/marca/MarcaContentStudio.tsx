@@ -2,12 +2,12 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Badge, Button, Card, EmptyState, RowActions, SavingIndicator } from "@/components/ui";
-import { ImageIcon, InstagramIcon, LinkedinIcon, PencilIcon, PinIcon, PlusIcon, StoriesIcon, TrashIcon } from "@/components/ui/icons";
+import { FileTextIcon, ImageIcon, InstagramIcon, LinkedinIcon, PencilIcon, PinIcon, PlusIcon, StoriesIcon, TrashIcon } from "@/components/ui/icons";
 import { PiezaEditorModal } from "@/components/contenido/PiezaEditorModal";
 import { PiezaWorkspaceModal } from "@/components/contenido/PiezaWorkspaceModal";
 import { MarcaContenidoTimeline } from "@/components/marca/MarcaContenidoTimeline";
 import { getPiezaImageUrl } from "@/components/contenido/PiezaCard";
-import { createCanal, createPieza, deletePieza, fetchCanales, fetchFeedSlots, fetchPilares, fetchPiezas, generarCompletoPieza, publicarPieza, subirImagenPieza, updateFeedSlot, updatePieza } from "@/lib/hooks/useContenido";
+import { createCanal, createPieza, deletePieza, fetchCanales, fetchFeedSlots, fetchPilares, fetchPiezas, generarCompletoPieza, publicarPieza, subirImagenPieza, updatePieza } from "@/lib/hooks/useContenido";
 import { createIntegracionSocial, fetchIdentidadSecciones, fetchIntegracionesSociales, saveIdentidadSecciones } from "@/lib/hooks/useMarcaOperacion";
 import type { CanalContenido, FeedSlotContenido, PiezaContenido, PilarContenido, WorkspaceContenido } from "@/types/contenido";
 import type { IntegracionSocial, MarcaIdentidadSeccion } from "@/types/contenidoOperacion";
@@ -63,8 +63,10 @@ function StudioTile({ pieza, onOpen, onDelete, onWorkspace, onDragStart, onDrop,
         <p className="mt-1 text-xs text-white/80">{formatDate(pieza.fecha_programada)} · {story ? "Historia" : pieza.plataforma === "linkedin_post" ? "LinkedIn" : "Instagram"}</p>
       </div>
       <div className="absolute left-2 top-2 flex gap-1">
-        <Badge variant={pieza.estado === "publicada" ? "success" : pieza.estado === "lista" || pieza.estado === "programada" ? "signal" : "default"}>{pieza.estado === "lista" || pieza.estado === "programada" ? "Aprobada" : pieza.estado === "publicada" ? "Publicada" : "Borrador"}</Badge>
-        {pieza.feed_pineado ? <Badge variant="warning"><PinIcon size={12} /> Fijada</Badge> : null}
+        {pieza.estado === "idea" || pieza.estado === "en_diseno" ? <span title="Borrador" aria-label="Borrador"><Badge variant="default"><FileTextIcon size={13} /></Badge></span> : null}
+        {pieza.estado === "lista" || pieza.estado === "programada" ? <span title="Aprobada" aria-label="Aprobada"><Badge variant="signal">✓</Badge></span> : null}
+        {pieza.estado === "publicada" ? <span title="Publicada" aria-label="Publicada"><Badge variant="success">✓</Badge></span> : null}
+        {pieza.feed_pineado ? <span title="Fijada arriba" aria-label="Fijada arriba"><Badge variant="warning"><PinIcon size={13} /></Badge></span> : null}
         {pieza.workspace_data && (pieza.workspace_data.strokes.length > 0 || pieza.workspace_data.texts.length > 0) ? <Badge variant="danger">Correcciones</Badge> : null}
       </div>
       <div className="absolute right-2 top-2 opacity-0 transition-opacity duration-fast group-hover:opacity-100 group-focus-within:opacity-100" onClick={(event) => event.stopPropagation()}>
@@ -161,13 +163,6 @@ export function MarcaContentStudio({ initialTab = "feed" }: MarcaContentStudioPr
     await load();
   }
 
-  async function handleSlotDate(index: number, value: string) {
-    try {
-      const saved = await updateFeedSlot({ plataforma: socialFilter === "instagram" ? "instagram_feed" : "linkedin_post", slot_orden: index, fecha_programada: value || null });
-      setFeedSlots((current) => [...current.filter((slot) => slot.slot_orden !== index || slot.plataforma !== saved.plataforma), saved].sort((a, b) => a.slot_orden - b.slot_orden));
-    } catch (error) { window.alert(error instanceof Error ? error.message : "No se pudo guardar el horario del cuadrante."); }
-  }
-
   async function handleTogglePin(pieza: PiezaContenido) {
     if (!pieza.feed_pineado && feedPieces.filter((item) => item.feed_pineado).length >= 3) {
       window.alert("Podés fijar hasta 3 publicaciones arriba del feed.");
@@ -223,7 +218,7 @@ export function MarcaContentStudio({ initialTab = "feed" }: MarcaContentStudioPr
       {tab === "feed" ? <section className="mx-auto max-w-3xl space-y-5">
         <div className="flex flex-wrap items-center justify-end gap-2"><div className="flex gap-1 rounded-md border border-slate-200 bg-white p-1"><button type="button" onClick={() => setSocialFilter("instagram")} className={cn("flex items-center gap-2 rounded-md px-3 py-2 text-sm font-label", socialFilter === "instagram" ? "bg-signal text-white" : "text-slate-600 hover:bg-slate-50")}><InstagramIcon size={15} /> Instagram</button><button type="button" onClick={() => setSocialFilter("linkedin")} className={cn("flex items-center gap-2 rounded-md px-3 py-2 text-sm font-label", socialFilter === "linkedin" ? "bg-signal text-white" : "text-slate-600 hover:bg-slate-50")}><LinkedinIcon size={15} /> LinkedIn</button></div></div>
         <div className="grid grid-cols-3 gap-4">
-          {feedPieces.map((pieza, index) => <div key={pieza.id} className="space-y-2"><label className="block"><input aria-label={`Fecha de publicación ${index + 1}`} type="datetime-local" value={(feedSlots.find((slot) => slot.slot_orden === index && slot.plataforma === (socialFilter === "instagram" ? "instagram_feed" : "linkedin_post"))?.fecha_programada ?? pieza.fecha_programada ?? "").slice(0, 16)} onChange={(event) => void handleSlotDate(index, event.target.value)} className="w-full rounded border border-line bg-white px-2 py-1 text-[11px] text-carbon" /></label><StudioTile ratio="portrait" pieza={pieza} onOpen={setSelected} onDelete={handleDelete} onWorkspace={setWorkspacePieza} onDragStart={setDraggedPieza} onDrop={(target) => void (draggedPieza ? handleReorder(target) : handleTogglePin(target))} /></div>)}
+          {feedPieces.map((pieza) => <div key={pieza.id}><StudioTile ratio="portrait" pieza={pieza} onOpen={setSelected} onDelete={handleDelete} onWorkspace={setWorkspacePieza} onDragStart={setDraggedPieza} onDrop={(target) => void (draggedPieza ? handleReorder(target) : handleTogglePin(target))} /></div>)}
           <button type="button" onClick={() => void handleCreate(socialFilter === "instagram" ? "instagram_feed" : "linkedin_post")} className="flex aspect-[4/5] items-center justify-center rounded-md border-2 border-dashed border-slate-300 bg-slate-50 text-slate-400 transition-colors hover:border-signal hover:bg-signal-light/30 hover:text-signal" aria-label="Agregar publicación"><PlusIcon size={32} /></button>
         </div>
       </section> : null}
