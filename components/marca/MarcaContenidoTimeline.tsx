@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui";
 import { CalendarIcon, ClockIcon, PlusIcon } from "@/components/ui/icons";
 import { cn } from "@/lib/cn";
-import type { CanalContenido, PiezaContenido } from "@/types/contenido";
+import type { CanalContenido, FeedSlotContenido, PiezaContenido } from "@/types/contenido";
 
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 const WEEK_WIDTH = 132;
@@ -46,12 +46,13 @@ function pieceLabel(pieza: PiezaContenido) {
 type Props = {
   canales: CanalContenido[];
   piezas: PiezaContenido[];
+  feedSlots: FeedSlotContenido[];
   onOpen: (pieza: PiezaContenido) => void;
   onCreate: (canal: CanalContenido, date: Date) => void;
   onAddChannel: () => void;
 };
 
-export function MarcaContenidoTimeline({ canales, piezas, onOpen, onCreate, onAddChannel }: Props) {
+export function MarcaContenidoTimeline({ canales, piezas, feedSlots, onOpen, onCreate, onAddChannel }: Props) {
   const scrollerRef = useRef<HTMLDivElement>(null);
   const currentWeekRef = useRef<HTMLDivElement>(null);
   const [expandedWeekKey, setExpandedWeekKey] = useState<string | null>(null);
@@ -93,12 +94,25 @@ export function MarcaContenidoTimeline({ canales, piezas, onOpen, onCreate, onAd
 
   const piecesByChannelAndDate = useMemo(() => {
     const map = new Map<string, PiezaContenido[]>();
-    piezas.filter((pieza) => pieza.fecha_programada).forEach((pieza) => {
-      const key = `${pieza.plataforma}:${pieceDateKey(pieza.fecha_programada)}`;
+    const feedDatesByPieceId = new Map<string, string | null>();
+    for (const plataforma of ["instagram_feed", "linkedin_post"] as const) {
+      const feedPieces = piezas
+        .filter((pieza) => pieza.plataforma === plataforma)
+        .sort((a, b) => Number(b.feed_pineado) - Number(a.feed_pineado) || (a.feed_orden ?? Number.MAX_SAFE_INTEGER) - (b.feed_orden ?? Number.MAX_SAFE_INTEGER) || a.created_at.localeCompare(b.created_at));
+      feedPieces.forEach((pieza, index) => {
+        feedDatesByPieceId.set(pieza.id, feedSlots.find((slot) => slot.plataforma === plataforma && slot.slot_orden === index)?.fecha_programada ?? null);
+      });
+    }
+
+    piezas.forEach((pieza) => {
+      const feedDate = feedDatesByPieceId.get(pieza.id) ?? null;
+      const effectiveDate = feedDate || pieza.fecha_programada;
+      if (!effectiveDate) return;
+      const key = `${pieza.plataforma}:${pieceDateKey(effectiveDate)}`;
       map.set(key, [...(map.get(key) ?? []), pieza]);
     });
     return map;
-  }, [piezas]);
+  }, [feedSlots, piezas]);
 
   return (
     <div className="space-y-3">

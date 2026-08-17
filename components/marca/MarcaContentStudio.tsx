@@ -98,10 +98,10 @@ export function MarcaContentStudio({ initialTab = "feed" }: MarcaContentStudioPr
   async function load(showLoading = false) {
     if (showLoading) setLoading(true);
     try {
-      const [pieces, pillars, identity, social, channelList, slots] = await Promise.all([fetchPiezas(), fetchPilares(), fetchIdentidadSecciones().catch(() => []), fetchIntegracionesSociales().catch(() => []), fetchCanales(), fetchFeedSlots().catch(() => [])]);
+      const [pieces, pillars, identity, social, channelList, instagramSlots, linkedinSlots] = await Promise.all([fetchPiezas(), fetchPilares(), fetchIdentidadSecciones().catch(() => []), fetchIntegracionesSociales().catch(() => []), fetchCanales(), fetchFeedSlots("instagram_feed").catch(() => []), fetchFeedSlots("linkedin_post").catch(() => [])]);
       setPiezas(pieces);
       setCanales(channelList);
-      setFeedSlots(slots);
+      setFeedSlots([...instagramSlots, ...linkedinSlots]);
       setPilares(pillars);
       setSections(identity.length ? identity : sectionDefaults.map(([clave, titulo]) => ({ id: clave, marca_id: "", clave, titulo, contenido: "", orden: 0, visible: true, updated_by: null, created_at: "", updated_at: "" })));
       setIntegraciones(social);
@@ -228,7 +228,7 @@ export function MarcaContentStudio({ initialTab = "feed" }: MarcaContentStudioPr
 
       {tab === "historias" ? <section className="space-y-4"><div className="flex flex-wrap items-end justify-between gap-3"><div><p className="text-sm font-label text-signal">Laboratorio vertical</p><h2 className="font-title text-xl text-carbon">Historias listas para ejecutar</h2><p className="mt-1 text-sm text-graphite">Organizá secuencias, textos y horarios de historias desde un único lugar.</p></div><Button size="sm" onClick={() => void handleCreate("instagram_story")}><PlusIcon size={16} /> Nueva historia</Button></div>{storyPieces.length === 0 ? <EmptyState icon={StoriesIcon} titulo="Todavía no hay historias" descripcion="Creá una historia para empezar a armar la secuencia de Instagram." accion={{ label: "Crear historia", onClick: () => void handleCreate("instagram_story") }} /> : <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6">{storyPieces.map((pieza) => <div key={pieza.id} className="aspect-[9/16]"><StudioTile pieza={pieza} onOpen={setSelected} onDelete={handleDelete} onWorkspace={setWorkspacePieza} /></div>)}</div>}</section> : null}
 
-      {tab === "calendario" ? <MarcaContenidoTimeline canales={canales} piezas={piezas} onOpen={setSelected} onCreate={(canal, date) => void handleCreateFromTimeline(canal, date)} onAddChannel={() => void handleAddChannel()} /> : null}
+      {tab === "calendario" ? <MarcaContenidoTimeline canales={canales} piezas={piezas} feedSlots={feedSlots} onOpen={setSelected} onCreate={(canal, date) => void handleCreateFromTimeline(canal, date)} onAddChannel={() => void handleAddChannel()} /> : null}
 
       {tab === "identidad" ? (
         <section className="grid gap-5 lg:grid-cols-[1fr_340px]">
