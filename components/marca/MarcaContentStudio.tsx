@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { Badge, Button, Card, EmptyState, RowActions, SavingIndicator } from "@/components/ui";
 import { ImageIcon, InstagramIcon, LinkedinIcon, PencilIcon, PlusIcon, StoriesIcon, TrashIcon } from "@/components/ui/icons";
@@ -223,19 +222,7 @@ export function MarcaContentStudio({ initialTab = "feed" }: MarcaContentStudioPr
       </div>}
 
       {tab === "feed" ? <section className="mx-auto max-w-3xl space-y-5">
-        <Card padding="md" className="mx-auto max-w-3xl">
-          <div className="flex flex-wrap items-center gap-5">
-            <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-full border border-slate-200 bg-signal-light">
-              <Image src="/Favicon_Blyndtek.svg" alt="Blyndtek" fill className="object-contain p-3" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="flex flex-wrap items-center gap-2"><h2 className="font-title text-lg text-carbon">blyndtek</h2><Badge variant="success">Cuenta profesional</Badge></div>
-              <div className="mt-3 flex gap-5 text-sm text-carbon"><span><strong className="font-title">{feedPieces.length}</strong> publicaciones</span><span><strong className="font-title">Blyndtek</strong> marca</span><span><strong className="font-title">Orgánico</strong> canal</span></div>
-            </div>
-          </div>
-          <div className="mt-4"><p className="font-title text-sm text-carbon">Blyndtek · Automatización para PyMEs</p><p className="mt-1 text-sm leading-5 text-graphite">Consultoría tecnológica, IA y automatización. Medimos tu operación y te mostramos en números cuánto estás perdiendo.</p><p className="mt-1 text-sm text-signal">blyndtek.com</p></div>
-        </Card>
-        <div className="flex flex-wrap items-end justify-between gap-3"><div><p className="text-sm font-label text-signal">Vista editorial</p><h2 className="font-title text-xl text-carbon">Feed de {socialFilter === "instagram" ? "Instagram" : "LinkedIn"}</h2><p className="mt-1 text-sm text-graphite">Hacé click en cualquier publicación para abrir su lab y editarla.</p></div><div className="flex flex-wrap gap-2"><div className="flex gap-1 rounded-md border border-slate-200 bg-white p-1"><button type="button" onClick={() => setSocialFilter("instagram")} className={cn("flex items-center gap-2 rounded-md px-3 py-2 text-sm font-label", socialFilter === "instagram" ? "bg-signal text-white" : "text-slate-600 hover:bg-slate-50")}><InstagramIcon size={15} /> Instagram</button><button type="button" onClick={() => setSocialFilter("linkedin")} className={cn("flex items-center gap-2 rounded-md px-3 py-2 text-sm font-label", socialFilter === "linkedin" ? "bg-signal text-white" : "text-slate-600 hover:bg-slate-50")}><LinkedinIcon size={15} /> LinkedIn</button></div><Button size="sm" onClick={() => void handleCreate(socialFilter === "instagram" ? "instagram_feed" : "linkedin_post")}><PlusIcon size={16} /> Nueva publicación</Button></div></div>
+        <div className="flex flex-wrap items-center justify-end gap-2"><div className="flex gap-1 rounded-md border border-slate-200 bg-white p-1"><button type="button" onClick={() => setSocialFilter("instagram")} className={cn("flex items-center gap-2 rounded-md px-3 py-2 text-sm font-label", socialFilter === "instagram" ? "bg-signal text-white" : "text-slate-600 hover:bg-slate-50")}><InstagramIcon size={15} /> Instagram</button><button type="button" onClick={() => setSocialFilter("linkedin")} className={cn("flex items-center gap-2 rounded-md px-3 py-2 text-sm font-label", socialFilter === "linkedin" ? "bg-signal text-white" : "text-slate-600 hover:bg-slate-50")}><LinkedinIcon size={15} /> LinkedIn</button></div><Button size="sm" onClick={() => void handleCreate(socialFilter === "instagram" ? "instagram_feed" : "linkedin_post")}><PlusIcon size={16} /> Nueva publicación</Button></div>
         {feedPieces.length === 0 ? <EmptyState icon={ImageIcon} titulo="Todavía no hay publicaciones" descripcion="Creá la primera publicación para empezar a ordenar el feed de la marca." accion={{ label: "Crear publicación", onClick: () => void handleCreate(socialFilter === "instagram" ? "instagram_feed" : "linkedin_post") }} /> : <div className="grid grid-cols-3 gap-px overflow-hidden rounded-md border border-slate-200 bg-slate-200">{feedPieces.map((pieza, index) => <div key={pieza.id} className="space-y-2 bg-white p-2"><label className="block text-[10px] font-label uppercase tracking-wide text-graphite">Cuadrante {index + 1}<input type="datetime-local" value={(feedSlots.find((slot) => slot.slot_orden === index && slot.plataforma === (socialFilter === "instagram" ? "instagram_feed" : "linkedin_post"))?.fecha_programada ?? pieza.fecha_programada ?? "").slice(0, 16)} onChange={(event) => void handleSlotDate(index, event.target.value)} className="mt-1 w-full rounded border border-line bg-white px-1 py-1 text-[11px] text-carbon" /></label><StudioTile ratio="portrait" pieza={pieza} onOpen={setSelected} onDelete={handleDelete} onWorkspace={setWorkspacePieza} onDragStart={setDraggedPieza} onDrop={(target) => void (draggedPieza ? handleReorder(target) : handleTogglePin(target))} /></div>)}</div>}
       </section> : null}
 
