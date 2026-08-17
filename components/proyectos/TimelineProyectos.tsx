@@ -35,7 +35,6 @@ const TOTAL_MONTHS = 12;
 const TOTAL_WEEKS = WEEKS_PER_MONTH * TOTAL_MONTHS;
 const TOTAL_DAYS = TOTAL_WEEKS * 7;
 const DAY_MS = 24 * 60 * 60 * 1000;
-const WEEK_PERCENT = 100 / TOTAL_WEEKS;
 const weeks = Array.from({ length: TOTAL_WEEKS }, (_, index) => index);
 function getClientName(id: string, clients: TimelineProyectosProps["clientes"]) {
   return clients.find((client) => client.id === id)?.empresa ?? "Cliente";
@@ -163,6 +162,12 @@ export function TimelineProyectos({ proyectos, clientes, currentUserId, onSelect
   const [scheduleDrag, setScheduleDrag] = useState<{ projectId: string; mode: "move" | "resize"; originX: number; deltaWeeks: number } | null>(null);
   const [scheduleSaving, setScheduleSaving] = useState<string | null>(null);
   const [scheduleError, setScheduleError] = useState<string | null>(null);
+  const [expandedWeek, setExpandedWeek] = useState<number | null>(null);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [projectFilter, setProjectFilter] = useState("todos");
+  const [fromDateFilter, setFromDateFilter] = useState("");
+  const [toDateFilter, setToDateFilter] = useState("");
+  const [eventTypeFilters, setEventTypeFilters] = useState<Record<TimelineEvent["type"], boolean>>({ pago: true, reunion: true, nota: true });
 
   useEffect(() => {
     let cancelled = false;
@@ -222,11 +227,47 @@ export function TimelineProyectos({ proyectos, clientes, currentUserId, onSelect
   }, [timelineStart]);
 
   const displayProjects = useMemo(() => proyectos.slice(0, 8), [proyectos]);
-  const projectRows = displayProjects.length > 0 ? displayProjects : [
+  const baseProjectRows = useMemo(() => displayProjects.length > 0 ? displayProjects : [
     { id: "funes", nombre: "Implementación web", cliente_id: "funes", estado: "en_desarrollo", fecha_inicio: null, entrega_comprometida: null, avance_pct: 38 } as Proyecto,
     { id: "ha", nombre: "Sistema interno", cliente_id: "ha", estado: "implementacion", fecha_inicio: null, entrega_comprometida: null, avance_pct: 61 } as Proyecto,
     { id: "abc", nombre: "Automatización", cliente_id: "abc", estado: "por_empezar", fecha_inicio: null, entrega_comprometida: null, avance_pct: 18 } as Proyecto
-  ];
+  ], [displayProjects]);
+  const projectRows = useMemo(() => baseProjectRows.filter((project) => {
+    if (projectFilter !== "todos" && project.id !== projectFilter) return false;
+    const start = project.fecha_inicio ? parseProjectDate(project.fecha_inicio) : null;
+    const end = project.entrega_comprometida ? parseProjectDate(project.entrega_comprometida) : null;
+    if (fromDateFilter && end && end < parseProjectDate(fromDateFilter)) return false;
+    if (toDateFilter && start && start > parseProjectDate(toDateFilter)) return false;
+    return true;
+  }), [baseProjectRows, fromDateFilter, projectFilter, toDateFilter]);
+  const timelineColumns = useMemo(() => weeks.flatMap((week) => Array.from({ length: expandedWeek === week ? 7 : 1 }, (_, day) => ({ week, day }))), [expandedWeek]);
+  const timelineColumnCount = timelineColumns.length;
+
+  function weekColumnStart(week: number) {
+    return weeks.slice(0, week).reduce((total, item) => total + (expandedWeek === item ? 7 : 1), 0);
+  }
+
+  function expandedTimelinePercent(date: Date) {
+    const week = getWeekIndex(date, timelineStart);
+    const weekStart = getWeekDate(week, timelineStart);
+    const dayProgress = Math.max(0, Math.min(1, (date.getTime() - weekStart.getTime()) / (7 * DAY_MS)));
+    const columns = expandedWeek === week ? 7 : 1;
+    return ((weekColumnStart(week) + dayProgress * columns) / timelineColumnCount) * 100;
+  }
+
+  function eventWeekStyle(week: number) {
+    const start = weekColumnStart(week);
+    const width = expandedWeek === week ? 7 : 1;
+    return { left: `${(start / timelineColumnCount) * 100}%`, width: `${(width / timelineColumnCount) * 100}%` };
+  }
+
+  function monthColumnSpan(monthIndex: number) {
+    return weeks.slice(monthIndex * WEEKS_PER_MONTH, (monthIndex + 1) * WEEKS_PER_MONTH).reduce((total, week) => total + (expandedWeek === week ? 7 : 1), 0);
+  }
+
+  function toggleEventType(type: TimelineEvent["type"]) {
+    setEventTypeFilters((current) => ({ ...current, [type]: !current[type] }));
+  }
 
   function openCell(project: Proyecto, week: number) {
     setActiveCell({ proyectoId: project.id, clientId: project.cliente_id, week });
@@ -364,49 +405,67 @@ export function TimelineProyectos({ proyectos, clientes, currentUserId, onSelect
   }
 
   return (
-    <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-card border border-line-soft bg-white shadow-card">
+    <section className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-card border border-line-soft bg-white shadow-card">
+      <div className="relative z-50 flex items-center justify-end border-b border-line-soft bg-white px-4 py-3">
+        <div className="relative">
+          <button type="button" onClick={() => setFiltersOpen((current) => !current)} className={cn("rounded-component border px-3 py-2 text-sm font-label transition-colors", filtersOpen ? "border-signal bg-signal text-white" : "border-line text-graphite hover:border-signal hover:text-signal")}>Filtros</button>
+          {filtersOpen ? <div className="absolute right-0 top-11 z-50 w-80 rounded-card border border-line-soft bg-white p-4 shadow-modal">
+            <div className="flex items-center justify-between"><p className="text-sm font-label text-carbon">Filtrar timeline</p><button type="button" onClick={() => { setProjectFilter("todos"); setFromDateFilter(""); setToDateFilter(""); setEventTypeFilters({ pago: true, reunion: true, nota: true }); }} className="text-xs text-signal hover:underline">Limpiar</button></div>
+            <div className="mt-3 space-y-3">
+              <label className="block text-xs font-label text-graphite">Proyecto<select value={projectFilter} onChange={(event) => setProjectFilter(event.target.value)} className="mt-1 w-full rounded-component border border-line bg-white px-2 py-2 text-sm font-normal text-carbon"><option value="todos">Todos los proyectos</option>{baseProjectRows.map((project) => <option key={project.id} value={project.id}>{project.nombre}</option>)}</select></label>
+              <div className="grid grid-cols-2 gap-2"><label className="text-xs font-label text-graphite">Desde<input type="date" value={fromDateFilter} onChange={(event) => setFromDateFilter(event.target.value)} className="mt-1 w-full rounded-component border border-line px-2 py-2 text-sm font-normal text-carbon" /></label><label className="text-xs font-label text-graphite">Hasta<input type="date" value={toDateFilter} onChange={(event) => setToDateFilter(event.target.value)} className="mt-1 w-full rounded-component border border-line px-2 py-2 text-sm font-normal text-carbon" /></label></div>
+              <div><p className="text-xs font-label text-graphite">Mostrar</p><div className="mt-2 flex flex-wrap gap-3">{(["pago", "reunion", "nota"] as const).map((type) => <label key={type} className="flex items-center gap-1.5 text-xs text-carbon"><input type="checkbox" checked={eventTypeFilters[type]} onChange={() => toggleEventType(type)} className="accent-signal" />{type === "pago" ? "Pagos" : type === "reunion" ? "Reuniones" : "Notas"}</label>)}</div></div>
+            </div>
+          </div> : null}
+        </div>
+      </div>
       <div className="overflow-x-auto overscroll-x-contain pb-3">
-        <div className="min-w-[3716px]">
-          <div className="grid grid-cols-[260px_repeat(48,minmax(72px,1fr))]">
+        <div style={{ minWidth: `${308 + timelineColumnCount * 72}px` }}>
+          <div className="grid" style={{ gridTemplateColumns: `260px 48px repeat(${timelineColumnCount}, minmax(72px, 1fr))` }}>
             <div className="sticky left-0 z-20 flex h-14 items-center border-b-2 border-r-2 border-line bg-white px-3 text-[11px] font-label uppercase tracking-wider text-graphite">Proyecto</div>
-            {months.map((month, index) => <div key={month} className={cn("flex h-14 items-center justify-center border-b-2 border-line px-2 text-center text-xs font-title capitalize text-carbon", index > 0 && "border-l")} style={{ gridColumn: `span ${WEEKS_PER_MONTH}` }}>{month}</div>)}
+            <div className="border-b-2 border-line bg-white" />
+            {months.map((month, index) => <div key={month} className={cn("flex h-14 items-center justify-center border-b-2 border-line px-2 text-center text-xs font-title capitalize text-carbon", index > 0 && "border-l")} style={{ gridColumn: `span ${monthColumnSpan(index)}` }}>{month}</div>)}
             <div className="sticky left-0 z-20 flex h-12 items-center border-b-2 border-r-2 border-line bg-white px-3 text-[11px] text-graphite">Semanas</div>
-            {weeks.map((week) => <div key={week} className={cn("relative flex h-12 items-center justify-center border-b-2 border-line text-[10px] text-graphite", week !== 0 && "border-l", week % WEEKS_PER_MONTH === 0 && week !== 0 && "border-l-slate-300", week === currentWeek && "bg-amber-100/70 font-title text-amber-800")}><span>{(week % WEEKS_PER_MONTH) + 1}</span>{week === currentWeek ? <span className="absolute -top-1 left-1/2 h-2 w-2 -translate-x-1/2 rounded-full bg-amber-500" title="Semana actual" /> : null}</div>)}
+            <div className="border-b-2 border-line bg-white" />
+            {weeks.map((week) => <button key={week} type="button" onClick={() => setExpandedWeek((current) => current === week ? null : week)} className={cn("relative flex h-12 items-center justify-center border-b-2 border-line text-[10px] text-graphite hover:bg-signal-light/30", week !== 0 && "border-l", week % WEEKS_PER_MONTH === 0 && week !== 0 && "border-l-slate-300", week === currentWeek && "bg-amber-100/70 font-title text-amber-800")} style={{ gridColumn: `span ${expandedWeek === week ? 7 : 1}` }} title={expandedWeek === week ? "Contraer semana" : "Expandir semana a días"}><span>{(week % WEEKS_PER_MONTH) + 1}{expandedWeek === week ? " · días" : ""}</span>{week === currentWeek ? <span className="absolute -top-1 left-1/2 h-2 w-2 -translate-x-1/2 rounded-full bg-amber-500" title="Semana actual" /> : null}</button>)}
+            {expandedWeek !== null ? <><div className="sticky left-0 z-20 flex h-9 items-center border-b border-r-2 border-line bg-white px-3 text-[10px] text-graphite">Días</div><div className="border-b border-line bg-white" />{timelineColumns.map((column) => <div key={`day-${column.week}-${column.day}`} className="flex h-9 items-center justify-center border-b border-l border-line-soft text-[9px] text-graphite">{column.week === expandedWeek ? new Intl.DateTimeFormat("es-AR", { weekday: "short", day: "2-digit" }).format(getWeekDate(column.week, timelineStart).getTime() + column.day * DAY_MS) : ""}</div>)}</> : null}
 
             {projectRows.map((project, index) => {
               const dragOffset = scheduleDrag?.projectId === project.id && scheduleDrag.mode === "move" ? scheduleDrag.deltaWeeks : 0;
               const resizeOffset = scheduleDrag?.projectId === project.id && scheduleDrag.mode === "resize" ? scheduleDrag.deltaWeeks : 0;
               const position = projectPosition(project, timelineStart, dragOffset / 7, resizeOffset / 7);
+              const visualPosition = { ...position, startPercent: expandedTimelinePercent(position.startDate), endPercent: expandedTimelinePercent(position.endDate) };
+              visualPosition.widthPercent = Math.max(100 / timelineColumnCount, visualPosition.endPercent - visualPosition.startPercent);
               const resolvedClientName = getClientName(project.cliente_id, clientes);
               const clientName = resolvedClientName === "Cliente" ? ["Funes", "HA", "ABC"][index] ?? "Cliente" : resolvedClientName;
               const alias = ["funes", "ha", "abc"][index];
-              const projectEvents = events.filter((event) => event.proyectoId === project.id || event.proyectoId === alias || (!event.proyectoId && event.clientId === project.cliente_id));
+              const projectEvents = events.filter((event) => (event.proyectoId === project.id || event.proyectoId === alias || (!event.proyectoId && event.clientId === project.cliente_id)) && eventTypeFilters[event.type]);
               return <div key={project.id} className="contents">
-                <div className="sticky left-0 z-40 grid h-[224px] grid-cols-[minmax(0,1fr)_48px] grid-rows-[56px_56px_56px_56px] overflow-hidden border-b-2 border-r-2 border-line bg-white">
+                <div className="sticky left-0 z-40 grid h-[224px] grid-cols-[minmax(0,1fr)_48px] grid-rows-[56px_56px_56px_56px] overflow-hidden border-b-2 border-r-2 border-line bg-white" style={{ gridColumn: "1 / span 2" }}>
                   <button type="button" onClick={() => onSelectProject(project.id)} className="group relative z-10 row-span-4 flex min-w-0 flex-col justify-center bg-white px-3 text-left hover:bg-paper"><span className="text-sm font-title text-carbon group-hover:text-signal">{clientName}</span><span className="mt-1 truncate text-xs text-graphite">{project.nombre}</span><span className="mt-2 flex items-center gap-1.5 text-[10px] text-graphite"><span className="h-1.5 w-1.5 rounded-full bg-signal" />{project.avance_pct ?? 0}% avance</span></button>
                   <div className="relative z-10 row-span-4 grid grid-rows-[56px_56px_56px_56px] border-l border-line bg-white text-graphite"><span className="flex items-center justify-center border-b border-line-soft text-sm" title="Duración"><ClockIcon size={18} /></span><span className="flex items-center justify-center border-b border-line-soft text-base" title="Hitos de pago">$</span><span className="flex items-center justify-center border-b border-line-soft text-base" title="Reuniones"><VideoIcon size={18} /></span><span className="flex items-center justify-center text-base" title="Notas"><FileTextIcon size={18} /></span></div>
                 </div>
-                <div className="relative h-[224px] border-b-2 border-line" style={{ gridColumn: `2 / span ${TOTAL_WEEKS}` }}>
-                  {weeks.map((week) => <button key={`${project.id}-${week}`} type="button" onClick={() => openCell(project, week)} aria-label={`Agregar evento en semana ${week + 1}`} className={cn("absolute top-0 h-full border-l border-line-soft/70 hover:bg-signal-light/30", week === 0 && "border-l-0", week === currentWeek && "bg-amber-50/70")} style={{ left: `${week * WEEK_PERCENT}%`, width: `${WEEK_PERCENT}%` }} />)}
-                  {weeks.map((week) => <button key={`${project.id}-note-${week}`} type="button" onClick={() => openNote(project, week)} aria-label={`Agregar nota en semana ${week + 1}`} className={cn("absolute top-[168px] z-10 h-14 border-l border-line-soft/70 hover:bg-signal-light/20", week === currentWeek && "bg-amber-50/70")} style={{ left: `${week * WEEK_PERCENT}%`, width: `${WEEK_PERCENT}%` }} />)}
+                <div className="relative h-[224px] border-b-2 border-line" style={{ gridColumn: `3 / span ${timelineColumnCount}` }}>
+                  {timelineColumns.map((column, columnIndex) => <button key={`${project.id}-${column.week}-${column.day}`} type="button" onClick={() => openCell(project, column.week)} aria-label={`Agregar evento en semana ${column.week + 1}${expandedWeek === column.week ? `, día ${column.day + 1}` : ""}`} className={cn("absolute top-0 h-full border-l border-line-soft/70 hover:bg-signal-light/30", columnIndex === 0 && "border-l-0", column.week === currentWeek && "bg-amber-50/70")} style={{ left: `${(columnIndex / timelineColumnCount) * 100}%`, width: `${(1 / timelineColumnCount) * 100}%` }} />)}
+                  {timelineColumns.map((column, columnIndex) => <button key={`${project.id}-note-${column.week}-${column.day}`} type="button" onClick={() => openNote(project, column.week)} aria-label={`Agregar nota en semana ${column.week + 1}`} className={cn("absolute top-[168px] z-10 h-14 border-l border-line-soft/70 hover:bg-signal-light/20", column.week === currentWeek && "bg-amber-50/70")} style={{ left: `${(columnIndex / timelineColumnCount) * 100}%`, width: `${(1 / timelineColumnCount) * 100}%` }} />)}
                   <div className="absolute left-0 right-0 top-2 h-10">
-                    {scheduleDrag?.projectId === project.id ? <div className="absolute -top-8 z-30 whitespace-nowrap rounded-sm bg-carbon px-2 py-1 text-[11px] font-label text-white shadow-sm" style={{ left: `${position.startPercent}%` }}>Inicio: {formatTimelineDate(position.startDate)} · Entrega: {formatTimelineDate(position.endDate)}</div> : null}
+                    {scheduleDrag?.projectId === project.id ? <div className="absolute -top-8 z-30 whitespace-nowrap rounded-sm bg-carbon px-2 py-1 text-[11px] font-label text-white shadow-sm" style={{ left: `${visualPosition.startPercent}%` }}>Inicio: {formatTimelineDate(visualPosition.startDate)} · Entrega: {formatTimelineDate(visualPosition.endDate)}</div> : null}
                     <div
                       className={cn("group absolute h-10 overflow-hidden rounded-component border px-3 py-2 text-sm font-label text-carbon shadow-sm", position.remainingClass, position.hasSchedule ? "cursor-grab active:cursor-grabbing" : "cursor-default")}
-                      style={{ left: `${position.startPercent}%`, width: `${position.widthPercent}%` }}
+                      style={{ left: `${visualPosition.startPercent}%`, width: `${visualPosition.widthPercent}%` }}
                       onPointerDown={(event) => beginScheduleDrag(event, project, "move")}
                       onPointerMove={updateScheduleDrag}
                       onPointerUp={(event) => void finishScheduleDrag(event, project)}
-                      title={position.hasSchedule ? `Inicio: ${toDateInputValue(position.startDate)} · Entrega: ${toDateInputValue(position.endDate)}` : "Definí las fechas del proyecto para editarlo desde acá"}
+                      title={visualPosition.hasSchedule ? `Inicio: ${toDateInputValue(visualPosition.startDate)} · Entrega: ${toDateInputValue(visualPosition.endDate)}` : "Definí las fechas del proyecto para editarlo desde acá"}
                     >
                       <div className="absolute inset-y-0 left-0 bg-slate-300/80" style={{ width: `${position.progressPct}%` }} />
                       <span className="sr-only">{project.nombre}</span>
                       {position.hasSchedule ? <button type="button" aria-label="Cambiar fecha de entrega" className="absolute inset-y-0 right-0 z-10 w-2 cursor-ew-resize bg-carbon/10 opacity-0 transition-opacity group-hover:opacity-100" onPointerDown={(event) => beginScheduleDrag(event, project, "resize")} onPointerMove={updateScheduleDrag} onPointerUp={(event) => void finishScheduleDrag(event, project)} /> : null}
                     </div>
                   </div>
-                  <div className="pointer-events-none absolute left-0 right-0 top-[64px] h-10">{projectEvents.filter((event) => event.type === "pago").map((event) => <span key={event.id} title={event.label} className="absolute flex h-10 min-w-0 overflow-hidden items-center justify-center rounded-component border border-emerald-200 bg-emerald-50 px-1 text-[10px] font-label text-emerald-800 shadow-sm" style={{ left: `calc(${event.week * WEEK_PERCENT}% + 2px)`, width: `calc(${WEEK_PERCENT}% - 4px)` }}><span className="min-w-0 truncate">{event.amount != null ? formatMoney(event.amount) : "$ —"}</span></span>)}</div>
-                  <div className="pointer-events-none absolute left-0 right-0 top-[120px] h-10">{projectEvents.filter((event) => event.type === "reunion").map((event) => <span key={event.id} title={event.date ? formatEventDate(event.date) : "Reunión"} className="absolute flex h-10 min-w-0 overflow-hidden items-center justify-center gap-1 rounded-component border border-violet-200 bg-violet-50 px-1 text-[10px] font-label text-violet-800 shadow-sm" style={{ left: `calc(${event.week * WEEK_PERCENT}% + 2px)`, width: `calc(${WEEK_PERCENT}% - 4px)` }}><VideoIcon size={12} className="shrink-0" /><span className="min-w-0 truncate">{event.date ? formatEventDate(event.date) : "Sin fecha"}</span></span>)}</div>
-                  <div className="pointer-events-none absolute left-0 right-0 top-[176px] z-30 h-10">{projectEvents.filter((event) => event.type === "nota").map((event) => <span key={event.id} className="group pointer-events-auto absolute h-10 min-w-0" style={{ left: `calc(${event.week * WEEK_PERCENT}% + 2px)`, width: `calc(${WEEK_PERCENT}% - 4px)` }}><span className={cn("flex h-10 w-full items-center justify-center rounded-component border px-1 text-[10px] font-label shadow-sm", event.priority === "alta" ? "border-red-200 bg-red-100 text-red-800" : event.priority === "baja" ? "border-slate-200 bg-slate-100 text-slate-700" : "border-amber-200 bg-amber-100 text-amber-800")}>Nota</span><span className="absolute left-full top-0 z-40 ml-2 hidden w-64 rounded-card border border-line-soft bg-white p-3 text-left text-xs text-graphite shadow-modal group-hover:block"><span className="block whitespace-pre-wrap">{event.noteText || event.label || "Sin contenido"}</span></span></span>)}</div>
+                  <div className="pointer-events-none absolute left-0 right-0 top-[64px] h-10">{projectEvents.filter((event) => event.type === "pago").map((event) => <span key={event.id} title={event.label} className="absolute flex h-10 min-w-0 overflow-hidden items-center justify-center rounded-component border border-emerald-200 bg-emerald-50 px-1 text-[10px] font-label text-emerald-800 shadow-sm" style={eventWeekStyle(event.week)}><span className="min-w-0 truncate">{event.amount != null ? formatMoney(event.amount) : "$ —"}</span></span>)}</div>
+                  <div className="pointer-events-none absolute left-0 right-0 top-[120px] h-10">{projectEvents.filter((event) => event.type === "reunion").map((event) => <span key={event.id} title={event.date ? formatEventDate(event.date) : "Reunión"} className="absolute flex h-10 min-w-0 overflow-hidden items-center justify-center gap-1 rounded-component border border-violet-200 bg-violet-50 px-1 text-[10px] font-label text-violet-800 shadow-sm" style={eventWeekStyle(event.week)}><VideoIcon size={12} className="shrink-0" /><span className="min-w-0 truncate">{event.date ? formatEventDate(event.date) : "Sin fecha"}</span></span>)}</div>
+                  <div className="pointer-events-none absolute left-0 right-0 top-[176px] z-30 h-10">{projectEvents.filter((event) => event.type === "nota").map((event) => <span key={event.id} className="group pointer-events-auto absolute h-10 min-w-0" style={eventWeekStyle(event.week)}><span className={cn("flex h-10 w-full items-center justify-center rounded-component border px-1 text-[10px] font-label shadow-sm", event.priority === "alta" ? "border-red-200 bg-red-100 text-red-800" : event.priority === "baja" ? "border-slate-200 bg-slate-100 text-slate-700" : "border-amber-200 bg-amber-100 text-amber-800")}>Nota</span><span className="absolute left-full top-0 z-40 ml-2 hidden w-64 rounded-card border border-line-soft bg-white p-3 text-left text-xs text-graphite shadow-modal group-hover:block"><span className="block whitespace-pre-wrap">{event.noteText || event.label || "Sin contenido"}</span></span></span>)}</div>
                 </div>
               </div>;
             })}
