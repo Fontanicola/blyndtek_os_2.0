@@ -81,11 +81,15 @@ export function MarcaContenidoTimeline({ canales, piezas, onOpen, onCreate, onAd
       </div>
 
       <div className="overflow-hidden rounded-md border border-slate-200 bg-white">
-        <div ref={scrollerRef} className="overflow-x-auto overscroll-x-contain">
-          <div className="min-w-max">
-            <div className="sticky top-0 z-20 grid grid-cols-[244px_1fr] border-b border-slate-200 bg-white">
-              <div className="flex items-end border-r border-slate-300 px-4 pb-3 text-xs font-label uppercase tracking-[0.14em] text-graphite">Canal</div>
-              <div>
+        <div className="flex min-w-0">
+          <div className="sticky left-0 z-30 w-[244px] shrink-0 bg-white">
+            <div className="sticky top-0 z-20 flex h-[84px] items-end border-b border-r border-slate-300 px-4 pb-3 text-xs font-label uppercase tracking-[0.14em] text-graphite">Canal</div>
+            {canales.map((canal) => <div key={canal.id} className="flex min-h-[132px] flex-col justify-center border-b border-r border-slate-300 px-4 last:border-b-0"><span className="text-sm font-title text-carbon">{canal.nombre}</span><span className="mt-1 text-xs text-graphite">{piezas.filter((pieza) => pieza.plataforma === canal.plataforma && pieza.fecha_programada).length} piezas programadas</span></div>)}
+            {canales.length === 0 ? <div className="flex min-h-[132px] items-center justify-center border-r border-slate-300 p-6 text-center text-sm text-graphite"><CalendarIcon className="mr-2 shrink-0 text-slate-400" size={20} />Sin canales</div> : null}
+          </div>
+          <div ref={scrollerRef} className="min-w-0 flex-1 overflow-x-auto overscroll-x-contain">
+            <div className="min-w-max">
+              <div className="sticky top-0 z-20 border-b border-slate-200 bg-white">
                 <div className="flex h-12 border-b border-slate-200">
                   {monthGroups.map((month) => <div key={month.key} className="border-r border-slate-300 px-4 pt-3 text-center text-sm font-title capitalize text-carbon" style={{ width: month.count * WEEK_WIDTH }}>{month.label}</div>)}
                 </div>
@@ -96,29 +100,17 @@ export function MarcaContenidoTimeline({ canales, piezas, onOpen, onCreate, onAd
                   })}
                 </div>
               </div>
+              {canales.map((canal) => <div key={canal.id} className="flex min-h-[132px] border-b border-slate-300 last:border-b-0">
+                {weeks.map((week) => {
+                  const dateKey = toDateKey(week);
+                  const cellPieces = piecesByChannelAndDate.get(`${canal.plataforma}:${dateKey}`) ?? [];
+                  return <div key={`${canal.id}-${dateKey}`} className={cn("group relative border-r border-slate-200 p-2", dateKey === todayKey && "bg-amber-50/60")} style={{ width: WEEK_WIDTH }}>
+                    <button type="button" aria-label={`Agregar contenido en ${canal.nombre}, semana del ${dateKey}`} onClick={() => onCreate(canal, week)} className="absolute inset-0 z-0 opacity-0 transition-opacity group-hover:opacity-100"><span className="absolute right-2 top-2 rounded-md bg-white px-2 py-1 text-[11px] font-label text-signal shadow-sm">+ Agregar</span></button>
+                    <div className="relative z-10 space-y-1">{cellPieces.map((pieza) => <button key={pieza.id} type="button" onClick={() => onOpen(pieza)} className={cn("block w-full overflow-hidden rounded-md border px-2 py-2 text-left shadow-sm transition-shadow hover:shadow-md", channelColor(canal))} title={`${pieza.titulo} · ${pieceLabel(pieza)}`}><span className="flex items-center gap-1 text-[10px] font-label uppercase tracking-wide opacity-70"><ClockIcon size={11} /> {pieza.fecha_programada ? new Intl.DateTimeFormat("es-AR", { day: "2-digit", month: "2-digit" }).format(new Date(pieza.fecha_programada)) : ""}</span><span className="mt-1 block truncate text-xs font-label">{pieza.titulo}</span></button>)}</div>
+                  </div>;
+                })}
+              </div>)}
             </div>
-
-            {canales.map((canal) => (
-              <div key={canal.id} className="grid grid-cols-[244px_1fr] border-b border-slate-300 last:border-b-0">
-                <div className="sticky left-0 z-10 flex min-h-[132px] flex-col justify-center border-r border-slate-300 bg-white px-4">
-                  <span className="text-sm font-title text-carbon">{canal.nombre}</span>
-                  <span className="mt-1 text-xs text-graphite">{piezas.filter((pieza) => pieza.plataforma === canal.plataforma && pieza.fecha_programada).length} piezas programadas</span>
-                </div>
-                <div className="flex min-h-[132px]">
-                  {weeks.map((week) => {
-                    const dateKey = toDateKey(week);
-                    const cellPieces = piecesByChannelAndDate.get(`${canal.plataforma}:${dateKey}`) ?? [];
-                    return <div key={`${canal.id}-${dateKey}`} className={cn("group relative border-r border-slate-200 p-2", dateKey === todayKey && "bg-amber-50/60")} style={{ width: WEEK_WIDTH }}>
-                      <button type="button" aria-label={`Agregar contenido en ${canal.nombre}, semana del ${dateKey}`} onClick={() => onCreate(canal, week)} className="absolute inset-0 z-0 opacity-0 transition-opacity group-hover:opacity-100"><span className="absolute right-2 top-2 rounded-md bg-white px-2 py-1 text-[11px] font-label text-signal shadow-sm">+ Agregar</span></button>
-                      <div className="relative z-10 space-y-1">
-                        {cellPieces.map((pieza) => <button key={pieza.id} type="button" onClick={() => onOpen(pieza)} className={cn("block w-full overflow-hidden rounded-md border px-2 py-2 text-left shadow-sm transition-shadow hover:shadow-md", channelColor(canal))} title={`${pieza.titulo} · ${pieceLabel(pieza)}`}><span className="flex items-center gap-1 text-[10px] font-label uppercase tracking-wide opacity-70"><ClockIcon size={11} /> {pieza.fecha_programada ? new Intl.DateTimeFormat("es-AR", { day: "2-digit", month: "2-digit" }).format(new Date(pieza.fecha_programada)) : ""}</span><span className="mt-1 block truncate text-xs font-label">{pieza.titulo}</span></button>)}
-                      </div>
-                    </div>;
-                  })}
-                </div>
-              </div>
-            ))}
-            {canales.length === 0 ? <div className="p-10 text-center text-sm text-graphite"><CalendarIcon className="mx-auto mb-2 text-slate-400" size={24} />Todavía no hay canales configurados.</div> : null}
           </div>
         </div>
       </div>
