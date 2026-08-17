@@ -189,6 +189,15 @@ export function MarcaContentStudio({ initialTab = "feed", initialSocialFilter = 
     });
   }
 
+  function handleWeekMarkerDragOver(event: React.DragEvent<HTMLElement>) {
+    if (!draggingWeekMarker) return;
+    event.preventDefault();
+    const edge = 120;
+    const speed = 18;
+    if (event.clientY < edge) window.scrollBy({ top: -speed, behavior: "auto" });
+    if (event.clientY > window.innerHeight - edge) window.scrollBy({ top: speed, behavior: "auto" });
+  }
+
   function handleCreateWeek(afterWeek?: string) {
     const suggested = afterWeek ? new Date(new Date(`${afterWeek}T12:00:00`).getTime() - 7 * 24 * 60 * 60 * 1000) : startOfWeek(new Date());
     const value = window.prompt("Inicio de la semana (AAAA-MM-DD)", weekKey(suggested));
@@ -305,7 +314,7 @@ export function MarcaContentStudio({ initialTab = "feed", initialSocialFilter = 
             {pinnedFeedPieces.map((pieza) => <div className="relative z-10" key={pieza.id}><StudioTile ratio="portrait" pieza={pieza} onOpen={setSelected} onDelete={handleDelete} onWorkspace={setWorkspacePieza} onDragStart={setDraggedPieza} onDrop={(target) => void (draggedPieza ? handleReorder(target) : handleTogglePin(target))} /></div>)}
           </div> : null}
           {feedWeeks.map((week, weekIndex) => <div key={week}>
-            <div className={cn("relative grid grid-cols-3 gap-4 overflow-visible rounded-md p-2 transition-colors", displayCurrentWeekIndex === weekIndex && "bg-amber-50/60")} onDragOver={(event) => { if (draggingWeekMarker) event.preventDefault(); }} onDrop={() => { if (draggingWeekMarker) { moveCurrentWeek(weekIndex); setDraggingWeekMarker(false); } }}>
+            <div className={cn("relative grid grid-cols-3 gap-4 overflow-visible rounded-md p-2 transition-colors", displayCurrentWeekIndex === weekIndex && "bg-amber-50/60")} onDragOver={handleWeekMarkerDragOver} onDrop={() => { if (draggingWeekMarker) { moveCurrentWeek(weekIndex); setDraggingWeekMarker(false); } }}>
               {displayCurrentWeekIndex === weekIndex ? <div draggable onDragStart={() => setDraggingWeekMarker(true)} onDragEnd={() => setDraggingWeekMarker(false)} className={cn("group absolute -left-5 inset-y-0 z-20 flex w-4 cursor-grab items-center justify-center", draggingWeekMarker && "opacity-40")} title="Arrastrá para elegir la semana actual"><div className="h-full w-1 rounded-full bg-amber-400" /><span className="absolute top-1/2 flex h-4 w-4 -translate-y-1/2 items-center justify-center rounded-full bg-amber-500 shadow-sm"><span className="h-1.5 w-1.5 rounded-full bg-white" /></span><span className="absolute left-6 top-1/2 -translate-y-1/2 whitespace-nowrap rounded-pill bg-amber-100 px-2 py-0.5 text-[10px] font-label text-amber-900 opacity-0 transition-opacity group-hover:opacity-100">Semana actual</span></div> : null}
               {[0, 1, 2].map((slotIndex) => {
                 const pieza = feedPiecesByWeek.get(week)?.[slotIndex];
@@ -314,7 +323,7 @@ export function MarcaContentStudio({ initialTab = "feed", initialSocialFilter = 
             </div>
             {weekIndex < feedWeeks.length - 1 ? <button type="button" onClick={() => handleCreateWeek(week.startsWith("sin-fecha") ? undefined : week)} className="group flex h-4 w-full items-center justify-center" aria-label="Crear semana entre filas"><span className="flex h-5 w-5 items-center justify-center rounded-full border border-slate-300 bg-white text-slate-400 opacity-0 transition-opacity group-hover:opacity-100 group-hover:text-signal"><PlusIcon size={14} /></span></button> : null}
           </div>)}
-          {feedWeeks.length > 0 ? <div onDragOver={(event) => { if (draggingWeekMarker) event.preventDefault(); }} onDrop={() => { if (draggingWeekMarker) { moveCurrentWeek(feedWeeks.length - 1); setDraggingWeekMarker(false); } }}><button type="button" onClick={() => handleCreateWeek(feedWeeks.at(-1)?.startsWith("sin-fecha") ? undefined : feedWeeks.at(-1))} className="group flex h-4 w-full items-center justify-center" aria-label="Crear nueva semana"><span className="flex h-5 w-5 items-center justify-center rounded-full border border-slate-300 bg-white text-slate-400 opacity-0 transition-opacity group-hover:opacity-100 group-hover:text-signal"><PlusIcon size={14} /></span></button></div> : <button type="button" onClick={() => handleCreateWeek()} className="group flex h-14 w-full items-center justify-center rounded-md border-2 border-dashed border-slate-300 bg-slate-50 text-slate-400 hover:border-signal hover:text-signal" aria-label="Crear primera semana"><PlusIcon size={24} /></button>}
+          {feedWeeks.length > 0 ? <div onDragOver={handleWeekMarkerDragOver} onDrop={() => { if (draggingWeekMarker) { moveCurrentWeek(feedWeeks.length - 1); setDraggingWeekMarker(false); } }}><button type="button" onClick={() => handleCreateWeek(feedWeeks.at(-1)?.startsWith("sin-fecha") ? undefined : feedWeeks.at(-1))} className="group flex h-4 w-full items-center justify-center" aria-label="Crear nueva semana"><span className="flex h-5 w-5 items-center justify-center rounded-full border border-slate-300 bg-white text-slate-400 opacity-0 transition-opacity group-hover:opacity-100 group-hover:text-signal"><PlusIcon size={14} /></span></button></div> : <button type="button" onClick={() => handleCreateWeek()} className="group flex h-14 w-full items-center justify-center rounded-md border-2 border-dashed border-slate-300 bg-slate-50 text-slate-400 hover:border-signal hover:text-signal" aria-label="Crear primera semana"><PlusIcon size={24} /></button>}
         </div>
       </section> : null}
 
