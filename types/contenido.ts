@@ -85,6 +85,9 @@ export type PiezaContenido = {
   plataforma: string;
   estado: PiezaContenidoEstado;
   fecha_programada: string | null;
+  feed_orden: number | null;
+  feed_pineado: boolean;
+  workspace_data: WorkspaceContenido | null;
   publicado_at: string | null;
   meta_post_id: string | null;
   meta_error: string | null;
@@ -102,6 +105,11 @@ export type PiezaContenido = {
   created_at: string;
   pilar?: PilarContenido | null;
   plan?: PlanSemanal | null;
+};
+
+export type WorkspaceContenido = {
+  strokes: Array<{ points: Array<{ x: number; y: number }>; color: string; width: number }>;
+  texts: Array<{ x: number; y: number; text: string; color: string }>;
 };
 
 export type MarcaIdentidadSeccion = {

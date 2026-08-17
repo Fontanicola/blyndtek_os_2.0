@@ -83,6 +83,9 @@ export async function PATCH(request: Request, { params }: RouteContext) {
       }
     }
     if ("fecha_programada" in body) updatePayload.fecha_programada = body.fecha_programada || null;
+    if ("feed_orden" in body) updatePayload.feed_orden = typeof body.feed_orden === "number" ? body.feed_orden : null;
+    if ("feed_pineado" in body) updatePayload.feed_pineado = Boolean(body.feed_pineado);
+    if ("workspace_data" in body) updatePayload.workspace_data = body.workspace_data ?? null;
     updatePayload.updated_at = new Date().toISOString();
 
     const { data, error } = await supabase

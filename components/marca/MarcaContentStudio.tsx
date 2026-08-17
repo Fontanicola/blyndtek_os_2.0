@@ -5,11 +5,12 @@ import { useEffect, useMemo, useState } from "react";
 import { Badge, Button, Card, EmptyState, RowActions, SavingIndicator } from "@/components/ui";
 import { ImageIcon, InstagramIcon, LinkedinIcon, PencilIcon, PlusIcon, StoriesIcon, TrashIcon } from "@/components/ui/icons";
 import { PiezaEditorModal } from "@/components/contenido/PiezaEditorModal";
+import { PiezaWorkspaceModal } from "@/components/contenido/PiezaWorkspaceModal";
 import { MarcaContenidoTimeline } from "@/components/marca/MarcaContenidoTimeline";
 import { getPiezaImageUrl } from "@/components/contenido/PiezaCard";
 import { createCanal, createPieza, deletePieza, fetchCanales, fetchPilares, fetchPiezas, generarCompletoPieza, publicarPieza, subirImagenPieza, updatePieza } from "@/lib/hooks/useContenido";
 import { createIntegracionSocial, fetchIdentidadSecciones, fetchIntegracionesSociales, saveIdentidadSecciones } from "@/lib/hooks/useMarcaOperacion";
-import type { CanalContenido, PiezaContenido, PilarContenido } from "@/types/contenido";
+import type { CanalContenido, PiezaContenido, PilarContenido, WorkspaceContenido } from "@/types/contenido";
 import type { IntegracionSocial, MarcaIdentidadSeccion } from "@/types/contenidoOperacion";
 import { cn } from "@/lib/cn";
 
@@ -39,7 +40,7 @@ function isInstagramFeed(pieza: PiezaContenido) {
   return pieza.plataforma === "instagram_feed" || pieza.plataforma === "linkedin_post";
 }
 
-function StudioTile({ pieza, onOpen, onDelete }: { pieza: PiezaContenido; onOpen: (pieza: PiezaContenido) => void; onDelete: (pieza: PiezaContenido) => void }) {
+function StudioTile({ pieza, onOpen, onDelete, onWorkspace, onDragStart, onDrop }: { pieza: PiezaContenido; onOpen: (pieza: PiezaContenido) => void; onDelete: (pieza: PiezaContenido) => void; onWorkspace: (pieza: PiezaContenido) => void; onDragStart?: (pieza: PiezaContenido) => void; onDrop?: (pieza: PiezaContenido) => void }) {
   const imageUrl = getPiezaImageUrl(pieza);
   const story = pieza.plataforma === "instagram_story";
   return (
@@ -47,6 +48,10 @@ function StudioTile({ pieza, onOpen, onDelete }: { pieza: PiezaContenido; onOpen
       role="button"
       tabIndex={0}
       onClick={() => onOpen(pieza)}
+      draggable={Boolean(onDragStart)}
+      onDragStart={() => onDragStart?.(pieza)}
+      onDragOver={(event) => { if (onDrop) event.preventDefault(); }}
+      onDrop={(event) => { event.preventDefault(); onDrop?.(pieza); }}
       onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); onOpen(pieza); } }}
       className="group relative aspect-square cursor-pointer overflow-hidden rounded-md border border-slate-200 bg-slate-50 text-left transition-colors duration-fast hover:border-signal hover:bg-signal-light/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-signal/30"
     >
@@ -60,10 +65,14 @@ function StudioTile({ pieza, onOpen, onDelete }: { pieza: PiezaContenido; onOpen
       </div>
       <div className="absolute left-2 top-2 flex gap-1">
         <Badge variant={pieza.estado === "publicada" ? "success" : pieza.estado === "programada" ? "signal" : "default"}>{pieza.estado === "programada" ? "Programada" : pieza.estado === "publicada" ? "Publicada" : "Borrador"}</Badge>
+        {pieza.feed_pineado ? <Badge variant="warning">Fijada</Badge> : null}
+        {pieza.workspace_data && (pieza.workspace_data.strokes.length > 0 || pieza.workspace_data.texts.length > 0) ? <Badge variant="danger">Correcciones</Badge> : null}
       </div>
       <div className="absolute right-2 top-2 opacity-0 transition-opacity duration-fast group-hover:opacity-100 group-focus-within:opacity-100" onClick={(event) => event.stopPropagation()}>
         <RowActions actions={[
           { kind: "edit", label: "Editar publicación", icon: <PencilIcon size={15} />, onClick: () => onOpen(pieza) },
+          { kind: "edit", label: "Abrir Workspace", icon: <PencilIcon size={15} />, onClick: () => onWorkspace(pieza) },
+          { kind: "edit", label: pieza.feed_pineado ? "Desfijar del feed" : "Fijar arriba", icon: <PlusIcon size={15} />, onClick: () => onDrop?.(pieza) },
           { kind: "destructive", label: "Eliminar publicación", icon: <TrashIcon size={15} />, onClick: () => onDelete(pieza) }
         ]} />
       </div>
@@ -78,6 +87,8 @@ export function MarcaContentStudio({ initialTab = "feed" }: MarcaContentStudioPr
   const [canales, setCanales] = useState<CanalContenido[]>([]);
   const [pilares, setPilares] = useState<PilarContenido[]>([]);
   const [selected, setSelected] = useState<PiezaContenido | null>(null);
+  const [workspacePieza, setWorkspacePieza] = useState<PiezaContenido | null>(null);
+  const [draggedPieza, setDraggedPieza] = useState<PiezaContenido | null>(null);
   const [sections, setSections] = useState<MarcaIdentidadSeccion[]>([]);
   const [integraciones, setIntegraciones] = useState<IntegracionSocial[]>([]);
   const [loading, setLoading] = useState(true);
@@ -100,7 +111,7 @@ export function MarcaContentStudio({ initialTab = "feed" }: MarcaContentStudioPr
 
   useEffect(() => { void load(); }, []);
 
-  const feedPieces = useMemo(() => piezas.filter((pieza) => isInstagramFeed(pieza) && (socialFilter === "instagram" ? pieza.plataforma === "instagram_feed" : pieza.plataforma === "linkedin_post")), [piezas, socialFilter]);
+  const feedPieces = useMemo(() => piezas.filter((pieza) => isInstagramFeed(pieza) && (socialFilter === "instagram" ? pieza.plataforma === "instagram_feed" : pieza.plataforma === "linkedin_post")).sort((a, b) => Number(b.feed_pineado) - Number(a.feed_pineado) || (a.feed_orden ?? Number.MAX_SAFE_INTEGER) - (b.feed_orden ?? Number.MAX_SAFE_INTEGER) || a.created_at.localeCompare(b.created_at)), [piezas, socialFilter]);
   const storyPieces = useMemo(() => piezas.filter((pieza) => pieza.plataforma === "instagram_story"), [piezas]);
   async function handleCreate(platform: "instagram_feed" | "instagram_story" | "linkedin_post") {
     const created = await createPieza({ plataforma: platform, tipo_pieza: platform === "instagram_story" ? "historia" : null, titulo: platform === "instagram_story" ? "Nueva historia" : "Nueva publicación" });
@@ -117,12 +128,8 @@ export function MarcaContentStudio({ initialTab = "feed" }: MarcaContentStudioPr
   async function handleAddChannel() {
     const name = window.prompt("Nombre del nuevo canal");
     if (!name?.trim()) return;
-    try {
-      await createCanal({ nombre: name.trim() });
-      await load();
-    } catch (error) {
-      window.alert(error instanceof Error ? error.message : "No se pudo crear el canal.");
-    }
+    await createCanal({ nombre: name.trim() });
+    await load();
   }
 
   async function handleSave(id: string, payload: Partial<PiezaContenido>) {
@@ -134,6 +141,36 @@ export function MarcaContentStudio({ initialTab = "feed" }: MarcaContentStudioPr
     if (!window.confirm(`¿Eliminar la publicación "${pieza.titulo}"?`)) return;
     await deletePieza(pieza.id);
     if (selected?.id === pieza.id) setSelected(null);
+    await load();
+  }
+
+  async function handleReorder(target: PiezaContenido) {
+    if (!draggedPieza || draggedPieza.id === target.id) return;
+    const ordered = [...feedPieces];
+    const from = ordered.findIndex((item) => item.id === draggedPieza.id);
+    const to = ordered.findIndex((item) => item.id === target.id);
+    if (from < 0 || to < 0) return;
+    const [moved] = ordered.splice(from, 1);
+    if (!moved) return;
+    ordered.splice(to, 0, moved);
+    await Promise.all(ordered.map((item, index) => updatePieza(item.id, { feed_orden: index })));
+    setDraggedPieza(null);
+    await load();
+  }
+
+  async function handleTogglePin(pieza: PiezaContenido) {
+    if (!pieza.feed_pineado && feedPieces.filter((item) => item.feed_pineado).length >= 3) {
+      window.alert("Podés fijar hasta 3 publicaciones arriba del feed.");
+      return;
+    }
+    await updatePieza(pieza.id, { feed_pineado: !pieza.feed_pineado });
+    await load();
+  }
+
+  async function handleWorkspaceSave(data: WorkspaceContenido) {
+    if (!workspacePieza) return;
+    await updatePieza(workspacePieza.id, { workspace_data: data });
+    setWorkspacePieza(null);
     await load();
   }
 
@@ -188,10 +225,10 @@ export function MarcaContentStudio({ initialTab = "feed" }: MarcaContentStudioPr
           <div className="mt-4"><p className="font-title text-sm text-carbon">Blyndtek · Automatización para PyMEs</p><p className="mt-1 text-sm leading-5 text-graphite">Consultoría tecnológica, IA y automatización. Medimos tu operación y te mostramos en números cuánto estás perdiendo.</p><p className="mt-1 text-sm text-signal">blyndtek.com</p></div>
         </Card>
         <div className="flex flex-wrap items-end justify-between gap-3"><div><p className="text-sm font-label text-signal">Vista editorial</p><h2 className="font-title text-xl text-carbon">Feed de {socialFilter === "instagram" ? "Instagram" : "LinkedIn"}</h2><p className="mt-1 text-sm text-graphite">Hacé click en cualquier publicación para abrir su lab y editarla.</p></div><div className="flex flex-wrap gap-2"><div className="flex gap-1 rounded-md border border-slate-200 bg-white p-1"><button type="button" onClick={() => setSocialFilter("instagram")} className={cn("flex items-center gap-2 rounded-md px-3 py-2 text-sm font-label", socialFilter === "instagram" ? "bg-signal text-white" : "text-slate-600 hover:bg-slate-50")}><InstagramIcon size={15} /> Instagram</button><button type="button" onClick={() => setSocialFilter("linkedin")} className={cn("flex items-center gap-2 rounded-md px-3 py-2 text-sm font-label", socialFilter === "linkedin" ? "bg-signal text-white" : "text-slate-600 hover:bg-slate-50")}><LinkedinIcon size={15} /> LinkedIn</button></div><Button size="sm" onClick={() => void handleCreate(socialFilter === "instagram" ? "instagram_feed" : "linkedin_post")}><PlusIcon size={16} /> Nueva publicación</Button></div></div>
-        {feedPieces.length === 0 ? <EmptyState icon={ImageIcon} titulo="Todavía no hay publicaciones" descripcion="Creá la primera publicación para empezar a ordenar el feed de la marca." accion={{ label: "Crear publicación", onClick: () => void handleCreate(socialFilter === "instagram" ? "instagram_feed" : "linkedin_post") }} /> : <div className="grid grid-cols-3 gap-px overflow-hidden rounded-md border border-slate-200 bg-slate-200">{feedPieces.map((pieza) => <StudioTile key={pieza.id} pieza={pieza} onOpen={setSelected} onDelete={handleDelete} />)}</div>}
+        {feedPieces.length === 0 ? <EmptyState icon={ImageIcon} titulo="Todavía no hay publicaciones" descripcion="Creá la primera publicación para empezar a ordenar el feed de la marca." accion={{ label: "Crear publicación", onClick: () => void handleCreate(socialFilter === "instagram" ? "instagram_feed" : "linkedin_post") }} /> : <div className="grid grid-cols-3 gap-px overflow-hidden rounded-md border border-slate-200 bg-slate-200">{feedPieces.map((pieza) => <StudioTile key={pieza.id} pieza={pieza} onOpen={setSelected} onDelete={handleDelete} onWorkspace={setWorkspacePieza} onDragStart={setDraggedPieza} onDrop={(target) => void (draggedPieza ? handleReorder(target) : handleTogglePin(target))} />)}</div>}
       </section> : null}
 
-      {tab === "historias" ? <section className="space-y-4"><div className="flex flex-wrap items-end justify-between gap-3"><div><p className="text-sm font-label text-signal">Laboratorio vertical</p><h2 className="font-title text-xl text-carbon">Historias listas para ejecutar</h2><p className="mt-1 text-sm text-graphite">Organizá secuencias, textos y horarios de historias desde un único lugar.</p></div><Button size="sm" onClick={() => void handleCreate("instagram_story")}><PlusIcon size={16} /> Nueva historia</Button></div>{storyPieces.length === 0 ? <EmptyState icon={StoriesIcon} titulo="Todavía no hay historias" descripcion="Creá una historia para empezar a armar la secuencia de Instagram." accion={{ label: "Crear historia", onClick: () => void handleCreate("instagram_story") }} /> : <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6">{storyPieces.map((pieza) => <div key={pieza.id} className="aspect-[9/16]"><StudioTile pieza={pieza} onOpen={setSelected} onDelete={handleDelete} /></div>)}</div>}</section> : null}
+      {tab === "historias" ? <section className="space-y-4"><div className="flex flex-wrap items-end justify-between gap-3"><div><p className="text-sm font-label text-signal">Laboratorio vertical</p><h2 className="font-title text-xl text-carbon">Historias listas para ejecutar</h2><p className="mt-1 text-sm text-graphite">Organizá secuencias, textos y horarios de historias desde un único lugar.</p></div><Button size="sm" onClick={() => void handleCreate("instagram_story")}><PlusIcon size={16} /> Nueva historia</Button></div>{storyPieces.length === 0 ? <EmptyState icon={StoriesIcon} titulo="Todavía no hay historias" descripcion="Creá una historia para empezar a armar la secuencia de Instagram." accion={{ label: "Crear historia", onClick: () => void handleCreate("instagram_story") }} /> : <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6">{storyPieces.map((pieza) => <div key={pieza.id} className="aspect-[9/16]"><StudioTile pieza={pieza} onOpen={setSelected} onDelete={handleDelete} onWorkspace={setWorkspacePieza} /></div>)}</div>}</section> : null}
 
       {tab === "calendario" ? <MarcaContenidoTimeline canales={canales} piezas={piezas} onOpen={setSelected} onCreate={(canal, date) => void handleCreateFromTimeline(canal, date)} onAddChannel={() => void handleAddChannel()} /> : null}
 
@@ -245,7 +282,8 @@ export function MarcaContentStudio({ initialTab = "feed" }: MarcaContentStudioPr
         </section>
       ) : null}
 
-      <PiezaEditorModal isOpen={Boolean(selected)} pieza={selected} pilares={pilares} onClose={() => setSelected(null)} onSave={handleSave} onUploadImage={async (id, file, index) => { await subirImagenPieza(id, file, index); await load(); }} onGenerateComplete={async (id) => { const result = await generarCompletoPieza(id); await load(); return result; }} onPublish={async (id, red) => { await publicarPieza(id, red); await load(); }} />
+      <PiezaEditorModal simple isOpen={Boolean(selected)} pieza={selected} pilares={pilares} onClose={() => setSelected(null)} onSave={handleSave} onUploadImage={async (id, file, index) => { await subirImagenPieza(id, file, index); await load(); }} onGenerateComplete={async (id) => { const result = await generarCompletoPieza(id); await load(); return result; }} onPublish={async (id, red) => { await publicarPieza(id, red); await load(); }} />
+      <PiezaWorkspaceModal pieza={workspacePieza} isOpen={Boolean(workspacePieza)} onClose={() => setWorkspacePieza(null)} onSave={handleWorkspaceSave} />
     </div>
   );
 }

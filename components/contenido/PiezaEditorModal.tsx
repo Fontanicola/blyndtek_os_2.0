@@ -21,6 +21,7 @@ type PiezaEditorModalProps = {
   onUploadImage: (piezaId: string, file: File, slideIndex?: number | null) => Promise<void>;
   onGenerateComplete: (piezaId: string) => Promise<GenerarCompletoPiezaResult>;
   onPublish?: (piezaId: string, red: "instagram" | "linkedin") => Promise<void>;
+  simple?: boolean;
 };
 
 type EditableSlide = {
@@ -70,6 +71,7 @@ export function PiezaEditorModal({
   onUploadImage,
   onGenerateComplete,
   onPublish
+  , simple = false
 }: PiezaEditorModalProps) {
   const [titulo, setTitulo] = useState("");
   const [pilarId, setPilarId] = useState("");
@@ -178,12 +180,14 @@ export function PiezaEditorModal({
 
       await onSave(pieza.id, {
         titulo,
-        pilar_id: pilarId || null,
         caption,
-        hashtags,
-        estado,
-        fecha_programada: estado === "programada" && fechaProgramada ? fechaProgramada : null,
-        guion: nextGuion
+        ...(simple ? { estado: fechaProgramada ? "programada" : "idea", fecha_programada: fechaProgramada || null } : {
+          pilar_id: pilarId || null,
+          hashtags,
+          estado,
+          fecha_programada: estado === "programada" && fechaProgramada ? fechaProgramada : null,
+          guion: nextGuion
+        })
       });
       onClose();
     } finally {
@@ -294,7 +298,7 @@ export function PiezaEditorModal({
               Subir imagen
             </Button>
 
-            {showRevisionActions ? (
+            {!simple && showRevisionActions ? (
               <div className="rounded-card border border-line-soft bg-success-light p-4">
                 <h3 className="font-title text-base text-carbon">Revisión pendiente</h3>
                 <p className="mt-1 text-xs leading-relaxed text-graphite">
@@ -332,19 +336,19 @@ export function PiezaEditorModal({
               </div>
             ) : null}
 
-            {showMarkPublished ? (
+            {!simple && showMarkPublished ? (
               <Button variant="secondary" className="w-full" loading={saving} onClick={() => void handleMarkPublished()}>
                 Marcar como publicado
               </Button>
             ) : null}
 
-            {onPublish && pieza.estado === "lista" && (pieza.plataforma === "instagram_feed" || pieza.plataforma === "instagram_story" || pieza.plataforma === "linkedin_post") ? (
+            {!simple && onPublish && pieza.estado === "lista" && (pieza.plataforma === "instagram_feed" || pieza.plataforma === "instagram_story" || pieza.plataforma === "linkedin_post") ? (
               <Button className="w-full" loading={publishing} onClick={() => void handlePublish()}>
                 Publicar ahora en {pieza.plataforma === "linkedin_post" ? "LinkedIn" : "Instagram"}
               </Button>
             ) : null}
 
-            {hasRenderableGuion(pieza) ? (
+            {!simple && hasRenderableGuion(pieza) ? (
               <div className="rounded-card border border-line-soft bg-white p-4 shadow-subtle">
                 <div className="mb-3 flex items-start justify-between gap-3">
                   <div>
@@ -436,7 +440,7 @@ export function PiezaEditorModal({
           <div className="space-y-4">
             <Input label="Título" value={titulo} onChange={(event) => setTitulo(event.target.value)} placeholder="Título interno de la pieza" />
 
-            <label className="block">
+            {!simple ? <label className="block">
               <span className="mb-1 block text-sm font-label text-carbon">Pilar</span>
               <select
                 value={pilarId}
@@ -450,9 +454,9 @@ export function PiezaEditorModal({
                   </option>
                 ))}
               </select>
-            </label>
+            </label> : null}
 
-            {pieza.plataforma === "instagram_feed" && slides.length > 0 ? (
+            {!simple && pieza.plataforma === "instagram_feed" && slides.length > 0 ? (
               <section className="rounded-md border border-line-soft bg-paper p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div>
@@ -493,7 +497,7 @@ export function PiezaEditorModal({
               />
             </label>
 
-            <div>
+            {!simple ? <div>
               <span className="mb-2 block text-sm font-label text-carbon">Hashtags</span>
               <div className="flex flex-wrap items-center gap-2 rounded-component border border-line bg-white p-2">
                 {hashtags.map((tag) => (
@@ -518,9 +522,9 @@ export function PiezaEditorModal({
                   className="h-8 min-w-[120px] flex-1 bg-transparent px-1 text-sm text-carbon outline-none placeholder:text-graphite"
                 />
               </div>
-            </div>
+            </div> : null}
 
-            <div className="grid gap-4 sm:grid-cols-2">
+            {!simple ? <div className="grid gap-4 sm:grid-cols-2">
               <label className="block">
                 <span className="mb-1 block text-sm font-label text-carbon">Estado</span>
                 <select
@@ -550,7 +554,7 @@ export function PiezaEditorModal({
                   <Badge variant="ghost">Sin programación</Badge>
                 </div>
               )}
-            </div>
+            </div> : <Input label="Fecha y hora de publicación" type="datetime-local" value={fechaProgramada} onChange={(event) => setFechaProgramada(event.target.value)} />}
 
             <div className="flex justify-end gap-2 pt-2">
               <Button variant="ghost" onClick={onClose}>
