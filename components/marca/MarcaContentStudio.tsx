@@ -142,13 +142,14 @@ export function MarcaContentStudio({ initialTab = "feed", initialSocialFilter = 
   }, []);
 
   const feedPieces = useMemo(() => piezas.filter((pieza) => isInstagramFeed(pieza) && (socialFilter === "instagram" ? pieza.plataforma === "instagram_feed" : pieza.plataforma === "linkedin_post")).sort((a, b) => Number(b.feed_pineado) - Number(a.feed_pineado) || (a.feed_orden ?? Number.MAX_SAFE_INTEGER) - (b.feed_orden ?? Number.MAX_SAFE_INTEGER) || a.created_at.localeCompare(b.created_at)), [piezas, socialFilter]);
+  const pinnedFeedPieces = useMemo(() => feedPieces.filter((pieza) => pieza.feed_pineado), [feedPieces]);
+  const unpinnedFeedPieces = useMemo(() => feedPieces.filter((pieza) => !pieza.feed_pineado), [feedPieces]);
   const storyPieces = useMemo(() => piezas.filter((pieza) => pieza.plataforma === "instagram_story"), [piezas]);
   const currentWeek = weekKey(new Date());
   const activeFeedPlatform = socialFilter === "instagram" ? "instagram_feed" : "linkedin_post";
   const feedWeeks = useMemo(() => {
-    const dates = feedPieces.map((pieza, index) => {
-      const slotDate = feedSlots.find((slot) => slot.plataforma === activeFeedPlatform && slot.slot_orden === index)?.fecha_programada;
-      return slotDate ? weekKey(new Date(slotDate)) : pieza.fecha_programada ? weekKey(new Date(pieza.fecha_programada)) : null;
+    const dates = unpinnedFeedPieces.map((pieza) => {
+      return pieza.fecha_programada ? weekKey(new Date(pieza.fecha_programada)) : null;
     });
     const keys = new Set<string>(manualWeeks[socialFilter] ?? []);
     dates.forEach((date) => { if (date) keys.add(date); });
@@ -162,18 +163,17 @@ export function MarcaContentStudio({ initialTab = "feed", initialSocialFilter = 
       if (aUndated !== bUndated) return aUndated ? 1 : -1;
       return aUndated ? a.localeCompare(b) : b.localeCompare(a);
     });
-  }, [activeFeedPlatform, feedPieces, feedSlots, manualWeeks, socialFilter]);
+  }, [manualWeeks, socialFilter, unpinnedFeedPieces]);
   const feedPiecesByWeek = useMemo(() => {
     const assignments = new Map<string, PiezaContenido[]>();
     let undatedIndex = 0;
-    feedPieces.forEach((pieza, index) => {
-      const slotDate = feedSlots.find((slot) => slot.plataforma === activeFeedPlatform && slot.slot_orden === index)?.fecha_programada;
-      const key = slotDate ? weekKey(new Date(slotDate)) : pieza.fecha_programada ? weekKey(new Date(pieza.fecha_programada)) : `sin-fecha-${Math.floor(undatedIndex / 3)}`;
-      if (!slotDate && !pieza.fecha_programada) undatedIndex += 1;
+    unpinnedFeedPieces.forEach((pieza) => {
+      const key = pieza.fecha_programada ? weekKey(new Date(pieza.fecha_programada)) : `sin-fecha-${Math.floor(undatedIndex / 3)}`;
+      if (!pieza.fecha_programada) undatedIndex += 1;
       assignments.set(key, [...(assignments.get(key) ?? []), pieza]);
     });
     return assignments;
-  }, [activeFeedPlatform, feedPieces, feedSlots]);
+  }, [unpinnedFeedPieces]);
   const selectedCurrentWeek = currentWeekOverrides[socialFilter] ?? currentWeek;
   const currentWeekIndex = feedWeeks.findIndex((week) => week === selectedCurrentWeek);
   const displayCurrentWeekIndex = currentWeekIndex >= 0 ? currentWeekIndex : (feedWeeks.length > 0 ? 0 : -1);
@@ -301,6 +301,9 @@ export function MarcaContentStudio({ initialTab = "feed", initialSocialFilter = 
 
       {tab === "feed" ? <section className="mx-auto max-w-3xl space-y-5">
         <div className="space-y-3">
+          {pinnedFeedPieces.length > 0 ? <div className="grid grid-cols-3 gap-4 rounded-md bg-white p-2">
+            {pinnedFeedPieces.map((pieza) => <div className="relative z-10" key={pieza.id}><StudioTile ratio="portrait" pieza={pieza} onOpen={setSelected} onDelete={handleDelete} onWorkspace={setWorkspacePieza} onDragStart={setDraggedPieza} onDrop={(target) => void (draggedPieza ? handleReorder(target) : handleTogglePin(target))} /></div>)}
+          </div> : null}
           {feedWeeks.map((week, weekIndex) => <div key={week}>
             <div className={cn("relative grid grid-cols-3 gap-4 overflow-visible rounded-md p-2 transition-colors", displayCurrentWeekIndex === weekIndex && "bg-amber-50/60")} onDragOver={(event) => { if (draggingWeekMarker) event.preventDefault(); }} onDrop={() => { if (draggingWeekMarker) { moveCurrentWeek(weekIndex); setDraggingWeekMarker(false); } }}>
               {displayCurrentWeekIndex === weekIndex ? <div draggable onDragStart={() => setDraggingWeekMarker(true)} onDragEnd={() => setDraggingWeekMarker(false)} className={cn("group absolute -left-5 inset-y-0 z-20 flex w-4 cursor-grab items-center justify-center", draggingWeekMarker && "opacity-40")} title="Arrastrá para elegir la semana actual"><div className="h-full w-1 rounded-full bg-amber-400" /><span className="absolute top-1/2 flex h-4 w-4 -translate-y-1/2 items-center justify-center rounded-full bg-amber-500 shadow-sm"><span className="h-1.5 w-1.5 rounded-full bg-white" /></span><span className="absolute left-6 top-1/2 -translate-y-1/2 whitespace-nowrap rounded-pill bg-amber-100 px-2 py-0.5 text-[10px] font-label text-amber-900 opacity-0 transition-opacity group-hover:opacity-100">Semana actual</span></div> : null}
