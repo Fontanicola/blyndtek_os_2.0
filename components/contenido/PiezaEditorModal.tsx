@@ -111,6 +111,7 @@ export function PiezaEditorModal({
   const [pilarId, setPilarId] = useState("");
   const [caption, setCaption] = useState("");
   const [estado, setEstado] = useState<PiezaContenidoEstado>("idea");
+  const [aprobada, setAprobada] = useState(false);
   const [fechaProgramada, setFechaProgramada] = useState("");
   const [hashtags, setHashtags] = useState<string[]>([]);
   const [slides, setSlides] = useState<EditableSlide[]>([]);
@@ -136,6 +137,7 @@ export function PiezaEditorModal({
     setPilarId(pieza.pilar_id ?? "");
     setCaption(pieza.caption ?? "");
     setEstado(pieza.estado);
+    setAprobada(pieza.estado === "lista" || pieza.estado === "programada");
     setFechaProgramada(pieza.fecha_programada ? pieza.fecha_programada.slice(0, 16) : "");
     setHashtags(Array.isArray(pieza.hashtags) ? pieza.hashtags : []);
     setSlides(getEditableSlides(pieza));
@@ -215,7 +217,7 @@ export function PiezaEditorModal({
       await onSave(pieza.id, {
         titulo,
         caption,
-        ...(simple ? { estado: fechaProgramada ? "programada" : "idea", fecha_programada: fechaProgramada || null } : {
+        ...(simple ? { estado: aprobada ? "lista" : "idea", fecha_programada: aprobada ? fechaProgramada || null : null } : {
           pilar_id: pilarId || null,
           hashtags,
           estado,
@@ -588,7 +590,13 @@ export function PiezaEditorModal({
                   <Badge variant="ghost">Sin programación</Badge>
                 </div>
               )}
-            </div> : <Input label="Fecha y hora de publicación" type="datetime-local" value={fechaProgramada} onChange={(event) => setFechaProgramada(event.target.value)} />}
+            </div> : <div className="space-y-3">
+              <div className="grid gap-2 sm:grid-cols-2">
+                <button type="button" onClick={() => setAprobada(false)} className={cn("rounded-md border px-3 py-2 text-left text-sm font-label", !aprobada ? "border-slate-400 bg-slate-100 text-carbon" : "border-line-soft bg-white text-graphite")}>Borrador<p className="mt-1 text-xs font-normal text-graphite">No se automatiza la subida.</p></button>
+                <button type="button" onClick={() => setAprobada(true)} className={cn("rounded-md border px-3 py-2 text-left text-sm font-label", aprobada ? "border-success bg-success-light text-success" : "border-line-soft bg-white text-graphite")}>Aprobada<p className="mt-1 text-xs font-normal text-graphite">Se sube automáticamente en la fecha indicada.</p></button>
+              </div>
+              <Input label="Fecha y hora de publicación" type="datetime-local" value={fechaProgramada} disabled={!aprobada} onChange={(event) => setFechaProgramada(event.target.value)} />
+            </div>}
 
             <div className="flex justify-end gap-2 pt-2">
               <Button variant="ghost" onClick={onClose}>
