@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui";
 import { CalendarIcon, ClockIcon, PlusIcon } from "@/components/ui/icons";
 import { cn } from "@/lib/cn";
@@ -8,6 +8,7 @@ import type { CanalContenido, PiezaContenido } from "@/types/contenido";
 
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 const WEEK_WIDTH = 132;
+const DAY_WIDTH = 112;
 
 function startOfWeek(date: Date) {
   const value = new Date(date.getFullYear(), date.getMonth(), date.getDate());
@@ -19,6 +20,10 @@ function startOfWeek(date: Date) {
 
 function toDateKey(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
+function addDays(date: Date, days: number) {
+  return new Date(date.getTime() + days * 24 * 60 * 60 * 1000);
 }
 
 function pieceDateKey(value: string | null) {
@@ -49,6 +54,7 @@ type Props = {
 export function MarcaContenidoTimeline({ canales, piezas, onOpen, onCreate, onAddChannel }: Props) {
   const scrollerRef = useRef<HTMLDivElement>(null);
   const currentWeekRef = useRef<HTMLDivElement>(null);
+  const [expandedWeekKey, setExpandedWeekKey] = useState<string | null>(null);
   const weeks = useMemo(() => {
     const first = startOfWeek(new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1));
     return Array.from({ length: 32 }, (_, index) => new Date(first.getTime() + index * WEEK_MS));
@@ -75,6 +81,16 @@ export function MarcaContenidoTimeline({ canales, piezas, onOpen, onCreate, onAd
     return groups;
   }, [weeks]);
 
+  const weekNumberByKey = useMemo(() => {
+    const counters = new Map<string, number>();
+    return new Map(weeks.map((week) => {
+      const monthKey = `${week.getFullYear()}-${week.getMonth()}`;
+      const number = (counters.get(monthKey) ?? 0) + 1;
+      counters.set(monthKey, number);
+      return [toDateKey(week), number] as const;
+    }));
+  }, [weeks]);
+
   const piecesByChannelAndDate = useMemo(() => {
     const map = new Map<string, PiezaContenido[]>();
     piezas.filter((pieza) => pieza.fecha_programada).forEach((pieza) => {
@@ -94,7 +110,7 @@ export function MarcaContenidoTimeline({ canales, piezas, onOpen, onCreate, onAd
       <div className="overflow-hidden rounded-md border border-slate-200 bg-white">
         <div className="flex min-w-0">
           <div className="sticky left-0 z-30 w-[244px] shrink-0 bg-white">
-            <div className="box-border sticky top-0 z-20 flex h-[84px] items-end border-b border-r border-slate-300 px-4 pb-3 text-xs font-label uppercase tracking-[0.14em] text-graphite">Canal</div>
+            <div className={cn("box-border sticky top-0 z-20 flex items-end border-b border-r border-slate-300 px-4 pb-3 text-xs font-label uppercase tracking-[0.14em] text-graphite", expandedWeekKey ? "h-[120px]" : "h-[84px]")}>Canal</div>
             {canales.map((canal) => <div key={canal.id} className="box-border flex h-[132px] min-h-0 flex-col justify-center overflow-hidden border-b border-r border-slate-300 px-4 last:border-b-0"><span className="text-sm font-title text-carbon">{canal.nombre}</span><span className="mt-1 text-xs text-graphite">{piezas.filter((pieza) => pieza.plataforma === canal.plataforma && pieza.fecha_programada).length} piezas programadas</span></div>)}
             {canales.length === 0 ? <div className="box-border flex h-[132px] min-h-0 items-center justify-center overflow-hidden border-r border-slate-300 p-6 text-center text-sm text-graphite"><CalendarIcon className="mr-2 shrink-0 text-slate-400" size={20} />Sin canales</div> : null}
           </div>
@@ -102,22 +118,28 @@ export function MarcaContenidoTimeline({ canales, piezas, onOpen, onCreate, onAd
             <div className="min-w-max">
               <div className="sticky top-0 z-20 border-b border-slate-200 bg-white">
                 <div className="flex h-12 border-b border-slate-200">
-                  {monthGroups.map((month) => <div key={month.key} className="border-r border-slate-300 px-4 pt-3 text-center text-sm font-title capitalize text-carbon" style={{ width: month.count * WEEK_WIDTH }}>{month.label}</div>)}
+                  {monthGroups.map((month) => <div key={month.key} className="border-r border-slate-300 px-4 pt-3 text-center text-sm font-title capitalize text-carbon" style={{ width: weeks.slice(month.start, month.start + month.count).reduce((total, week) => total + (toDateKey(week) === expandedWeekKey ? DAY_WIDTH * 7 : WEEK_WIDTH), 0) }}>{month.label}</div>)}
                 </div>
-                <div className="flex h-9">
+                <div className="flex min-h-9">
                   {weeks.map((week) => {
                     const key = toDateKey(week);
-                    return <div ref={key === todayKey ? currentWeekRef : undefined} key={key} className={cn("relative flex items-center justify-center border-r border-slate-200 text-xs font-label text-graphite", key === todayKey && "bg-amber-50 text-amber-800")} style={{ width: WEEK_WIDTH }}><span>Sem. {week.getDate()}</span>{key === todayKey ? <span className="absolute -top-1 h-2 w-2 rounded-full bg-amber-500" /> : null}</div>;
+                    const expanded = key === expandedWeekKey;
+                    return <div ref={key === todayKey ? currentWeekRef : undefined} key={key} className={cn("relative shrink-0 border-r border-slate-200 text-xs font-label text-graphite", key === todayKey && "bg-amber-50 text-amber-800")} style={{ width: expanded ? DAY_WIDTH * 7 : WEEK_WIDTH }}>
+                      <button type="button" onClick={() => setExpandedWeekKey(expanded ? null : key)} className="flex h-9 w-full items-center justify-center font-label hover:bg-slate-50" aria-label={`${expanded ? "Contraer" : "Expandir"} semana ${weekNumberByKey.get(key) ?? 1}`}><span>Sem. {weekNumberByKey.get(key) ?? 1}</span>{key === todayKey ? <span className="absolute -top-1 h-2 w-2 rounded-full bg-amber-500" /> : null}</button>
+                      {expanded ? <div className="grid grid-cols-7 border-t border-slate-200">{Array.from({ length: 7 }, (_, dayIndex) => { const day = addDays(week, dayIndex); return <div key={toDateKey(day)} className="flex h-9 items-center justify-center border-r border-slate-200 text-[10px]">{new Intl.DateTimeFormat("es-AR", { weekday: "short", day: "numeric" }).format(day)}</div>; })}</div> : null}
+                    </div>;
                   })}
                 </div>
               </div>
               {canales.map((canal) => <div key={canal.id} className="box-border flex h-[132px] min-h-0 overflow-hidden border-b border-slate-300 last:border-b-0">
                 {weeks.map((week) => {
-                  const dateKey = toDateKey(week);
-                  const cellPieces = piecesByChannelAndDate.get(`${canal.plataforma}:${dateKey}`) ?? [];
-                  return <div key={`${canal.id}-${dateKey}`} className={cn("group relative h-[132px] border-r border-slate-200 p-2", dateKey === todayKey && "bg-amber-50/60")} style={{ width: WEEK_WIDTH }}>
-                    <button type="button" aria-label={`Agregar contenido en ${canal.nombre}, semana del ${dateKey}`} onClick={() => onCreate(canal, week)} className="absolute inset-0 z-0 opacity-0 transition-opacity group-hover:opacity-100"><span className="absolute right-2 top-2 rounded-md bg-white px-2 py-1 text-[11px] font-label text-signal shadow-sm">+ Agregar</span></button>
-                    <div className="relative z-10 space-y-1">{cellPieces.map((pieza) => <button key={pieza.id} type="button" onClick={() => onOpen(pieza)} className={cn("block w-full overflow-hidden rounded-md border px-2 py-2 text-left shadow-sm transition-shadow hover:shadow-md", channelColor(canal))} title={`${pieza.titulo} · ${pieceLabel(pieza)}`}><span className="flex items-center gap-1 text-[10px] font-label uppercase tracking-wide opacity-70"><ClockIcon size={11} /> {pieza.fecha_programada ? new Intl.DateTimeFormat("es-AR", { day: "2-digit", month: "2-digit" }).format(new Date(pieza.fecha_programada)) : ""}</span><span className="mt-1 block truncate text-xs font-label">{pieza.titulo}</span></button>)}</div>
+                  const expanded = toDateKey(week) === expandedWeekKey;
+                  const days = expanded ? Array.from({ length: 7 }, (_, dayIndex) => addDays(week, dayIndex)) : [week];
+                  return <div key={`${canal.id}-${toDateKey(week)}`} className="grid h-[132px] shrink-0" style={{ width: expanded ? DAY_WIDTH * 7 : WEEK_WIDTH, gridTemplateColumns: `repeat(${days.length}, minmax(0, 1fr))` }}>
+                    {days.map((day) => { const dateKey = toDateKey(day); const cellPieces = piecesByChannelAndDate.get(`${canal.plataforma}:${dateKey}`) ?? []; return <div key={`${canal.id}-${dateKey}`} className={cn("group relative h-[132px] border-r border-slate-200 p-2", dateKey === todayKey && "bg-amber-50/60")}>
+                      <button type="button" aria-label={`Agregar contenido en ${canal.nombre}, día ${dateKey}`} onClick={() => onCreate(canal, day)} className="absolute inset-0 z-0 opacity-0 transition-opacity group-hover:opacity-100"><span className="absolute right-2 top-2 rounded-md bg-white px-2 py-1 text-[11px] font-label text-signal shadow-sm">+ Agregar</span></button>
+                      <div className="relative z-10 space-y-1">{cellPieces.map((pieza) => <button key={pieza.id} type="button" onClick={() => onOpen(pieza)} className={cn("block w-full overflow-hidden rounded-md border px-2 py-2 text-left shadow-sm transition-shadow hover:shadow-md", channelColor(canal))} title={`${pieza.titulo} · ${pieceLabel(pieza)}`}><span className="flex items-center gap-1 text-[10px] font-label uppercase tracking-wide opacity-70"><ClockIcon size={11} /> {pieza.fecha_programada ? new Intl.DateTimeFormat("es-AR", { day: "2-digit", month: "2-digit" }).format(new Date(pieza.fecha_programada)) : ""}</span><span className="mt-1 block truncate text-xs font-label">{pieza.titulo}</span></button>)}</div>
+                    </div>; })}
                   </div>;
                 })}
               </div>)}
