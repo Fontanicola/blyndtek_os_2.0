@@ -95,8 +95,8 @@ export function MarcaContentStudio({ initialTab = "feed" }: MarcaContentStudioPr
   const [savingIdentity, setSavingIdentity] = useState<"idle" | "saving" | "saved">("idle");
   const [connecting, setConnecting] = useState<"instagram" | "linkedin" | null>(null);
 
-  async function load() {
-    setLoading(true);
+  async function load(showLoading = false) {
+    if (showLoading) setLoading(true);
     try {
       const [pieces, pillars, identity, social, channelList, slots] = await Promise.all([fetchPiezas(), fetchPilares(), fetchIdentidadSecciones().catch(() => []), fetchIntegracionesSociales().catch(() => []), fetchCanales(), fetchFeedSlots().catch(() => [])]);
       setPiezas(pieces);
@@ -106,11 +106,11 @@ export function MarcaContentStudio({ initialTab = "feed" }: MarcaContentStudioPr
       setSections(identity.length ? identity : sectionDefaults.map(([clave, titulo]) => ({ id: clave, marca_id: "", clave, titulo, contenido: "", orden: 0, visible: true, updated_by: null, created_at: "", updated_at: "" })));
       setIntegraciones(social);
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
   }
 
-  useEffect(() => { void load(); }, []);
+  useEffect(() => { void load(true); }, []);
 
   const feedPieces = useMemo(() => piezas.filter((pieza) => isInstagramFeed(pieza) && (socialFilter === "instagram" ? pieza.plataforma === "instagram_feed" : pieza.plataforma === "linkedin_post")).sort((a, b) => Number(b.feed_pineado) - Number(a.feed_pineado) || (a.feed_orden ?? Number.MAX_SAFE_INTEGER) - (b.feed_orden ?? Number.MAX_SAFE_INTEGER) || a.created_at.localeCompare(b.created_at)), [piezas, socialFilter]);
   const storyPieces = useMemo(() => piezas.filter((pieza) => pieza.plataforma === "instagram_story"), [piezas]);
