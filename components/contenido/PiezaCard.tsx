@@ -59,12 +59,13 @@ function getTipoContenidoVisual(tipo: PiezaContenidoTipo): PiezaTipoVisual | nul
   return tipo ? TIPO_PIEZA_VISUAL[tipo] ?? null : null;
 }
 
-export function getPiezaImageUrl(pieza: Pick<PiezaContenido, "id" | "storage_path">) {
+export function getPiezaImageUrl(pieza: Pick<PiezaContenido, "id" | "storage_path"> & Partial<Pick<PiezaContenido, "updated_at">>) {
   if (!pieza.storage_path) {
     return null;
   }
 
-  return `/api/piezas-contenido/${pieza.id}/imagen/${encodeURIComponent(pieza.storage_path)}`;
+  const version = pieza.updated_at ? `?v=${encodeURIComponent(pieza.updated_at)}` : "";
+  return `/api/piezas-contenido/${pieza.id}/imagen/${encodeURIComponent(pieza.storage_path)}${version}`;
 }
 
 export function getPiezaImagePathUrl(piezaId: string, storagePath: string) {

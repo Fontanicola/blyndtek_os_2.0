@@ -60,7 +60,9 @@ async function prepareFeedImage(file: File) {
 
     let quality = 0.86;
     let blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", quality));
-    while (blob && blob.size > 4 * 1024 * 1024 && quality > 0.55) {
+    // Vercel puede rechazar el multipart antes de que llegue a la route. Dejamos
+    // margen para el overhead de FormData y apuntamos a menos de 3.5 MB.
+    while (blob && blob.size > 3.5 * 1024 * 1024 && quality > 0.42) {
       quality -= 0.08;
       blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", quality));
     }
@@ -118,6 +120,7 @@ export function PiezaEditorModal({
   const [tagInput, setTagInput] = useState("");
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
   const [generationError, setGenerationError] = useState<string | null>(null);
   const [generatedPrompt, setGeneratedPrompt] = useState("");
@@ -177,8 +180,11 @@ export function PiezaEditorModal({
     }
 
     setUploading(true);
+    setUploadError(null);
     try {
       await onUploadImage(pieza.id, pieza.plataforma === "instagram_feed" ? await prepareFeedImage(file) : file);
+    } catch (error) {
+      setUploadError(error instanceof Error ? error.message : "No se pudo subir el creativo.");
     } finally {
       setUploading(false);
     }
@@ -195,8 +201,11 @@ export function PiezaEditorModal({
     }
 
     setUploading(true);
+    setUploadError(null);
     try {
-      await onUploadImage(pieza.id, file, slideIndex);
+      await onUploadImage(pieza.id, pieza.plataforma === "instagram_feed" ? await prepareFeedImage(file) : file, slideIndex);
+    } catch (error) {
+      setUploadError(error instanceof Error ? error.message : "No se pudo subir el creativo.");
     } finally {
       setUploading(false);
     }
@@ -333,6 +342,7 @@ export function PiezaEditorModal({
               <UploadIcon size={16} />
               Subir imagen
             </Button>
+            {uploadError ? <p className="text-xs font-label text-danger">{uploadError}</p> : null}
 
             {!simple && showRevisionActions ? (
               <div className="rounded-card border border-line-soft bg-success-light p-4">

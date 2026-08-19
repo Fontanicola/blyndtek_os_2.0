@@ -381,7 +381,7 @@ export function MarcaContentStudio({ initialTab = "feed", initialSocialFilter = 
         </section>
       ) : null}
 
-      <PiezaEditorModal simple isOpen={Boolean(selected)} pieza={selected} pilares={pilares} onClose={() => setSelected(null)} onSave={handleSave} onUploadImage={async (id, file, index) => { await subirImagenPieza(id, file, index); await load(); }} onGenerateComplete={async (id) => { const result = await generarCompletoPieza(id); await load(); return result; }} onPublish={async (id, red) => { await publicarPieza(id, red); await load(); }} />
+      <PiezaEditorModal simple isOpen={Boolean(selected)} pieza={selected} pilares={pilares} onClose={() => setSelected(null)} onSave={handleSave} onUploadImage={async (id, file, index) => { const saved = await subirImagenPieza(id, file, index); setSelected(saved); await load(); }} onGenerateComplete={async (id) => { const result = await generarCompletoPieza(id); await load(); return result; }} onPublish={async (id, red) => { await publicarPieza(id, red); await load(); }} />
       <PiezaWorkspaceModal pieza={workspacePieza} isOpen={Boolean(workspacePieza)} onClose={() => setWorkspacePieza(null)} onSave={handleWorkspaceSave} />
     </div>
   );
