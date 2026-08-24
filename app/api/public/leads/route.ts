@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createUntypedAdminClient } from "@/lib/supabase/admin";
 import type { CanalOrigenLead } from "@/types/leads";
+import { sendMetaLeadEvent } from "@/lib/meta/conversions-api";
+import { randomUUID } from "node:crypto";
 
 export const runtime = "nodejs";
 
-const DEFAULT_MARKETING_SITE_URL = "https://blyndtek.com";
+const DEFAULT_MARKETING_SITE_URLS = ["https://blyndtek.com", "https://www.blyndtek.com"];
 const RATE_LIMIT_WINDOW_MS = 60_000;
 const RATE_LIMIT_MAX_REQUESTS = 5;
 
@@ -30,6 +32,12 @@ type PublicLeadBody = {
   formulario_version?: unknown;
   consentimiento_marketing?: unknown;
   honeypot?: unknown;
+  cantidad_empleados?: unknown;
+  acepta_diagnostico_pago?: unknown;
+  problema_principal?: unknown;
+  rol?: unknown;
+  urgencia?: unknown;
+  referrer?: unknown;
 };
 
 type RateLimitEntry = {
@@ -39,8 +47,13 @@ type RateLimitEntry = {
 
 const rateLimitStore = new Map<string, RateLimitEntry>();
 
-function getAllowedOrigin() {
-  return process.env.MARKETING_SITE_URL?.trim() || DEFAULT_MARKETING_SITE_URL;
+function getAllowedOrigins() {
+  const configured = (process.env.MARKETING_SITE_URLS || process.env.MARKETING_SITE_URL || "")
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean);
+
+  return new Set([...DEFAULT_MARKETING_SITE_URLS, ...configured]);
 }
 
 function buildCorsHeaders(origin: string) {
@@ -57,14 +70,13 @@ function rejectCors() {
 }
 
 function getCorsHeadersOrResponse(request: NextRequest) {
-  const allowedOrigin = getAllowedOrigin();
   const origin = request.headers.get("origin");
 
-  if (origin !== allowedOrigin) {
+  if (!origin || !getAllowedOrigins().has(origin)) {
     return { errorResponse: rejectCors(), headers: null };
   }
 
-  return { errorResponse: null, headers: buildCorsHeaders(allowedOrigin) };
+  return { errorResponse: null, headers: buildCorsHeaders(origin) };
 }
 
 function getRequestIp(request: NextRequest) {
@@ -118,8 +130,8 @@ function isValidEmail(email: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
-function buildNotas(email: string, mensajeInicial: string) {
-  return [`Email: ${email}`, mensajeInicial ? `Mensaje inicial: ${mensajeInicial}` : null]
+function buildNotas(email: string, mensajeInicial: string, details: string[]) {
+  return [`Email: ${email}`, mensajeInicial ? `Mensaje inicial: ${mensajeInicial}` : null, ...details]
     .filter(Boolean)
     .join("\n");
 }
@@ -192,6 +204,7 @@ export async function POST(request: NextRequest) {
   const fbp = asTrimmedString(body.fbp);
   const landingUrl = asTrimmedString(body.landing_url);
   const formularioVersion = asTrimmedString(body.formulario_version);
+  const eventId = randomUUID();
 
   if (!nombre) {
     return NextResponse.json({ error: "El nombre es obligatorio." }, { status: 400, headers });
@@ -206,6 +219,13 @@ export async function POST(request: NextRequest) {
   }
 
   const supabase = createUntypedAdminClient();
+  const details = [
+    asTrimmedString(body.cantidad_empleados) ? `Empleados: ${asTrimmedString(body.cantidad_empleados)}` : "",
+    asTrimmedString(body.rol) ? `Rol: ${asTrimmedString(body.rol)}` : "",
+    asTrimmedString(body.problema_principal) ? `Problema: ${asTrimmedString(body.problema_principal)}` : "",
+    asTrimmedString(body.urgencia) ? `Urgencia: ${asTrimmedString(body.urgencia)}` : "",
+    body.acepta_diagnostico_pago === true ? "Acepta diagnóstico pago: sí" : ""
+  ].filter(Boolean);
   const payload = {
     canal: "inbound",
     canal_origen: mapUtmSourceToCanalOrigen(utmSource),
@@ -219,7 +239,7 @@ export async function POST(request: NextRequest) {
     responsable_id: null,
     contexto: mensajeInicial || null,
     mensaje_inicial: mensajeInicial || null,
-    notas: buildNotas(email, mensajeInicial),
+    notas: buildNotas(email, mensajeInicial, details),
     utm_source: utmSource || null,
     utm_medium: utmMedium || null,
     utm_content: utmContent || null,
@@ -234,17 +254,40 @@ export async function POST(request: NextRequest) {
     landing_url: landingUrl || null,
     formulario_version: formularioVersion || null,
     consentimiento_marketing: body.consentimiento_marketing === true,
-    attribution_captured_at: new Date().toISOString()
+    attribution_captured_at: new Date().toISOString(),
+    meta_event_id: eventId,
+    meta_capi_status: "pending"
   };
 
-  const { error } = await supabase.from("leads").insert(payload).select("id").single();
+  const { data: lead, error } = await supabase.from("leads").insert(payload).select("id").single();
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500, headers });
   }
 
+  const capi = await sendMetaLeadEvent({
+    email,
+    eventId,
+    eventSourceUrl: landingUrl,
+    fbc,
+    fbp,
+    ipAddress: getRequestIp(request),
+    leadId: lead.id,
+    phone: telefono,
+    userAgent: request.headers.get("user-agent") || undefined
+  });
+
+  await supabase
+    .from("leads")
+    .update({
+      meta_capi_status: capi.ok ? "sent" : "error",
+      meta_capi_event_at: capi.ok ? new Date().toISOString() : null,
+      meta_capi_error: capi.ok ? null : capi.error
+    })
+    .eq("id", lead.id);
+
   return NextResponse.json(
-    { message: "Gracias. Recibimos tu consulta y te vamos a contactar pronto." },
+    { event_id: eventId, message: "Gracias. Recibimos tu consulta y te vamos a contactar pronto." },
     { status: 200, headers }
   );
 }
