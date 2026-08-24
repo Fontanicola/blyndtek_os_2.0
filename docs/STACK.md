@@ -29,7 +29,7 @@ Documento canónico del stack técnico de Blyndtek OS. Las versiones salen de pa
 | Claude API | fetch a https://api.anthropic.com/v1/messages | Diagnósticos, propuestas, agentes, checklist y contenido | No hay SDK de Anthropic instalado. Las respuestas se tipan y validan; el modelo canónico es claude-sonnet-4-6. |
 | Higgsfield | @higgsfield/client 0.2.1 | Fondos visuales de Content Studio cuando el tipo lo permite | Se usa el SDK oficial y credenciales Key ID:Secret, no Bearer. |
 | Google Calendar | función sync-google-calendar y APIs de calendario | Sincronización de eventos | Mantiene eventos externos conectados con el calendario operativo. |
-| Meta Marketing API | Graph API server-side, sólo lectura en Fase 1 | Campañas, conjuntos, anuncios, creatividades e insights diarios | El token vive en Vercel; el CRM cachea métricas y nunca cambia campañas automáticamente. |
+| Meta Marketing API | Graph API v26 server-side, sólo lectura | Campañas, conjuntos, anuncios, creatividades, insights diarios y reglas de Fase 2 | El token vive en Vercel; el CRM cachea métricas, genera alertas auditables y nunca cambia campañas automáticamente. |
 
 ## 3. Librerías aprobadas
 

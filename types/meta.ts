@@ -19,6 +19,8 @@ export type MetaKpis = {
   costPerLead: number | null;
   costPerQualifiedLead: number | null;
   cashRoas: number | null;
+  videoPlays3s: number;
+  videoPlays15s: number;
 };
 
 export type MetaTrendPoint = {
@@ -63,6 +65,10 @@ export type MetaCreativeRow = {
   platformLeads: number;
   ctr: number;
   cpl: number | null;
+  videoPlays3s: number;
+  videoPlays15s: number;
+  hookRate: number | null;
+  holdRate: number | null;
 };
 
 export type MetaFunnelStage = {
@@ -86,10 +92,27 @@ export type MetaRun = {
 export type MetaRecommendation = {
   id: string;
   severity: "info" | "warning" | "critical";
+  status: "open" | "acknowledged";
+  ruleKey: string;
+  entityType: string | null;
+  entityId: string | null;
   title: string;
   rationale: string;
   recommendedAction: string;
   detectedAt: string;
+  lastDetectedAt: string;
+  occurrences: number;
+};
+
+export type MetaGuardrails = {
+  targetCpl: number;
+  targetCpql: number;
+  targetCashRoas: number;
+  minLinkCtr: number;
+  maxFrequency: number;
+  maxAttributionGapPct: number;
+  minSpendForAlert: number;
+  staleSyncHours: number;
 };
 
 export type MetaOverview = {
@@ -104,6 +127,8 @@ export type MetaOverview = {
   };
   period: MetaPeriod;
   periodStart: string;
+  healthScore: number;
+  guardrails: MetaGuardrails;
   kpis: MetaKpis;
   trend: MetaTrendPoint[];
   campaigns: MetaCampaignRow[];

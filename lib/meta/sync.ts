@@ -1,4 +1,5 @@
 import { getMetaConfig } from "@/lib/meta/config";
+import { safelyGenerateMetaRecommendations } from "@/lib/meta/intelligence";
 import {
   getMetaAccount,
   getMetaAds,
@@ -171,7 +172,9 @@ export async function syncMetaAds(initiatedBy: string | null, triggerType: "manu
       records_adsets: adSets.length, records_ads: ads.length, records_insights: insights.length
     }).eq("id", run.id);
 
-    return { records, campaigns: campaigns.length, adSets: adSets.length, ads: ads.length, insights: insights.length };
+    const intelligence = await safelyGenerateMetaRecommendations();
+
+    return { records, campaigns: campaigns.length, adSets: adSets.length, ads: ads.length, insights: insights.length, intelligence };
   } catch (error) {
     const message = error instanceof Error ? error.message : "Error desconocido al sincronizar Meta.";
     await Promise.all([

@@ -12,6 +12,8 @@ Las funciones viven en `supabase/functions/`:
 
 Meta Ads usa una función Vercel separada: `GET /api/cron/meta-sync`, declarada en `vercel.json` a las 10:15 UTC. Vercel envía `Authorization: Bearer $CRON_SECRET`; la ejecución consulta Meta en modo lectura y registra el resultado en `meta_sync_runs`.
 
+Al finalizar una sincronización correcta, la Fase 2 recalcula recomendaciones contra `meta_guardrails`. El análisis es tolerante a fallos: si una regla falla, el sync de datos permanece válido y el error se registra server-side. Las recomendaciones nunca aplican cambios en Meta.
+
 ### Comando de deploy
 
 ```bash

@@ -6,10 +6,11 @@ import { Badge, Button, Card, DataTable, DataTableBody, DataTableCell, DataTable
 import { AlertTriangleIcon, BarChartIcon, CheckCircleIcon, ClockIcon, InboxIcon, MegaphoneIcon, RefreshIcon, SparklesIcon } from "@/components/ui/icons";
 import { chartTheme } from "@/lib/charts/chartTheme";
 import { cn } from "@/lib/cn";
-import type { MetaOverview, MetaPeriod } from "@/types/meta";
+import type { MetaGuardrails, MetaOverview, MetaPeriod } from "@/types/meta";
 
 type Tab = "resumen" | "campanas" | "creatividad" | "embudo" | "operacion";
-type ApiResponse = { data?: MetaOverview; permissions?: { canSync: boolean }; error?: string };
+type Permissions = { canSync: boolean; canAnalyze: boolean; canManageRecommendations: boolean; canEditGuardrails: boolean };
+type ApiResponse = { data?: MetaOverview; permissions?: Permissions; error?: string };
 
 const tabs: Array<{ value: Tab; label: string }> = [
   { value: "resumen", label: "Resumen" }, { value: "campanas", label: "Campañas" },
@@ -47,6 +48,10 @@ function MetricCard({ label, value, detail, tone = "default" }: { label: string;
   </Card>;
 }
 
+function GuardrailField({ label, value, suffix, disabled, onChange }: { label: string; value: number; suffix: string; disabled: boolean; onChange: (value: number) => void }) {
+  return <label className="block"><span className="text-xs font-label text-graphite">{label}</span><div className="mt-1 flex h-10 items-center rounded-md border border-line bg-white px-3 focus-within:border-signal"><input type="number" min="0" step="0.1" value={value} disabled={disabled} onChange={(event) => onChange(Number(event.target.value))} className="min-w-0 flex-1 bg-transparent text-sm tabular-nums text-carbon outline-none disabled:text-graphite" /><span className="ml-2 text-xs text-graphite">{suffix}</span></div></label>;
+}
+
 function EmptyModule({ title, description }: { title: string; description: string }) {
   return <Card className="py-10"><EmptyState icon={InboxIcon} titulo={title} descripcion={description} /></Card>;
 }
@@ -56,8 +61,12 @@ export default function MarketingPage() {
   const [period, setPeriod] = useState<MetaPeriod>("30d");
   const [overview, setOverview] = useState<MetaOverview | null>(null);
   const [canSync, setCanSync] = useState(false);
+  const [permissions, setPermissions] = useState<Permissions>({ canSync: false, canAnalyze: false, canManageRecommendations: false, canEditGuardrails: false });
+  const [guardrails, setGuardrails] = useState<MetaGuardrails | null>(null);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [savingGuardrails, setSavingGuardrails] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
@@ -67,7 +76,8 @@ export default function MarketingPage() {
       const response = await fetch(`/api/marketing/meta/overview?period=${period}`, { cache: "no-store" });
       const payload = await response.json() as ApiResponse;
       if (!response.ok || !payload.data) throw new Error(payload.error || "No se pudo cargar el centro de control.");
-      setOverview(payload.data); setCanSync(Boolean(payload.permissions?.canSync));
+      const nextPermissions = { canSync: Boolean(payload.permissions?.canSync), canAnalyze: Boolean(payload.permissions?.canAnalyze), canManageRecommendations: Boolean(payload.permissions?.canManageRecommendations), canEditGuardrails: Boolean(payload.permissions?.canEditGuardrails) };
+      setOverview(payload.data); setCanSync(nextPermissions.canSync); setPermissions(nextPermissions); setGuardrails(payload.data.guardrails);
     } catch (loadError) { setError(loadError instanceof Error ? loadError.message : "No se pudo cargar el centro de control."); }
     finally { setLoading(false); }
   }, [period]);
@@ -84,6 +94,40 @@ export default function MarketingPage() {
       await load();
     } catch (syncError) { setError(syncError instanceof Error ? syncError.message : "No se pudo sincronizar."); }
     finally { setSyncing(false); }
+  }
+
+  async function analyze() {
+    setAnalyzing(true); setNotice(null); setError(null);
+    try {
+      const response = await fetch("/api/marketing/meta/intelligence", { method: "POST" });
+      const payload = await response.json() as { data?: { detected: number; resolved: number }; error?: string };
+      if (!response.ok) throw new Error(payload.error || "No se pudo ejecutar el análisis.");
+      setNotice(`Análisis completo: ${payload.data?.detected || 0} alertas activas y ${payload.data?.resolved || 0} resueltas.`);
+      await load();
+    } catch (analysisError) { setError(analysisError instanceof Error ? analysisError.message : "No se pudo ejecutar el análisis."); }
+    finally { setAnalyzing(false); }
+  }
+
+  async function saveGuardrails() {
+    if (!guardrails) return;
+    setSavingGuardrails(true); setNotice(null); setError(null);
+    try {
+      const response = await fetch("/api/marketing/meta/guardrails", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(guardrails) });
+      const payload = await response.json() as { data?: MetaGuardrails; error?: string };
+      if (!response.ok || !payload.data) throw new Error(payload.error || "No se pudieron guardar los objetivos.");
+      setGuardrails(payload.data); setNotice("Objetivos y límites guardados. El análisis fue recalculado.");
+      await analyze();
+    } catch (guardrailError) { setError(guardrailError instanceof Error ? guardrailError.message : "No se pudieron guardar los objetivos."); }
+    finally { setSavingGuardrails(false); }
+  }
+
+  async function updateRecommendation(id: string, status: "acknowledged" | "dismissed") {
+    setError(null);
+    const response = await fetch(`/api/marketing/meta/recommendations/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status }) });
+    const payload = await response.json() as { error?: string };
+    if (!response.ok) { setError(payload.error || "No se pudo actualizar la alerta."); return; }
+    setNotice(status === "acknowledged" ? "Alerta reconocida; queda en seguimiento." : "Alerta descartada.");
+    await load();
   }
 
   const connection = overview?.connection;
@@ -122,6 +166,7 @@ export default function MarketingPage() {
 
     {overview && tab === "resumen" ? <>
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <MetricCard label="Salud operativa" value={`${overview.healthScore}/100`} detail={`${overview.recommendations.filter((item) => item.status === "open").length} alertas abiertas`} tone={overview.healthScore >= 80 ? "success" : "warning"} />
         <MetricCard label="Inversión" value={money.format(kpis?.spend || 0)} detail={`${integer.format(kpis?.impressions || 0)} impresiones`} />
         <MetricCard label="Leads en Meta" value={integer.format(kpis?.platformLeads || 0)} detail={kpis?.costPerLead ? `${decimalMoney.format(kpis.costPerLead)} por lead` : "Sin CPL calculable"} />
         <MetricCard label="Leads en CRM" value={integer.format(kpis?.crmLeads || 0)} detail={`${integer.format(kpis?.qualifiedLeads || 0)} calificados`} tone={kpis?.qualifiedLeads ? "success" : "warning"} />
@@ -155,9 +200,9 @@ export default function MarketingPage() {
       <DataTableBody>{overview.campaigns.map((row) => <DataTableRow key={row.id}><DataTableCell><p className="max-w-[280px] truncate font-label text-carbon">{row.name}</p><p className="mt-0.5 text-xs text-graphite">{row.objective || "Sin objetivo informado"}</p></DataTableCell><DataTableCell><Badge variant={statusVariant(row.status)}>{friendlyStatus(row.status)}</Badge></DataTableCell><DataTableCell className="text-right font-label text-carbon">{money.format(row.spend)}</DataTableCell><DataTableCell className="text-right">{metricPct(row.ctr)}</DataTableCell><DataTableCell className="text-right">{integer.format(row.platformLeads)}</DataTableCell><DataTableCell className="text-right">{integer.format(row.crmLeads)}</DataTableCell><DataTableCell className="text-right font-label text-carbon">{integer.format(row.qualifiedLeads)}</DataTableCell><DataTableCell className="text-right">{row.cpql ? decimalMoney.format(row.cpql) : "—"}</DataTableCell><DataTableCell className="text-right">{integer.format(row.wonLeads)}</DataTableCell><DataTableCell className="text-right">{money.format(row.collectedRevenue)}</DataTableCell><DataTableCell className="text-right font-label text-carbon">{ratio(row.cashRoas)}</DataTableCell></DataTableRow>)}</DataTableBody>
     </DataTable> : <EmptyModule title="Todavía no hay campañas sincronizadas" description="Conectá Meta y ejecutá la primera sincronización para comparar inversión con resultados comerciales." /> : null}
 
-    {overview && tab === "creatividad" ? overview.creatives.length ? <DataTable className="min-w-[980px]">
-      <DataTableHeader><DataTableRow><DataTableHead>Anuncio y pieza</DataTableHead><DataTableHead>Formato</DataTableHead><DataTableHead>Estado</DataTableHead><DataTableHead className="text-right">Inversión</DataTableHead><DataTableHead className="text-right">Impresiones</DataTableHead><DataTableHead className="text-right">CTR</DataTableHead><DataTableHead className="text-right">Leads</DataTableHead><DataTableHead className="text-right">CPL</DataTableHead></DataTableRow></DataTableHeader>
-      <DataTableBody>{overview.creatives.map((row) => <DataTableRow key={`${row.adId}-${row.id}`}><DataTableCell><div className="flex items-center gap-3"><div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-line-soft bg-paper text-signal"><MegaphoneIcon size={18} /></div><div><p className="max-w-[340px] truncate font-label text-carbon">{row.adName}</p><p className="mt-0.5 max-w-[340px] truncate text-xs text-graphite">{row.title || row.body || row.creativeName}</p></div></div></DataTableCell><DataTableCell>{row.format || "—"}</DataTableCell><DataTableCell><Badge variant={statusVariant(row.status)}>{friendlyStatus(row.status)}</Badge></DataTableCell><DataTableCell className="text-right">{money.format(row.spend)}</DataTableCell><DataTableCell className="text-right">{integer.format(row.impressions)}</DataTableCell><DataTableCell className="text-right">{metricPct(row.ctr)}</DataTableCell><DataTableCell className="text-right">{integer.format(row.platformLeads)}</DataTableCell><DataTableCell className="text-right">{row.cpl ? decimalMoney.format(row.cpl) : "—"}</DataTableCell></DataTableRow>)}</DataTableBody>
+    {overview && tab === "creatividad" ? overview.creatives.length ? <DataTable className="min-w-[1180px]">
+      <DataTableHeader><DataTableRow><DataTableHead>Anuncio y pieza</DataTableHead><DataTableHead>Formato</DataTableHead><DataTableHead>Estado</DataTableHead><DataTableHead className="text-right">Inversión</DataTableHead><DataTableHead className="text-right">Impresiones</DataTableHead><DataTableHead className="text-right">Hook 3s</DataTableHead><DataTableHead className="text-right">Retención</DataTableHead><DataTableHead className="text-right">CTR</DataTableHead><DataTableHead className="text-right">Leads</DataTableHead><DataTableHead className="text-right">CPL</DataTableHead></DataTableRow></DataTableHeader>
+      <DataTableBody>{overview.creatives.map((row) => <DataTableRow key={`${row.adId}-${row.id}`}><DataTableCell><div className="flex items-center gap-3"><div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-line-soft bg-paper text-signal"><MegaphoneIcon size={18} /></div><div><p className="max-w-[340px] truncate font-label text-carbon">{row.adName}</p><p className="mt-0.5 max-w-[340px] truncate text-xs text-graphite">{row.title || row.body || row.creativeName}</p></div></div></DataTableCell><DataTableCell>{row.format || "—"}</DataTableCell><DataTableCell><Badge variant={statusVariant(row.status)}>{friendlyStatus(row.status)}</Badge></DataTableCell><DataTableCell className="text-right">{money.format(row.spend)}</DataTableCell><DataTableCell className="text-right">{integer.format(row.impressions)}</DataTableCell><DataTableCell className="text-right">{pct(row.hookRate)}</DataTableCell><DataTableCell className="text-right">{pct(row.holdRate)}</DataTableCell><DataTableCell className="text-right">{metricPct(row.ctr)}</DataTableCell><DataTableCell className="text-right">{integer.format(row.platformLeads)}</DataTableCell><DataTableCell className="text-right">{row.cpl ? decimalMoney.format(row.cpl) : "—"}</DataTableCell></DataTableRow>)}</DataTableBody>
     </DataTable> : <EmptyModule title="Todavía no hay creatividades" description="Las piezas aparecerán con su inversión, respuesta y costo por lead después de sincronizar Meta." /> : null}
 
     {overview && tab === "embudo" ? <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
@@ -169,7 +214,8 @@ export default function MarketingPage() {
       <Card padding="none" className="overflow-hidden"><div className="border-b border-line-soft px-5 py-4"><p className="font-title text-lg text-carbon">Conexión y seguridad</p><p className="mt-1 text-xs text-graphite">Estado técnico de la integración.</p></div><div className="divide-y divide-line-soft">
         {[{ label: "Cuenta publicitaria", value: connection?.accountName || connection?.adAccountId || "Pendiente", ok: connection?.status === "connected" }, { label: "Credenciales de servidor", value: missingConfig ? "Configuración incompleta" : "Disponibles", ok: !missingConfig }, { label: "Permisos de escritura", value: "Desactivados en Fase 1", ok: true }, { label: "Última sincronización", value: connection?.lastSyncAt ? new Date(connection.lastSyncAt).toLocaleString("es-AR") : "Nunca", ok: Boolean(connection?.lastSyncAt) }].map((item) => <div key={item.label} className="flex items-center justify-between gap-4 px-5 py-3"><div className="flex items-center gap-3">{item.ok ? <CheckCircleIcon className="text-success" size={18} /> : <ClockIcon className="text-warning" size={18} />}<span className="text-sm text-carbon">{item.label}</span></div><span className="max-w-[55%] truncate text-right text-xs text-graphite">{item.value}</span></div>)}
       </div></Card>
-      <Card padding="none" className="overflow-hidden"><div className="border-b border-line-soft px-5 py-4"><p className="font-title text-lg text-carbon">Recomendaciones abiertas</p><p className="mt-1 text-xs text-graphite">Decisiones sugeridas; nunca se aplican automáticamente.</p></div>{overview.recommendations.length ? <div className="divide-y divide-line-soft">{overview.recommendations.map((item) => <div key={item.id} className="px-5 py-4"><div className="flex items-center gap-2"><SparklesIcon className="text-signal" size={16} /><p className="font-label text-carbon">{item.title}</p><Badge variant={statusVariant(item.severity)}>{item.severity}</Badge></div><p className="mt-2 text-sm text-graphite">{item.rationale}</p><p className="mt-2 text-xs font-label text-signal">Acción: {item.recommendedAction}</p></div>)}</div> : <div className="px-6 py-10"><EmptyState icon={SparklesIcon} titulo="Sin recomendaciones pendientes" descripcion="Después de la primera sincronización, las reglas van a señalar desvíos y oportunidades." /></div>}</Card>
+      <Card padding="none" className="overflow-hidden"><div className="flex items-start justify-between gap-3 border-b border-line-soft px-5 py-4"><div><p className="font-title text-lg text-carbon">Alertas y recomendaciones</p><p className="mt-1 text-xs text-graphite">Persistentes, auditables y sin ejecución automática.</p></div>{permissions.canAnalyze ? <Button variant="secondary" size="sm" onClick={() => void analyze()} disabled={analyzing}><SparklesIcon className={cn("mr-2", analyzing && "animate-pulse")} size={15} />{analyzing ? "Analizando" : "Analizar"}</Button> : null}</div>{overview.recommendations.length ? <div className="max-h-[520px] divide-y divide-line-soft overflow-y-auto">{overview.recommendations.map((item) => <div key={item.id} className="px-5 py-4"><div className="flex flex-wrap items-center gap-2"><SparklesIcon className="text-signal" size={16} /><p className="min-w-0 flex-1 font-label text-carbon">{item.title}</p><Badge variant={item.status === "acknowledged" ? "default" : statusVariant(item.severity)}>{item.status === "acknowledged" ? "En seguimiento" : item.severity}</Badge></div><p className="mt-2 text-sm text-graphite">{item.rationale}</p><p className="mt-2 text-xs font-label text-signal">Acción: {item.recommendedAction}</p><div className="mt-3 flex items-center justify-between gap-3"><span className="text-[11px] text-graphite">Detectada {item.occurrences} {item.occurrences === 1 ? "vez" : "veces"}</span>{permissions.canManageRecommendations && item.id !== "configuration" ? <div className="flex gap-2">{item.status === "open" ? <Button variant="secondary" size="sm" onClick={() => void updateRecommendation(item.id, "acknowledged")}>Reconocer</Button> : null}<Button variant="ghost" size="sm" onClick={() => void updateRecommendation(item.id, "dismissed")}>Descartar</Button></div> : null}</div></div>)}</div> : <div className="px-6 py-10"><EmptyState icon={SparklesIcon} titulo="Sin alertas activas" descripcion="La cuenta está dentro de los objetivos definidos o todavía no tiene suficiente entrega." /></div>}</Card>
+      <Card padding="none" className="overflow-hidden xl:col-span-2"><div className="flex items-start justify-between gap-3 border-b border-line-soft px-5 py-4"><div><p className="font-title text-lg text-carbon">Objetivos y guardrails</p><p className="mt-1 text-xs text-graphite">Definen cuándo alertar; nunca cambian presupuesto ni campañas.</p></div><Badge variant="default">Fase 2</Badge></div>{guardrails ? <div className="grid gap-4 p-5 sm:grid-cols-2 xl:grid-cols-4"><GuardrailField label="CPL objetivo" value={guardrails.targetCpl} suffix="USD" disabled={!permissions.canEditGuardrails} onChange={(value) => setGuardrails({ ...guardrails, targetCpl: value })} /><GuardrailField label="CPQL objetivo" value={guardrails.targetCpql} suffix="USD" disabled={!permissions.canEditGuardrails} onChange={(value) => setGuardrails({ ...guardrails, targetCpql: value })} /><GuardrailField label="Cash ROAS objetivo" value={guardrails.targetCashRoas} suffix="x" disabled={!permissions.canEditGuardrails} onChange={(value) => setGuardrails({ ...guardrails, targetCashRoas: value })} /><GuardrailField label="CTR mínimo" value={guardrails.minLinkCtr} suffix="%" disabled={!permissions.canEditGuardrails} onChange={(value) => setGuardrails({ ...guardrails, minLinkCtr: value })} /><GuardrailField label="Frecuencia máxima" value={guardrails.maxFrequency} suffix="x" disabled={!permissions.canEditGuardrails} onChange={(value) => setGuardrails({ ...guardrails, maxFrequency: value })} /><GuardrailField label="Brecha atribución máxima" value={guardrails.maxAttributionGapPct} suffix="%" disabled={!permissions.canEditGuardrails} onChange={(value) => setGuardrails({ ...guardrails, maxAttributionGapPct: value })} /><GuardrailField label="Gasto mínimo para alertar" value={guardrails.minSpendForAlert} suffix="USD" disabled={!permissions.canEditGuardrails} onChange={(value) => setGuardrails({ ...guardrails, minSpendForAlert: value })} /><GuardrailField label="Sync atrasado después de" value={guardrails.staleSyncHours} suffix="horas" disabled={!permissions.canEditGuardrails} onChange={(value) => setGuardrails({ ...guardrails, staleSyncHours: value })} />{permissions.canEditGuardrails ? <div className="sm:col-span-2 xl:col-span-4 flex justify-end"><Button onClick={() => void saveGuardrails()} disabled={savingGuardrails}>{savingGuardrails ? "Guardando" : "Guardar objetivos"}</Button></div> : null}</div> : null}</Card>
       <Card padding="none" className="overflow-hidden xl:col-span-2"><div className="border-b border-line-soft px-5 py-4"><p className="font-title text-lg text-carbon">Historial de sincronización</p><p className="mt-1 text-xs text-graphite">Trazabilidad completa de ejecuciones manuales y programadas.</p></div>{overview.runs.length ? <DataTable wrapperClassName="rounded-none border-0"><DataTableHeader><DataTableRow><DataTableHead>Inicio</DataTableHead><DataTableHead>Origen</DataTableHead><DataTableHead>Estado</DataTableHead><DataTableHead className="text-right">Registros</DataTableHead><DataTableHead>Detalle</DataTableHead></DataTableRow></DataTableHeader><DataTableBody>{overview.runs.map((run) => <DataTableRow key={run.id}><DataTableCell>{new Date(run.startedAt).toLocaleString("es-AR")}</DataTableCell><DataTableCell>{run.triggerType === "cron" ? "Programada" : "Manual"}</DataTableCell><DataTableCell><Badge variant={statusVariant(run.status)}>{friendlyStatus(run.status)}</Badge></DataTableCell><DataTableCell className="text-right">{integer.format(run.records)}</DataTableCell><DataTableCell className="max-w-[420px] truncate">{run.errorMessage || "Sin observaciones"}</DataTableCell></DataTableRow>)}</DataTableBody></DataTable> : <div className="px-6 py-10"><EmptyState icon={ClockIcon} titulo="Todavía no hay ejecuciones" descripcion="El historial comenzará con la primera sincronización manual o programada." /></div>}</Card>
     </div> : null}
   </div>;

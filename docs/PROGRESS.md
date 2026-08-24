@@ -6,6 +6,14 @@ Stack: Next.js 14 (App Router) · TypeScript estricto · Tailwind CSS · Supabas
 
 Fecha de inicio: 2026-06-25
 
+## Actualización 2026-08-24 — Centro de Control Meta Ads, Fase 2
+
+- Se agregó inteligencia operativa persistente: nueve reglas detectan sincronización atrasada, pérdida de atribución, ausencia de calificados, CPL/CPQL/ROAS fuera de objetivo, campañas ineficientes y problemas de hook, retención o fatiga creativa.
+- Los objetivos viven en `meta_guardrails` y son editables sólo por administradores. Configuran CPL, CPQL, Cash ROAS, CTR, frecuencia, brecha de atribución, gasto mínimo y frescura máxima del sync.
+- Las recomendaciones ahora conservan estado, recurrencia, reconocimiento y resolución. Admin y marketing pueden reconocer o descartar; ninguna acción cambia Meta.
+- El dashboard muestra salud operativa, hook rate y hold rate por anuncio, permite recalcular alertas y mantiene trazabilidad completa.
+- La inteligencia se ejecuta después de cada sincronización. Un fallo del analizador queda registrado pero no invalida la lectura de Meta ni habilita escrituras.
+
 ## Actualización 2026-08-24 — Centro de Control Meta Ads, Fase 1
 
 - Se reemplazó la vista de atribución aislada por un centro de control con Resumen, Campañas, Creatividad, Embudo y Operación.
