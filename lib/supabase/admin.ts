@@ -27,3 +27,14 @@ export function createAdminClient() {
     }
   });
 }
+
+export function createUntypedAdminClient() {
+  const { url, serviceRoleKey } = getSupabaseAdminEnv();
+
+  return createSupabaseClient(url, serviceRoleKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  });
+}

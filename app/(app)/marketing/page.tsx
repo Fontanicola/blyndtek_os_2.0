@@ -1,196 +1,176 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { Badge, Card, EmptyState } from "@/components/ui";
-import { BarChartIcon, InboxIcon } from "@/components/ui/icons";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Badge, Button, Card, DataTable, DataTableBody, DataTableCell, DataTableHead, DataTableHeader, DataTableRow, EmptyState } from "@/components/ui";
+import { AlertTriangleIcon, BarChartIcon, CheckCircleIcon, ClockIcon, InboxIcon, MegaphoneIcon, RefreshIcon, SparklesIcon } from "@/components/ui/icons";
+import { chartTheme } from "@/lib/charts/chartTheme";
 import { cn } from "@/lib/cn";
-import type { MarketingAtribucionPeriod, MarketingAtribucionRow } from "@/types/marketing";
+import type { MetaOverview, MetaPeriod } from "@/types/meta";
 
-type AtribucionResponse = {
-  data?: MarketingAtribucionRow[];
-  error?: string;
-};
+type Tab = "resumen" | "campanas" | "creatividad" | "embudo" | "operacion";
+type ApiResponse = { data?: MetaOverview; permissions?: { canSync: boolean }; error?: string };
 
-const periodOptions: Array<{ value: MarketingAtribucionPeriod; label: string }> = [
-  { value: "month", label: "Este mes" },
-  { value: "quarter", label: "Trimestre" },
-  { value: "year", label: "Este año" },
-  { value: "todo", label: "Todo" }
+const tabs: Array<{ value: Tab; label: string }> = [
+  { value: "resumen", label: "Resumen" }, { value: "campanas", label: "Campañas" },
+  { value: "creatividad", label: "Creatividad" }, { value: "embudo", label: "Embudo" },
+  { value: "operacion", label: "Operación" }
+];
+const periods: Array<{ value: MetaPeriod; label: string }> = [
+  { value: "7d", label: "7 días" }, { value: "30d", label: "30 días" },
+  { value: "90d", label: "90 días" }, { value: "year", label: "Año" }
 ];
 
-const futureTabs = ["Campañas Meta", "Contenido"];
+const money = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
+const decimalMoney = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const integer = new Intl.NumberFormat("es-AR", { maximumFractionDigits: 0 });
+const decimal = new Intl.NumberFormat("es-AR", { maximumFractionDigits: 2 });
 
-function formatUSD(value: number) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 0
-  }).format(value);
+function pct(value: number | null) { return value === null ? "—" : `${decimal.format(value * 100)}%`; }
+function metricPct(value: number) { return `${decimal.format(value)}%`; }
+function ratio(value: number | null) { return value === null ? "—" : `${decimal.format(value)}x`; }
+function statusVariant(status: string) {
+  if (["ACTIVE", "connected", "success"].includes(status)) return "success" as const;
+  if (["error", "critical", "DISAPPROVED"].includes(status)) return "danger" as const;
+  if (["degraded", "warning", "partial", "PAUSED"].includes(status)) return "warning" as const;
+  return "default" as const;
+}
+function friendlyStatus(status: string) {
+  return ({ ACTIVE: "Activa", PAUSED: "Pausada", connected: "Conectada", not_configured: "Sin configurar", degraded: "Revisar", error: "Error", success: "Correcta", partial: "Parcial", running: "En curso" } as Record<string, string>)[status] || status;
 }
 
-function formatPct(value: number) {
-  return `${value.toFixed(1)}%`;
+function MetricCard({ label, value, detail, tone = "default" }: { label: string; value: string; detail: string; tone?: "default" | "success" | "warning" }) {
+  return <Card padding="sm" className={cn("min-w-0", tone === "success" && "border-success/25", tone === "warning" && "border-warning/25")}>
+    <p className="text-xs font-label text-graphite">{label}</p>
+    <p className="mt-2 truncate font-title text-2xl tabular-nums text-carbon">{value}</p>
+    <p className="mt-1 truncate text-xs text-graphite">{detail}</p>
+  </Card>;
+}
+
+function EmptyModule({ title, description }: { title: string; description: string }) {
+  return <Card className="py-10"><EmptyState icon={InboxIcon} titulo={title} descripcion={description} /></Card>;
 }
 
 export default function MarketingPage() {
-  const [period, setPeriod] = useState<MarketingAtribucionPeriod>("month");
-  const [rows, setRows] = useState<MarketingAtribucionRow[]>([]);
+  const [tab, setTab] = useState<Tab>("resumen");
+  const [period, setPeriod] = useState<MetaPeriod>("30d");
+  const [overview, setOverview] = useState<MetaOverview | null>(null);
+  const [canSync, setCanSync] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [syncing, setSyncing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
-  useEffect(() => {
-    let mounted = true;
-
-    async function fetchAtribucion() {
-      setLoading(true);
-      setError(null);
-
-      try {
-        const response = await fetch(`/api/marketing/atribucion?period=${period}`);
-        const payload = (await response.json()) as AtribucionResponse;
-
-        if (!response.ok || !payload.data) {
-          throw new Error(payload.error ?? "No se pudo cargar la atribución.");
-        }
-
-        if (mounted) {
-          setRows(payload.data);
-        }
-      } catch (fetchError) {
-        if (mounted) {
-          setError(fetchError instanceof Error ? fetchError.message : "No se pudo cargar la atribución.");
-          setRows([]);
-        }
-      } finally {
-        if (mounted) {
-          setLoading(false);
-        }
-      }
-    }
-
-    void fetchAtribucion();
-
-    return () => {
-      mounted = false;
-    };
+  const load = useCallback(async () => {
+    setLoading(true); setError(null);
+    try {
+      const response = await fetch(`/api/marketing/meta/overview?period=${period}`, { cache: "no-store" });
+      const payload = await response.json() as ApiResponse;
+      if (!response.ok || !payload.data) throw new Error(payload.error || "No se pudo cargar el centro de control.");
+      setOverview(payload.data); setCanSync(Boolean(payload.permissions?.canSync));
+    } catch (loadError) { setError(loadError instanceof Error ? loadError.message : "No se pudo cargar el centro de control."); }
+    finally { setLoading(false); }
   }, [period]);
 
-  const attributionRows = useMemo(
-    () => rows.filter((row) => row.canal_origen !== "organico"),
-    [rows]
-  );
+  useEffect(() => { void load(); }, [load]);
 
-  return (
-    <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto p-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div className="flex flex-wrap items-center gap-2">
-          <Badge variant="signal" className="h-10 px-5 text-sm">
-            Atribución
-          </Badge>
-          {futureTabs.map((tab) => (
-            <Badge key={tab} variant="ghost" className="h-10 px-5 text-sm text-graphite/70">
-              {tab}
-            </Badge>
-          ))}
-        </div>
+  async function synchronize() {
+    setSyncing(true); setNotice(null); setError(null);
+    try {
+      const response = await fetch("/api/marketing/meta/sync", { method: "POST" });
+      const payload = await response.json() as { data?: { records: number }; error?: string };
+      if (!response.ok) throw new Error(payload.error || "No se pudo sincronizar.");
+      setNotice(`Sincronización completa: ${integer.format(payload.data?.records || 0)} registros actualizados.`);
+      await load();
+    } catch (syncError) { setError(syncError instanceof Error ? syncError.message : "No se pudo sincronizar."); }
+    finally { setSyncing(false); }
+  }
 
-        <div className="flex rounded-pill border border-line bg-white p-1 shadow-soft">
-          {periodOptions.map((option) => (
-            <button
-              key={option.value}
-              type="button"
-              onClick={() => setPeriod(option.value)}
-              className={cn(
-                "rounded-pill px-4 py-2 text-sm font-label transition-all duration-fast ease-fast",
-                period === option.value
-                  ? "bg-signal text-white shadow-soft"
-                  : "text-graphite hover:bg-paper hover:text-carbon"
-              )}
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>
+  const connection = overview?.connection;
+  const kpis = overview?.kpis;
+  const missingConfig = (connection?.missingEnvironmentVariables.length || 0) > 0;
+  const objectiveHealth = useMemo(() => {
+    if (!kpis || !kpis.spend) return "Sin inversión registrada";
+    if (kpis.qualifiedLeads === 0) return "Todavía sin leads calificados";
+    return `${integer.format(kpis.qualifiedLeads)} leads con intención comercial`;
+  }, [kpis]);
+
+  return <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-6">
+    <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center gap-2">
+        {tabs.map((item) => <button key={item.value} type="button" onClick={() => setTab(item.value)} className={cn("rounded-pill border px-3 py-2 text-sm font-label transition-colors", tab === item.value ? "border-signal bg-signal text-white" : "border-line bg-white text-graphite hover:bg-paper")}>{item.label}</button>)}
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <select value={period} onChange={(event) => setPeriod(event.target.value as MetaPeriod)} className="h-10 rounded-md border border-line bg-white px-3 text-sm text-carbon outline-none focus:border-signal">
+          {periods.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
+        </select>
+        {connection ? <Badge variant={statusVariant(connection.status)} className="h-10 px-3">{friendlyStatus(connection.status)}</Badge> : null}
+        {canSync ? <Button onClick={() => void synchronize()} disabled={syncing || missingConfig}>
+          <RefreshIcon className={cn("mr-2", syncing && "animate-spin")} size={16} />{syncing ? "Sincronizando" : "Sincronizar"}
+        </Button> : null}
+      </div>
+    </div>
+
+    {error ? <div className="flex items-start gap-3 rounded-md border border-danger/20 bg-danger-light px-4 py-3 text-sm text-danger"><AlertTriangleIcon className="mt-0.5 shrink-0" size={17} /><span>{error}</span></div> : null}
+    {notice ? <div className="flex items-start gap-3 rounded-md border border-success/20 bg-success-light px-4 py-3 text-sm text-success"><CheckCircleIcon className="mt-0.5 shrink-0" size={17} /><span>{notice}</span></div> : null}
+    {missingConfig ? <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-warning/25 bg-warning-light px-4 py-3">
+      <div className="flex items-start gap-3"><AlertTriangleIcon className="mt-0.5 shrink-0 text-warning" size={18} /><div><p className="text-sm font-label text-carbon">Falta conectar la cuenta publicitaria</p><p className="mt-0.5 text-xs text-graphite">Variables pendientes en producción: {connection?.missingEnvironmentVariables.join(", ")}. El CRM ya está preparado y no ejecuta cambios en Meta.</p></div></div>
+      <Badge variant="warning">Solo lectura</Badge>
+    </div> : null}
+
+    {loading && !overview ? <Card className="py-16 text-center text-sm text-graphite">Cargando métricas de Meta y CRM...</Card> : null}
+
+    {overview && tab === "resumen" ? <>
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <MetricCard label="Inversión" value={money.format(kpis?.spend || 0)} detail={`${integer.format(kpis?.impressions || 0)} impresiones`} />
+        <MetricCard label="Leads en Meta" value={integer.format(kpis?.platformLeads || 0)} detail={kpis?.costPerLead ? `${decimalMoney.format(kpis.costPerLead)} por lead` : "Sin CPL calculable"} />
+        <MetricCard label="Leads en CRM" value={integer.format(kpis?.crmLeads || 0)} detail={`${integer.format(kpis?.qualifiedLeads || 0)} calificados`} tone={kpis?.qualifiedLeads ? "success" : "warning"} />
+        <MetricCard label="Costo por calificado" value={kpis?.costPerQualifiedLead ? decimalMoney.format(kpis.costPerQualifiedLead) : "—"} detail={objectiveHealth} />
+        <MetricCard label="CTR de enlace" value={metricPct(kpis?.ctr || 0)} detail={`${integer.format(kpis?.linkClicks || 0)} clics`} />
+        <MetricCard label="Frecuencia" value={decimal.format(kpis?.frequency || 0)} detail={`${integer.format(kpis?.reach || 0)} personas alcanzadas`} />
+        <MetricCard label="Ventas ganadas" value={integer.format(kpis?.wonLeads || 0)} detail={`${money.format(kpis?.collectedRevenue || 0)} cobrado`} tone={kpis?.wonLeads ? "success" : "default"} />
+        <MetricCard label="Cash ROAS" value={ratio(kpis?.cashRoas ?? null)} detail="Cobrado atribuible / inversión" />
       </div>
 
-      <Card padding="none" className="overflow-hidden border border-line-soft shadow-soft">
-        <div className="flex items-start justify-between gap-4 border-b border-line-soft px-6 py-5">
-          <div>
-            <h2 className="font-title text-xl text-carbon">Atribución comercial</h2>
-            <p className="mt-1 text-sm text-graphite">
-              Origen del lead cruzado con cliente, contrato y comisión pagada.
-            </p>
-          </div>
-          <BarChartIcon className="mt-1 text-signal" size={22} />
-        </div>
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.65fr)_minmax(300px,0.7fr)]">
+        <Card padding="none" className="min-w-0 overflow-hidden">
+          <div className="flex items-start justify-between border-b border-line-soft px-5 py-4"><div><p className="font-title text-lg text-carbon">Inversión y generación de demanda</p><p className="mt-1 text-xs text-graphite">Serie diaria sincronizada desde Meta y el CRM.</p></div><BarChartIcon className="text-signal" size={20} /></div>
+          {overview.trend.length ? <div className="h-[280px] px-2 pb-3 pt-5"><ResponsiveContainer width="100%" height="100%"><LineChart data={overview.trend} margin={{ top: 5, right: 15, bottom: 0, left: 4 }}>
+            <CartesianGrid stroke={chartTheme.grid.stroke} vertical={false} /><XAxis dataKey="date" tick={chartTheme.axis.tick} axisLine={false} tickLine={false} tickFormatter={(value) => String(value).slice(5)} />
+            <YAxis yAxisId="money" tick={chartTheme.axis.tick} axisLine={false} tickLine={false} tickFormatter={(value) => `$${value}`} /><YAxis yAxisId="leads" orientation="right" tick={chartTheme.axis.tick} axisLine={false} tickLine={false} allowDecimals={false} />
+            <Tooltip contentStyle={{ border: `1px solid ${chartTheme.colors.line}`, borderRadius: 8, fontSize: 12 }} formatter={(value: number | string, name: string) => [name === "Inversión" ? decimalMoney.format(Number(value)) : integer.format(Number(value)), name]} />
+            <Line yAxisId="money" type="monotone" dataKey="spend" name="Inversión" stroke={chartTheme.colors.signal} strokeWidth={2} dot={false} />
+            <Line yAxisId="leads" type="monotone" dataKey="crmLeads" name="Leads CRM" stroke={chartTheme.colors.success} strokeWidth={2} dot={false} />
+          </LineChart></ResponsiveContainer></div> : <div className="px-6 py-12"><EmptyState icon={BarChartIcon} titulo="Aún no hay serie de inversión" descripcion="La primera sincronización va a completar el histórico de 90 días." /></div>}
+        </Card>
+        <Card padding="none" className="overflow-hidden">
+          <div className="border-b border-line-soft px-5 py-4"><p className="font-title text-lg text-carbon">Embudo atribuible</p><p className="mt-1 text-xs text-graphite">Del lead en CRM a la venta.</p></div>
+          <div className="divide-y divide-line-soft">{overview.funnel.map((stage, index) => <div key={stage.key} className="px-5 py-3"><div className="flex items-center justify-between gap-4"><span className="text-sm text-carbon">{stage.label}</span><span className="font-title text-lg tabular-nums text-carbon">{integer.format(stage.count)}</span></div><div className="mt-1 flex justify-between text-xs text-graphite"><span>{index ? `${pct(stage.conversionFromPrevious)} del paso anterior` : "Entrada atribuida"}</span><span>{index ? `${pct(stage.conversionFromLead)} del total` : "100%"}</span></div></div>)}</div>
+        </Card>
+      </div>
+    </> : null}
 
-        {error ? (
-          <div className="m-6 rounded-component border border-danger bg-danger-light px-4 py-3 text-sm text-danger">
-            {error}
-          </div>
-        ) : null}
+    {overview && tab === "campanas" ? overview.campaigns.length ? <DataTable className="min-w-[1180px]">
+      <DataTableHeader><DataTableRow><DataTableHead>Campaña</DataTableHead><DataTableHead>Estado</DataTableHead><DataTableHead className="text-right">Inversión</DataTableHead><DataTableHead className="text-right">CTR</DataTableHead><DataTableHead className="text-right">Leads Meta</DataTableHead><DataTableHead className="text-right">Leads CRM</DataTableHead><DataTableHead className="text-right">Calificados</DataTableHead><DataTableHead className="text-right">CPQL</DataTableHead><DataTableHead className="text-right">Ganados</DataTableHead><DataTableHead className="text-right">Cobrado</DataTableHead><DataTableHead className="text-right">Cash ROAS</DataTableHead></DataTableRow></DataTableHeader>
+      <DataTableBody>{overview.campaigns.map((row) => <DataTableRow key={row.id}><DataTableCell><p className="max-w-[280px] truncate font-label text-carbon">{row.name}</p><p className="mt-0.5 text-xs text-graphite">{row.objective || "Sin objetivo informado"}</p></DataTableCell><DataTableCell><Badge variant={statusVariant(row.status)}>{friendlyStatus(row.status)}</Badge></DataTableCell><DataTableCell className="text-right font-label text-carbon">{money.format(row.spend)}</DataTableCell><DataTableCell className="text-right">{metricPct(row.ctr)}</DataTableCell><DataTableCell className="text-right">{integer.format(row.platformLeads)}</DataTableCell><DataTableCell className="text-right">{integer.format(row.crmLeads)}</DataTableCell><DataTableCell className="text-right font-label text-carbon">{integer.format(row.qualifiedLeads)}</DataTableCell><DataTableCell className="text-right">{row.cpql ? decimalMoney.format(row.cpql) : "—"}</DataTableCell><DataTableCell className="text-right">{integer.format(row.wonLeads)}</DataTableCell><DataTableCell className="text-right">{money.format(row.collectedRevenue)}</DataTableCell><DataTableCell className="text-right font-label text-carbon">{ratio(row.cashRoas)}</DataTableCell></DataTableRow>)}</DataTableBody>
+    </DataTable> : <EmptyModule title="Todavía no hay campañas sincronizadas" description="Conectá Meta y ejecutá la primera sincronización para comparar inversión con resultados comerciales." /> : null}
 
-        {!error && loading ? (
-          <div className="px-6 py-10 text-sm text-graphite">Cargando atribución...</div>
-        ) : null}
+    {overview && tab === "creatividad" ? overview.creatives.length ? <DataTable className="min-w-[980px]">
+      <DataTableHeader><DataTableRow><DataTableHead>Anuncio y pieza</DataTableHead><DataTableHead>Formato</DataTableHead><DataTableHead>Estado</DataTableHead><DataTableHead className="text-right">Inversión</DataTableHead><DataTableHead className="text-right">Impresiones</DataTableHead><DataTableHead className="text-right">CTR</DataTableHead><DataTableHead className="text-right">Leads</DataTableHead><DataTableHead className="text-right">CPL</DataTableHead></DataTableRow></DataTableHeader>
+      <DataTableBody>{overview.creatives.map((row) => <DataTableRow key={`${row.adId}-${row.id}`}><DataTableCell><div className="flex items-center gap-3"><div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-line-soft bg-paper text-signal"><MegaphoneIcon size={18} /></div><div><p className="max-w-[340px] truncate font-label text-carbon">{row.adName}</p><p className="mt-0.5 max-w-[340px] truncate text-xs text-graphite">{row.title || row.body || row.creativeName}</p></div></div></DataTableCell><DataTableCell>{row.format || "—"}</DataTableCell><DataTableCell><Badge variant={statusVariant(row.status)}>{friendlyStatus(row.status)}</Badge></DataTableCell><DataTableCell className="text-right">{money.format(row.spend)}</DataTableCell><DataTableCell className="text-right">{integer.format(row.impressions)}</DataTableCell><DataTableCell className="text-right">{metricPct(row.ctr)}</DataTableCell><DataTableCell className="text-right">{integer.format(row.platformLeads)}</DataTableCell><DataTableCell className="text-right">{row.cpl ? decimalMoney.format(row.cpl) : "—"}</DataTableCell></DataTableRow>)}</DataTableBody>
+    </DataTable> : <EmptyModule title="Todavía no hay creatividades" description="Las piezas aparecerán con su inversión, respuesta y costo por lead después de sincronizar Meta." /> : null}
 
-        {!error && !loading && attributionRows.length === 0 ? (
-          <div className="px-6 py-12">
-            <EmptyState
-              icon={InboxIcon}
-              titulo="Todavía no hay leads con origen atribuible"
-              descripcion="Cuando cargues leads con canal o campaña, la atribución va a mostrar su retorno real."
-            />
-          </div>
-        ) : null}
+    {overview && tab === "embudo" ? <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
+      <Card padding="none" className="overflow-hidden"><div className="border-b border-line-soft px-5 py-4"><p className="font-title text-lg text-carbon">Conversión de principio a fin</p><p className="mt-1 text-xs text-graphite">Los estados comerciales se toman directamente del CRM.</p></div><div className="p-5">{overview.funnel.map((stage, index) => <div key={stage.key} className="relative pb-5 last:pb-0"><div className="flex items-center gap-4"><div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-signal/20 bg-signal-light text-sm font-label text-signal">{index + 1}</div><div className="min-w-0 flex-1"><div className="flex items-center justify-between gap-4"><span className="font-label text-carbon">{stage.label}</span><span className="font-title text-xl tabular-nums text-carbon">{integer.format(stage.count)}</span></div><div className="mt-2 h-2 overflow-hidden rounded-pill bg-paper"><div className="h-full rounded-pill bg-signal" style={{ width: `${Math.max(2, (stage.conversionFromLead ?? 0) * 100)}%` }} /></div><p className="mt-1 text-xs text-graphite">{index ? `${pct(stage.conversionFromPrevious)} desde el paso anterior · ${pct(stage.conversionFromLead)} desde lead` : "Todos los leads Meta registrados en el período"}</p></div></div>{index < overview.funnel.length - 1 ? <div className="absolute bottom-1 left-[17px] top-10 w-px bg-line" /> : null}</div>)}</div></Card>
+      <div className="space-y-4"><MetricCard label="Landing page → Lead Meta" value={pct(kpis?.landingPageViews ? (kpis.platformLeads / kpis.landingPageViews) : null)} detail={`${integer.format(kpis?.landingPageViews || 0)} visitas a landing`} /><MetricCard label="Meta → CRM" value={pct(kpis?.platformLeads ? (kpis.crmLeads / kpis.platformLeads) : null)} detail="Control de pérdida de atribución" /><MetricCard label="Lead → Calificado" value={pct(kpis?.crmLeads ? (kpis.qualifiedLeads / kpis.crmLeads) : null)} detail="Calidad real de la demanda" /><MetricCard label="Lead → Venta" value={pct(kpis?.crmLeads ? (kpis.wonLeads / kpis.crmLeads) : null)} detail={`${integer.format(kpis?.wonLeads || 0)} oportunidades ganadas`} /></div>
+    </div> : null}
 
-        {!error && !loading && attributionRows.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="min-w-[980px] w-full border-collapse text-left">
-              <thead className="bg-paper text-xs font-label text-graphite">
-                <tr>
-                  <th className="px-6 py-4">Canal</th>
-                  <th className="px-6 py-4">Campaña</th>
-                  <th className="px-6 py-4 text-right">Leads</th>
-                  <th className="px-6 py-4 text-right">Clientes</th>
-                  <th className="px-6 py-4 text-right">Conversión</th>
-                  <th className="px-6 py-4 text-right">Ingreso generado</th>
-                  <th className="px-6 py-4 text-right">Comisión pagada</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-line-soft text-sm">
-                {attributionRows.map((row) => (
-                  <tr key={`${row.canal_origen}-${row.campana_origen ?? "sin-campana"}`}>
-                    <td className="px-6 py-4">
-                      <Badge variant="signal" className="h-7 px-3 text-xs">
-                        {row.canal_label}
-                      </Badge>
-                    </td>
-                    <td className="max-w-[320px] px-6 py-4 text-carbon">
-                      {row.campana_origen ?? <span className="text-graphite">Sin campaña</span>}
-                    </td>
-                    <td className="px-6 py-4 text-right font-label text-carbon">
-                      {row.leads_generados}
-                    </td>
-                    <td className="px-6 py-4 text-right font-label text-carbon">
-                      {row.clientes_convertidos}
-                    </td>
-                    <td className="px-6 py-4 text-right text-graphite">
-                      {formatPct(row.tasa_conversion_pct)}
-                    </td>
-                    <td className="px-6 py-4 text-right font-label text-carbon">
-                      {formatUSD(row.ingreso_generado_usd)}
-                    </td>
-                    <td className="px-6 py-4 text-right text-graphite">
-                      {formatUSD(row.comision_pagada_usd)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : null}
-      </Card>
-    </div>
-  );
+    {overview && tab === "operacion" ? <div className="grid gap-4 xl:grid-cols-2">
+      <Card padding="none" className="overflow-hidden"><div className="border-b border-line-soft px-5 py-4"><p className="font-title text-lg text-carbon">Conexión y seguridad</p><p className="mt-1 text-xs text-graphite">Estado técnico de la integración.</p></div><div className="divide-y divide-line-soft">
+        {[{ label: "Cuenta publicitaria", value: connection?.accountName || connection?.adAccountId || "Pendiente", ok: connection?.status === "connected" }, { label: "Credenciales de servidor", value: missingConfig ? "Configuración incompleta" : "Disponibles", ok: !missingConfig }, { label: "Permisos de escritura", value: "Desactivados en Fase 1", ok: true }, { label: "Última sincronización", value: connection?.lastSyncAt ? new Date(connection.lastSyncAt).toLocaleString("es-AR") : "Nunca", ok: Boolean(connection?.lastSyncAt) }].map((item) => <div key={item.label} className="flex items-center justify-between gap-4 px-5 py-3"><div className="flex items-center gap-3">{item.ok ? <CheckCircleIcon className="text-success" size={18} /> : <ClockIcon className="text-warning" size={18} />}<span className="text-sm text-carbon">{item.label}</span></div><span className="max-w-[55%] truncate text-right text-xs text-graphite">{item.value}</span></div>)}
+      </div></Card>
+      <Card padding="none" className="overflow-hidden"><div className="border-b border-line-soft px-5 py-4"><p className="font-title text-lg text-carbon">Recomendaciones abiertas</p><p className="mt-1 text-xs text-graphite">Decisiones sugeridas; nunca se aplican automáticamente.</p></div>{overview.recommendations.length ? <div className="divide-y divide-line-soft">{overview.recommendations.map((item) => <div key={item.id} className="px-5 py-4"><div className="flex items-center gap-2"><SparklesIcon className="text-signal" size={16} /><p className="font-label text-carbon">{item.title}</p><Badge variant={statusVariant(item.severity)}>{item.severity}</Badge></div><p className="mt-2 text-sm text-graphite">{item.rationale}</p><p className="mt-2 text-xs font-label text-signal">Acción: {item.recommendedAction}</p></div>)}</div> : <div className="px-6 py-10"><EmptyState icon={SparklesIcon} titulo="Sin recomendaciones pendientes" descripcion="Después de la primera sincronización, las reglas van a señalar desvíos y oportunidades." /></div>}</Card>
+      <Card padding="none" className="overflow-hidden xl:col-span-2"><div className="border-b border-line-soft px-5 py-4"><p className="font-title text-lg text-carbon">Historial de sincronización</p><p className="mt-1 text-xs text-graphite">Trazabilidad completa de ejecuciones manuales y programadas.</p></div>{overview.runs.length ? <DataTable wrapperClassName="rounded-none border-0"><DataTableHeader><DataTableRow><DataTableHead>Inicio</DataTableHead><DataTableHead>Origen</DataTableHead><DataTableHead>Estado</DataTableHead><DataTableHead className="text-right">Registros</DataTableHead><DataTableHead>Detalle</DataTableHead></DataTableRow></DataTableHeader><DataTableBody>{overview.runs.map((run) => <DataTableRow key={run.id}><DataTableCell>{new Date(run.startedAt).toLocaleString("es-AR")}</DataTableCell><DataTableCell>{run.triggerType === "cron" ? "Programada" : "Manual"}</DataTableCell><DataTableCell><Badge variant={statusVariant(run.status)}>{friendlyStatus(run.status)}</Badge></DataTableCell><DataTableCell className="text-right">{integer.format(run.records)}</DataTableCell><DataTableCell className="max-w-[420px] truncate">{run.errorMessage || "Sin observaciones"}</DataTableCell></DataTableRow>)}</DataTableBody></DataTable> : <div className="px-6 py-10"><EmptyState icon={ClockIcon} titulo="Todavía no hay ejecuciones" descripcion="El historial comenzará con la primera sincronización manual o programada." /></div>}</Card>
+    </div> : null}
+  </div>;
 }

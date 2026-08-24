@@ -6,6 +6,15 @@ Stack: Next.js 14 (App Router) · TypeScript estricto · Tailwind CSS · Supabas
 
 Fecha de inicio: 2026-06-25
 
+## Actualización 2026-08-24 — Centro de Control Meta Ads, Fase 1
+
+- Se reemplazó la vista de atribución aislada por un centro de control con Resumen, Campañas, Creatividad, Embudo y Operación.
+- Los KPIs cruzan inversión y entrega de Meta con leads, calificación, ventas y caja cobrada del CRM; CPQL y Cash ROAS quedan separados de las métricas superficiales.
+- Se agregó una integración server-side de Meta Marketing API estrictamente de lectura, cache diario de 90 días, sincronización manual admin-only y cron diario autenticado.
+- Cada sincronización queda auditada; las recomendaciones son explícitas y ninguna acción modifica campañas durante Fase 1.
+- El endpoint público de leads captura UTMs completas, IDs de Meta, `fbclid`/`fbc`/`fbp`, landing, versión y consentimiento sin exponer secretos.
+- La migración `038_meta_ads_control_center.sql` crea las tablas operativas y RLS para `admin`/`marketing`. Los tokens permanecen en Vercel, nunca en Postgres.
+
 ## Actualización 2026-08-11 — Reportes consolidados de Cronista para socios
 
 - Se creó `supabase/migrations/030_cronista_reportes.sql` con `reportes_cronista`, RLS admin-only, estado, dos intentos máximos, error explícito, tokens, costo y trazabilidad de Resend.

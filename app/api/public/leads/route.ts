@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createUntypedAdminClient } from "@/lib/supabase/admin";
 import type { CanalOrigenLead } from "@/types/leads";
-import type { Database } from "@/types/supabase";
 
 export const runtime = "nodejs";
 
@@ -17,6 +16,19 @@ type PublicLeadBody = {
   mensaje_inicial?: unknown;
   utm_source?: unknown;
   utm_campaign?: unknown;
+  utm_medium?: unknown;
+  utm_content?: unknown;
+  utm_term?: unknown;
+  meta_campaign_id?: unknown;
+  meta_adset_id?: unknown;
+  meta_ad_id?: unknown;
+  meta_lead_id?: unknown;
+  fbclid?: unknown;
+  fbc?: unknown;
+  fbp?: unknown;
+  landing_url?: unknown;
+  formulario_version?: unknown;
+  consentimiento_marketing?: unknown;
   honeypot?: unknown;
 };
 
@@ -24,8 +36,6 @@ type RateLimitEntry = {
   count: number;
   resetAt: number;
 };
-
-type LeadInsert = Database["public"]["Tables"]["leads"]["Insert"];
 
 const rateLimitStore = new Map<string, RateLimitEntry>();
 
@@ -83,7 +93,7 @@ function checkRateLimit(ip: string) {
 }
 
 function asTrimmedString(value: unknown) {
-  return typeof value === "string" ? value.trim() : "";
+  return typeof value === "string" ? value.trim().slice(0, 1000) : "";
 }
 
 function mapUtmSourceToCanalOrigen(utmSource: string): CanalOrigenLead {
@@ -170,6 +180,18 @@ export async function POST(request: NextRequest) {
   const mensajeInicial = asTrimmedString(body.mensaje_inicial);
   const utmSource = asTrimmedString(body.utm_source);
   const utmCampaign = asTrimmedString(body.utm_campaign);
+  const utmMedium = asTrimmedString(body.utm_medium);
+  const utmContent = asTrimmedString(body.utm_content);
+  const utmTerm = asTrimmedString(body.utm_term);
+  const metaCampaignId = asTrimmedString(body.meta_campaign_id);
+  const metaAdsetId = asTrimmedString(body.meta_adset_id);
+  const metaAdId = asTrimmedString(body.meta_ad_id);
+  const metaLeadId = asTrimmedString(body.meta_lead_id);
+  const fbclid = asTrimmedString(body.fbclid);
+  const fbc = asTrimmedString(body.fbc);
+  const fbp = asTrimmedString(body.fbp);
+  const landingUrl = asTrimmedString(body.landing_url);
+  const formularioVersion = asTrimmedString(body.formulario_version);
 
   if (!nombre) {
     return NextResponse.json({ error: "El nombre es obligatorio." }, { status: 400, headers });
@@ -183,7 +205,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "El email no tiene un formato válido." }, { status: 400, headers });
   }
 
-  const supabase = createAdminClient();
+  const supabase = createUntypedAdminClient();
   const payload = {
     canal: "inbound",
     canal_origen: mapUtmSourceToCanalOrigen(utmSource),
@@ -191,13 +213,29 @@ export async function POST(request: NextRequest) {
     empresa: empresa || nombre,
     contacto_1_nombre: nombre,
     contacto_1_tel: telefono || null,
+    contacto_email: email,
     etapa: "por_contactar",
     vendedor_id: null,
     responsable_id: null,
     contexto: mensajeInicial || null,
     mensaje_inicial: mensajeInicial || null,
-    notas: buildNotas(email, mensajeInicial)
-  } satisfies LeadInsert;
+    notas: buildNotas(email, mensajeInicial),
+    utm_source: utmSource || null,
+    utm_medium: utmMedium || null,
+    utm_content: utmContent || null,
+    utm_term: utmTerm || null,
+    meta_campaign_id: metaCampaignId || null,
+    meta_adset_id: metaAdsetId || null,
+    meta_ad_id: metaAdId || null,
+    meta_lead_id: metaLeadId || null,
+    fbclid: fbclid || null,
+    fbc: fbc || null,
+    fbp: fbp || null,
+    landing_url: landingUrl || null,
+    formulario_version: formularioVersion || null,
+    consentimiento_marketing: body.consentimiento_marketing === true,
+    attribution_captured_at: new Date().toISOString()
+  };
 
   const { error } = await supabase.from("leads").insert(payload).select("id").single();
 

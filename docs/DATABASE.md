@@ -1286,6 +1286,16 @@ Nota: `usuarios` debe existir antes que `leads`, `proyectos`, `features`, `tarea
 - La migración `025_content_operations_luli.sql` crea estas tablas idempotentemente. Las publicaciones, carruseles, historias y sus fechas siguen viviendo en `piezas_contenido`; no se duplica el calendario editorial.
 - La publicación directa requiere una fila activa con `access_token` y `cuenta_externa_id`; el token se consulta únicamente server-side. Instagram requiere además una imagen accesible y LinkedIn usa el identificador de autor de organización/persona según la cuenta configurada.
 
+### Centro de Control Meta Ads
+
+- `meta_connections` guarda identificadores no secretos, estado, permisos declarados y salud de la conexión. El access token vive únicamente en Vercel.
+- `meta_campaigns`, `meta_ad_sets`, `meta_ads` y `meta_creatives` son un cache de lectura de la estructura publicitaria.
+- `meta_insights_daily` conserva métricas diarias por anuncio para comparar inversión, entrega y leads con el CRM sin consultar Meta en cada render.
+- `meta_sync_runs` audita cada ejecución manual o programada, incluyendo cantidades y error explícito.
+- `meta_recommendations` registra hallazgos y acciones sugeridas; Fase 1 no aplica cambios en campañas.
+- `leads` incorpora email estructurado, UTMs completas, IDs de campaña/conjunto/anuncio/lead de Meta, `fbclid`/`fbc`/`fbp`, landing, versión de formulario y consentimiento.
+- Todas las tablas Meta tienen RLS: `admin` y `marketing` pueden leer; únicamente `admin` puede escribir mediante operaciones internas server-side.
+
 ### Tabla nueva
 
 - `ai_dev_ejecuciones`: registra cada corrida de AI Dev por fase con modelos usados, estado, PR, tokens, costo estimado, usuario que inició y timestamps de inicio/fin.

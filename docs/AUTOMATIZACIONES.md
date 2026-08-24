@@ -10,6 +10,8 @@ Las funciones viven en `supabase/functions/`:
 - `marcar-vencidos`
 - `sync-google-calendar`
 
+Meta Ads usa una función Vercel separada: `GET /api/cron/meta-sync`, declarada en `vercel.json` a las 10:15 UTC. Vercel envía `Authorization: Bearer $CRON_SECRET`; la ejecución consulta Meta en modo lectura y registra el resultado en `meta_sync_runs`.
+
 ### Comando de deploy
 
 ```bash
@@ -40,6 +42,7 @@ Migraciones relevantes:
 - `supabase/migrations/008_agentes_asesor_financiero.sql`
 - `supabase/migrations/029_cronista.sql`
 - `supabase/migrations/030_cronista_reportes.sql`
+- `supabase/migrations/038_meta_ads_control_center.sql`
 
 ### Cómo aplicarlas
 
@@ -80,6 +83,12 @@ O bien, manualmente desde Supabase SQL Editor copiando cada archivo.
 - Programa el reporte semanal de socios el domingo a las 20:00 de Argentina (`23:00 UTC`).
 - Programa el reporte mensual del mes cerrado el día 1 a las 08:00 de Argentina (`11:00 UTC`).
 - Crea `reportes_cronista` con RLS admin-only, dos intentos máximos, error, tokens, costo, Markdown e ID de Resend.
+
+`038_meta_ads_control_center.sql`
+
+- Crea el cache operativo de campañas, conjuntos, anuncios, creatividades e insights diarios.
+- Crea historial de sincronizaciones y recomendaciones auditables con lectura para roles `admin` y `marketing`.
+- Amplía `leads` con atribución UTM/Meta estructurada; el token de Meta no se almacena en Postgres.
 
 ## 3. Placeholders a reemplazar
 
