@@ -104,6 +104,26 @@ export type MetaRecommendation = {
   occurrences: number;
 };
 
+export type MetaActionStatus = "draft" | "pending_approval" | "approved" | "rejected" | "cancelled" | "executed" | "failed";
+
+export type MetaAction = {
+  id: string;
+  recommendationId: string | null;
+  actionType: string;
+  entityType: string | null;
+  entityId: string | null;
+  title: string;
+  rationale: string;
+  proposedAction: string;
+  proposedPayload: Record<string, unknown>;
+  riskLevel: "low" | "medium" | "high";
+  status: MetaActionStatus;
+  requestedAt: string;
+  reviewedAt: string | null;
+  notes: string | null;
+  errorMessage: string | null;
+};
+
 export type MetaGuardrails = {
   targetCpl: number;
   targetCpql: number;
@@ -135,5 +155,6 @@ export type MetaOverview = {
   creatives: MetaCreativeRow[];
   funnel: MetaFunnelStage[];
   recommendations: MetaRecommendation[];
+  actions: MetaAction[];
   runs: MetaRun[];
 };

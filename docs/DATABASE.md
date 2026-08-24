@@ -1297,6 +1297,7 @@ Nota: `usuarios` debe existir antes que `leads`, `proyectos`, `features`, `tarea
 - Todas las tablas Meta tienen RLS: `admin` y `marketing` pueden leer; únicamente `admin` puede escribir mediante operaciones internas server-side.
 - `meta_guardrails` define los objetivos internos de performance y frescura usados por la Fase 2. No contiene credenciales ni ejecuta cambios sobre Meta.
 - `meta_recommendations` conserva última detección, cantidad de recurrencias, reconocimiento, notas y resolución para que cada alerta tenga seguimiento auditable.
+- `meta_action_queue` convierte recomendaciones en propuestas con riesgo, payload futuro, aprobación humana y trazabilidad. El estado `approved` no ejecuta Meta y nunca contiene secretos.
 
 ### Tabla nueva
 

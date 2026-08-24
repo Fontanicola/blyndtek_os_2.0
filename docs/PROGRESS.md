@@ -6,6 +6,14 @@ Stack: Next.js 14 (App Router) · TypeScript estricto · Tailwind CSS · Supabas
 
 Fecha de inicio: 2026-06-25
 
+## Actualización 2026-08-24 — Centro de Control Meta Ads, Fase 3 segura
+
+- Se agregó una cola de acciones que transforma una recomendación en una propuesta operativa con entidad, riesgo, evidencia y acción concreta.
+- Admin y marketing pueden proponer acciones; sólo un administrador puede aprobarlas, rechazarlas o cancelar una ya aprobada.
+- Cada decisión conserva solicitante, revisor, fechas, notas y estado. El dashboard separa pendientes, aprobadas y el contador de cambios automáticos.
+- Aprobar no ejecuta la acción: `ads_management` continúa deshabilitado y la API devuelve explícitamente que no intentó modificar Meta.
+- La migración `040_meta_action_queue.sql` agrega RLS, unicidad para acciones activas por recomendación e índices de operación.
+
 ## Actualización 2026-08-24 — Centro de Control Meta Ads, Fase 2
 
 - Se agregó inteligencia operativa persistente: nueve reglas detectan sincronización atrasada, pérdida de atribución, ausencia de calificados, CPL/CPQL/ROAS fuera de objetivo, campañas ineficientes y problemas de hook, retención o fatiga creativa.

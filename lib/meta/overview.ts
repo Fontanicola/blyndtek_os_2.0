@@ -35,7 +35,7 @@ export async function getMetaOverview(period: MetaPeriod): Promise<MetaOverview>
   const startDate = start.toISOString().slice(0, 10);
   const config = getMetaConfig();
 
-  const [connectionResult, insightsResult, campaignsResult, adsResult, creativesResult, leadsResult, runsResult, recommendationsResult, guardrailsResult] = await Promise.all([
+  const [connectionResult, insightsResult, campaignsResult, adsResult, creativesResult, leadsResult, runsResult, recommendationsResult, guardrailsResult, actionsResult] = await Promise.all([
     db.from("meta_connections").select("*").order("updated_at", { ascending: false }).limit(1).maybeSingle(),
     db.from("meta_insights_daily").select("*").gte("date_start", startDate).order("date_start"),
     db.from("meta_campaigns").select("*").order("name"),
@@ -44,7 +44,8 @@ export async function getMetaOverview(period: MetaPeriod): Promise<MetaOverview>
     db.from("leads").select("id, etapa, meta_campaign_id, meta_ad_id, campana_origen, created_at").eq("canal_origen", "meta_ads").gte("created_at", start.toISOString()),
     db.from("meta_sync_runs").select("*").order("started_at", { ascending: false }).limit(8),
     db.from("meta_recommendations").select("*").in("status", ["open", "acknowledged"]).order("last_detected_at", { ascending: false }).limit(20),
-    db.from("meta_guardrails").select("*").eq("ad_account_id", config.configured ? config.adAccountId : "not-configured").maybeSingle()
+    db.from("meta_guardrails").select("*").eq("ad_account_id", config.configured ? config.adAccountId : "not-configured").maybeSingle(),
+    db.from("meta_action_queue").select("*").order("requested_at", { ascending: false }).limit(50)
   ]);
 
   const metaTablesUnavailable = [connectionResult, insightsResult, campaignsResult, adsResult, creativesResult, runsResult, recommendationsResult]
@@ -147,6 +148,12 @@ export async function getMetaOverview(period: MetaPeriod): Promise<MetaOverview>
   const guardrails: MetaGuardrails = guardrailRow ? { targetCpl: n(guardrailRow.target_cpl), targetCpql: n(guardrailRow.target_cpql), targetCashRoas: n(guardrailRow.target_cash_roas), minLinkCtr: n(guardrailRow.min_link_ctr), maxFrequency: n(guardrailRow.max_frequency), maxAttributionGapPct: n(guardrailRow.max_attribution_gap_pct), minSpendForAlert: n(guardrailRow.min_spend_for_alert), staleSyncHours: n(guardrailRow.stale_sync_hours) } : defaultGuardrails;
   const healthPenalty = storedRecommendations.reduce((total, item) => total + (item.status === "acknowledged" ? 0 : item.severity === "critical" ? 20 : item.severity === "warning" ? 8 : 2), 0);
   const healthScore = Math.max(0, Math.min(100, (connection?.status === "connected" ? 100 : 60) - healthPenalty));
+  const actions = actionsResult.error ? [] : (actionsResult.data ?? []).map((row) => ({
+    id: row.id, recommendationId: row.recommendation_id, actionType: row.action_type, entityType: row.entity_type, entityId: row.entity_id,
+    title: row.title, rationale: row.rationale, proposedAction: row.proposed_action, proposedPayload: row.proposed_payload || {},
+    riskLevel: row.risk_level, status: row.status, requestedAt: row.requested_at, reviewedAt: row.reviewed_at,
+    notes: row.notes, errorMessage: row.error_message
+  }));
 
   return {
     connection: { status: metaTablesUnavailable ? "not_configured" : (connection?.status || (config.configured ? "degraded" : "not_configured")), accountName: connection?.account_name || null,
@@ -158,7 +165,7 @@ export async function getMetaOverview(period: MetaPeriod): Promise<MetaOverview>
       costPerLead: divide(totals.spend, totals.platformLeads), costPerQualifiedLead: divide(totals.spend, qualifiedLeads), cashRoas: divide(collectedRevenue, totals.spend),
       videoPlays3s: totals.videoPlays3s, videoPlays15s: totals.videoPlays15s },
     trend: [...trendMap.values()].sort((a, b) => a.date.localeCompare(b.date)), campaigns, creatives, funnel,
-    recommendations: [...automaticRecommendations, ...storedRecommendations],
+    recommendations: [...automaticRecommendations, ...storedRecommendations], actions,
     runs: metaTablesUnavailable ? [] : (runsResult.data ?? []).map((row) => ({ id: row.id, status: row.status, triggerType: row.trigger_type, startedAt: row.started_at, finishedAt: row.finished_at,
       records: n(row.records_campaigns) + n(row.records_adsets) + n(row.records_ads) + n(row.records_insights), errorMessage: row.error_message }))
   };

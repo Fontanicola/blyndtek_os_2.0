@@ -14,6 +14,8 @@ Meta Ads usa una función Vercel separada: `GET /api/cron/meta-sync`, declarada 
 
 Al finalizar una sincronización correcta, la Fase 2 recalcula recomendaciones contra `meta_guardrails`. El análisis es tolerante a fallos: si una regla falla, el sync de datos permanece válido y el error se registra server-side. Las recomendaciones nunca aplican cambios en Meta.
 
+La Fase 3 permite convertir una recomendación en una fila de `meta_action_queue` y someterla a aprobación. Incluso una acción aprobada permanece sin ejecutar: no existe cron de escritura ni permiso `ads_management` habilitado.
+
 ### Comando de deploy
 
 ```bash

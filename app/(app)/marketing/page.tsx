@@ -3,18 +3,18 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Badge, Button, Card, DataTable, DataTableBody, DataTableCell, DataTableHead, DataTableHeader, DataTableRow, EmptyState } from "@/components/ui";
-import { AlertTriangleIcon, BarChartIcon, CheckCircleIcon, ClockIcon, InboxIcon, MegaphoneIcon, RefreshIcon, SparklesIcon } from "@/components/ui/icons";
+import { AlertTriangleIcon, BarChartIcon, CheckCircleIcon, ClockIcon, InboxIcon, MegaphoneIcon, RefreshIcon, SparklesIcon, WrenchIcon } from "@/components/ui/icons";
 import { chartTheme } from "@/lib/charts/chartTheme";
 import { cn } from "@/lib/cn";
 import type { MetaGuardrails, MetaOverview, MetaPeriod } from "@/types/meta";
 
-type Tab = "resumen" | "campanas" | "creatividad" | "embudo" | "operacion";
-type Permissions = { canSync: boolean; canAnalyze: boolean; canManageRecommendations: boolean; canEditGuardrails: boolean };
+type Tab = "resumen" | "campanas" | "creatividad" | "embudo" | "acciones" | "operacion";
+type Permissions = { canSync: boolean; canAnalyze: boolean; canManageRecommendations: boolean; canEditGuardrails: boolean; canCreateActions: boolean; canReviewActions: boolean };
 type ApiResponse = { data?: MetaOverview; permissions?: Permissions; error?: string };
 
 const tabs: Array<{ value: Tab; label: string }> = [
   { value: "resumen", label: "Resumen" }, { value: "campanas", label: "Campañas" },
-  { value: "creatividad", label: "Creatividad" }, { value: "embudo", label: "Embudo" },
+  { value: "creatividad", label: "Creatividad" }, { value: "embudo", label: "Embudo" }, { value: "acciones", label: "Acciones" },
   { value: "operacion", label: "Operación" }
 ];
 const periods: Array<{ value: MetaPeriod; label: string }> = [
@@ -31,13 +31,13 @@ function pct(value: number | null) { return value === null ? "—" : `${decimal.
 function metricPct(value: number) { return `${decimal.format(value)}%`; }
 function ratio(value: number | null) { return value === null ? "—" : `${decimal.format(value)}x`; }
 function statusVariant(status: string) {
-  if (["ACTIVE", "connected", "success"].includes(status)) return "success" as const;
-  if (["error", "critical", "DISAPPROVED"].includes(status)) return "danger" as const;
-  if (["degraded", "warning", "partial", "PAUSED"].includes(status)) return "warning" as const;
+  if (["ACTIVE", "connected", "success", "approved", "executed"].includes(status)) return "success" as const;
+  if (["error", "critical", "DISAPPROVED", "rejected", "failed"].includes(status)) return "danger" as const;
+  if (["degraded", "warning", "partial", "PAUSED", "pending_approval"].includes(status)) return "warning" as const;
   return "default" as const;
 }
 function friendlyStatus(status: string) {
-  return ({ ACTIVE: "Activa", PAUSED: "Pausada", connected: "Conectada", not_configured: "Sin configurar", degraded: "Revisar", error: "Error", success: "Correcta", partial: "Parcial", running: "En curso" } as Record<string, string>)[status] || status;
+  return ({ ACTIVE: "Activa", PAUSED: "Pausada", connected: "Conectada", not_configured: "Sin configurar", degraded: "Revisar", error: "Error", success: "Correcta", partial: "Parcial", running: "En curso", draft: "Borrador", pending_approval: "Pendiente", approved: "Aprobada", rejected: "Rechazada", cancelled: "Cancelada", executed: "Ejecutada", failed: "Fallida" } as Record<string, string>)[status] || status;
 }
 
 function MetricCard({ label, value, detail, tone = "default" }: { label: string; value: string; detail: string; tone?: "default" | "success" | "warning" }) {
@@ -61,7 +61,7 @@ export default function MarketingPage() {
   const [period, setPeriod] = useState<MetaPeriod>("30d");
   const [overview, setOverview] = useState<MetaOverview | null>(null);
   const [canSync, setCanSync] = useState(false);
-  const [permissions, setPermissions] = useState<Permissions>({ canSync: false, canAnalyze: false, canManageRecommendations: false, canEditGuardrails: false });
+  const [permissions, setPermissions] = useState<Permissions>({ canSync: false, canAnalyze: false, canManageRecommendations: false, canEditGuardrails: false, canCreateActions: false, canReviewActions: false });
   const [guardrails, setGuardrails] = useState<MetaGuardrails | null>(null);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
@@ -76,7 +76,7 @@ export default function MarketingPage() {
       const response = await fetch(`/api/marketing/meta/overview?period=${period}`, { cache: "no-store" });
       const payload = await response.json() as ApiResponse;
       if (!response.ok || !payload.data) throw new Error(payload.error || "No se pudo cargar el centro de control.");
-      const nextPermissions = { canSync: Boolean(payload.permissions?.canSync), canAnalyze: Boolean(payload.permissions?.canAnalyze), canManageRecommendations: Boolean(payload.permissions?.canManageRecommendations), canEditGuardrails: Boolean(payload.permissions?.canEditGuardrails) };
+      const nextPermissions = { canSync: Boolean(payload.permissions?.canSync), canAnalyze: Boolean(payload.permissions?.canAnalyze), canManageRecommendations: Boolean(payload.permissions?.canManageRecommendations), canEditGuardrails: Boolean(payload.permissions?.canEditGuardrails), canCreateActions: Boolean(payload.permissions?.canCreateActions), canReviewActions: Boolean(payload.permissions?.canReviewActions) };
       setOverview(payload.data); setCanSync(nextPermissions.canSync); setPermissions(nextPermissions); setGuardrails(payload.data.guardrails);
     } catch (loadError) { setError(loadError instanceof Error ? loadError.message : "No se pudo cargar el centro de control."); }
     finally { setLoading(false); }
@@ -127,6 +127,24 @@ export default function MarketingPage() {
     const payload = await response.json() as { error?: string };
     if (!response.ok) { setError(payload.error || "No se pudo actualizar la alerta."); return; }
     setNotice(status === "acknowledged" ? "Alerta reconocida; queda en seguimiento." : "Alerta descartada.");
+    await load();
+  }
+
+  async function createAction(recommendationId: string) {
+    setError(null); setNotice(null);
+    const response = await fetch("/api/marketing/meta/actions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ recommendationId }) });
+    const payload = await response.json() as { existing?: boolean; error?: string };
+    if (!response.ok) { setError(payload.error || "No se pudo proponer la acción."); return; }
+    setNotice(payload.existing ? "La recomendación ya tiene una acción activa." : "Acción enviada a aprobación; no se ejecutó ningún cambio en Meta.");
+    setTab("acciones"); await load();
+  }
+
+  async function reviewAction(id: string, status: "approved" | "rejected" | "cancelled") {
+    setError(null); setNotice(null);
+    const response = await fetch(`/api/marketing/meta/actions/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status }) });
+    const payload = await response.json() as { error?: string };
+    if (!response.ok) { setError(payload.error || "No se pudo revisar la acción."); return; }
+    setNotice(status === "approved" ? "Acción aprobada y registrada. La ejecución en Meta continúa bloqueada." : status === "rejected" ? "Acción rechazada." : "Acción cancelada.");
     await load();
   }
 
@@ -210,11 +228,24 @@ export default function MarketingPage() {
       <div className="space-y-4"><MetricCard label="Landing page → Lead Meta" value={pct(kpis?.landingPageViews ? (kpis.platformLeads / kpis.landingPageViews) : null)} detail={`${integer.format(kpis?.landingPageViews || 0)} visitas a landing`} /><MetricCard label="Meta → CRM" value={pct(kpis?.platformLeads ? (kpis.crmLeads / kpis.platformLeads) : null)} detail="Control de pérdida de atribución" /><MetricCard label="Lead → Calificado" value={pct(kpis?.crmLeads ? (kpis.qualifiedLeads / kpis.crmLeads) : null)} detail="Calidad real de la demanda" /><MetricCard label="Lead → Venta" value={pct(kpis?.crmLeads ? (kpis.wonLeads / kpis.crmLeads) : null)} detail={`${integer.format(kpis?.wonLeads || 0)} oportunidades ganadas`} /></div>
     </div> : null}
 
+    {overview && tab === "acciones" ? <div className="space-y-4">
+      <div className="grid gap-3 sm:grid-cols-3">
+        <MetricCard label="Pendientes de aprobación" value={integer.format(overview.actions.filter((item) => item.status === "pending_approval").length)} detail="Requieren decisión de un administrador" tone={overview.actions.some((item) => item.status === "pending_approval") ? "warning" : "default"} />
+        <MetricCard label="Aprobadas" value={integer.format(overview.actions.filter((item) => item.status === "approved").length)} detail="Registradas, todavía sin ejecutar" />
+        <MetricCard label="Cambios automáticos" value="0" detail="Bloqueados por diseño" tone="success" />
+      </div>
+      <div className="flex items-start gap-3 rounded-md border border-warning/25 bg-warning-light px-4 py-3"><AlertTriangleIcon className="mt-0.5 shrink-0 text-warning" size={18} /><div><p className="text-sm font-label text-carbon">Aprobar no modifica Meta</p><p className="mt-0.5 text-xs text-graphite">Esta fase documenta la decisión y deja la acción preparada. Presupuestos, anuncios y campañas siguen en modo de solo lectura.</p></div></div>
+      {overview.actions.length ? <DataTable className="min-w-[1100px]">
+        <DataTableHeader><DataTableRow><DataTableHead>Acción propuesta</DataTableHead><DataTableHead>Entidad</DataTableHead><DataTableHead>Riesgo</DataTableHead><DataTableHead>Estado</DataTableHead><DataTableHead>Solicitada</DataTableHead><DataTableHead className="text-right">Decisión</DataTableHead></DataTableRow></DataTableHeader>
+        <DataTableBody>{overview.actions.map((action) => <DataTableRow key={action.id}><DataTableCell><div className="flex items-start gap-3"><div className="mt-0.5 rounded-md bg-signal-light p-2 text-signal"><WrenchIcon size={16} /></div><div><p className="max-w-[380px] font-label text-carbon">{action.title}</p><p className="mt-1 max-w-[480px] text-xs text-graphite">{action.proposedAction}</p></div></div></DataTableCell><DataTableCell><p className="text-sm text-carbon">{action.entityType || "Cuenta"}</p><p className="max-w-[150px] truncate text-xs text-graphite">{action.entityId || "General"}</p></DataTableCell><DataTableCell><Badge variant={action.riskLevel === "high" ? "danger" : action.riskLevel === "medium" ? "warning" : "default"}>{action.riskLevel === "high" ? "Alto" : action.riskLevel === "medium" ? "Medio" : "Bajo"}</Badge></DataTableCell><DataTableCell><Badge variant={statusVariant(action.status)}>{friendlyStatus(action.status)}</Badge></DataTableCell><DataTableCell className="text-sm text-graphite">{new Date(action.requestedAt).toLocaleString("es-AR")}</DataTableCell><DataTableCell><div className="flex justify-end gap-2">{permissions.canReviewActions && action.status === "pending_approval" ? <><Button size="sm" onClick={() => void reviewAction(action.id, "approved")}>Aprobar</Button><Button variant="secondary" size="sm" onClick={() => void reviewAction(action.id, "rejected")}>Rechazar</Button></> : null}{permissions.canReviewActions && action.status === "approved" ? <Button variant="ghost" size="sm" onClick={() => void reviewAction(action.id, "cancelled")}>Cancelar</Button> : null}</div></DataTableCell></DataTableRow>)}</DataTableBody>
+      </DataTable> : <Card className="py-12"><EmptyState icon={WrenchIcon} titulo="Todavía no hay acciones propuestas" descripcion="Cuando aparezca una alerta, usá “Proponer acción” para enviarla a aprobación y dejar trazabilidad de la decisión." /></Card>}
+    </div> : null}
+
     {overview && tab === "operacion" ? <div className="grid gap-4 xl:grid-cols-2">
       <Card padding="none" className="overflow-hidden"><div className="border-b border-line-soft px-5 py-4"><p className="font-title text-lg text-carbon">Conexión y seguridad</p><p className="mt-1 text-xs text-graphite">Estado técnico de la integración.</p></div><div className="divide-y divide-line-soft">
         {[{ label: "Cuenta publicitaria", value: connection?.accountName || connection?.adAccountId || "Pendiente", ok: connection?.status === "connected" }, { label: "Credenciales de servidor", value: missingConfig ? "Configuración incompleta" : "Disponibles", ok: !missingConfig }, { label: "Permisos de escritura", value: "Desactivados en Fase 1", ok: true }, { label: "Última sincronización", value: connection?.lastSyncAt ? new Date(connection.lastSyncAt).toLocaleString("es-AR") : "Nunca", ok: Boolean(connection?.lastSyncAt) }].map((item) => <div key={item.label} className="flex items-center justify-between gap-4 px-5 py-3"><div className="flex items-center gap-3">{item.ok ? <CheckCircleIcon className="text-success" size={18} /> : <ClockIcon className="text-warning" size={18} />}<span className="text-sm text-carbon">{item.label}</span></div><span className="max-w-[55%] truncate text-right text-xs text-graphite">{item.value}</span></div>)}
       </div></Card>
-      <Card padding="none" className="overflow-hidden"><div className="flex items-start justify-between gap-3 border-b border-line-soft px-5 py-4"><div><p className="font-title text-lg text-carbon">Alertas y recomendaciones</p><p className="mt-1 text-xs text-graphite">Persistentes, auditables y sin ejecución automática.</p></div>{permissions.canAnalyze ? <Button variant="secondary" size="sm" onClick={() => void analyze()} disabled={analyzing}><SparklesIcon className={cn("mr-2", analyzing && "animate-pulse")} size={15} />{analyzing ? "Analizando" : "Analizar"}</Button> : null}</div>{overview.recommendations.length ? <div className="max-h-[520px] divide-y divide-line-soft overflow-y-auto">{overview.recommendations.map((item) => <div key={item.id} className="px-5 py-4"><div className="flex flex-wrap items-center gap-2"><SparklesIcon className="text-signal" size={16} /><p className="min-w-0 flex-1 font-label text-carbon">{item.title}</p><Badge variant={item.status === "acknowledged" ? "default" : statusVariant(item.severity)}>{item.status === "acknowledged" ? "En seguimiento" : item.severity}</Badge></div><p className="mt-2 text-sm text-graphite">{item.rationale}</p><p className="mt-2 text-xs font-label text-signal">Acción: {item.recommendedAction}</p><div className="mt-3 flex items-center justify-between gap-3"><span className="text-[11px] text-graphite">Detectada {item.occurrences} {item.occurrences === 1 ? "vez" : "veces"}</span>{permissions.canManageRecommendations && item.id !== "configuration" ? <div className="flex gap-2">{item.status === "open" ? <Button variant="secondary" size="sm" onClick={() => void updateRecommendation(item.id, "acknowledged")}>Reconocer</Button> : null}<Button variant="ghost" size="sm" onClick={() => void updateRecommendation(item.id, "dismissed")}>Descartar</Button></div> : null}</div></div>)}</div> : <div className="px-6 py-10"><EmptyState icon={SparklesIcon} titulo="Sin alertas activas" descripcion="La cuenta está dentro de los objetivos definidos o todavía no tiene suficiente entrega." /></div>}</Card>
+      <Card padding="none" className="overflow-hidden"><div className="flex items-start justify-between gap-3 border-b border-line-soft px-5 py-4"><div><p className="font-title text-lg text-carbon">Alertas y recomendaciones</p><p className="mt-1 text-xs text-graphite">Persistentes, auditables y sin ejecución automática.</p></div>{permissions.canAnalyze ? <Button variant="secondary" size="sm" onClick={() => void analyze()} disabled={analyzing}><SparklesIcon className={cn("mr-2", analyzing && "animate-pulse")} size={15} />{analyzing ? "Analizando" : "Analizar"}</Button> : null}</div>{overview.recommendations.length ? <div className="max-h-[520px] divide-y divide-line-soft overflow-y-auto">{overview.recommendations.map((item) => <div key={item.id} className="px-5 py-4"><div className="flex flex-wrap items-center gap-2"><SparklesIcon className="text-signal" size={16} /><p className="min-w-0 flex-1 font-label text-carbon">{item.title}</p><Badge variant={item.status === "acknowledged" ? "default" : statusVariant(item.severity)}>{item.status === "acknowledged" ? "En seguimiento" : item.severity}</Badge></div><p className="mt-2 text-sm text-graphite">{item.rationale}</p><p className="mt-2 text-xs font-label text-signal">Acción: {item.recommendedAction}</p><div className="mt-3 flex items-center justify-between gap-3"><span className="text-[11px] text-graphite">Detectada {item.occurrences} {item.occurrences === 1 ? "vez" : "veces"}</span>{item.id !== "configuration" ? <div className="flex flex-wrap gap-2">{permissions.canCreateActions ? <Button size="sm" onClick={() => void createAction(item.id)}>Proponer acción</Button> : null}{permissions.canManageRecommendations && item.status === "open" ? <Button variant="secondary" size="sm" onClick={() => void updateRecommendation(item.id, "acknowledged")}>Reconocer</Button> : null}{permissions.canManageRecommendations ? <Button variant="ghost" size="sm" onClick={() => void updateRecommendation(item.id, "dismissed")}>Descartar</Button> : null}</div> : null}</div></div>)}</div> : <div className="px-6 py-10"><EmptyState icon={SparklesIcon} titulo="Sin alertas activas" descripcion="La cuenta está dentro de los objetivos definidos o todavía no tiene suficiente entrega." /></div>}</Card>
       <Card padding="none" className="overflow-hidden xl:col-span-2"><div className="flex items-start justify-between gap-3 border-b border-line-soft px-5 py-4"><div><p className="font-title text-lg text-carbon">Objetivos y guardrails</p><p className="mt-1 text-xs text-graphite">Definen cuándo alertar; nunca cambian presupuesto ni campañas.</p></div><Badge variant="default">Fase 2</Badge></div>{guardrails ? <div className="grid gap-4 p-5 sm:grid-cols-2 xl:grid-cols-4"><GuardrailField label="CPL objetivo" value={guardrails.targetCpl} suffix="USD" disabled={!permissions.canEditGuardrails} onChange={(value) => setGuardrails({ ...guardrails, targetCpl: value })} /><GuardrailField label="CPQL objetivo" value={guardrails.targetCpql} suffix="USD" disabled={!permissions.canEditGuardrails} onChange={(value) => setGuardrails({ ...guardrails, targetCpql: value })} /><GuardrailField label="Cash ROAS objetivo" value={guardrails.targetCashRoas} suffix="x" disabled={!permissions.canEditGuardrails} onChange={(value) => setGuardrails({ ...guardrails, targetCashRoas: value })} /><GuardrailField label="CTR mínimo" value={guardrails.minLinkCtr} suffix="%" disabled={!permissions.canEditGuardrails} onChange={(value) => setGuardrails({ ...guardrails, minLinkCtr: value })} /><GuardrailField label="Frecuencia máxima" value={guardrails.maxFrequency} suffix="x" disabled={!permissions.canEditGuardrails} onChange={(value) => setGuardrails({ ...guardrails, maxFrequency: value })} /><GuardrailField label="Brecha atribución máxima" value={guardrails.maxAttributionGapPct} suffix="%" disabled={!permissions.canEditGuardrails} onChange={(value) => setGuardrails({ ...guardrails, maxAttributionGapPct: value })} /><GuardrailField label="Gasto mínimo para alertar" value={guardrails.minSpendForAlert} suffix="USD" disabled={!permissions.canEditGuardrails} onChange={(value) => setGuardrails({ ...guardrails, minSpendForAlert: value })} /><GuardrailField label="Sync atrasado después de" value={guardrails.staleSyncHours} suffix="horas" disabled={!permissions.canEditGuardrails} onChange={(value) => setGuardrails({ ...guardrails, staleSyncHours: value })} />{permissions.canEditGuardrails ? <div className="sm:col-span-2 xl:col-span-4 flex justify-end"><Button onClick={() => void saveGuardrails()} disabled={savingGuardrails}>{savingGuardrails ? "Guardando" : "Guardar objetivos"}</Button></div> : null}</div> : null}</Card>
       <Card padding="none" className="overflow-hidden xl:col-span-2"><div className="border-b border-line-soft px-5 py-4"><p className="font-title text-lg text-carbon">Historial de sincronización</p><p className="mt-1 text-xs text-graphite">Trazabilidad completa de ejecuciones manuales y programadas.</p></div>{overview.runs.length ? <DataTable wrapperClassName="rounded-none border-0"><DataTableHeader><DataTableRow><DataTableHead>Inicio</DataTableHead><DataTableHead>Origen</DataTableHead><DataTableHead>Estado</DataTableHead><DataTableHead className="text-right">Registros</DataTableHead><DataTableHead>Detalle</DataTableHead></DataTableRow></DataTableHeader><DataTableBody>{overview.runs.map((run) => <DataTableRow key={run.id}><DataTableCell>{new Date(run.startedAt).toLocaleString("es-AR")}</DataTableCell><DataTableCell>{run.triggerType === "cron" ? "Programada" : "Manual"}</DataTableCell><DataTableCell><Badge variant={statusVariant(run.status)}>{friendlyStatus(run.status)}</Badge></DataTableCell><DataTableCell className="text-right">{integer.format(run.records)}</DataTableCell><DataTableCell className="max-w-[420px] truncate">{run.errorMessage || "Sin observaciones"}</DataTableCell></DataTableRow>)}</DataTableBody></DataTable> : <div className="px-6 py-10"><EmptyState icon={ClockIcon} titulo="Todavía no hay ejecuciones" descripcion="El historial comenzará con la primera sincronización manual o programada." /></div>}</Card>
     </div> : null}
