@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getMetaConfig } from "@/lib/meta/config";
 import { syncMetaAds } from "@/lib/meta/sync";
 
 export const dynamic = "force-dynamic";
@@ -9,6 +10,16 @@ export async function GET(request: NextRequest) {
   const authorization = request.headers.get("authorization");
   if (!expectedSecret || authorization !== `Bearer ${expectedSecret}`) {
     return NextResponse.json({ error: "No autorizado." }, { status: 401 });
+  }
+
+  const config = getMetaConfig();
+  if (!config.configured) {
+    return NextResponse.json({
+      data: {
+        status: "skipped",
+        reason: "Meta todavía no está configurado."
+      }
+    });
   }
 
   try {
