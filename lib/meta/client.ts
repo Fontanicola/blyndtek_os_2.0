@@ -69,8 +69,7 @@ export type MetaInsightApiRow = {
   cpm?: string;
   actions?: Array<{ action_type: string; value: string }>;
   cost_per_action_type?: Array<{ action_type: string; value: string }>;
-  video_3_sec_watched_actions?: Array<{ action_type: string; value: string }>;
-  video_15_sec_watched_actions?: Array<{ action_type: string; value: string }>;
+  video_thruplay_watched_actions?: Array<{ action_type: string; value: string }>;
 };
 
 async function getAllPages<T>(url: URL, accessToken: string) {
@@ -140,7 +139,7 @@ export async function getMetaAds() {
 }
 
 export async function getMetaInsights(since: string, until: string) {
-  const fields = "date_start,date_stop,campaign_id,adset_id,ad_id,spend,impressions,reach,frequency,clicks,ctr,cpc,cpm,actions,cost_per_action_type,video_3_sec_watched_actions,video_15_sec_watched_actions";
+  const fields = "date_start,date_stop,campaign_id,adset_id,ad_id,spend,impressions,reach,frequency,clicks,ctr,cpc,cpm,actions,cost_per_action_type,video_thruplay_watched_actions";
   const { url, config } = buildUrl(`${configuredAccountPath()}/insights`, fields, {
     level: "ad",
     time_increment: "1",

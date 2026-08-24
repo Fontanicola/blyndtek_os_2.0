@@ -43,8 +43,10 @@ function mapInsight(row: MetaInsightApiRow, adAccountId: string) {
     link_clicks: linkClicks,
     landing_page_views: landingPageViews,
     leads,
-    video_plays_3s: actionValue(row.video_3_sec_watched_actions, ["video_view"]),
-    video_plays_15s: actionValue(row.video_15_sec_watched_actions, ["video_view"]),
+    // In Graph API v26, 3-second views are exposed as the video_view action and
+    // 15-second/completed views are exposed through the ThruPlay metric.
+    video_plays_3s: actionValue(row.actions, ["video_view"]),
+    video_plays_15s: actionValue(row.video_thruplay_watched_actions, ["video_view"]),
     ctr: number(row.ctr),
     cpc: number(row.cpc),
     cpm: number(row.cpm),
