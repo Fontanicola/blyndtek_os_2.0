@@ -38,6 +38,7 @@ type PublicLeadBody = {
   rol?: unknown;
   urgencia?: unknown;
   referrer?: unknown;
+  web_session_id?: unknown;
 };
 
 type RateLimitEntry = {
@@ -204,6 +205,7 @@ export async function POST(request: NextRequest) {
   const fbp = asTrimmedString(body.fbp);
   const landingUrl = asTrimmedString(body.landing_url);
   const formularioVersion = asTrimmedString(body.formulario_version);
+  const webSessionId = asTrimmedString(body.web_session_id);
   const eventId = randomUUID();
 
   if (!nombre) {
@@ -256,7 +258,8 @@ export async function POST(request: NextRequest) {
     consentimiento_marketing: body.consentimiento_marketing === true,
     attribution_captured_at: new Date().toISOString(),
     meta_event_id: eventId,
-    meta_capi_status: "pending"
+    meta_capi_status: "pending",
+    web_session_id: webSessionId || null
   };
 
   const { data: lead, error } = await supabase.from("leads").insert(payload).select("id").single();
@@ -285,6 +288,10 @@ export async function POST(request: NextRequest) {
       meta_capi_error: capi.ok ? null : capi.error
     })
     .eq("id", lead.id);
+
+  if (webSessionId) {
+    await supabase.from("web_sessions").update({ converted_lead_id: lead.id, updated_at: new Date().toISOString() }).eq("id", webSessionId);
+  }
 
   return NextResponse.json(
     { event_id: eventId, message: "Gracias. Recibimos tu consulta y te vamos a contactar pronto." },
