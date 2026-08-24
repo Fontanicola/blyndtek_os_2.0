@@ -43,14 +43,15 @@ export async function POST(request: NextRequest) {
       const normalizedPhone = message.from.replace(/\D/g, "");
       const { data: lead } = await db.from("leads").select("id").ilike("contacto_1_tel", `%${normalizedPhone.slice(-8)}%`).order("created_at", { ascending: false }).limit(1).maybeSingle();
       const messageAt = eventTimestamp(message.timestamp);
+      const { data: previous } = await db.from("whatsapp_conversations").select("id,first_message_at,message_count,unread_count").eq("wa_id", message.from).maybeSingle();
       const { data: conversation, error } = await db.from("whatsapp_conversations").upsert({
         wa_id: message.from, lead_id: lead?.id || null, phone_number_id: value.metadata?.phone_number_id || null,
-        contact_name: contact?.profile?.name || null, referral: message.referral || {}, first_message_at: messageAt,
-        last_message_at: messageAt, status: "open", updated_at: new Date().toISOString()
+        contact_name: contact?.profile?.name || null, referral: message.referral || {}, first_message_at: previous?.first_message_at || messageAt,
+        last_message_at: messageAt, message_count: Number(previous?.message_count || 0) + 1,
+        unread_count: Number(previous?.unread_count || 0) + 1, status: "open", updated_at: new Date().toISOString()
       }, { onConflict: "wa_id" }).select("id").single();
       if (error || !conversation) continue;
       await db.from("whatsapp_messages").upsert({ id: message.id, conversation_id: conversation.id, direction: "inbound", message_type: message.type || null, status: "received", text_preview: message.text?.body?.slice(0, 500) || null, timestamp: messageAt, raw: message });
-      await db.from("whatsapp_conversations").update({ last_message_at: messageAt, unread_count: 1 }).eq("id", conversation.id);
     }
   }
   return NextResponse.json({ received: true });

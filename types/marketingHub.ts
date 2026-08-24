@@ -15,10 +15,19 @@ export type MarketingHubOverview = {
     adsetId: string | null; adId: string | null; landingUrl: string | null; sessionId: string | null;
     capiStatus: string | null; discardReason: string | null;
   }>;
-  whatsapp: { clicks: number; conversations: number; qualified: number; unread: number; averageFirstResponseMinutes: number | null };
+  whatsapp: {
+    clicks: number; conversations: number; qualified: number; unread: number; averageFirstResponseMinutes: number | null;
+    threads: Array<{
+      id: string; waId: string; leadId: string | null; contactName: string | null; status: string;
+      unread: number; lastMessageAt: string | null;
+      messages: Array<{ id: string; direction: "inbound" | "outbound"; type: string | null; status: string | null; text: string | null; timestamp: string }>;
+    }>;
+  };
   instagram: {
     connected: boolean; missingPermissions: string[]; followers: number | null; reach: number; interactions: number;
-    media: Array<{ id: string; caption: string | null; mediaType: string | null; thumbnailUrl: string | null; permalink: string | null; postedAt: string | null; likes: number; comments: number; reach: number; interactions: number }>;
+    views: number; saves: number; shares: number; engagementRate: number | null;
+    trend: Array<{ date: string; reach: number; interactions: number; views: number; saves: number; shares: number }>;
+    media: Array<{ id: string; caption: string | null; mediaType: string | null; thumbnailUrl: string | null; permalink: string | null; postedAt: string | null; likes: number; comments: number; reach: number; interactions: number; views: number; saves: number; shares: number; engagementRate: number | null; analysis: string }>;
   };
 };
 

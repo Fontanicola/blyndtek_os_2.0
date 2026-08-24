@@ -41,7 +41,7 @@ export async function getMetaOverview(period: MetaPeriod): Promise<MetaOverview>
     db.from("meta_campaigns").select("*").order("name"),
     db.from("meta_ads").select("*").order("name"),
     db.from("meta_creatives").select("*").order("name"),
-    db.from("leads").select("id, etapa, meta_campaign_id, meta_ad_id, campana_origen, created_at").eq("canal_origen", "meta_ads").gte("created_at", start.toISOString()),
+    db.from("leads").select("id, etapa, meta_campaign_id, meta_ad_id, campana_origen, created_at, contacto_1_nombre, empresa").eq("canal_origen", "meta_ads").gte("created_at", start.toISOString()),
     db.from("meta_sync_runs").select("*").order("started_at", { ascending: false }).limit(8),
     db.from("meta_recommendations").select("*").in("status", ["open", "acknowledged"]).order("last_detected_at", { ascending: false }).limit(20),
     db.from("meta_guardrails").select("*").eq("ad_account_id", config.configured ? config.adAccountId : "not-configured").maybeSingle(),
@@ -174,6 +174,7 @@ export async function getMetaOverview(period: MetaPeriod): Promise<MetaOverview>
       costPerLead: divide(totals.spend, totals.platformLeads), costPerQualifiedLead: divide(totals.spend, qualifiedLeads), cashRoas: divide(collectedRevenue, totals.spend),
       videoPlays3s: totals.videoPlays3s, videoPlays15s: totals.videoPlays15s },
     trend: [...trendMap.values()].sort((a, b) => a.date.localeCompare(b.date)), campaigns, creatives, funnel,
+    funnelLeads: leads.map((lead) => ({ id: lead.id, name: lead.contacto_1_nombre || "Sin nombre", company: lead.empresa || "Sin empresa", stage: lead.etapa, campaign: lead.campana_origen, createdAt: lead.created_at })),
     recommendations: [...automaticRecommendations, ...storedRecommendations], actions,
     runs: metaTablesUnavailable ? [] : (runsResult.data ?? []).map((row) => ({ id: row.id, status: row.status, triggerType: row.trigger_type, startedAt: row.started_at, finishedAt: row.finished_at,
       records: n(row.records_campaigns) + n(row.records_adsets) + n(row.records_ads) + n(row.records_insights), errorMessage: row.error_message }))

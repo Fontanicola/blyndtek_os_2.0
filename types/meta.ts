@@ -166,6 +166,7 @@ export type MetaOverview = {
   guardrails: MetaGuardrails;
   kpis: MetaKpis;
   trend: MetaTrendPoint[];
+  funnelLeads: Array<{ id: string; name: string; company: string; stage: string; campaign: string | null; createdAt: string }>;
   campaigns: MetaCampaignRow[];
   creatives: MetaCreativeRow[];
   funnel: MetaFunnelStage[];
