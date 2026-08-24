@@ -35,7 +35,7 @@ export async function getMetaOverview(period: MetaPeriod): Promise<MetaOverview>
   const startDate = start.toISOString().slice(0, 10);
   const config = getMetaConfig();
 
-  const [connectionResult, insightsResult, campaignsResult, adsResult, creativesResult, leadsResult, runsResult, recommendationsResult, guardrailsResult, actionsResult] = await Promise.all([
+  const [connectionResult, insightsResult, campaignsResult, adsResult, creativesResult, leadsResult, runsResult, recommendationsResult, guardrailsResult, actionsResult, executionPolicyResult] = await Promise.all([
     db.from("meta_connections").select("*").order("updated_at", { ascending: false }).limit(1).maybeSingle(),
     db.from("meta_insights_daily").select("*").gte("date_start", startDate).order("date_start"),
     db.from("meta_campaigns").select("*").order("name"),
@@ -45,7 +45,8 @@ export async function getMetaOverview(period: MetaPeriod): Promise<MetaOverview>
     db.from("meta_sync_runs").select("*").order("started_at", { ascending: false }).limit(8),
     db.from("meta_recommendations").select("*").in("status", ["open", "acknowledged"]).order("last_detected_at", { ascending: false }).limit(20),
     db.from("meta_guardrails").select("*").eq("ad_account_id", config.configured ? config.adAccountId : "not-configured").maybeSingle(),
-    db.from("meta_action_queue").select("*").order("requested_at", { ascending: false }).limit(50)
+    db.from("meta_action_queue").select("*").order("requested_at", { ascending: false }).limit(50),
+    db.from("meta_execution_policy").select("*").eq("ad_account_id", config.configured ? config.adAccountId : "not-configured").maybeSingle()
   ]);
 
   const metaTablesUnavailable = [connectionResult, insightsResult, campaignsResult, adsResult, creativesResult, runsResult, recommendationsResult]
@@ -152,14 +153,22 @@ export async function getMetaOverview(period: MetaPeriod): Promise<MetaOverview>
     id: row.id, recommendationId: row.recommendation_id, actionType: row.action_type, entityType: row.entity_type, entityId: row.entity_id,
     title: row.title, rationale: row.rationale, proposedAction: row.proposed_action, proposedPayload: row.proposed_payload || {},
     riskLevel: row.risk_level, status: row.status, requestedAt: row.requested_at, reviewedAt: row.reviewed_at,
-    notes: row.notes, errorMessage: row.error_message
+    notes: row.notes, errorMessage: row.error_message, simulatedAt: row.simulated_at, simulationResult: row.simulation_result,
+    executedAt: row.executed_at, metaRequestId: row.meta_request_id
   }));
+  const policyRow = executionPolicyResult.error ? null : executionPolicyResult.data;
+  const executionPolicy = {
+    executionEnabled: Boolean(policyRow?.execution_enabled), dryRunOnly: policyRow?.dry_run_only !== false,
+    allowPause: policyRow?.allow_pause !== false, allowResume: false as const, allowBudgetChanges: false as const,
+    cooldownMinutes: n(policyRow?.cooldown_minutes) || 30, environmentWriteEnabled: config.configured ? config.writeEnabled : false
+  };
 
   return {
     connection: { status: metaTablesUnavailable ? "not_configured" : (connection?.status || (config.configured ? "degraded" : "not_configured")), accountName: connection?.account_name || null,
       adAccountId: connection?.ad_account_id || (config.configured ? config.adAccountId : null), lastSyncAt: connection?.last_sync_at || null, lastError: connection?.last_error || null,
-      missingEnvironmentVariables: config.missingEnvironmentVariables, writeAccessEnabled: false },
-    period, periodStart: start.toISOString(), healthScore, guardrails,
+      tokenExpiresAt: config.configured ? config.tokenExpiresAt : null,
+      missingEnvironmentVariables: config.missingEnvironmentVariables, writeAccessEnabled: executionPolicy.executionEnabled && !executionPolicy.dryRunOnly && executionPolicy.environmentWriteEnabled },
+    period, periodStart: start.toISOString(), healthScore, guardrails, executionPolicy,
     kpis: { ...totals, frequency: totals.reach ? totals.impressions / totals.reach : 0, crmLeads: leads.length, qualifiedLeads, wonLeads, collectedRevenue,
       ctr: totals.impressions ? totals.linkClicks / totals.impressions * 100 : 0, cpc: divide(totals.spend, totals.linkClicks) ?? 0, cpm: totals.impressions ? totals.spend / totals.impressions * 1000 : 0,
       costPerLead: divide(totals.spend, totals.platformLeads), costPerQualifiedLead: divide(totals.spend, qualifiedLeads), cashRoas: divide(collectedRevenue, totals.spend),

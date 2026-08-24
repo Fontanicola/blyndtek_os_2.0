@@ -29,7 +29,7 @@ const defaults: MetaGuardrails = {
 const managedRules = [
   "connection_stale", "attribution_gap", "no_qualified", "cpl_over_target",
   "cpql_over_target", "cash_roas_under_target", "campaign_cpl_over_target",
-  "creative_low_hook", "creative_low_hold", "creative_fatigue"
+  "creative_low_hook", "creative_low_hold", "creative_fatigue", "token_expiring"
 ];
 
 function n(value: unknown) {
@@ -104,6 +104,17 @@ export async function generateMetaRecommendations() {
   const kpis = overview.kpis;
   const add = (finding: Finding) => findings.push(finding);
   const syncedHoursAgo = hoursSince(connectionResult.data?.last_sync_at ?? null);
+
+  if (config.tokenExpiresAt) {
+    const daysRemaining = Math.ceil((new Date(config.tokenExpiresAt).getTime() - Date.now()) / 86_400_000);
+    if (daysRemaining <= 14) add({
+      ruleKey: "token_expiring", severity: daysRemaining <= 3 ? "critical" : "warning", entityType: "account", entityId: accountId,
+      title: "El token de Meta está próximo a vencer",
+      rationale: `La credencial técnica vence en ${Math.max(0, daysRemaining)} días.`,
+      recommendedAction: "Rotar el token del usuario del sistema, actualizar Vercel y verificar permisos antes del vencimiento.",
+      evidence: { daysRemaining, tokenExpiresAt: config.tokenExpiresAt }
+    });
+  }
 
   if (syncedHoursAgo > guardrails.staleSyncHours) add({
     ruleKey: "connection_stale", severity: "critical", entityType: "account", entityId: accountId,

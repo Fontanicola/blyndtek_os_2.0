@@ -18,10 +18,27 @@ export async function POST(request: NextRequest) {
     const user = await getCurrentUser();
     if (!user) return NextResponse.json({ error: "No autenticado." }, { status: 401 });
     if (user.rol !== "admin" && user.rol !== "marketing") return NextResponse.json({ error: "No autorizado." }, { status: 403 });
-    const body = await request.json() as { recommendationId?: unknown; notes?: unknown };
-    if (typeof body.recommendationId !== "string") return NextResponse.json({ error: "Falta la recomendación." }, { status: 400 });
+    const body = await request.json() as { recommendationId?: unknown; notes?: unknown; entityType?: unknown; entityId?: unknown; title?: unknown };
 
     const db = createUntypedAdminClient();
+    if (typeof body.recommendationId !== "string") {
+      if ((body.entityType !== "campaign" && body.entityType !== "adset" && body.entityType !== "ad") || typeof body.entityId !== "string") return NextResponse.json({ error: "Falta una recomendación o entidad válida." }, { status: 400 });
+      const table = body.entityType === "campaign" ? "meta_campaigns" : body.entityType === "adset" ? "meta_ad_sets" : "meta_ads";
+      const { data: entity, error: entityError } = await db.from(table).select("id,name,ad_account_id,status,effective_status").eq("id", body.entityId).maybeSingle();
+      if (entityError) throw entityError;
+      if (!entity) return NextResponse.json({ error: "La entidad no existe en el cache sincronizado." }, { status: 404 });
+      const { data, error } = await db.from("meta_action_queue").insert({
+        action_type: "pause_entity", entity_type: body.entityType, entity_id: entity.id,
+        title: typeof body.title === "string" ? body.title.slice(0, 180) : `Pausar ${entity.name}`,
+        rationale: "Propuesta manual creada desde el Centro de Control. Requiere aprobación y simulación antes de ejecutarse.",
+        proposed_action: `Cambiar el estado de ${entity.name} a PAUSED.`, proposed_payload: { status: "PAUSED" },
+        risk_level: body.entityType === "campaign" ? "high" : "medium", status: "pending_approval", requested_by: user.id,
+        notes: typeof body.notes === "string" ? body.notes.slice(0, 2000) : null
+      }).select("*").single();
+      if (error) throw error;
+      return NextResponse.json({ data }, { status: 201 });
+    }
+
     const { data: recommendation, error: recommendationError } = await db.from("meta_recommendations").select("*").eq("id", body.recommendationId).maybeSingle();
     if (recommendationError) throw recommendationError;
     if (!recommendation) return NextResponse.json({ error: "Recomendación inexistente." }, { status: 404 });

@@ -122,6 +122,20 @@ export type MetaAction = {
   reviewedAt: string | null;
   notes: string | null;
   errorMessage: string | null;
+  simulatedAt: string | null;
+  simulationResult: Record<string, unknown> | null;
+  executedAt: string | null;
+  metaRequestId: string | null;
+};
+
+export type MetaExecutionPolicy = {
+  executionEnabled: boolean;
+  dryRunOnly: boolean;
+  allowPause: boolean;
+  allowResume: false;
+  allowBudgetChanges: false;
+  cooldownMinutes: number;
+  environmentWriteEnabled: boolean;
 };
 
 export type MetaGuardrails = {
@@ -142,8 +156,9 @@ export type MetaOverview = {
     adAccountId: string | null;
     lastSyncAt: string | null;
     lastError: string | null;
+    tokenExpiresAt: string | null;
     missingEnvironmentVariables: string[];
-    writeAccessEnabled: false;
+    writeAccessEnabled: boolean;
   };
   period: MetaPeriod;
   periodStart: string;
@@ -156,5 +171,6 @@ export type MetaOverview = {
   funnel: MetaFunnelStage[];
   recommendations: MetaRecommendation[];
   actions: MetaAction[];
+  executionPolicy: MetaExecutionPolicy;
   runs: MetaRun[];
 };

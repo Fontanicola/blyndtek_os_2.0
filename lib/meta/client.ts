@@ -122,6 +122,44 @@ function configuredAccountPath() {
   return config.adAccountId;
 }
 
+export type MetaMutableEntity = "campaign" | "adset" | "ad";
+
+export async function getMetaEntity(entityType: MetaMutableEntity, entityId: string) {
+  const fields = entityType === "campaign"
+    ? "id,name,status,effective_status,daily_budget,lifetime_budget,account_id"
+    : entityType === "adset"
+      ? "id,name,status,effective_status,daily_budget,lifetime_budget,account_id,campaign_id"
+      : "id,name,status,effective_status,account_id,campaign_id,adset_id";
+  const { url, config } = buildUrl(entityId, fields);
+  const response = await fetch(url, { headers: { Authorization: `Bearer ${config.accessToken}` }, cache: "no-store" });
+  const payload = (await response.json()) as Record<string, unknown> & { error?: { message?: string } };
+  if (!response.ok || payload.error) throw new Error(payload.error?.message || "No se pudo verificar la entidad en Meta.");
+  return payload;
+}
+
+export async function updateMetaEntity(entityId: string, payload: Record<string, string | number>) {
+  const config = getMetaConfig();
+  if (!config.configured) throw new Error(`Faltan variables de Meta: ${config.missingEnvironmentVariables.join(", ")}.`);
+  if (!config.writeEnabled) throw new Error("El kill switch META_WRITE_ENABLED está desactivado.");
+  const url = new URL(`https://graph.facebook.com/${config.graphApiVersion}/${entityId}`);
+  const body = new URLSearchParams();
+  Object.entries(payload).forEach(([key, value]) => body.set(key, String(value)));
+  const response = await fetch(url, { method: "POST", headers: { Authorization: `Bearer ${config.accessToken}`, "Content-Type": "application/x-www-form-urlencoded" }, body, cache: "no-store" });
+  const result = (await response.json()) as Record<string, unknown> & { error?: { message?: string }; success?: boolean };
+  if (!response.ok || result.error || result.success !== true) throw new Error(result.error?.message || "Meta rechazó la actualización.");
+  return { result, requestId: response.headers.get("x-fb-trace-id") || response.headers.get("x-fb-rev") };
+}
+
+export async function getMetaGrantedPermissions() {
+  const config = getMetaConfig();
+  if (!config.configured) throw new Error("La conexión de Meta no está configurada.");
+  const url = new URL(`https://graph.facebook.com/${config.graphApiVersion}/me/permissions`);
+  const response = await fetch(url, { headers: { Authorization: `Bearer ${config.accessToken}` }, cache: "no-store" });
+  const payload = (await response.json()) as { data?: Array<{ permission: string; status: string }>; error?: { message?: string } };
+  if (!response.ok || payload.error) throw new Error(payload.error?.message || "No se pudieron verificar los permisos de Meta.");
+  return (payload.data || []).filter((item) => item.status === "granted").map((item) => item.permission);
+}
+
 export async function getMetaCampaigns() {
   const { url, config } = buildUrl(`${configuredAccountPath()}/campaigns`, "id,name,status,effective_status,objective,buying_type,daily_budget,lifetime_budget,start_time,stop_time");
   return getAllPages<MetaCampaignApiRow>(url, config.accessToken);

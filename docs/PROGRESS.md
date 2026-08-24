@@ -6,6 +6,15 @@ Stack: Next.js 14 (App Router) · TypeScript estricto · Tailwind CSS · Supabas
 
 Fecha de inicio: 2026-06-25
 
+## Actualización 2026-08-24 — Centro de Control Meta Ads, Fase 4
+
+- Se agregó ejecución controlada de pausas para campañas, conjuntos y anuncios. Reactivar, crear anuncios y modificar presupuestos continúan fuera de la allowlist.
+- Toda ejecución exige que la acción esté aprobada, tenga una simulación válida, pase la verificación de pertenencia a la cuenta, respete el enfriamiento y reciba una confirmación escrita con su identificador.
+- Dos kill switches independientes protegen producción: `META_WRITE_ENABLED` en Vercel y `meta_execution_policy` en Postgres. La política productiva nace con `execution_enabled=false` y `dry_run_only=true`.
+- `meta_action_executions` registra simulaciones, bloqueos, errores y éxitos con estado anterior/posterior y referencia de Meta sin guardar credenciales.
+- El usuario de sistema recibió acceso parcial para administrar campañas; el token fue rotado con `ads_read` y `ads_management`, vigencia de 60 días y alerta automática 14 días antes.
+- No se pausó, reactivó ni modificó ninguna campaña durante la implementación o las pruebas.
+
 ## Actualización 2026-08-24 — Centro de Control Meta Ads, Fase 3 segura
 
 - Se agregó una cola de acciones que transforma una recomendación en una propuesta operativa con entidad, riesgo, evidencia y acción concreta.

@@ -16,6 +16,8 @@ Al finalizar una sincronización correcta, la Fase 2 recalcula recomendaciones c
 
 La Fase 3 permite convertir una recomendación en una fila de `meta_action_queue` y someterla a aprobación. Incluso una acción aprobada permanece sin ejecutar: no existe cron de escritura ni permiso `ads_management` habilitado.
 
+La Fase 4 no agrega un cron de escritura. Un administrador puede simular una pausa aprobada y luego ejecutarla manualmente sólo si `META_WRITE_ENABLED=true`, `meta_execution_policy.execution_enabled=true`, `dry_run_only=false` y el token conserva `ads_management`. Reactivar y cambiar presupuestos siguen bloqueados.
+
 ### Comando de deploy
 
 ```bash
