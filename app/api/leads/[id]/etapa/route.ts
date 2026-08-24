@@ -12,6 +12,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { crearTareaConAdminClient } from "@/lib/tareas/crearTarea";
 import { hoyLocalString } from "@/lib/utils/fechas";
 import { ensureClienteDesdeLead } from "@/lib/clientes/ensureClienteDesdeLead";
+import { refreshMarketingIntelligence } from "@/lib/marketing/intelligence";
+import { sendMetaStageEvent } from "@/lib/meta/conversions-api";
 import type { Database } from "@/types/supabase";
 import {
   type EtapaLead,
@@ -146,6 +148,10 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
         const status = error.code === "PGRST116" ? 404 : 500;
         return NextResponse.json({ error: error.message }, { status });
       }
+
+      await refreshMarketingIntelligence(currentUser.id, "stage_changed", [lead.id]).catch((cause) => {
+        console.error("No se pudo actualizar el perfil de marketing:", cause instanceof Error ? cause.message : cause);
+      });
 
       return NextResponse.json({ data: data as Lead });
     }
@@ -485,6 +491,28 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
         const message = error instanceof Error ? error.message : "No se pudo completar el cierre del lead.";
         return NextResponse.json({ error: message }, { status: 500 });
       }
+    }
+
+    await refreshMarketingIntelligence(currentUser.id, "stage_changed", [lead.id]).catch((cause) => {
+      console.error("No se pudo actualizar el perfil de marketing:", cause instanceof Error ? cause.message : cause);
+    });
+
+    const attributedLead = nextLead as Lead & { contacto_email?: string | null; consentimiento_marketing?: boolean; landing_url?: string | null; fbc?: string | null; fbp?: string | null };
+    if (attributedLead.consentimiento_marketing && (attributedLead.contacto_email || attributedLead.contacto_1_tel)) {
+      const stageValue = body.etapa === "diagnostico_pagado" ? Number(body.diagnostico_monto || 0) : body.etapa === "ganado" ? Number(ganadoFinalDesarrollo || 0) + Number(ganadoFinalMensual || 0) : null;
+      await sendMetaStageEvent({
+        email: attributedLead.contacto_email || undefined,
+        phone: attributedLead.contacto_1_tel || undefined,
+        leadId: attributedLead.id,
+        eventId: `${attributedLead.id}:${body.etapa}`,
+        eventSourceUrl: attributedLead.landing_url || undefined,
+        fbc: attributedLead.fbc || undefined,
+        fbp: attributedLead.fbp || undefined,
+        stage: body.etapa,
+        value: stageValue
+      }).catch((cause) => {
+        console.error("No se pudo enviar la señal de calidad a Meta:", cause instanceof Error ? cause.message : cause);
+      });
     }
 
     return NextResponse.json({ data: nextLead });

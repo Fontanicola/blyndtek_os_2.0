@@ -8,13 +8,14 @@ import { chartTheme } from "@/lib/charts/chartTheme";
 import { cn } from "@/lib/cn";
 import type { MetaGuardrails, MetaOverview, MetaPeriod } from "@/types/meta";
 import { MarketingHubPanel } from "@/components/marketing/MarketingHubPanel";
+import { MarketingIntelligencePanel } from "@/components/marketing/MarketingIntelligencePanel";
 
-type Tab = "resumen" | "web" | "leads" | "campanas" | "creatividad" | "embudo" | "instagram" | "whatsapp" | "acciones" | "operacion";
+type Tab = "resumen" | "web" | "leads" | "inteligencia" | "campanas" | "creatividad" | "embudo" | "instagram" | "whatsapp" | "acciones" | "operacion";
 type Permissions = { canSync: boolean; canAnalyze: boolean; canManageRecommendations: boolean; canEditGuardrails: boolean; canCreateActions: boolean; canReviewActions: boolean; canExecuteActions: boolean; canEditExecutionPolicy: boolean };
 type ApiResponse = { data?: MetaOverview; permissions?: Permissions; error?: string };
 
 const tabs: Array<{ value: Tab; label: string }> = [
-  { value: "resumen", label: "Resumen" }, { value: "web", label: "Web" }, { value: "leads", label: "Leads de pauta" }, { value: "campanas", label: "Campañas" },
+  { value: "resumen", label: "Resumen" }, { value: "web", label: "Web" }, { value: "leads", label: "Leads de pauta" }, { value: "inteligencia", label: "Inteligencia" }, { value: "campanas", label: "Campañas" },
   { value: "creatividad", label: "Creatividad" }, { value: "embudo", label: "Embudo" }, { value: "instagram", label: "Instagram" }, { value: "whatsapp", label: "WhatsApp" }, { value: "acciones", label: "Acciones" },
   { value: "operacion", label: "Operación" }
 ];
@@ -249,6 +250,7 @@ export default function MarketingPage() {
 
     {tab === "web" ? <MarketingHubPanel mode="web" period={period} /> : null}
     {tab === "leads" ? <MarketingHubPanel mode="leads" period={period} /> : null}
+    {tab === "inteligencia" ? <MarketingIntelligencePanel /> : null}
     {tab === "instagram" ? <MarketingHubPanel mode="instagram" period={period} /> : null}
     {tab === "whatsapp" ? <MarketingHubPanel mode="whatsapp" period={period} /> : null}
 

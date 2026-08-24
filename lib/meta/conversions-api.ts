@@ -5,7 +5,7 @@ import { createUntypedAdminClient } from "@/lib/supabase/admin";
 const GRAPH_API_VERSION = "v26.0";
 
 type SendLeadEventInput = {
-  email: string;
+  email?: string;
   eventId: string;
   eventSourceUrl?: string;
   fbc?: string;
@@ -16,6 +16,11 @@ type SendLeadEventInput = {
   userAgent?: string;
 };
 
+type SendMetaEventInput = SendLeadEventInput & {
+  eventName: string;
+  customData?: Record<string, unknown>;
+};
+
 function sha256(value: string) {
   return createHash("sha256").update(value).digest("hex");
 }
@@ -24,13 +29,13 @@ function normalizePhone(value: string) {
   return value.replace(/\D/g, "");
 }
 
-export async function sendMetaLeadEvent(input: SendLeadEventInput) {
+async function sendMetaEvent(input: SendMetaEventInput) {
   const pixelId = process.env.META_PIXEL_ID?.trim();
   const accessToken = process.env.META_ACCESS_TOKEN?.trim();
   const supabase = createUntypedAdminClient();
   const baseRecord = {
     event_id: input.eventId,
-    event_name: "Lead",
+    event_name: input.eventName,
     lead_id: input.leadId,
     event_source_url: input.eventSourceUrl || null,
     attempts: 1,
@@ -44,11 +49,9 @@ export async function sendMetaLeadEvent(input: SendLeadEventInput) {
   }
 
   const phone = normalizePhone(input.phone || "");
-  const userData: Record<string, string | string[]> = {
-    em: [sha256(input.email.trim().toLowerCase())],
-    external_id: [sha256(input.leadId)]
-  };
+  const userData: Record<string, string | string[]> = { external_id: [sha256(input.leadId)] };
 
+  if (input.email) userData.em = [sha256(input.email.trim().toLowerCase())];
   if (phone) userData.ph = [sha256(phone)];
   if (input.fbc) userData.fbc = input.fbc;
   if (input.fbp) userData.fbp = input.fbp;
@@ -66,10 +69,11 @@ export async function sendMetaLeadEvent(input: SendLeadEventInput) {
             {
               action_source: "website",
               event_id: input.eventId,
-              event_name: "Lead",
+              event_name: input.eventName,
               event_source_url: input.eventSourceUrl,
               event_time: Math.floor(Date.now() / 1000),
-              user_data: userData
+              user_data: userData,
+              ...(input.customData ? { custom_data: input.customData } : {})
             }
           ]
         })
@@ -98,3 +102,29 @@ export async function sendMetaLeadEvent(input: SendLeadEventInput) {
   }
 }
 
+export function sendMetaLeadEvent(input: SendLeadEventInput) {
+  return sendMetaEvent({ ...input, eventName: "Lead" });
+}
+
+export async function sendMetaStageEvent(input: SendLeadEventInput & { stage: string; value?: number | null }) {
+  const eventNameByStage: Record<string, string> = {
+    calificado: "QualifiedLead",
+    diagnostico_ofrecido: "Schedule",
+    diagnostico_pagado: "PaidDiagnosis",
+    cotizacion: "InitiateCheckout",
+    ganado: "Purchase"
+  };
+  const eventName = eventNameByStage[input.stage];
+  if (!eventName) return { ok: false, skipped: true, error: "La etapa no genera una señal para Meta." };
+  const db = createUntypedAdminClient();
+  const { data: previous } = await db.from("meta_capi_events").select("status").eq("event_id", input.eventId).maybeSingle();
+  if (previous?.status === "sent") return { ok: true, skipped: true };
+  return sendMetaEvent({
+    ...input,
+    eventName,
+    customData: {
+      blyndtek_stage: input.stage,
+      ...(input.value && input.value > 0 ? { value: input.value, currency: "USD" } : {})
+    }
+  });
+}

@@ -22,3 +22,48 @@ export type MarketingHubOverview = {
   };
 };
 
+export type MarketingIntelligenceOverview = {
+  summary: {
+    profiledLeads: number;
+    tierA: number;
+    tierB: number;
+    audienceEligible: number;
+    averageScore: number;
+    averageCompleteness: number;
+    qualifiedRate: number | null;
+    wonRate: number | null;
+  };
+  idealCustomer: {
+    confidence: "low" | "medium" | "high";
+    sampleSize: number;
+    topIndustries: Array<{ value: string; count: number }>;
+    topSources: Array<{ value: string; count: number }>;
+    topCampaigns: Array<{ value: string; count: number }>;
+    winningSignals: string[];
+    narrative: string;
+  };
+  profiles: Array<{
+    leadId: string;
+    name: string;
+    company: string;
+    stage: string;
+    source: string | null;
+    campaign: string | null;
+    score: number;
+    fitScore: number;
+    intentScore: number;
+    engagementScore: number;
+    completeness: number;
+    tier: "A" | "B" | "C" | "D";
+    touchpoints: number;
+    lastTouchAt: string | null;
+    nextBestAction: string | null;
+    audienceEligible: boolean;
+    audienceStatus: string;
+    positiveSignals: string[];
+    missingData: string[];
+  }>;
+  channels: Array<{ channel: string; touchpoints: number; leads: number }>;
+  learningTrend: Array<{ date: string; profiled: number; tierA: number; eligible: number }>;
+  lastRun: { status: string; triggerType: string; startedAt: string; finishedAt: string | null; profilesProcessed: number; errorMessage: string | null } | null;
+};

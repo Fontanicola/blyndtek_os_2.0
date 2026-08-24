@@ -3,6 +3,7 @@ import { createUntypedAdminClient } from "@/lib/supabase/admin";
 import type { CanalOrigenLead } from "@/types/leads";
 import { sendMetaLeadEvent } from "@/lib/meta/conversions-api";
 import { randomUUID } from "node:crypto";
+import { refreshMarketingIntelligence } from "@/lib/marketing/intelligence";
 
 export const runtime = "nodejs";
 
@@ -292,6 +293,11 @@ export async function POST(request: NextRequest) {
   if (webSessionId) {
     await supabase.from("web_sessions").update({ converted_lead_id: lead.id, updated_at: new Date().toISOString() }).eq("id", webSessionId);
   }
+
+  // El alta del lead nunca depende del modelo: si el recálculo falla, el cron diario lo repara.
+  await refreshMarketingIntelligence(null, "lead_created", [lead.id]).catch((cause) => {
+    console.error("No se pudo construir el perfil de marketing del lead:", cause instanceof Error ? cause.message : cause);
+  });
 
   return NextResponse.json(
     { event_id: eventId, message: "Gracias. Recibimos tu consulta y te vamos a contactar pronto." },
