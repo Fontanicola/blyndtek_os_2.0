@@ -65,18 +65,20 @@ type SeriesProps = {
   [key: string]: unknown;
 };
 
+type TooltipRenderProps = {
+  active?: boolean;
+  payload?: Array<{
+    dataKey?: string;
+    name?: string;
+    value?: string | number;
+    color?: string;
+    payload?: Point;
+  }>;
+  label?: string | number;
+};
+
 type TooltipProps = {
-  content?: (props: {
-    active?: boolean;
-    payload?: Array<{
-      dataKey?: string;
-      name?: string;
-      value?: string | number;
-      color?: string;
-      payload?: Point;
-    }>;
-    label?: string | number;
-  }) => ReactNode;
+  content?: ReactElement<TooltipRenderProps> | ((props: TooltipRenderProps) => ReactNode);
   [key: string]: unknown;
 };
 
@@ -106,6 +108,18 @@ function pickChartProps(children: ReactNode) {
   const svgDefs = childArray.filter((child) => isValidElement(child) && child.type === "defs") as ReactElement[];
 
   return { xAxis, yAxis, yAxes, legend, tooltip, areas, bars, lines, svgDefs };
+}
+
+function renderTooltipContent(content: TooltipProps["content"], props: TooltipRenderProps) {
+  if (typeof content === "function") {
+    return content(props);
+  }
+
+  if (isValidElement<TooltipRenderProps>(content)) {
+    return cloneElement(content, props);
+  }
+
+  return null;
 }
 
 function getMargins(margin?: Margin) {
@@ -345,7 +359,7 @@ export function BarChart({ data, width = 600, height = 320, margin, children, cl
 
   const tooltipNode =
     activePoint && tooltip?.props.content
-      ? tooltip.props.content({
+      ? renderTooltipContent(tooltip.props.content, {
           active: true,
           label: activeLabelValue == null ? activeIndex ?? undefined : activeLabelValue,
           payload: bars.map((bar) => ({
@@ -569,7 +583,7 @@ export function ComposedChart({ data, width = 600, height = 320, margin, childre
 
   const tooltipNode =
     activePoint && tooltip?.props.content
-      ? tooltip.props.content({
+      ? renderTooltipContent(tooltip.props.content, {
           active: true,
           label: activeLabelValue == null ? activeIndex ?? undefined : activeLabelValue,
           payload: [
