@@ -1386,10 +1386,10 @@
     "semantic_hash": "fcade8b1b94df11aff16d5f4908c3c29"
   },
   "app/api/sistemas/operaciones/route.ts": {
-    "mtime": 1787626419.0428083,
-    "seen": 1787626559.093508,
-    "ast_hash": "b92dccd8df169259f2dd42f8c34c4a06",
-    "semantic_hash": "b92dccd8df169259f2dd42f8c34c4a06"
+    "mtime": 1787671260.5197442,
+    "seen": 1787671649.706563,
+    "ast_hash": "c2b8a939961c528ff97aabba6da96373",
+    "semantic_hash": ""
   },
   "app/api/sistemas/reportar-error/route.ts": {
     "mtime": 1787625743.4261022,
@@ -1398,10 +1398,10 @@
     "semantic_hash": "8599855d314170eda59034ce884b27de"
   },
   "app/api/sistemas/route.ts": {
-    "mtime": 1787625743.4261847,
-    "seen": 1787626559.0935092,
-    "ast_hash": "38bbc0c67acb2b0f51366d69a8efeb13",
-    "semantic_hash": "38bbc0c67acb2b0f51366d69a8efeb13"
+    "mtime": 1787671134.8609762,
+    "seen": 1787671649.7065642,
+    "ast_hash": "5d7b00f5db34ecc5c5dddf052475c09a",
+    "semantic_hash": ""
   },
   "app/api/soporte/resumen/route.ts": {
     "mtime": 1787625743.4263165,
@@ -2676,16 +2676,16 @@
     "semantic_hash": "11eebd666ff74bd5a4bd67322c955084"
   },
   "components/software/SoftwareDetailPage.tsx": {
-    "mtime": 1787625743.449379,
-    "seen": 1787626559.093573,
-    "ast_hash": "850f7af970eb4e5e4eb4fae670247207",
-    "semantic_hash": "850f7af970eb4e5e4eb4fae670247207"
+    "mtime": 1787671450.6203456,
+    "seen": 1787671649.706641,
+    "ast_hash": "1234e58c8e2e6d1d4d9492d75f71a6f0",
+    "semantic_hash": ""
   },
   "components/software/SoftwarePage.tsx": {
-    "mtime": 1787626476.4127192,
-    "seen": 1787626559.093573,
-    "ast_hash": "5c2d7bc6418f12ef68bff6dd48d8349f",
-    "semantic_hash": "5c2d7bc6418f12ef68bff6dd48d8349f"
+    "mtime": 1787671377.4300742,
+    "seen": 1787671649.706641,
+    "ast_hash": "ec759c8d749041b9b6c01983238ffcce",
+    "semantic_hash": ""
   },
   "components/soporte/SoporteClient.tsx": {
     "mtime": 1787625743.4495602,
@@ -3558,10 +3558,10 @@
     "semantic_hash": ""
   },
   "package.json": {
-    "mtime": 1787626120.018523,
-    "seen": 1787626559.0936162,
-    "ast_hash": "c076f638db220d1c389749983f30771f",
-    "semantic_hash": "c076f638db220d1c389749983f30771f"
+    "mtime": 1787671499.790698,
+    "seen": 1787671649.7066948,
+    "ast_hash": "d8c960c319d94dded8d68abc3f7234e1",
+    "semantic_hash": ""
   },
   "pages/_document.tsx": {
     "mtime": 1787625743.4671855,
@@ -3900,10 +3900,10 @@
     "semantic_hash": "c3c520ca78c30e447d51f0db5c9ac172"
   },
   "types/sistemas.ts": {
-    "mtime": 1787626419.0436876,
-    "seen": 1787626559.093636,
-    "ast_hash": "28256b79564fa1df0d3757eb8f490ca6",
-    "semantic_hash": "28256b79564fa1df0d3757eb8f490ca6"
+    "mtime": 1787671134.8603005,
+    "seen": 1787671649.70674,
+    "ast_hash": "bf60e352b3cf4c924ebb5cd137ea4510",
+    "semantic_hash": ""
   },
   "types/soporte.ts": {
     "mtime": 1787625743.4812987,
@@ -3912,10 +3912,10 @@
     "semantic_hash": "f05a0ae47bdea333fdb4e4f9a5e80962"
   },
   "types/supabase.ts": {
-    "mtime": 1787625743.4814045,
-    "seen": 1787626559.0936372,
-    "ast_hash": "56815e4f0a4ed1d587e20885cf06390e",
-    "semantic_hash": "56815e4f0a4ed1d587e20885cf06390e"
+    "mtime": 1787671549.7938094,
+    "seen": 1787671649.706741,
+    "ast_hash": "d0acfa36a17490a0fe384ae0aa93c8c4",
+    "semantic_hash": ""
   },
   "types/suscripciones.ts": {
     "mtime": 1787625743.4815361,
@@ -3936,9 +3936,9 @@
     "semantic_hash": "b3825d32f8ee9ee94c9650b12db48a8e"
   },
   "types/techOps.ts": {
-    "mtime": 1787626725.1738684,
-    "seen": 1787627235.93084,
-    "ast_hash": "60d55fd6ae7ef9227af1cee91c0e30cb",
+    "mtime": 1787671549.794304,
+    "seen": 1787671649.706743,
+    "ast_hash": "a7f0859451e1c798b60bb7097d636666",
     "semantic_hash": ""
   },
   "types/transferencias.ts": {
@@ -4470,9 +4470,9 @@
     "semantic_hash": ""
   },
   "docs/control-tecnico.md": {
-    "mtime": 1787627287.408193,
-    "seen": 1787627299.879072,
-    "ast_hash": "2c0ba642f4720f76c5669ddffd77cd15",
+    "mtime": 1787671520.9990263,
+    "seen": 1787671649.706753,
+    "ast_hash": "9d34e6072e2e93d5e556e8505f5672ee",
     "semantic_hash": ""
   },
   "supabase/migrations/050_registrar_blyndtek_os_control_tecnico.sql": {
@@ -4485,6 +4485,30 @@
     "mtime": 1787628119.1136596,
     "seen": 1787628195.821486,
     "ast_hash": "921eef7f06f6e2cd48c84d3ad2b8c734",
+    "semantic_hash": ""
+  },
+  "app/api/sistemas/acciones/route.ts": {
+    "mtime": 1787671191.771859,
+    "seen": 1787671649.706561,
+    "ast_hash": "30d0682c3067a4171ce0a715eb3dd7f5",
+    "semantic_hash": ""
+  },
+  "app/api/sistemas/guardias/route.ts": {
+    "mtime": 1787671191.7716084,
+    "seen": 1787671649.706562,
+    "ast_hash": "53820a628bb572d56da157ffbf6f6840",
+    "semantic_hash": ""
+  },
+  "scripts/registrar-control-tecnico.mjs": {
+    "mtime": 1787671499.7901695,
+    "seen": 1787671649.706696,
+    "ast_hash": "4546d28aa9a0a7dcd67a06b3c2767df2",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/052_guardias_acciones_control_tecnico.sql": {
+    "mtime": 1787671115.7312095,
+    "seen": 1787671649.706723,
+    "ast_hash": "8ac6164d9a4096b2b223cd8108c77c81",
     "semantic_hash": ""
   }
 }

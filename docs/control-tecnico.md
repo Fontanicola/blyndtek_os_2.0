@@ -2,7 +2,16 @@
 
 ## Objetivo
 
-Centralizar señales técnicas, agrupar errores repetidos en incidentes y permitir que Codex prepare correcciones verificadas sin desplegar ni modificar producción de forma autónoma.
+Centralizar el estado técnico de todos los productos, agrupar errores repetidos por causa raíz y mantener una bitácora auditable de cada guardia, diagnóstico y corrección realizada por Codex.
+
+## Inventario vigilado
+
+- Blyndtek OS
+- Funes Exclusivos
+- Control de Obra
+- Trackit
+- ARC
+- Blyndtek Web
 
 ## Fuentes
 
@@ -18,15 +27,28 @@ Centralizar señales técnicas, agrupar errores repetidos en incidentes y permit
 1. Una fuente envía o expone una señal.
 2. El evento se normaliza, se redactan secretos y se calcula un fingerprint estable.
 3. Los errores repetidos actualizan un único incidente abierto y aumentan su contador.
-4. El panel `/software` presenta salud, volumen, incidentes activos y cobertura de integraciones.
-5. La guardia de Codex revisa cada dos horas, correlaciona evidencia y puede preparar un fix en un worktree aislado.
-6. Merge, deploy, cambios de datos, secretos, permisos y presupuesto requieren aprobación explícita.
+4. El panel `/software` consolida salud, latencia p95, disponibilidad, errores, incidentes, deploys, cobertura, guardias y acciones.
+5. Supabase Realtime actualiza señales, guardias y acciones; un polling de respaldo refresca el tablero cada 30 segundos.
+6. La guardia de Codex revisa cada dos horas, correlaciona evidencia y registra la ejecución completa.
+7. Cada intervención registra sistema, incidente, actor, estado, branch, commit, deployment y evidencia no sensible.
+8. Las correcciones seguras siguen la política de autonomía de la guardia; secretos, datos, permisos, dominios y presupuesto requieren aprobación explícita.
 
 ## Endpoints
 
 - `POST /api/sistemas/observabilidad/ingest`: ingesta genérica con bearer `TECH_OPS_INGEST_SECRET`.
 - `POST /api/webhooks/observabilidad/vercel`: ingesta de Log Drain validada con `x-vercel-signature` y `VERCEL_DRAIN_SECRET`.
 - `GET /api/sistemas/operaciones`: resumen operativo autenticado para administradores.
+- `GET|POST|PATCH /api/sistemas/guardias`: consulta y registro de ejecuciones de guardia.
+- `GET|POST|PATCH /api/sistemas/acciones`: bitácora de diagnósticos, fixes, verificaciones y despliegues.
+
+## Registro desde Codex
+
+El helper carga el entorno local sin imprimir credenciales y sólo devuelve el identificador y estado creados:
+
+```bash
+npm run tech:record -- guardia --status saludable --systems 6 --incidents 0 --actions 0 --summary "Flota estable"
+npm run tech:record -- accion --project prj_xxx --type correccion --status verificada --title "Fix verificado" --branch codex/fix --commit abc123
+```
 
 ## Variables
 
@@ -36,8 +58,11 @@ Las variables y ejemplos viven en `.env.example`. Nunca registrar DSNs privados,
 
 - `048_control_tecnico_observabilidad.sql`: tablas y extensiones del control técnico.
 - `049_reparar_logs_diarios_seguro.sql`: reparación idempotente de `logs_diarios` sin ejecutar el cron histórico con placeholders.
+- `050_registrar_blyndtek_os_control_tecnico.sql`: alta inicial de Blyndtek OS.
+- `051_reparar_soporte_con_rls.sql`: reparación segura del módulo de soporte.
+- `052_guardias_acciones_control_tecnico.sql`: inventario multiproyecto, guardias, acciones y canales Realtime.
 
-Antes de aplicar una migración, confirmar que el project ref coincide con la base usada por el deployment. Actualmente existe una discrepancia entre el proyecto Supabase accesible y la instancia histórica aparente; no desplegar hasta resolverla.
+El project ref de producción verificado es `gyspazxpnzwkzrqlikqw`. Confirmarlo antes de aplicar futuras migraciones.
 
 ## Operación externa
 

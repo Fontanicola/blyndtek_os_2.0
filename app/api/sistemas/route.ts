@@ -6,7 +6,7 @@ import type { SistemaCreateInput, SistemaGestionado, SistemaHealthCheck } from "
 
 const writableFields = new Set([
   "nombre", "url_produccion", "url_staging", "management_endpoint", "management_token", "proyecto_id", "cliente_id",
-  "vercel_project_id", "vercel_team_id", "supabase_project_ref", "stack", "version_patrones", "estado", "monitoreo_activo"
+  "vercel_project_id", "vercel_team_id", "supabase_project_ref", "repositorio_github", "stack", "version_patrones", "estado", "monitoreo_activo"
 ]);
 
 function parseBody(value: unknown, allowToken: boolean): SistemaCreateInput | null {
@@ -25,7 +25,7 @@ function parseBody(value: unknown, allowToken: boolean): SistemaCreateInput | nu
       result[key] = url;
     }
   }
-  for (const key of ["management_endpoint", "proyecto_id", "cliente_id", "vercel_project_id", "vercel_team_id", "supabase_project_ref", "version_patrones"] as const) {
+  for (const key of ["management_endpoint", "proyecto_id", "cliente_id", "vercel_project_id", "vercel_team_id", "supabase_project_ref", "repositorio_github", "version_patrones"] as const) {
     if (key in payload) {
       if (payload[key] !== null && typeof payload[key] !== "string") return null;
       result[key] = payload[key] as string | null;

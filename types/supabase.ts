@@ -2763,6 +2763,7 @@ export type Database = {
           vercel_project_id: string | null;
           vercel_team_id: string | null;
           supabase_project_ref: string | null;
+          repositorio_github: string | null;
           stack: Json | null;
           version_patrones: string | null;
           estado: string;
@@ -2782,6 +2783,7 @@ export type Database = {
           vercel_project_id?: string | null;
           vercel_team_id?: string | null;
           supabase_project_ref?: string | null;
+          repositorio_github?: string | null;
           stack?: Json | null;
           version_patrones?: string | null;
           estado?: string;
@@ -2801,6 +2803,7 @@ export type Database = {
           vercel_project_id?: string | null;
           vercel_team_id?: string | null;
           supabase_project_ref?: string | null;
+          repositorio_github?: string | null;
           stack?: Json | null;
           version_patrones?: string | null;
           estado?: string;

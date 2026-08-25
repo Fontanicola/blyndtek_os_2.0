@@ -58,6 +58,17 @@ export type TechIntegration = {
   updated_at: string;
 };
 
+export type TechSlo = {
+  id: string;
+  sistema_id: string;
+  disponibilidad_objetivo: number;
+  latencia_p95_objetivo_ms: number;
+  tasa_error_objetivo: number;
+  ventana_dias: number;
+  created_at: string;
+  updated_at: string;
+};
+
 export type TechRemediation = {
   id: string;
   sistema_id: string;
@@ -73,6 +84,47 @@ export type TechRemediation = {
   created_at: string;
 };
 
+export type TechGuardStatus = "ejecutando" | "saludable" | "hallazgos" | "fallida" | "bloqueada";
+export type TechActionStatus = "detectada" | "diagnosticando" | "preparada" | "verificada" | "desplegada" | "fallida" | "bloqueada" | "revertida";
+
+export type TechGuard = {
+  id: string;
+  automation_id: string;
+  estado: TechGuardStatus;
+  ventana_desde: string;
+  ventana_hasta: string;
+  iniciada_at: string;
+  finalizada_at: string | null;
+  resumen: string | null;
+  sistemas_revisados: number;
+  incidentes_detectados: number;
+  acciones_ejecutadas: number;
+  metadata: Json;
+  created_at: string;
+  updated_at: string;
+};
+
+export type TechAction = {
+  id: string;
+  guardia_id: string | null;
+  sistema_id: string | null;
+  incidente_id: string | null;
+  actor: "codex" | "automatizacion" | "humano" | "sistema";
+  tipo: string;
+  estado: TechActionStatus;
+  titulo: string;
+  detalle: string | null;
+  evidencia: Json;
+  branch: string | null;
+  commit_sha: string | null;
+  deployment_id: string | null;
+  external_url: string | null;
+  iniciada_at: string;
+  finalizada_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 type Table<Row, Insert, Update = Partial<Insert>> = {
   Row: Row;
   Insert: Insert;
@@ -86,7 +138,10 @@ export type TechOpsDatabase = Database & {
       sistemas_incidentes: Table<TechIncident, TechIncidentInsert>;
       sistemas_eventos_tecnicos: Table<TechEvent, Omit<TechEvent, "id" | "recibido_at"> & { id?: string; recibido_at?: string }>;
       sistemas_integraciones: Table<TechIntegration, Omit<TechIntegration, "id" | "created_at" | "updated_at"> & { id?: string; created_at?: string; updated_at?: string }>;
+      sistemas_slos: Table<TechSlo, Omit<TechSlo, "id" | "created_at" | "updated_at"> & { id?: string; created_at?: string; updated_at?: string }>;
       sistemas_remediaciones: Table<TechRemediation, Omit<TechRemediation, "id" | "created_at"> & { id?: string; created_at?: string }>;
+      sistemas_guardias: Table<TechGuard, Omit<TechGuard, "id" | "created_at" | "updated_at"> & { id?: string; created_at?: string; updated_at?: string }>;
+      sistemas_acciones_tecnicas: Table<TechAction, Omit<TechAction, "id" | "created_at" | "updated_at"> & { id?: string; created_at?: string; updated_at?: string }>;
     };
     Views: Database["public"]["Views"];
     Functions: Database["public"]["Functions"];
