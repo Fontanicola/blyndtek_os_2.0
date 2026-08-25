@@ -1,6 +1,8 @@
 # La empresa a oscuras — paquete de preproducción
 
-Estado: **G0 listo para aprobación. Ninguna generación autorizada.**
+Estado: **retirado como flagship el 2026-08-25. Ninguna generación autorizada.**
+
+Este concepto se conserva como posible anuncio táctico de performance. Fue reemplazado como película principal de marca por `see-what-youre-becoming`, que trabaja la misión, visión y escala latinoamericana de Blyndtek.
 
 ## Orden de lectura
 
