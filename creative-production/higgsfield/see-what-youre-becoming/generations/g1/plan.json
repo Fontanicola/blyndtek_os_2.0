@@ -1,0 +1,22 @@
+{
+  "campaign": "see-what-youre-becoming",
+  "gate": "G1",
+  "approved_credit_cap": 40,
+  "balance_before": 730,
+  "balance_after": 693.92,
+  "actual_cost": 36.08,
+  "unused_approved_credits": 3.92,
+  "jobs": [
+    {"key": "food-macro", "model": "soul_cinematic", "job_id": "34160cba-865c-4730-bd32-12721a26352c", "cost": 0.12, "status": "rejected", "reason": "Flour resolved as a solid slab instead of airborne particles."},
+    {"key": "food-macro-v2", "model": "soul_cinematic", "job_id": "43ecd7b5-ace1-4046-b55b-9db9b92023ee", "cost": 0.12, "status": "selected", "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GPcG7QBT9gFgRPcU6mHRH1pw0B/hf_20260825_163346_43ecd7b5-ace1-4046-b55b-9db9b92023ee.png"},
+    {"key": "food-wide", "model": "soul_location", "job_id": "c3ac081c-e185-4b7a-8b6a-692142951b1e", "cost": 0.12, "status": "selected_for_style_only", "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GPcG7QBT9gFgRPcU6mHRH1pw0B/hf_20260825_163022_c3ac081c-e185-4b7a-8b6a-692142951b1e.png", "note": "Strong scale and atmosphere; practical lights need highlight control for final production."},
+    {"key": "manufacturing-macro", "model": "soul_cinematic", "job_id": "f8508c54-817b-4aa7-9dfc-814ba7e152a7", "cost": 0.12, "status": "selected", "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GPcG7QBT9gFgRPcU6mHRH1pw0B/hf_20260825_163022_f8508c54-817b-4aa7-9dfc-814ba7e152a7.png"},
+    {"key": "manufacturing-wide", "model": "soul_location", "job_id": "a894919d-8bcd-4486-bf4e-7fc156ddf1b8", "cost": 0.12, "status": "repair_before_final", "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GPcG7QBT9gFgRPcU6mHRH1pw0B/hf_20260825_163022_a894919d-8bcd-4486-bf4e-7fc156ddf1b8.png", "reason": "Good tone and depth, but it contains generated signage and an implausible suspended object."},
+    {"key": "logistics-macro", "model": "soul_cinematic", "job_id": "73bdc8bc-6b70-4d82-b637-f00358bcfc17", "cost": 0.12, "status": "rejected", "reason": "The pallet and stretch film were not legible enough."},
+    {"key": "logistics-macro-v2", "model": "soul_cinematic", "job_id": "4d113c6b-5ea8-40ca-9ebf-9a9b3363d131", "cost": 0.12, "status": "rejected", "reason": "The material became legible but the carton contained fake generated typography."},
+    {"key": "logistics-macro-v3", "model": "soul_cinematic", "job_id": "bc9ac26f-4fc2-49ff-bc75-536957a47215", "cost": 0.12, "status": "selected", "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GPcG7QBT9gFgRPcU6mHRH1pw0B/hf_20260825_163451_bc9ac26f-4fc2-49ff-bc75-536957a47215.png"},
+    {"key": "logistics-wide", "model": "soul_location", "job_id": "1381a7a4-b984-44dc-ab58-8ba6446a6a3f", "cost": 0.12, "status": "repair_before_final", "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GPcG7QBT9gFgRPcU6mHRH1pw0B/hf_20260825_163022_1381a7a4-b984-44dc-ab58-8ba6446a6a3f.png", "reason": "Good depth and doorway silhouette, but it contains fake marks and unnatural worker grouping."},
+    {"key": "motion-food-echo", "model": "seedance_2_0_fast", "job_id": "119b98ae-4246-4440-b355-fa1a2d15eed3", "cost": 17.5, "status": "completed_pending_temporal_qa", "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GPcG7QBT9gFgRPcU6mHRH1pw0B/hf_20260825_163543_119b98ae-4246-4440-b355-fa1a2d15eed3.mp4", "spec": "5.042 seconds, 1280x720, H.264, silent"},
+    {"key": "motion-metal-to-pallet", "model": "seedance_2_0_fast", "job_id": "91a0d33e-f8c7-4358-a4f4-1325dad21dae", "cost": 17.5, "status": "completed_pending_temporal_qa", "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GPcG7QBT9gFgRPcU6mHRH1pw0B/hf_20260825_163829_91a0d33e-f8c7-4358-a4f4-1325dad21dae.mp4", "spec": "5.042 seconds, 1280x720, H.264, silent"}
+  ]
+}
