@@ -11,15 +11,19 @@ Test the four motion families that the complete film depends on before generatin
 
 The metal-to-pallet half already exists from G1 and is not regenerated here.
 
-## Paid batch
+## Executed batch
 
 - Four Seedance 2.0 Fast clips.
 - Five seconds each.
 - 720p, 16:9, silent.
 - Live cost on 2026-08-25: **17.5 credits per clip**.
-- Proposed hard cap: **70 credits**.
-- Current balance: **686.36 credits**.
+- Approved hard cap: **70 credits**.
+- Actual cost: **70 credits**.
+- Balance before: **686.36 credits**.
+- Balance after: **616.36 credits**.
 
 ## Gate
 
-After generation, every clip receives full temporal QA. Useful time ranges are logged and assembled with the two G1 motion tests into a silent proof animatic. No rerender, audio, upscale, final production or publication is authorized by this batch.
+Every clip received temporal QA and its useful range is logged. Three directions can move forward: logistics, tray handling and the fragmented-order beat with a deterministic phone-screen replacement. The hero transition failed as a transition because its middle morphs; only its final steel plate is salvageable.
+
+G4 must rebuild the hero moment as two independent shots joined by an exact editorial cut. No rerender, audio, upscale, final production or publication was authorized by this batch.

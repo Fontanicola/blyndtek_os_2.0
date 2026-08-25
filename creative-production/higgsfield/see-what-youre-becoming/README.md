@@ -1,6 +1,6 @@
 # See what you’re becoming
 
-Estado: **G1 generado. Revisión temporal humana pendiente antes de G2.**
+Estado: **G3 motion tests complete. Three directions selected; hero transition requires an edit-first repair.**
 
 Película manifiesto de Blyndtek. No es un anuncio táctico, un tutorial de software ni un caso inventado. Su trabajo es instalar una idea de categoría y hacer que Blyndtek se perciba como la compañía que está cerrando la brecha tecnológica entre las grandes empresas y las Pymes de Latinoamérica.
 
@@ -18,14 +18,14 @@ Película manifiesto de Blyndtek. No es un anuncio táctico, un tutorial de soft
 - G0 concepto: completo.
 - G1 visual proof: generado el 2026-08-25 por 36,08 créditos de Higgsfield.
 - G2 asset lock: completo; 16 still jobs generados por 7,56 créditos y selects registrados.
-- G3 pruebas de movimiento por beat: pendiente de presupuesto y aprobación separados.
+- G3 pruebas de movimiento: completo; cuatro clips generados por 70 créditos, tres direcciones utilizables y un transition hard fail documentado.
 - No se publicó nada.
 
 Revisá el resultado en [`qa/g1/report.md`](qa/g1/report.md) y el ledger completo en [`generations/g1/plan.json`](generations/g1/plan.json).
 
 El resultado del asset lock está en [`qa/g2/report.md`](qa/g2/report.md), con selects, rechazos y máscaras obligatorias. El brief, la continuidad y los manifests son validables y reproducibles.
 
-El siguiente lote está definido en [`g3-motion-plan.md`](g3-motion-plan.md): cuatro pruebas de movimiento por 70 créditos, todavía sin autorización de gasto.
+Los resultados de movimiento están en [`qa/g3/report.md`](qa/g3/report.md) y el registro reproducible en [`generations/g3/results.json`](generations/g3/results.json). G4 debe escalar sólo las direcciones aprobadas y reconstruir el hero match cut con dos clips separados unidos en edición; no hay gasto adicional autorizado.
 
 ## Gate anterior
 

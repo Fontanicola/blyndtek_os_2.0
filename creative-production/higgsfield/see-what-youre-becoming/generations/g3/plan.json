@@ -1,10 +1,13 @@
 {
   "campaign": "see-what-youre-becoming",
   "gate": "G3_motion_families",
-  "status": "awaiting_credit_approval",
+  "status": "complete",
   "balance_checked": 686.36,
   "proposed_credit_cap": 70,
   "estimated_cost": 70,
+  "actual_cost": 70,
+  "balance_after": 616.36,
+  "completed_at": "2026-08-25T17:39:04Z",
   "jobs": [
     {
       "key": "operational-wide-logistics",
@@ -14,6 +17,9 @@
       "duration": 5,
       "resolution": "720p",
       "cost": 17.5,
+      "job_id": "e3c730da-f486-48af-8444-e301efd14638",
+      "status": "completed",
+      "decision": "select",
       "purpose": "Validate stable architecture, a weighted route and restrained wide-camera motion."
     },
     {
@@ -24,6 +30,9 @@
       "duration": 5,
       "resolution": "720p",
       "cost": 17.5,
+      "job_id": "14c05f77-3a3a-4e68-b38f-1051949a70cc",
+      "status": "completed",
+      "decision": "select",
       "purpose": "Validate hand contact, object weight and one controlled operational action."
     },
     {
@@ -34,6 +43,9 @@
       "duration": 5,
       "resolution": "720p",
       "cost": 17.5,
+      "job_id": "de7027c3-bd02-40a4-926f-e20bdd63d0a6",
+      "status": "completed",
+      "decision": "select_partial",
       "purpose": "Validate the no-one-sees-the-whole beat on blank compositing surfaces."
     },
     {
@@ -45,8 +57,12 @@
       "duration": 5,
       "resolution": "720p",
       "cost": 17.5,
+      "job_id": "49e6e89b-1f0f-4340-a853-846480b97c09",
+      "status": "completed",
+      "decision": "reject_transition_select_final_plate",
       "purpose": "Complete the missing first half of the hero transition system."
     }
   ],
-  "approval_unlocks": "Generate these four motion tests only, then stop for temporal QA and an animatic decision before full production."
+  "gate_result": "Three motion directions are viable. The hero transition requires an edit-first repair because the generated middle behaves as a morph.",
+  "approval_unlocks": "G4 may scale the logistics and tray motion families, use the fragmented-order clip only with deterministic screen replacement, and rebuild the hero match cut as two separately generated shots joined in the edit."
 }

@@ -95,10 +95,16 @@
       "references": ["@logistics_location_clean", "@operator_logistics"],
       "prompt_file": "prompts/production/S03_SH03.txt",
       "success_criteria": ["Doorway depth remains stable", "Pallet route reads instantly", "Workers stay separated", "No fake marks"],
-      "status": "blocked_by_g2",
-      "jobs": [],
-      "selects": [],
-      "qa_score": null
+      "status": "g3_select",
+      "jobs": ["e3c730da-f486-48af-8444-e301efd14638"],
+      "selects": [
+        {
+          "job_id": "e3c730da-f486-48af-8444-e301efd14638",
+          "timecode": "00:00.15-00:04.80",
+          "file": "generations/g3/operational-wide-logistics.mp4"
+        }
+      ],
+      "qa_score": 45
     },
     {
       "id": "S04_SH01",
@@ -109,10 +115,16 @@
       "references": ["@food_location_clean", "@food_tray", "@operator_food"],
       "prompt_file": "prompts/production/S04_SH01.txt",
       "success_criteria": ["Tray stays rigid", "Hands keep correct contact", "Motion exits frame-right", "No labels"],
-      "status": "blocked_by_g2",
-      "jobs": [],
-      "selects": [],
-      "qa_score": null
+      "status": "g3_select",
+      "jobs": ["14c05f77-3a3a-4e68-b38f-1051949a70cc"],
+      "selects": [
+        {
+          "job_id": "14c05f77-3a3a-4e68-b38f-1051949a70cc",
+          "timecode": "00:00.20-00:04.75",
+          "file": "generations/g3/human-action-food-tray.mp4"
+        }
+      ],
+      "qa_score": 43
     },
     {
       "id": "S04_SH02",
@@ -151,10 +163,17 @@
       "references": ["@blank_order_set", "@blank_screen_plate", "@operator_food"],
       "prompt_file": "prompts/production/S05_SH01.txt",
       "success_criteria": ["Exactly three supports remain present", "Phone stays on table", "Hand movement is singular and credible", "Screens remain blank"],
-      "status": "blocked_by_g2",
-      "jobs": [],
-      "selects": [],
-      "qa_score": null
+      "status": "g3_select_partial_screen_replacement_required",
+      "jobs": ["de7027c3-bd02-40a4-926f-e20bdd63d0a6"],
+      "selects": [
+        {
+          "job_id": "de7027c3-bd02-40a4-926f-e20bdd63d0a6",
+          "timecode": "00:00.15-00:04.70",
+          "file": "generations/g3/fragmented-order.mp4",
+          "restriction": "Replace the phone surface in post before use."
+        }
+      ],
+      "qa_score": 40
     },
     {
       "id": "S05_SH02",
@@ -235,10 +254,17 @@
       "references": ["@food_tray", "@metal_piece", "@food_location_clean", "@manufacturing_location_clean"],
       "prompt_file": "prompts/production/S08_SH01.txt",
       "success_criteria": ["One editorial match cut", "Edges align in position and speed", "No liquid morph", "Direction remains left-to-right"],
-      "status": "blocked_by_g2",
-      "jobs": [],
-      "selects": [],
-      "qa_score": null
+      "status": "g3_reject_transition_partial_end_available",
+      "jobs": ["49e6e89b-1f0f-4340-a853-846480b97c09"],
+      "selects": [
+        {
+          "job_id": "49e6e89b-1f0f-4340-a853-846480b97c09",
+          "timecode": "00:02.20-00:04.85",
+          "file": "generations/g3/hero-food-to-metal.mp4",
+          "restriction": "Final steel plate only; never use the morphing middle as the transition."
+        }
+      ],
+      "qa_score": 32
     },
     {
       "id": "S08_SH02",
