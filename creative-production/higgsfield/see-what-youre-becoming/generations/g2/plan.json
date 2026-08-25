@@ -1,11 +1,13 @@
 {
   "campaign": "see-what-youre-becoming",
   "gate": "G2_asset_lock",
-  "status": "awaiting_credit_approval",
-  "balance_checked": 693.92,
+  "status": "complete",
+  "balance_before": 693.92,
+  "balance_after": 686.36,
   "proposed_credit_cap": 8,
-  "estimated_cost": 7.08,
-  "unallocated_buffer": 0.92,
+  "estimated_cost": 7.56,
+  "actual_cost": 7.56,
+  "unallocated_buffer": 0.44,
   "jobs": [
     {"key": "food-location-clean", "model": "nano_banana_pro", "input_job_id": "c3ac081c-e185-4b7a-8b6a-692142951b1e", "resolution": "2k", "aspect_ratio": "16:9", "cost": 2, "purpose": "Recover highlights and produce a clean trackable master plate."},
     {"key": "manufacturing-location-clean", "model": "nano_banana_pro", "input_job_id": "a894919d-8bcd-4486-bf4e-7fc156ddf1b8", "resolution": "2k", "aspect_ratio": "16:9", "cost": 2, "purpose": "Remove fake signage and the suspended artifact without changing geometry."},
@@ -18,7 +20,11 @@
     {"key": "blank-order-set", "model": "soul_cinematic", "quality": "2k", "aspect_ratio": "16:9", "cost": 0.12, "purpose": "Create blank supports for deterministic compositing."},
     {"key": "operator-food-blocking", "model": "soul_cinematic", "quality": "2k", "aspect_ratio": "16:9", "cost": 0.12, "purpose": "Lock hands, torso, tray and direction without full identity risk."},
     {"key": "operator-metal-blocking", "model": "soul_cinematic", "quality": "2k", "aspect_ratio": "16:9", "cost": 0.12, "purpose": "Lock hands, torso, caliper and workbench relation."},
-    {"key": "operator-logistics-blocking", "model": "soul_cinematic", "quality": "2k", "aspect_ratio": "16:9", "cost": 0.12, "purpose": "Lock hands, torso, pallet jack and route direction."}
+    {"key": "operator-logistics-blocking", "model": "soul_cinematic", "quality": "2k", "aspect_ratio": "16:9", "cost": 0.12, "purpose": "Lock hands, torso, pallet jack and route direction."},
+    {"key": "blank-order-set-v2", "model": "soul_cinematic", "quality": "2k", "aspect_ratio": "16:9", "cost": 0.12, "purpose": "Repair fake generated order text by using pure blank surfaces."},
+    {"key": "operator-food-blocking-v2", "model": "soul_cinematic", "quality": "2k", "aspect_ratio": "16:9", "cost": 0.12, "purpose": "Repair fake clothing marks and two-person ambiguity through a tight crop."},
+    {"key": "operator-metal-blocking-v2", "model": "soul_cinematic", "quality": "2k", "aspect_ratio": "16:9", "cost": 0.12, "purpose": "Repair fake clothing marks and lock one caliper action."},
+    {"key": "operator-logistics-blocking-v2", "model": "soul_cinematic", "quality": "2k", "aspect_ratio": "16:9", "cost": 0.12, "purpose": "Repair fake clothing marks and remove the second operator."}
   ],
   "approval_unlocks": "Generate only these twelve still assets, then stop for G2 visual QA before any new video job."
 }

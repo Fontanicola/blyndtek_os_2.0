@@ -17,13 +17,15 @@ Película manifiesto de Blyndtek. No es un anuncio táctico, un tutorial de soft
 
 - G0 concepto: completo.
 - G1 visual proof: generado el 2026-08-25 por 36,08 créditos de Higgsfield.
-- G2 asset lock: preproducción completa; lote de 7,08 créditos pendiente de aprobación explícita.
-- G3 pruebas de movimiento por beat: bloqueado hasta aprobar los assets G2.
+- G2 asset lock: completo; 16 still jobs generados por 7,56 créditos y selects registrados.
+- G3 pruebas de movimiento por beat: pendiente de presupuesto y aprobación separados.
 - No se publicó nada.
 
 Revisá el resultado en [`qa/g1/report.md`](qa/g1/report.md) y el ledger completo en [`generations/g1/plan.json`](generations/g1/plan.json).
 
-La siguiente aprobación está definida en [`g2-asset-lock-plan.md`](g2-asset-lock-plan.md). El brief, la continuidad y los manifests ya son validables y reproducibles.
+El resultado del asset lock está en [`qa/g2/report.md`](qa/g2/report.md), con selects, rechazos y máscaras obligatorias. El brief, la continuidad y los manifests son validables y reproducibles.
+
+El siguiente lote está definido en [`g3-motion-plan.md`](g3-motion-plan.md): cuatro pruebas de movimiento por 70 créditos, todavía sin autorización de gasto.
 
 ## Gate anterior
 

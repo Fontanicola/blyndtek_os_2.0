@@ -11,9 +11,10 @@ Turn the G1 visual language into a reproducible world bible before generating ad
 - Three hero props/blocking frames with Soul Cinematic.
 - Three partial-operator blocking frames with Soul Cinematic.
 
-Live estimated cost on 2026-08-25: **7.08 credits**.  
-Proposed hard cap: **8 credits**.  
-Current balance: **693.92 credits**.
+Initial live estimate on 2026-08-25: **7.08 credits**.
+Proposed hard cap: **8 credits**.
+Actual cost after four targeted repairs: **7.56 credits**.
+Balance after G2: **686.36 credits**.
 
 ## Why this batch is enough
 
