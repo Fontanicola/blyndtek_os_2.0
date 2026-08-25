@@ -17,4 +17,4 @@ SUCCESS CRITERIA
 Stable spatial blocking; stable identities; three distinct eyeline sources; no broad gestures; no speaking to camera; folder stays on table; no position swaps.
 
 SOUND
-Room tone and placeholder natural speech cadence. Final Spanish dialogue will be recorded and synchronized in post.
+Room tone and placeholder natural speech cadence. Final English dialogue will be recorded and synchronized in post.

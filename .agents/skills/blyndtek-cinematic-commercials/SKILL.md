@@ -139,6 +139,7 @@ Entregar siempre, en este orden:
 
 ## Reglas duras
 
+- Escribir en inglés idiomático toda voz, diálogo, copy, título, subtítulo y CTA destinados a la audiencia. Tratar el inglés como master creativo, no como traducción literal. Localizar a otro idioma sólo si Felipe lo pide explícitamente.
 - No inventar clientes, métricas, ahorros, testimonios ni capacidades de Blyndtek.
 - No usar marcas, interfaces o personas reconocibles de terceros sin derechos.
 - No clonar voz o rostro sin consentimiento explícito.

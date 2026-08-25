@@ -29,6 +29,6 @@
 1. Pyme argentina genérica de distribución/logística.
 2. Personajes completamente ficticios.
 3. Master de marca sin precio del diagnóstico.
-4. CTA “Conocé cómo trabaja Blyndtek”.
+4. CTA “See how Blyndtek works”.
 
 La aprobación G0 permite consultar saldo, modelos y costo vivo y presentar G1. No permite generar automáticamente.

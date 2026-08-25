@@ -14,7 +14,7 @@ Una empresa puede estar en movimiento y, aun así, obligar a su dueño a decidir
 - **Lo que debe pensar:** “Mi empresa también depende de información repartida.”
 - **Lo que debe sentir:** Blyndtek entiende el problema con precisión y no viene a vender software genérico.
 - **Lo que debe hacer:** conocer cómo trabaja Blyndtek.
-- **País y voz:** Argentina, voseo.
+- **País y voz:** Argentina como contexto visual; inglés idiomático como master creativo.
 
 ## Sinopsis
 
@@ -37,35 +37,35 @@ Antes de que termine de encenderse una Pyme, su dueño ya recibió versiones dis
 
 ## CTA
 
-**Conocé cómo trabaja Blyndtek.**
+**See how Blyndtek works.**
 
-El master no vende explícitamente el diagnóstico de USD 600. Si una adaptación lo convierte en oferta de diagnóstico, debe mostrar el precio y usar “Validá si aplica”.
+El master no vende explícitamente el diagnóstico de USD 600. Si una adaptación lo convierte en oferta de diagnóstico, debe mostrar el precio y usar “See if the operational diagnostic is right for your business”.
 
 ## Guion maestro — 45 segundos
 
-### Voz en off
+### Voice-over
 
-> Tu empresa abre. Vende. Entrega. Crece.
+> Your business opens. Sells. Delivers. Grows.
 >
-> Pero una respuesta está en un mensaje. Otra, en una planilla. Otra, en la cabeza de alguien.
+> But one answer lives in a message. Another in a spreadsheet. Another in someone’s head.
 >
-> Y cuando necesitás decidir, nadie está viendo lo mismo.
+> And when it’s time to decide, no one is seeing the same thing.
 >
-> En Blyndtek no empezamos por venderte software.
+> At Blyndtek, we don’t start by selling you software.
 >
-> Primero medimos cómo funciona tu operación de verdad: recorridos, tiempos, responsables y trabajo repetido.
+> First, we measure how your operation really works: handoffs, time, ownership, and repeated work.
 >
-> Recién entonces construimos la vista que necesitás.
+> Only then do we build the visibility you need.
 >
-> Tu empresa opera a ciegas. Nosotros le instalamos la vista.
+> Your business is operating blind. We give it sight.
 
 ### Diálogo diegético
 
-- Dueño, contenido y sin mirar a cámara: **“¿Este pedido salió?”**
+- Dueño, contenido y sin mirar a cámara: **“Did this order ship?”**
 - Tres respuestas superpuestas, incompletas y naturales:
-  - **“En la planilla figura listo.”**
-  - **“A mí me falta la confirmación.”**
-  - **“Lo tiene Juli, creo.”**
+  - **“The spreadsheet says it’s ready.”**
+  - **“I’m still waiting on confirmation.”**
+  - **“I think Julia has it.”**
 
 Los textos de mensajes se agregan en post. Ningún diálogo afirma resultados.
 

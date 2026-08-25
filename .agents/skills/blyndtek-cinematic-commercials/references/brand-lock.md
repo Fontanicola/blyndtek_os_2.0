@@ -8,7 +8,9 @@ Blyndtek es una consultora de tecnología e inteligencia artificial que mide la 
 
 Categoría: diagnóstico operativo con ejecución. No presentarla como una software factory genérica.
 
-Promesa: “Tu empresa opera a ciegas. Nosotros le instalamos la vista.”
+Promesa canónica: “Tu empresa opera a ciegas. Nosotros le instalamos la vista.”
+
+Adaptación audiovisual inglesa aprobada como default: “Your business is operating blind. We give it sight.”
 
 Cada comercial debe reforzar al menos uno:
 
@@ -21,6 +23,12 @@ Cada comercial debe reforzar al menos uno:
 Dueños y directores de Pymes que crecieron más rápido que sus sistemas. Reconocen planillas duplicadas, WhatsApp como sistema, dependencia de una persona y falta de una vista confiable.
 
 Argentina: segunda persona y voseo. México: usted, tono neutral y reglas del manual.
+
+## Idioma audiovisual
+
+Directiva de Felipe, 2026-08-25: el master creativo de todos los comerciales debe estar en inglés. Escribir voz, diálogos, overlays, subtítulos, end cards y CTA directamente en inglés idiomático; no traducir palabra por palabra desde el castellano. Mantener los documentos internos en el idioma más útil para producción. Crear versiones localizadas únicamente ante pedido explícito.
+
+Esta directiva aplica al contenido audiovisual y prevalece sobre el voseo del manual para estas piezas. La precisión y claridad siguen siendo más importantes que sonar grandilocuente.
 
 ## Personalidad audiovisual
 

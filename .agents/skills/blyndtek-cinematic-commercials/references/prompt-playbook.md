@@ -97,6 +97,14 @@ Separar cuando sea posible:
 
 El realismo de un spot depende tanto de room tone, respiración y textura mecánica como de la imagen.
 
+## Idioma
+
+- Usar inglés idiomático como master para voz, diálogo, copy, subtítulos y CTA.
+- Escribir el pensamiento directamente en inglés; evitar calcos del castellano.
+- Mantener el tono directo, concreto y sobrio de Blyndtek.
+- Conservar nombres de producto o marca sin traducir.
+- Producir localizaciones sólo cuando Felipe las pida explícitamente.
+
 ## Reparación por síntoma
 
 | Falla | Reparación antes de regenerar |
