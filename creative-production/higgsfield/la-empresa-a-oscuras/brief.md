@@ -57,7 +57,7 @@ El master no vende explícitamente el diagnóstico de USD 600. Si una adaptació
 >
 > Only then do we build the visibility you need.
 >
-> Your business is operating blind. We give it sight.
+> Making complex work simple.
 
 ### Diálogo diegético
 

@@ -42,7 +42,7 @@ let attributes: [NSAttributedString.Key: Any] = [
     .kern: 0.2,
     .paragraphStyle: paragraph
 ]
-let line = "See what you’re becoming."
+let line = "Making complex work simple."
 line.draw(in: NSRect(x: 180, y: 240, width: 920, height: 60), withAttributes: attributes)
 image.unlockFocus()
 

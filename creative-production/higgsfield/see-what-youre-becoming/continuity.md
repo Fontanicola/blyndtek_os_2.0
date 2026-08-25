@@ -83,4 +83,4 @@
 ### S09 — signature
 
 - El último borde se reduce a una línea celeste exacta creada en post.
-- End card determinístico con logo horizontal oficial y `See what you’re becoming.`
+- End card determinístico con logo horizontal oficial y `Making complex work simple.`

@@ -1,5 +1,7 @@
 # Delivery package — See What You're Becoming
 
+Institutional end card: `Making complex work simple.` The campaign platform remains `See what you’re becoming.`
+
 ## Masters
 
 - `blyndtek-see-what-youre-becoming-master-1080p.mp4` — clean 16:9 master, 1920 × 1080, 24 fps, 60 seconds.

@@ -214,6 +214,7 @@ function buildSystemPrompt() {
 
 function buildBrandContext(marca: MarcaContenido) {
   return [
+    "Tagline maestro: Making complex work simple. Debe conservarse en inglés, en sentence case y con punto final. No inventes variantes ni traducciones para el lockup institucional.",
     `Tono de voz: ${marca.tono_voz || "directo, claro, premium y cercano"}`,
     `Público objetivo: ${marca.publico_objetivo || "dueños de PyME y empresas que necesitan sistemas reales"}`,
     `Tipografía de contenido: ${marca.tipografia || "DM Sans"}`,

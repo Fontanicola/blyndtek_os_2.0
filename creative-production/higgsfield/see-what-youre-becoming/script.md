@@ -38,13 +38,13 @@ No usar titulares durante el cuerpo. Sólo tres intervenciones deterministas:
 
 1. `Measure what is real.`
 2. `Build around the business.`
-3. End card: `See what you’re becoming.`
+3. End card: `Making complex work simple.`
 
 Antes de masterizar, revisar si las dos primeras líneas aportan o si la película funciona mejor únicamente con imagen y voz.
 
 ## End card
 
 - Logo horizontal oficial de Blyndtek.
-- `See what you’re becoming.`
+- `Making complex work simple.`
 - Fondo blanco o navy según el frame de salida aprobado.
 - Sin precio, URL, botón ni CTA de performance.

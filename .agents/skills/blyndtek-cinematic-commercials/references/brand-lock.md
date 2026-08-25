@@ -8,9 +8,9 @@ Blyndtek es una consultora de tecnología e inteligencia artificial que mide la 
 
 Categoría: diagnóstico operativo con ejecución. No presentarla como una software factory genérica.
 
-Promesa canónica: “Tu empresa opera a ciegas. Nosotros le instalamos la vista.”
+Tagline canónico: “Making complex work simple.”
 
-Adaptación audiovisual inglesa aprobada como default: “Your business is operating blind. We give it sight.”
+Usarlo siempre en inglés, en sentence case y con punto final. No traducirlo dentro del lockup. “Your business is operating blind” y “See what you’re becoming” pueden funcionar como plataformas tácticas de campaña, pero no reemplazan la firma institucional.
 
 Cada comercial debe reforzar al menos uno:
 

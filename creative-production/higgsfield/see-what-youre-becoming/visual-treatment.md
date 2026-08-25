@@ -63,5 +63,5 @@ No reproducir encuadres, música, copy, campañas ni assets reconocibles de esas
 - Master 60 s, 16:9.
 - Brand cut 30 s, 16:9 y 9:16 reconstruido.
 - Manifesto cut 15 s centrado en “nothing small”.
-- Bumper 6 s: sonar → operación hero → `See what you’re becoming.`
+- Bumper 6 s: sonar → operación hero → `Making complex work simple.`
 - Teaser sin logo de 8 s para generar intriga antes del lanzamiento.

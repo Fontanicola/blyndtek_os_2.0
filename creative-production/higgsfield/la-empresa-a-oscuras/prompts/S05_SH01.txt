@@ -3,7 +3,7 @@ DETERMINISTIC POST-PRODUCTION SPECIFICATION — DO NOT GENERATE WITH A VIDEO MOD
 Canvas: 3840×2160, 16:9, 24 fps, 3.5 seconds.
 Background: white.
 Logo: public/Logo_Blyndtek_plataforma.svg, original geometry and colors, clear space preserved.
-Headline: “Your business is operating blind. We give it sight.”
+Headline: “Making complex work simple.”
 CTA: “See how Blyndtek works”.
 Color: navy #263a6d; celeste #dfeeff only as a restrained line/accent.
 Animation: 8–12 frame opacity/position ease, no logo deformation, no 3D orca, no glow.

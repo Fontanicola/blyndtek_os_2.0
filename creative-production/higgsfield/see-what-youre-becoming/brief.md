@@ -30,7 +30,7 @@ Tres operaciones reales pero ficcionales comienzan antes del amanecer, monumenta
 
 ## CTA
 
-No hay CTA comercial. Firma única: `See what you’re becoming.`
+No hay CTA comercial. La plataforma de campaña es `See what you’re becoming.` y la firma institucional es `Making complex work simple.`
 
 ## Pruebas y claims
 

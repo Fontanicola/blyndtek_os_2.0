@@ -14,7 +14,7 @@
 | 00:29–00:33 | Dueño y analista ven la misma información; él señala un estado y toma una decisión. | Un único aviso. VO: “Only then do we build the visibility you need.” | Claridad y autoridad. |
 | 00:33–00:37 | Pedido avanza de izquierda a derecha; la operadora actualiza una sola vez. | Carro, confirmación, room tone amplio. | Demostrar sin prometer perfección. |
 | 00:37–00:41.5 | Desde la oficina, el dueño ve el avance y exhala; no celebra. | Carro alejándose, ambiente abierto, inicio del sting. | Cierre humano y transición. |
-| 00:41.5–00:45 | Blanco. Logo oficial. Promesa y CTA en tipografía de marca. | Sting mínimo. VO: “Your business is operating blind. We give it sight.” | Firma y recordación. |
+| 00:41.5–00:45 | Blanco. Logo oficial. Tagline en tipografía de marca. | Sting mínimo. VO: “Making complex work simple.” | Firma y recordación. |
 
 ## Primer frame social
 
@@ -23,7 +23,7 @@ Para 9:16, abrir directamente sobre el teléfono vibrando con overlay: **“Your
 ## End card
 
 - Logo: `public/Logo_Blyndtek_plataforma.svg`.
-- Promesa: “Your business is operating blind. We give it sight.”
+- Tagline: “Making complex work simple.”
 - CTA: “See how Blyndtek works”.
 - Fondo blanco, logo navy, acento celeste discreto.
 - Duración mínima: 3.5 segundos.

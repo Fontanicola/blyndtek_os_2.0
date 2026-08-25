@@ -173,6 +173,9 @@ export function LoginForm() {
             priority
             className="mx-auto h-auto w-[260px] max-w-full lg:mx-0"
           />
+          <p className="mx-auto mt-5 text-lg font-medium tracking-[-0.01em] text-signal lg:mx-0">
+            Making complex work simple.
+          </p>
         </div>
 
         <div className="mt-10 border-t border-line-soft pt-10 lg:mt-0 lg:border-l lg:border-t-0 lg:pl-14 lg:pt-0">
