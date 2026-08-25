@@ -1,0 +1,156 @@
+{
+  "campaign": "see-what-youre-becoming",
+  "gate": "G2_asset_lock",
+  "assets": [
+    {
+      "tag": "@style_food_macro",
+      "type": "style",
+      "source": "generations/g1/food-macro-v2.png",
+      "higgsfield_job_id": "43ecd7b5-ace1-4046-b55b-9db9b92023ee",
+      "status": "approved_g1",
+      "approved_by": "Felipe",
+      "constraints": ["Preserve dry granular flour", "Preserve black negative space", "No generated text"]
+    },
+    {
+      "tag": "@style_metal_macro",
+      "type": "style",
+      "source": "generations/g1/manufacturing-macro.png",
+      "higgsfield_job_id": "f8508c54-817b-4aa7-9dfc-814ba7e152a7",
+      "status": "approved_g1",
+      "approved_by": "Felipe",
+      "constraints": ["Preserve horizontal edge", "Keep restrained sparks", "No labels or marks"]
+    },
+    {
+      "tag": "@style_logistics_macro",
+      "type": "style",
+      "source": "generations/g1/logistics-macro-v3.png",
+      "higgsfield_job_id": "bc9ac26f-4fc2-49ff-bc75-536957a47215",
+      "status": "approved_g1",
+      "approved_by": "Felipe",
+      "constraints": ["Blank kraft carton", "Visible transparent stretch film", "No printing"]
+    },
+    {
+      "tag": "@food_location_raw",
+      "type": "location",
+      "source": "generations/g1/food-wide.png",
+      "higgsfield_job_id": "c3ac081c-e185-4b7a-8b6a-692142951b1e",
+      "status": "repair_planned",
+      "approved_by": null,
+      "constraints": ["Preserve architecture", "Recover practical highlights", "Remove all accidental markings"]
+    },
+    {
+      "tag": "@manufacturing_location_raw",
+      "type": "location",
+      "source": "generations/g1/manufacturing-wide.png",
+      "higgsfield_job_id": "a894919d-8bcd-4486-bf4e-7fc156ddf1b8",
+      "status": "repair_planned",
+      "approved_by": null,
+      "constraints": ["Remove fake signage", "Remove suspended scrap", "Preserve geometry and lighting"]
+    },
+    {
+      "tag": "@logistics_location_raw",
+      "type": "location",
+      "source": "generations/g1/logistics-wide.png",
+      "higgsfield_job_id": "1381a7a4-b984-44dc-ab58-8ba6446a6a3f",
+      "status": "repair_planned",
+      "approved_by": null,
+      "constraints": ["Remove fake marks", "Simplify worker grouping", "Preserve doorway depth"]
+    },
+    {
+      "tag": "@food_location_clean",
+      "type": "location",
+      "source": "pending_higgsfield_job",
+      "status": "planned_g2",
+      "approved_by": null,
+      "constraints": ["Same architecture as raw plate", "Trackable clean surfaces", "No blown highlights"]
+    },
+    {
+      "tag": "@manufacturing_location_clean",
+      "type": "location",
+      "source": "pending_higgsfield_job",
+      "status": "planned_g2",
+      "approved_by": null,
+      "constraints": ["Same architecture as raw plate", "No text or suspended artifacts", "Trackable clean surfaces"]
+    },
+    {
+      "tag": "@logistics_location_clean",
+      "type": "location",
+      "source": "pending_higgsfield_job",
+      "status": "planned_g2",
+      "approved_by": null,
+      "constraints": ["Same architecture as raw plate", "Blank pillars and cartons", "Clear left-to-right route"]
+    },
+    {
+      "tag": "@food_tray",
+      "type": "prop",
+      "source": "pending_higgsfield_job",
+      "status": "planned_g2",
+      "approved_by": null,
+      "constraints": ["Unbranded stainless tray", "Straight horizontal leading edge", "No food branding"]
+    },
+    {
+      "tag": "@metal_piece",
+      "type": "prop",
+      "source": "pending_higgsfield_job",
+      "status": "planned_g2",
+      "approved_by": null,
+      "constraints": ["One stable machined piece", "Straight edge matches food tray", "No serial number"]
+    },
+    {
+      "tag": "@blank_order_set",
+      "type": "prop",
+      "source": "pending_higgsfield_job",
+      "status": "planned_g2",
+      "approved_by": null,
+      "constraints": ["Three blank supports", "No readable data", "Large simple shapes for later compositing"]
+    },
+    {
+      "tag": "@blank_screen_plate",
+      "type": "interface",
+      "source": "pending_higgsfield_job",
+      "status": "planned_g2",
+      "approved_by": null,
+      "constraints": ["Dark matte screen", "No generated UI", "Four corner tracking points added only in post"]
+    },
+    {
+      "tag": "@operator_food",
+      "type": "character",
+      "source": "pending_higgsfield_job",
+      "status": "planned_g2_partial_identity",
+      "approved_by": null,
+      "constraints": ["Hands and torso only", "Unbranded light workwear", "No direct gaze"]
+    },
+    {
+      "tag": "@operator_metal",
+      "type": "character",
+      "source": "pending_higgsfield_job",
+      "status": "planned_g2_partial_identity",
+      "approved_by": null,
+      "constraints": ["Hands and torso only", "Dark matte gloves", "No direct gaze"]
+    },
+    {
+      "tag": "@operator_logistics",
+      "type": "character",
+      "source": "pending_higgsfield_job",
+      "status": "planned_g2_partial_identity",
+      "approved_by": null,
+      "constraints": ["Silhouette or hands only", "Unbranded workwear", "No text on reflective elements"]
+    },
+    {
+      "tag": "@sonar_post",
+      "type": "graphics",
+      "source": "postproduction",
+      "status": "planned_offline",
+      "approved_by": null,
+      "constraints": ["Physical light response only", "No visible digital wave", "Navy and light-blue exact values in post"]
+    },
+    {
+      "tag": "@end_card",
+      "type": "brand",
+      "source": "official_svg_plus_postproduction",
+      "status": "planned_offline",
+      "approved_by": null,
+      "constraints": ["Official horizontal logo", "English line only", "No 3D orca"]
+    }
+  ]
+}

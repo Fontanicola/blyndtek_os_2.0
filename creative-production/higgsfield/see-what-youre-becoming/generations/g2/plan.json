@@ -1,0 +1,24 @@
+{
+  "campaign": "see-what-youre-becoming",
+  "gate": "G2_asset_lock",
+  "status": "awaiting_credit_approval",
+  "balance_checked": 693.92,
+  "proposed_credit_cap": 8,
+  "estimated_cost": 7.08,
+  "unallocated_buffer": 0.92,
+  "jobs": [
+    {"key": "food-location-clean", "model": "nano_banana_pro", "input_job_id": "c3ac081c-e185-4b7a-8b6a-692142951b1e", "resolution": "2k", "aspect_ratio": "16:9", "cost": 2, "purpose": "Recover highlights and produce a clean trackable master plate."},
+    {"key": "manufacturing-location-clean", "model": "nano_banana_pro", "input_job_id": "a894919d-8bcd-4486-bf4e-7fc156ddf1b8", "resolution": "2k", "aspect_ratio": "16:9", "cost": 2, "purpose": "Remove fake signage and the suspended artifact without changing geometry."},
+    {"key": "logistics-location-clean", "model": "nano_banana_pro", "input_job_id": "1381a7a4-b984-44dc-ab58-8ba6446a6a3f", "resolution": "2k", "aspect_ratio": "16:9", "cost": 2, "purpose": "Remove fake marks and simplify worker blocking while preserving the route."},
+    {"key": "food-location-angle", "model": "soul_location", "resolution": "fixed", "aspect_ratio": "16:9", "cost": 0.12, "purpose": "Establish a second clean 3/4 route plate."},
+    {"key": "manufacturing-location-angle", "model": "soul_location", "resolution": "fixed", "aspect_ratio": "16:9", "cost": 0.12, "purpose": "Establish a second clean 3/4 route plate."},
+    {"key": "logistics-location-angle", "model": "soul_location", "resolution": "fixed", "aspect_ratio": "16:9", "cost": 0.12, "purpose": "Establish a second clean 3/4 route plate."},
+    {"key": "food-tray", "model": "soul_cinematic", "quality": "2k", "aspect_ratio": "16:9", "cost": 0.12, "purpose": "Lock the first hero-match edge and tray physics."},
+    {"key": "metal-piece", "model": "soul_cinematic", "quality": "2k", "aspect_ratio": "16:9", "cost": 0.12, "purpose": "Lock the second hero-match edge and inspection prop."},
+    {"key": "blank-order-set", "model": "soul_cinematic", "quality": "2k", "aspect_ratio": "16:9", "cost": 0.12, "purpose": "Create blank supports for deterministic compositing."},
+    {"key": "operator-food-blocking", "model": "soul_cinematic", "quality": "2k", "aspect_ratio": "16:9", "cost": 0.12, "purpose": "Lock hands, torso, tray and direction without full identity risk."},
+    {"key": "operator-metal-blocking", "model": "soul_cinematic", "quality": "2k", "aspect_ratio": "16:9", "cost": 0.12, "purpose": "Lock hands, torso, caliper and workbench relation."},
+    {"key": "operator-logistics-blocking", "model": "soul_cinematic", "quality": "2k", "aspect_ratio": "16:9", "cost": 0.12, "purpose": "Lock hands, torso, pallet jack and route direction."}
+  ],
+  "approval_unlocks": "Generate only these twelve still assets, then stop for G2 visual QA before any new video job."
+}
