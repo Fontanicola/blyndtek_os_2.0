@@ -91,7 +91,6 @@ type OpsData = {
 
 type View = "radar" | "incidentes" | "guardias" | "cobertura";
 type ResolutionStage = "detectado" | "diagnostico" | "preparado" | "verificado" | "resuelto" | "bloqueado";
-type StageFilter = "todo" | ResolutionStage;
 type WorkItem = {
   id: string;
   systemId: string | null;
@@ -113,12 +112,13 @@ const VIEWS: Array<{ id: View; label: string }> = [
   { id: "cobertura", label: "Cobertura" }
 ];
 
-const FUNNEL_STAGES: Array<{ id: Exclude<ResolutionStage, "bloqueado">; label: string; hint: string; width: string }> = [
-  { id: "detectado", label: "Detectados", hint: "Esperan diagnóstico", width: "100%" },
-  { id: "diagnostico", label: "En diagnóstico", hint: "Causa en análisis", width: "89%" },
-  { id: "preparado", label: "Fix preparado", hint: "PR o cambio listo", width: "78%" },
-  { id: "verificado", label: "Verificados", hint: "Pruebas correctas", width: "67%" },
-  { id: "resuelto", label: "Resueltos", hint: "Producción estable", width: "56%" }
+const KANBAN_STAGES: Array<{ id: ResolutionStage; label: string; hint: string; accent: string }> = [
+  { id: "detectado", label: "Detectados", hint: "Esperan diagnóstico", accent: "bg-danger" },
+  { id: "diagnostico", label: "En diagnóstico", hint: "Causa en análisis", accent: "bg-warning" },
+  { id: "preparado", label: "Fix preparado", hint: "Cambio listo", accent: "bg-signal" },
+  { id: "verificado", label: "Verificados", hint: "Pruebas correctas", accent: "bg-sky-500" },
+  { id: "resuelto", label: "Resueltos", hint: "Producción estable", accent: "bg-success" },
+  { id: "bloqueado", label: "Bloqueados", hint: "Requieren decisión", accent: "bg-carbon" }
 ];
 
 function statusMeta(status: SystemSummary["estado_operativo"]) {
@@ -157,7 +157,6 @@ export function SoftwarePage() {
   const [ops, setOps] = useState<OpsData | null>(null);
   const [view, setView] = useState<View>("radar");
   const [selectedSystemId, setSelectedSystemId] = useState<string>("todo");
-  const [stageFilter, setStageFilter] = useState<StageFilter>("todo");
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -257,8 +256,7 @@ export function SoftwarePage() {
   const coverage = coverageTotal ? Math.round((coverageConnected / coverageTotal) * 100) : 0;
   const needsAttention = down > 0 || urgentCount > 0 || stageCounts.bloqueado > 0;
 
-  function openStage(stage: Exclude<ResolutionStage, "bloqueado">) {
-    setStageFilter(stage);
+  function openErrorBoard() {
     setView("incidentes");
   }
 
@@ -274,7 +272,7 @@ export function SoftwarePage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <div className="hidden items-center -space-x-1.5 sm:flex">{ops.sistemas.map((system) => <SystemLogo key={system.id} name={system.nombre} size="xs" className="ring-2 ring-carbon" />)}</div>
+            <div className="hidden items-center gap-1 sm:flex">{ops.sistemas.map((system) => <SystemLogo key={system.id} name={system.nombre} size="xs" />)}</div>
             <Button variant="secondary" size="sm" disabled={refreshing} onClick={() => void load()}><RefreshIcon className={refreshing ? "animate-spin" : ""} size={15} />Actualizar</Button>
           </div>
         </div>
@@ -296,8 +294,8 @@ export function SoftwarePage() {
         </nav>
       </div>
 
-      {view === "radar" ? <RadarView ops={ops} systems={scopedSystems} incidents={openIncidents} actions={scopedActions} timeline={scopedTimeline} counts={stageCounts} onOpenStage={openStage} onOpenIncidents={() => setView("incidentes")} onOpenGuards={() => setView("guardias")} /> : null}
-      {view === "incidentes" ? <ErrorsView items={workItems} counts={stageCounts} stageFilter={stageFilter} onStageFilter={setStageFilter} /> : null}
+      {view === "radar" ? <RadarView ops={ops} systems={scopedSystems} incidents={openIncidents} actions={scopedActions} timeline={scopedTimeline} items={workItems} counts={stageCounts} onOpenIncidents={openErrorBoard} onOpenGuards={() => setView("guardias")} /> : null}
+      {view === "incidentes" ? <ErrorsView items={workItems} counts={stageCounts} /> : null}
       {view === "guardias" ? <CodexView guards={ops.guardias} actions={scopedActions} /> : null}
       {view === "cobertura" ? <CoverageView systems={scopedSystems} integrations={ops.integraciones_detalle.filter((integration) => scopedSystemIds.has(integration.sistema_id))} search={search} onSearch={setSearch} /> : null}
     </div>
@@ -308,7 +306,7 @@ function HeroMetric({ label, value, hint, danger = false }: { label: string; val
   return <div className="border-r border-t border-white/10 px-4 py-3.5 last:border-r-0 sm:border-t-0 sm:px-5"><p className="text-[11px] text-white/55">{label}</p><p className={`mt-1 text-2xl font-title ${danger ? "text-amber-300" : "text-white"}`}>{value}</p><p className="mt-0.5 text-[11px] text-white/45">{hint}</p></div>;
 }
 
-function RadarView({ ops, systems, incidents, actions, timeline, counts, onOpenStage, onOpenIncidents, onOpenGuards }: { ops: OpsData; systems: SystemSummary[]; incidents: OpsIncident[]; actions: OpsAction[]; timeline: TimelineItem[]; counts: Record<ResolutionStage, number>; onOpenStage: (stage: Exclude<ResolutionStage, "bloqueado">) => void; onOpenIncidents: () => void; onOpenGuards: () => void }) {
+function RadarView({ ops, systems, incidents, actions, timeline, items, counts, onOpenIncidents, onOpenGuards }: { ops: OpsData; systems: SystemSummary[]; incidents: OpsIncident[]; actions: OpsAction[]; timeline: TimelineItem[]; items: WorkItem[]; counts: Record<ResolutionStage, number>; onOpenIncidents: () => void; onOpenGuards: () => void }) {
   const blockers = actions.filter((action) => action.estado === "bloqueada");
   const attention = [
     ...incidents.filter((incident) => incident.severidad === "critica" || incident.severidad === "alta").map((incident) => ({ id: `incident-${incident.id}`, systemName: incident.sistema_nombre, title: incident.titulo, detail: `${incident.ocurrencias ?? 1} ocurrencias`, date: incident.ultima_ocurrencia_at ?? incident.created_at, url: incident.external_url ?? null })),
@@ -317,11 +315,16 @@ function RadarView({ ops, systems, incidents, actions, timeline, counts, onOpenS
   const latestGuard = ops.guardias[0];
 
   return <div className="space-y-4">
-    <div className="grid gap-4 xl:grid-cols-[.82fr_1.18fr]">
-      <ErrorFunnel counts={counts} onOpenStage={onOpenStage} />
+    <ErrorKanban items={items} counts={counts} compact onOpenBoard={onOpenIncidents} />
+
+    <div className="grid gap-4 xl:grid-cols-[1.08fr_.92fr]">
       <Card padding="none" className="overflow-hidden">
         <div className="flex items-center justify-between border-b border-line-soft px-4 py-3"><div><p className="font-label text-carbon">Atención ahora</p><p className="text-xs text-graphite">Sólo bloqueos y prioridades altas.</p></div><button type="button" onClick={onOpenIncidents} className="flex items-center gap-1 text-xs font-label text-signal">Ver todos<ChevronRightIcon size={14} /></button></div>
         {attention.length ? <div className="divide-y divide-line-soft">{attention.map((item) => <AttentionRow key={item.id} {...item} />)}</div> : <div className="p-4"><EmptyState icon={CheckCircleIcon} titulo="Nada urgente" descripcion="No hay bloqueos ni incidentes de prioridad alta." /></div>}
+      </Card>
+      <Card padding="sm" className="border-signal/15 bg-signal-light/35">
+        <div className="flex items-center justify-between"><div className="flex items-center gap-2"><span className="flex h-8 w-8 items-center justify-center rounded-component bg-signal text-white"><BotIcon size={17} /></span><div><p className="font-label text-carbon">Última guardia Codex</p><p className="text-xs text-graphite">{latestGuard ? relativeTime(latestGuard.iniciada_at) : "Sin ejecuciones"}</p></div></div>{latestGuard ? <Badge variant={stateVariant(latestGuard.estado)}>{latestGuard.estado}</Badge> : null}</div>
+        {latestGuard ? <><p className="mt-4 line-clamp-4 text-sm leading-relaxed text-carbon">{latestGuard.resumen ?? "Guardia completada sin resumen."}</p><div className="mt-4 grid grid-cols-3 gap-2"><MiniMetric label="Sistemas" value={String(latestGuard.sistemas_revisados)} /><MiniMetric label="Hallazgos" value={String(latestGuard.incidentes_detectados)} danger={latestGuard.incidentes_detectados > 0} /><MiniMetric label="Acciones" value={String(latestGuard.acciones_ejecutadas)} /></div><button type="button" onClick={onOpenGuards} className="mt-4 flex items-center gap-1 text-xs font-label text-signal">Abrir registro completo<ChevronRightIcon size={14} /></button></> : <p className="mt-4 text-sm text-graphite">La próxima ejecución aparecerá acá.</p>}
       </Card>
     </div>
 
@@ -330,22 +333,26 @@ function RadarView({ ops, systems, incidents, actions, timeline, counts, onOpenS
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">{systems.map((system) => <SystemCard key={system.id} system={system} />)}</div>
     </section>
 
-    <div className="grid gap-4 xl:grid-cols-[.72fr_1.28fr]">
-      <Card padding="sm" className="border-signal/15 bg-signal-light/35">
-        <div className="flex items-center justify-between"><div className="flex items-center gap-2"><span className="flex h-8 w-8 items-center justify-center rounded-component bg-signal text-white"><BotIcon size={17} /></span><div><p className="font-label text-carbon">Última guardia Codex</p><p className="text-xs text-graphite">{latestGuard ? relativeTime(latestGuard.iniciada_at) : "Sin ejecuciones"}</p></div></div>{latestGuard ? <Badge variant={stateVariant(latestGuard.estado)}>{latestGuard.estado}</Badge> : null}</div>
-        {latestGuard ? <><p className="mt-4 line-clamp-4 text-sm leading-relaxed text-carbon">{latestGuard.resumen ?? "Guardia completada sin resumen."}</p><div className="mt-4 grid grid-cols-3 gap-2"><MiniMetric label="Sistemas" value={String(latestGuard.sistemas_revisados)} /><MiniMetric label="Hallazgos" value={String(latestGuard.incidentes_detectados)} danger={latestGuard.incidentes_detectados > 0} /><MiniMetric label="Acciones" value={String(latestGuard.acciones_ejecutadas)} /></div><button type="button" onClick={onOpenGuards} className="mt-4 flex items-center gap-1 text-xs font-label text-signal">Abrir registro completo<ChevronRightIcon size={14} /></button></> : <p className="mt-4 text-sm text-graphite">La próxima ejecución aparecerá acá.</p>}
-      </Card>
-      <ActivityFeed items={timeline.slice(0, 7)} />
-    </div>
+    <ActivityFeed items={timeline.slice(0, 7)} />
   </div>;
 }
 
-function ErrorFunnel({ counts, onOpenStage }: { counts: Record<ResolutionStage, number>; onOpenStage: (stage: Exclude<ResolutionStage, "bloqueado">) => void }) {
-  return <Card padding="sm">
-    <div className="flex items-start justify-between gap-3"><div><p className="font-label text-carbon">Funnel de errores</p><p className="text-xs text-graphite">Del hallazgo a producción estable.</p></div>{counts.bloqueado ? <Badge variant="danger">{counts.bloqueado} bloqueados</Badge> : <Badge variant="success">Sin bloqueos</Badge>}</div>
-    <div className="mt-4 space-y-1.5">{FUNNEL_STAGES.map((stage, index) => <button key={stage.id} type="button" onClick={() => onOpenStage(stage.id)} className="group mx-auto flex min-h-11 items-center justify-between gap-3 rounded-component border border-line-soft bg-paper px-3 text-left transition-colors hover:border-signal/30 hover:bg-signal-light/30" style={{ width: stage.width }}><span className="flex items-center gap-2"><span className={`flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-label ${index === FUNNEL_STAGES.length - 1 ? "bg-success text-white" : "bg-white text-graphite"}`}>{index + 1}</span><span><span className="block text-xs font-label text-carbon">{stage.label}</span><span className="hidden text-[10px] text-graphite sm:block">{stage.hint}</span></span></span><span className="text-lg font-title text-carbon">{counts[stage.id]}</span></button>)}</div>
-    <p className="mt-3 text-center text-[10px] text-slate-500">Casos agrupados por causa raíz y acciones técnicas registradas.</p>
-  </Card>;
+function ErrorKanban({ items, counts, compact = false, onOpenBoard }: { items: WorkItem[]; counts: Record<ResolutionStage, number>; compact?: boolean; onOpenBoard?: () => void }) {
+  return <section className="rounded-card border border-line-soft bg-white p-3 sm:p-4">
+    <div className="mb-4 flex flex-wrap items-start justify-between gap-3"><div><p className="font-label text-carbon">Funnel de errores</p><p className="text-xs text-graphite">Cada caso avanza como una tarjeta hasta quedar estable en producción.</p></div><div className="flex items-center gap-2">{counts.bloqueado ? <Badge variant="danger">{counts.bloqueado} bloqueados</Badge> : <Badge variant="success">Sin bloqueos</Badge>}{compact && onOpenBoard ? <button type="button" onClick={onOpenBoard} className="flex items-center gap-1 text-xs font-label text-signal">Abrir tablero<ChevronRightIcon size={14} /></button> : null}</div></div>
+    <div className="overflow-x-auto pb-2">
+      <div className="grid min-w-[1520px] grid-cols-6 gap-3">
+        {KANBAN_STAGES.map((stage) => {
+          const stageItems = items.filter((item) => item.stage === stage.id);
+          const visibleItems = compact ? stageItems.slice(0, 3) : stageItems.slice(0, 40);
+          return <div key={stage.id} className={`flex flex-col rounded-card border border-line-soft bg-paper/70 p-3 ${compact ? "min-h-[220px]" : "min-h-[560px]"}`}>
+            <div className="mb-3 flex items-start justify-between gap-2"><div className="flex min-w-0 items-start gap-2"><span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${stage.accent}`} /><div className="min-w-0"><p className="truncate text-sm font-label text-carbon">{stage.label}</p><p className="truncate text-[10px] text-graphite">{stage.hint}</p></div></div><span className="flex h-7 min-w-7 items-center justify-center rounded-full bg-white px-2 text-xs font-label text-carbon shadow-sm">{counts[stage.id]}</span></div>
+            <div className="flex-1 space-y-2">{visibleItems.length ? visibleItems.map((item) => <KanbanErrorCard key={item.id} item={item} />) : <div className="rounded-md border border-dashed border-line bg-white/50 p-4 text-center text-xs text-graphite">Sin casos</div>}{compact && stageItems.length > visibleItems.length ? <button type="button" onClick={onOpenBoard} className="w-full py-1 text-center text-[11px] font-label text-signal">+{stageItems.length - visibleItems.length} casos más</button> : null}</div>
+          </div>;
+        })}
+      </div>
+    </div>
+  </section>;
 }
 
 function AttentionRow({ systemName, title, detail, date, url }: { systemName: string; title: string; detail: string; date: string; url: string | null }) {
@@ -371,16 +378,15 @@ function ActivityFeed({ items }: { items: TimelineItem[] }) {
   return <Card padding="none" className="overflow-hidden"><div className="flex items-center justify-between border-b border-line-soft px-4 py-3"><div><p className="font-label text-carbon">Pulso operativo</p><p className="text-xs text-graphite">Guardias, deploys y acciones en una sola línea.</p></div><ClockIcon className="text-slate-400" size={17} /></div>{items.length ? <div className="divide-y divide-line-soft">{items.map((item) => <div key={item.id} className="flex items-center gap-3 px-4 py-2.5"><SystemLogo name={item.sistema_nombre} size="xs" /><div className="min-w-0 flex-1"><div className="flex items-center gap-2"><span className="truncate text-xs font-label text-carbon">{item.sistema_nombre}</span><Badge variant={stateVariant(item.estado)} className="h-5">{item.estado}</Badge><span className="ml-auto shrink-0 text-[10px] text-slate-400">{relativeTime(item.fecha)}</span></div><p className="mt-0.5 truncate text-xs text-graphite">{item.titulo}</p></div></div>)}</div> : <EmptyState icon={ClockIcon} titulo="Sin actividad" descripcion="Todavía no hay señales en esta vista." />}</Card>;
 }
 
-function ErrorsView({ items, counts, stageFilter, onStageFilter }: { items: WorkItem[]; counts: Record<ResolutionStage, number>; stageFilter: StageFilter; onStageFilter: (stage: StageFilter) => void }) {
-  const visibleItems = items.filter((item) => stageFilter === "todo" || item.stage === stageFilter);
-  return <div className="grid gap-4 xl:grid-cols-[.72fr_1.28fr]">
-    <div className="space-y-4"><ErrorFunnel counts={counts} onOpenStage={onStageFilter} /><Card padding="sm"><div className="flex items-center gap-2"><BotIcon className="text-signal" size={18} /><p className="font-label text-carbon">Autonomía de Codex</p></div><div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-1"><AutonomyRule tone="success" title="Puedo ejecutar" text="Diagnóstico, fix de código, pruebas, preview, PR y despliegues reversibles de alta confianza." /><AutonomyRule tone="warning" title="Necesito aprobación" text="Secretos, DNS, permisos, autenticación, datos, esquema productivo y facturación." /></div></Card></div>
-    <Card padding="none" className="overflow-hidden"><div className="flex flex-wrap items-center justify-between gap-3 border-b border-line-soft px-4 py-3"><div><p className="font-label text-carbon">Cola de resolución</p><p className="text-xs text-graphite">Qué falla, dónde está y cuál es el próximo paso.</p></div><div className="flex flex-wrap gap-1"><button type="button" onClick={() => onStageFilter("todo")} className={`rounded-pill px-2.5 py-1 text-xs font-label ${stageFilter === "todo" ? "bg-carbon text-white" : "bg-paper text-graphite"}`}>Todos</button>{(["detectado", "diagnostico", "preparado", "verificado", "resuelto", "bloqueado"] as ResolutionStage[]).map((stage) => <button key={stage} type="button" onClick={() => onStageFilter(stage)} className={`rounded-pill px-2.5 py-1 text-xs font-label capitalize ${stageFilter === stage ? "bg-carbon text-white" : "bg-paper text-graphite"}`}>{stage}</button>)}</div></div>{visibleItems.length ? <div className="divide-y divide-line-soft">{visibleItems.slice(0, 40).map((item) => <WorkItemRow key={item.id} item={item} />)}</div> : <EmptyState icon={CheckCircleIcon} titulo="Sin casos en esta etapa" descripcion="Probá otra etapa del funnel." />}</Card>
+function ErrorsView({ items, counts }: { items: WorkItem[]; counts: Record<ResolutionStage, number> }) {
+  return <div className="space-y-4">
+    <Card padding="sm"><div className="flex items-center gap-2"><BotIcon className="text-signal" size={18} /><p className="font-label text-carbon">Autonomía de Codex</p></div><div className="mt-3 grid gap-3 sm:grid-cols-2"><AutonomyRule tone="success" title="Puedo ejecutar" text="Diagnóstico, fix de código, pruebas, preview, PR y despliegues reversibles de alta confianza." /><AutonomyRule tone="warning" title="Necesito aprobación" text="Secretos, DNS, permisos, autenticación, datos, esquema productivo y facturación." /></div></Card>
+    <ErrorKanban items={items} counts={counts} />
   </div>;
 }
 
-function WorkItemRow({ item }: { item: WorkItem }) {
-  const content = <div className="flex items-start gap-3 px-4 py-3.5 transition-colors hover:bg-paper/35"><SystemLogo name={item.systemName} size="sm" /><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><Badge variant={item.stage === "resuelto" || item.stage === "verificado" ? "success" : item.stage === "bloqueado" ? "danger" : "warning"}>{item.stage}</Badge>{item.severity ? <span className="text-[10px] font-label uppercase tracking-wide text-graphite">{item.severity}</span> : null}<span className="text-xs font-label text-graphite">{item.systemName}</span><span className="ml-auto text-[10px] text-slate-400">{relativeTime(item.date)}</span></div><p className="mt-1.5 text-sm font-label text-carbon">{item.title}</p>{item.detail ? <p className="mt-0.5 line-clamp-2 text-xs leading-relaxed text-graphite">{item.detail}</p> : null}<div className="mt-1.5 flex items-center gap-3 text-[10px] text-slate-500"><span>{item.kind === "incidente" ? "Causa raíz" : "Acción técnica"}</span>{item.occurrences ? <span>{item.occurrences} ocurrencias</span> : null}</div></div>{item.url ? <ChevronRightIcon className="mt-2 shrink-0 text-slate-400" size={16} /> : null}</div>;
+function KanbanErrorCard({ item }: { item: WorkItem }) {
+  const content = <div className="rounded-md border border-line-soft bg-white p-3 shadow-sm transition-all hover:-translate-y-0.5 hover:border-line hover:shadow-md"><div className="flex items-center gap-2"><SystemLogo name={item.systemName} size="xs" /><span className="min-w-0 flex-1 truncate text-[11px] font-label text-graphite">{item.systemName}</span><span className="shrink-0 text-[9px] text-slate-400">{relativeTime(item.date)}</span></div><p className="mt-2 line-clamp-2 text-sm font-label leading-snug text-carbon">{item.title}</p>{item.detail ? <p className="mt-1 line-clamp-2 text-[11px] leading-relaxed text-graphite">{item.detail}</p> : null}<div className="mt-2 flex items-center gap-2 border-t border-line-soft pt-2 text-[9px] text-slate-500">{item.severity ? <Badge variant={item.severity === "critica" || item.severity === "alta" ? "danger" : "warning"}>{item.severity}</Badge> : <span>{item.kind === "incidente" ? "Incidente" : "Acción técnica"}</span>}{item.occurrences ? <span className="ml-auto">{item.occurrences} ocurrencias</span> : null}{item.url ? <ChevronRightIcon className="ml-auto" size={13} /> : null}</div></div>;
   return item.url ? <a href={item.url} target="_blank" rel="noreferrer">{content}</a> : item.systemId ? <Link href={`/software/${item.systemId}`}>{content}</Link> : content;
 }
 
