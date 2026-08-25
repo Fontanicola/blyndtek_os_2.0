@@ -1,0 +1,11 @@
+interface:
+  display_name: "Blyndtek Cinematic Commercials"
+  short_description: "Comerciales premium de marca con Higgsfield"
+  default_prompt: "Usá $blyndtek-cinematic-commercials para diseñar un comercial cinematográfico de Blyndtek listo para producir."
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "higgsfield"
+      description: "Generación y gestión oficial de imágenes, video y audio en Higgsfield"
+      transport: "streamable_http"
+      url: "https://mcp.higgsfield.ai/mcp"
