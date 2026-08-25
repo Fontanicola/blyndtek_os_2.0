@@ -4,6 +4,10 @@
     {
       "path": "/api/cron/meta-sync",
       "schedule": "15 10 * * *"
+    },
+    {
+      "path": "/api/cron/content-publish",
+      "schedule": "*/5 * * * *"
     }
   ]
 }

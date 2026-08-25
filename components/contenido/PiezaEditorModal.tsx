@@ -5,11 +5,25 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
-import { ChevronDownIcon, ImageIcon, SparklesIcon, UploadIcon, XIcon } from "@/components/ui/icons";
+import {
+  ChevronDownIcon,
+  ImageIcon,
+  SparklesIcon,
+  UploadIcon,
+  XIcon,
+} from "@/components/ui/icons";
 import { cn } from "@/lib/cn";
 import type { GenerarCompletoPiezaResult } from "@/lib/hooks/useContenido";
-import type { JsonValue, PiezaContenido, PiezaContenidoEstado, PilarContenido } from "@/types/contenido";
-import { getPiezaImagePathUrl, getPiezaImageUrl } from "@/components/contenido/PiezaCard";
+import type {
+  JsonValue,
+  PiezaContenido,
+  PiezaContenidoEstado,
+  PilarContenido,
+} from "@/types/contenido";
+import {
+  getPiezaImagePathUrl,
+  getPiezaImageUrl,
+} from "@/components/contenido/PiezaCard";
 import { PIEZA_ESTADO_LABELS } from "@/components/contenido/contenidoStyles";
 
 type PiezaEditorModalProps = {
@@ -18,7 +32,11 @@ type PiezaEditorModalProps = {
   pilares: PilarContenido[];
   onClose: () => void;
   onSave: (piezaId: string, payload: Partial<PiezaContenido>) => Promise<void>;
-  onUploadImage: (piezaId: string, file: File, slideIndex?: number | null) => Promise<void>;
+  onUploadImage: (
+    piezaId: string,
+    file: File,
+    slideIndex?: number | null,
+  ) => Promise<void>;
   onGenerateComplete: (piezaId: string) => Promise<GenerarCompletoPiezaResult>;
   onPublish?: (piezaId: string, red: "instagram" | "linkedin") => Promise<void>;
   simple?: boolean;
@@ -29,15 +47,32 @@ type EditableSlide = {
   texto: string;
 };
 
-const EDITABLE_ESTADOS: PiezaContenidoEstado[] = ["idea", "en_diseno", "lista", "programada"];
+const EDITABLE_ESTADOS: PiezaContenidoEstado[] = [
+  "idea",
+  "en_diseno",
+  "lista",
+  "programada",
+];
 
 function normalizeHashtag(value: string) {
   const trimmed = value.trim().replace(/^#+/, "");
   return trimmed ? `#${trimmed}` : "";
 }
 
+function toLocalDateTimeInput(value: string | null) {
+  if (!value) return "";
+  const date = new Date(value);
+  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60_000);
+  return local.toISOString().slice(0, 16);
+}
+
+function toStoredDateTime(value: string) {
+  return value ? new Date(value).toISOString() : null;
+}
+
 async function prepareFeedImage(file: File) {
-  if (typeof window === "undefined" || !file.type.startsWith("image/")) return file;
+  if (typeof window === "undefined" || !file.type.startsWith("image/"))
+    return file;
 
   const sourceUrl = URL.createObjectURL(file);
   try {
@@ -53,27 +88,48 @@ async function prepareFeedImage(file: File) {
     const context = canvas.getContext("2d");
     if (!context) return file;
 
-    const scale = Math.max(canvas.width / image.naturalWidth, canvas.height / image.naturalHeight);
+    const scale = Math.max(
+      canvas.width / image.naturalWidth,
+      canvas.height / image.naturalHeight,
+    );
     const width = image.naturalWidth * scale;
     const height = image.naturalHeight * scale;
-    context.drawImage(image, (canvas.width - width) / 2, (canvas.height - height) / 2, width, height);
+    context.drawImage(
+      image,
+      (canvas.width - width) / 2,
+      (canvas.height - height) / 2,
+      width,
+      height,
+    );
 
     let quality = 0.86;
-    let blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", quality));
+    let blob = await new Promise<Blob | null>((resolve) =>
+      canvas.toBlob(resolve, "image/jpeg", quality),
+    );
     // Vercel puede rechazar el multipart antes de que llegue a la route. Dejamos
     // margen para el overhead de FormData y apuntamos a menos de 3.5 MB.
     while (blob && blob.size > 3.5 * 1024 * 1024 && quality > 0.42) {
       quality -= 0.08;
-      blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", quality));
+      blob = await new Promise<Blob | null>((resolve) =>
+        canvas.toBlob(resolve, "image/jpeg", quality),
+      );
     }
-    return blob ? new File([blob], `${file.name.replace(/\.[^.]+$/, "") || "feed"}.jpg`, { type: "image/jpeg" }) : file;
+    return blob
+      ? new File([blob], `${file.name.replace(/\.[^.]+$/, "") || "feed"}.jpg`, {
+          type: "image/jpeg",
+        })
+      : file;
   } finally {
     URL.revokeObjectURL(sourceUrl);
   }
 }
 
-function asRecord(value: JsonValue | null): Record<string, JsonValue | undefined> {
-  return typeof value === "object" && value !== null && !Array.isArray(value) ? value : {};
+function asRecord(
+  value: JsonValue | null,
+): Record<string, JsonValue | undefined> {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+    ? value
+    : {};
 }
 
 function hasRenderableGuion(pieza: PiezaContenido | null) {
@@ -82,7 +138,9 @@ function hasRenderableGuion(pieza: PiezaContenido | null) {
   }
 
   const guion = asRecord(pieza.guion);
-  return Array.isArray(guion.slides) || typeof guion.texto_principal === "string";
+  return (
+    Array.isArray(guion.slides) || typeof guion.texto_principal === "string"
+  );
 }
 
 function getEditableSlides(pieza: PiezaContenido | null): EditableSlide[] {
@@ -92,8 +150,9 @@ function getEditableSlides(pieza: PiezaContenido | null): EditableSlide[] {
   return guion.slides.map((slide) => {
     const record = asRecord(slide);
     return {
-      titulo_slide: typeof record.titulo_slide === "string" ? record.titulo_slide : "",
-      texto: typeof record.texto === "string" ? record.texto : ""
+      titulo_slide:
+        typeof record.titulo_slide === "string" ? record.titulo_slide : "",
+      texto: typeof record.texto === "string" ? record.texto : "",
     };
   });
 }
@@ -106,8 +165,8 @@ export function PiezaEditorModal({
   onSave,
   onUploadImage,
   onGenerateComplete,
-  onPublish
-  , simple = false
+  onPublish,
+  simple = false,
 }: PiezaEditorModalProps) {
   const [titulo, setTitulo] = useState("");
   const [pilarId, setPilarId] = useState("");
@@ -125,9 +184,12 @@ export function PiezaEditorModal({
   const [generationError, setGenerationError] = useState<string | null>(null);
   const [generatedPrompt, setGeneratedPrompt] = useState("");
   const [promptOpen, setPromptOpen] = useState(false);
-  const [selectedGeneratedImage, setSelectedGeneratedImage] = useState<string | null>(null);
+  const [selectedGeneratedImage, setSelectedGeneratedImage] = useState<
+    string | null
+  >(null);
   const [publishing, setPublishing] = useState(false);
-  const readonlyState = pieza?.estado === "publicada" || pieza?.estado === "fallida";
+  const readonlyState =
+    pieza?.estado === "publicada" || pieza?.estado === "fallida";
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const replaceSlideInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -141,21 +203,35 @@ export function PiezaEditorModal({
     setCaption(pieza.caption ?? "");
     setEstado(pieza.estado);
     setAprobada(pieza.estado === "lista" || pieza.estado === "programada");
-    setFechaProgramada(pieza.fecha_programada ? pieza.fecha_programada.slice(0, 16) : "");
+    setFechaProgramada(toLocalDateTimeInput(pieza.fecha_programada));
     setHashtags(Array.isArray(pieza.hashtags) ? pieza.hashtags : []);
     setSlides(getEditableSlides(pieza));
     setTagInput("");
     setGeneratedPrompt(pieza.prompt_fondo ?? "");
     setPromptOpen(false);
     setGenerationError(null);
-    setSelectedGeneratedImage(Array.isArray(pieza.imagenes_generadas) ? pieza.imagenes_generadas[0] ?? null : null);
+    setSelectedGeneratedImage(
+      Array.isArray(pieza.imagenes_generadas)
+        ? (pieza.imagenes_generadas[0] ?? null)
+        : null,
+    );
   }, [pieza]);
 
-  const imageUrl = useMemo(() => (pieza ? getPiezaImageUrl(pieza) : null), [pieza]);
-  const generatedImages = useMemo(() => (Array.isArray(pieza?.imagenes_generadas) ? pieza.imagenes_generadas : []), [pieza]);
+  const imageUrl = useMemo(
+    () => (pieza ? getPiezaImageUrl(pieza) : null),
+    [pieza],
+  );
+  const generatedImages = useMemo(
+    () =>
+      Array.isArray(pieza?.imagenes_generadas) ? pieza.imagenes_generadas : [],
+    [pieza],
+  );
   const selectedGeneratedImageUrl = useMemo(
-    () => (pieza && selectedGeneratedImage ? getPiezaImagePathUrl(pieza.id, selectedGeneratedImage) : null),
-    [pieza, selectedGeneratedImage]
+    () =>
+      pieza && selectedGeneratedImage
+        ? getPiezaImagePathUrl(pieza.id, selectedGeneratedImage)
+        : null,
+    [pieza, selectedGeneratedImage],
   );
 
   function addTag(value: string) {
@@ -165,7 +241,9 @@ export function PiezaEditorModal({
     }
 
     setHashtags((current) => {
-      if (current.some((tag) => tag.toLowerCase() === normalized.toLowerCase())) {
+      if (
+        current.some((tag) => tag.toLowerCase() === normalized.toLowerCase())
+      ) {
         return current;
       }
 
@@ -182,20 +260,33 @@ export function PiezaEditorModal({
     setUploading(true);
     setUploadError(null);
     try {
-      await onUploadImage(pieza.id, pieza.plataforma === "instagram_feed" ? await prepareFeedImage(file) : file);
+      await onUploadImage(
+        pieza.id,
+        pieza.plataforma === "instagram_feed"
+          ? await prepareFeedImage(file)
+          : file,
+      );
     } catch (error) {
-      setUploadError(error instanceof Error ? error.message : "No se pudo subir el creativo.");
+      setUploadError(
+        error instanceof Error
+          ? error.message
+          : "No se pudo subir el creativo.",
+      );
     } finally {
       setUploading(false);
     }
   }
 
-  async function handleReplaceSelectedGeneratedImage(file: File | null | undefined) {
+  async function handleReplaceSelectedGeneratedImage(
+    file: File | null | undefined,
+  ) {
     if (!pieza || !file || !selectedGeneratedImage) {
       return;
     }
 
-    const slideIndex = generatedImages.findIndex((path) => path === selectedGeneratedImage);
+    const slideIndex = generatedImages.findIndex(
+      (path) => path === selectedGeneratedImage,
+    );
     if (slideIndex < 0) {
       return;
     }
@@ -203,9 +294,19 @@ export function PiezaEditorModal({
     setUploading(true);
     setUploadError(null);
     try {
-      await onUploadImage(pieza.id, pieza.plataforma === "instagram_feed" ? await prepareFeedImage(file) : file, slideIndex);
+      await onUploadImage(
+        pieza.id,
+        pieza.plataforma === "instagram_feed"
+          ? await prepareFeedImage(file)
+          : file,
+        slideIndex,
+      );
     } catch (error) {
-      setUploadError(error instanceof Error ? error.message : "No se pudo subir el creativo.");
+      setUploadError(
+        error instanceof Error
+          ? error.message
+          : "No se pudo subir el creativo.",
+      );
     } finally {
       setUploading(false);
     }
@@ -219,20 +320,42 @@ export function PiezaEditorModal({
     setSaving(true);
     try {
       const currentGuion = asRecord(pieza.guion);
-      const nextGuion = slides.length > 0
-        ? { ...currentGuion, slides: slides.map((slide) => ({ titulo_slide: slide.titulo_slide, texto: slide.texto })) }
-        : pieza.guion;
+      const nextGuion =
+        slides.length > 0
+          ? {
+              ...currentGuion,
+              slides: slides.map((slide) => ({
+                titulo_slide: slide.titulo_slide,
+                texto: slide.texto,
+              })),
+            }
+          : pieza.guion;
 
       await onSave(pieza.id, {
         titulo,
         caption,
-        ...(simple ? { estado: aprobada ? "lista" : "idea", fecha_programada: aprobada ? fechaProgramada || null : null } : {
-          pilar_id: pilarId || null,
-          hashtags,
-          estado,
-          fecha_programada: estado === "programada" && fechaProgramada ? fechaProgramada : null,
-          guion: nextGuion
-        })
+        ...(simple
+          ? {
+              estado: aprobada
+                ? fechaProgramada
+                  ? "programada"
+                  : "lista"
+                : "idea",
+              fecha_programada:
+                aprobada && fechaProgramada
+                  ? toStoredDateTime(fechaProgramada)
+                  : null,
+            }
+          : {
+              pilar_id: pilarId || null,
+              hashtags,
+              estado,
+              fecha_programada:
+                estado === "programada" && fechaProgramada
+                  ? toStoredDateTime(fechaProgramada)
+                  : null,
+              guion: nextGuion,
+            }),
       });
       onClose();
     } finally {
@@ -253,7 +376,8 @@ export function PiezaEditorModal({
       setGeneratedPrompt(result.prompt_fondo ?? "");
       setEstado(result.pieza.estado);
     } catch (error) {
-      const message = error instanceof Error ? error.message : "No se pudo generar la pieza.";
+      const message =
+        error instanceof Error ? error.message : "No se pudo generar la pieza.";
       setGenerationError(message);
     } finally {
       setGenerating(false);
@@ -269,7 +393,9 @@ export function PiezaEditorModal({
     try {
       await onSave(pieza.id, { estado: "lista" });
       setEstado("lista");
-      window.alert("Lista para publicar — subila desde tu celular cuando quieras.");
+      window.alert(
+        "Lista para publicar — subila desde tu celular cuando quieras.",
+      );
       onClose();
     } finally {
       setSaving(false);
@@ -295,7 +421,10 @@ export function PiezaEditorModal({
     if (!pieza || !onPublish) return;
     setPublishing(true);
     try {
-      await onPublish(pieza.id, pieza.plataforma === "linkedin_post" ? "linkedin" : "instagram");
+      await onPublish(
+        pieza.id,
+        pieza.plataforma === "linkedin_post" ? "linkedin" : "instagram",
+      );
       onClose();
     } finally {
       setPublishing(false);
@@ -303,17 +432,25 @@ export function PiezaEditorModal({
   }
 
   const showRevisionActions = pieza?.estado === "en_diseno";
-  const showMarkPublished = pieza?.estado === "lista" && (pieza.plataforma === "instagram_reel" || pieza.plataforma === "instagram_story");
+  const showMarkPublished =
+    pieza?.estado === "lista" &&
+    (pieza.plataforma === "instagram_reel" ||
+      pieza.plataforma === "instagram_story");
 
   return (
-    <Modal isOpen={isOpen && Boolean(pieza)} onClose={onClose} title="Editar pieza" size="xl">
+    <Modal
+      isOpen={isOpen && Boolean(pieza)}
+      onClose={onClose}
+      title="Editar pieza"
+      size="xl"
+    >
       {!pieza ? null : (
         <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
           <div className="space-y-4">
             <label
               className={cn(
                 "flex aspect-[4/3] cursor-pointer flex-col items-center justify-center overflow-hidden rounded-card border border-dashed border-line bg-paper text-center text-graphite transition-colors duration-fast ease-fast hover:border-signal hover:bg-signal-light/40",
-                uploading && "pointer-events-none opacity-60"
+                uploading && "pointer-events-none opacity-60",
               )}
               onDragOver={(event) => event.preventDefault()}
               onDrop={(event) => {
@@ -323,11 +460,17 @@ export function PiezaEditorModal({
             >
               {imageUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={imageUrl} alt={pieza.titulo} className="h-full w-full object-cover" />
+                <img
+                  src={imageUrl}
+                  alt={pieza.titulo}
+                  className="h-full w-full object-cover"
+                />
               ) : (
                 <div className="space-y-2">
                   <ImageIcon size={36} className="mx-auto" />
-                  <p className="text-sm">Arrastrá una imagen o subila manualmente</p>
+                  <p className="text-sm">
+                    Arrastrá una imagen o subila manualmente
+                  </p>
                 </div>
               )}
               <input
@@ -338,17 +481,27 @@ export function PiezaEditorModal({
                 onChange={(event) => void handleUpload(event.target.files?.[0])}
               />
             </label>
-            <Button variant="secondary" className="w-full" loading={uploading} onClick={() => fileInputRef.current?.click()}>
+            <Button
+              variant="secondary"
+              className="w-full"
+              loading={uploading}
+              onClick={() => fileInputRef.current?.click()}
+            >
               <UploadIcon size={16} />
               Subir imagen
             </Button>
-            {uploadError ? <p className="text-xs font-label text-danger">{uploadError}</p> : null}
+            {uploadError ? (
+              <p className="text-xs font-label text-danger">{uploadError}</p>
+            ) : null}
 
             {!simple && showRevisionActions ? (
               <div className="rounded-card border border-line-soft bg-success-light p-4">
-                <h3 className="font-title text-base text-carbon">Revisión pendiente</h3>
+                <h3 className="font-title text-base text-carbon">
+                  Revisión pendiente
+                </h3>
                 <p className="mt-1 text-xs leading-relaxed text-graphite">
-                  Esta pieza fue generada automáticamente. Aprobala, regenerala o cambiá una imagen puntual.
+                  Esta pieza fue generada automáticamente. Aprobala, regenerala
+                  o cambiá una imagen puntual.
                 </p>
                 <div className="mt-4 grid gap-2">
                   <Button
@@ -358,13 +511,19 @@ export function PiezaEditorModal({
                   >
                     Aprobar
                   </Button>
-                  <Button variant="secondary" loading={generating} onClick={() => void handleGenerateComplete()}>
+                  <Button
+                    variant="secondary"
+                    loading={generating}
+                    onClick={() => void handleGenerateComplete()}
+                  >
                     <SparklesIcon size={16} />
                     Regenerar
                   </Button>
                   <Button
                     variant="ghost"
-                    disabled={generatedImages.length === 0 || !selectedGeneratedImage}
+                    disabled={
+                      generatedImages.length === 0 || !selectedGeneratedImage
+                    }
                     loading={uploading}
                     onClick={() => replaceSlideInputRef.current?.click()}
                   >
@@ -376,21 +535,42 @@ export function PiezaEditorModal({
                     type="file"
                     accept="image/*"
                     className="sr-only"
-                    onChange={(event) => void handleReplaceSelectedGeneratedImage(event.target.files?.[0])}
+                    onChange={(event) =>
+                      void handleReplaceSelectedGeneratedImage(
+                        event.target.files?.[0],
+                      )
+                    }
                   />
                 </div>
               </div>
             ) : null}
 
             {!simple && showMarkPublished ? (
-              <Button variant="secondary" className="w-full" loading={saving} onClick={() => void handleMarkPublished()}>
+              <Button
+                variant="secondary"
+                className="w-full"
+                loading={saving}
+                onClick={() => void handleMarkPublished()}
+              >
                 Marcar como publicado
               </Button>
             ) : null}
 
-            {!simple && onPublish && pieza.estado === "lista" && (pieza.plataforma === "instagram_feed" || pieza.plataforma === "instagram_story" || pieza.plataforma === "linkedin_post") ? (
-              <Button className="w-full" loading={publishing} onClick={() => void handlePublish()}>
-                Publicar ahora en {pieza.plataforma === "linkedin_post" ? "LinkedIn" : "Instagram"}
+            {!simple &&
+            onPublish &&
+            pieza.estado === "lista" &&
+            (pieza.plataforma === "instagram_feed" ||
+              pieza.plataforma === "instagram_story" ||
+              pieza.plataforma === "linkedin_post") ? (
+              <Button
+                className="w-full"
+                loading={publishing}
+                onClick={() => void handlePublish()}
+              >
+                Publicar ahora en{" "}
+                {pieza.plataforma === "linkedin_post"
+                  ? "LinkedIn"
+                  : "Instagram"}
               </Button>
             ) : null}
 
@@ -398,27 +578,44 @@ export function PiezaEditorModal({
               <div className="rounded-card border border-line-soft bg-white p-4 shadow-subtle">
                 <div className="mb-3 flex items-start justify-between gap-3">
                   <div>
-                    <h3 className="font-title text-base text-carbon">Generar</h3>
+                    <h3 className="font-title text-base text-carbon">
+                      Generar
+                    </h3>
                     <p className="mt-1 text-xs leading-relaxed text-graphite">
-                      Crea el fondo y renderiza el texto real encima, listo para revisar.
+                      Crea el fondo y renderiza el texto real encima, listo para
+                      revisar.
                     </p>
                   </div>
                   <SparklesIcon size={18} className="mt-0.5 text-signal" />
                 </div>
 
-                <Button className="w-full" loading={generating} onClick={() => void handleGenerateComplete()}>
+                <Button
+                  className="w-full"
+                  loading={generating}
+                  onClick={() => void handleGenerateComplete()}
+                >
                   <SparklesIcon size={16} />
                   {generatedImages.length > 0 ? "Regenerar" : "Generar"}
                 </Button>
-                {generating ? <p className="mt-2 text-xs text-graphite">Generando...</p> : null}
-                {generationError ? <p className="mt-2 text-xs font-label text-danger">{generationError}</p> : null}
+                {generating ? (
+                  <p className="mt-2 text-xs text-graphite">Generando...</p>
+                ) : null}
+                {generationError ? (
+                  <p className="mt-2 text-xs font-label text-danger">
+                    {generationError}
+                  </p>
+                ) : null}
 
                 {generatedImages.length > 0 ? (
                   <div className="mt-4 space-y-3">
                     {selectedGeneratedImageUrl ? (
                       <div className="overflow-hidden rounded-component border border-line-soft bg-paper">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={selectedGeneratedImageUrl} alt="Slide generado" className="aspect-[4/5] w-full object-cover" />
+                        <img
+                          src={selectedGeneratedImageUrl}
+                          alt="Slide generado"
+                          className="aspect-[4/5] w-full object-cover"
+                        />
                       </div>
                     ) : null}
                     <div className="flex gap-2 overflow-x-auto pb-1">
@@ -431,11 +628,17 @@ export function PiezaEditorModal({
                             onClick={() => setSelectedGeneratedImage(path)}
                             className={cn(
                               "relative h-20 w-16 shrink-0 overflow-hidden rounded-component border bg-paper transition-colors duration-fast ease-fast",
-                              active ? "border-signal" : "border-line-soft hover:border-signal/60"
+                              active
+                                ? "border-signal"
+                                : "border-line-soft hover:border-signal/60",
                             )}
                           >
                             {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src={getPiezaImagePathUrl(pieza.id, path)} alt={`Slide ${index + 1}`} className="h-full w-full object-cover" />
+                            <img
+                              src={getPiezaImagePathUrl(pieza.id, path)}
+                              alt={`Slide ${index + 1}`}
+                              className="h-full w-full object-cover"
+                            />
                             <span className="absolute bottom-1 right-1 rounded-pill bg-white/90 px-1.5 text-[10px] font-label text-carbon">
                               {index + 1}
                             </span>
@@ -456,20 +659,27 @@ export function PiezaEditorModal({
                       Ver detalle técnico
                       <ChevronDownIcon
                         size={16}
-                        className={cn("text-graphite transition-transform duration-fast ease-fast", promptOpen && "rotate-180")}
+                        className={cn(
+                          "text-graphite transition-transform duration-fast ease-fast",
+                          promptOpen && "rotate-180",
+                        )}
                       />
                     </button>
                     {promptOpen ? (
                       <div className="space-y-3 border-t border-line-soft px-3 py-3 text-xs leading-relaxed text-graphite">
                         {generatedPrompt ? (
                           <div>
-                            <p className="mb-1 font-label text-carbon">Prompt de fondo</p>
+                            <p className="mb-1 font-label text-carbon">
+                              Prompt de fondo
+                            </p>
                             <p>{generatedPrompt}</p>
                           </div>
                         ) : null}
                         {pieza.guion ? (
                           <div>
-                            <p className="mb-1 font-label text-carbon">Guion usado</p>
+                            <p className="mb-1 font-label text-carbon">
+                              Guion usado
+                            </p>
                             <pre className="max-h-48 overflow-auto whitespace-pre-wrap font-base text-xs text-graphite">
                               {JSON.stringify(pieza.guion, null, 2)}
                             </pre>
@@ -484,57 +694,126 @@ export function PiezaEditorModal({
           </div>
 
           <div className="space-y-4">
-            <Input label="Título" value={titulo} onChange={(event) => setTitulo(event.target.value)} placeholder="Título interno de la pieza" />
+            <Input
+              label="Título"
+              value={titulo}
+              onChange={(event) => setTitulo(event.target.value)}
+              placeholder="Título interno de la pieza"
+            />
 
-            {!simple ? <label className="block">
-              <span className="mb-1 block text-sm font-label text-carbon">Pilar</span>
-              <select
-                value={pilarId}
-                onChange={(event) => setPilarId(event.target.value)}
-                className="w-full rounded-component border border-line bg-white px-3 py-2 text-base text-carbon outline-none transition-all duration-fast ease-fast focus:border-signal focus:ring-2 focus:ring-signal/20"
-              >
-                <option value="">Sin pilar</option>
-                {pilares.map((pilar) => (
-                  <option key={pilar.id} value={pilar.id}>
-                    {pilar.nombre}
-                  </option>
-                ))}
-              </select>
-            </label> : null}
+            {!simple ? (
+              <label className="block">
+                <span className="mb-1 block text-sm font-label text-carbon">
+                  Pilar
+                </span>
+                <select
+                  value={pilarId}
+                  onChange={(event) => setPilarId(event.target.value)}
+                  className="w-full rounded-component border border-line bg-white px-3 py-2 text-base text-carbon outline-none transition-all duration-fast ease-fast focus:border-signal focus:ring-2 focus:ring-signal/20"
+                >
+                  <option value="">Sin pilar</option>
+                  {pilares.map((pilar) => (
+                    <option key={pilar.id} value={pilar.id}>
+                      {pilar.nombre}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : null}
 
-            {!simple && pieza.plataforma === "instagram_feed" && slides.length > 0 ? (
+            {!simple &&
+            pieza.plataforma === "instagram_feed" &&
+            slides.length > 0 ? (
               <section className="rounded-md border border-line-soft bg-paper p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <h3 className="font-title text-base text-carbon">Slides del carrusel</h3>
-                    <p className="mt-1 text-xs text-graphite">Editá el contenido real de cada slide. El orden se conserva en el render y en el feed.</p>
+                    <h3 className="font-title text-base text-carbon">
+                      Slides del carrusel
+                    </h3>
+                    <p className="mt-1 text-xs text-graphite">
+                      Editá el contenido real de cada slide. El orden se
+                      conserva en el render y en el feed.
+                    </p>
                   </div>
                   <Badge variant="ghost">{slides.length} slides</Badge>
                 </div>
                 <div className="mt-4 space-y-3">
                   {slides.map((slide, index) => (
-                    <div key={`slide-${index}`} className="rounded-md border border-line-soft bg-white p-3">
+                    <div
+                      key={`slide-${index}`}
+                      className="rounded-md border border-line-soft bg-white p-3"
+                    >
                       <div className="mb-2 flex items-center justify-between gap-3">
-                        <span className="text-xs font-label text-graphite">Slide {index + 1}</span>
+                        <span className="text-xs font-label text-graphite">
+                          Slide {index + 1}
+                        </span>
                         {slides.length > 1 ? (
-                          <button type="button" onClick={() => setSlides((current) => current.filter((_, itemIndex) => itemIndex !== index))} className="text-graphite transition-colors duration-fast hover:text-danger" aria-label={`Eliminar slide ${index + 1}`}>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setSlides((current) =>
+                                current.filter(
+                                  (_, itemIndex) => itemIndex !== index,
+                                ),
+                              )
+                            }
+                            className="text-graphite transition-colors duration-fast hover:text-danger"
+                            aria-label={`Eliminar slide ${index + 1}`}
+                          >
                             <XIcon size={15} />
                           </button>
                         ) : null}
                       </div>
-                      <Input label="Título del slide" value={slide.titulo_slide} onChange={(event) => setSlides((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, titulo_slide: event.target.value } : item))} />
-                      <textarea value={slide.texto} onChange={(event) => setSlides((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, texto: event.target.value } : item))} placeholder="Texto del slide" className="mt-3 min-h-20 w-full rounded-component border border-line bg-white px-3 py-2 text-sm text-carbon outline-none focus:border-signal focus:ring-2 focus:ring-signal/20" />
+                      <Input
+                        label="Título del slide"
+                        value={slide.titulo_slide}
+                        onChange={(event) =>
+                          setSlides((current) =>
+                            current.map((item, itemIndex) =>
+                              itemIndex === index
+                                ? { ...item, titulo_slide: event.target.value }
+                                : item,
+                            ),
+                          )
+                        }
+                      />
+                      <textarea
+                        value={slide.texto}
+                        onChange={(event) =>
+                          setSlides((current) =>
+                            current.map((item, itemIndex) =>
+                              itemIndex === index
+                                ? { ...item, texto: event.target.value }
+                                : item,
+                            ),
+                          )
+                        }
+                        placeholder="Texto del slide"
+                        className="mt-3 min-h-20 w-full rounded-component border border-line bg-white px-3 py-2 text-sm text-carbon outline-none focus:border-signal focus:ring-2 focus:ring-signal/20"
+                      />
                     </div>
                   ))}
                 </div>
-                <Button variant="secondary" size="sm" className="mt-3" onClick={() => setSlides((current) => [...current, { titulo_slide: "", texto: "" }])}>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="mt-3"
+                  onClick={() =>
+                    setSlides((current) => [
+                      ...current,
+                      { titulo_slide: "", texto: "" },
+                    ])
+                  }
+                >
                   Agregar slide
                 </Button>
               </section>
             ) : null}
 
             <label className="block">
-              <span className="mb-1 block text-sm font-label text-carbon">Caption</span>
+              <span className="mb-1 block text-sm font-label text-carbon">
+                Caption
+              </span>
               <textarea
                 value={caption}
                 onChange={(event) => setCaption(event.target.value)}
@@ -543,70 +822,132 @@ export function PiezaEditorModal({
               />
             </label>
 
-            {!simple ? <div>
-              <span className="mb-2 block text-sm font-label text-carbon">Hashtags</span>
-              <div className="flex flex-wrap items-center gap-2 rounded-component border border-line bg-white p-2">
-                {hashtags.map((tag) => (
-                  <span key={tag} className="inline-flex h-7 items-center gap-1 rounded-pill bg-paper px-2 text-xs font-label text-carbon">
-                    {tag}
-                    <button type="button" onClick={() => setHashtags((current) => current.filter((item) => item !== tag))}>
-                      <XIcon size={13} />
-                    </button>
-                  </span>
-                ))}
-                <input
-                  value={tagInput}
-                  onChange={(event) => setTagInput(event.target.value)}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter" || event.key === ",") {
-                      event.preventDefault();
-                      addTag(tagInput);
-                    }
-                  }}
-                  onBlur={() => addTag(tagInput)}
-                  placeholder="#tag"
-                  className="h-8 min-w-[120px] flex-1 bg-transparent px-1 text-sm text-carbon outline-none placeholder:text-graphite"
-                />
-              </div>
-            </div> : null}
-
-            {!simple ? <div className="grid gap-4 sm:grid-cols-2">
-              <label className="block">
-                <span className="mb-1 block text-sm font-label text-carbon">Estado</span>
-                <select
-                  value={estado}
-                  disabled={readonlyState}
-                  onChange={(event) => setEstado(event.target.value as PiezaContenidoEstado)}
-                  className="w-full rounded-component border border-line bg-white px-3 py-2 text-base text-carbon outline-none transition-all duration-fast ease-fast focus:border-signal focus:ring-2 focus:ring-signal/20 disabled:bg-paper disabled:text-graphite"
-                >
-                  {(readonlyState ? [estado] : EDITABLE_ESTADOS).map((item) => (
-                    <option key={item} value={item}>
-                      {PIEZA_ESTADO_LABELS[item]}
-                    </option>
+            {!simple ? (
+              <div>
+                <span className="mb-2 block text-sm font-label text-carbon">
+                  Hashtags
+                </span>
+                <div className="flex flex-wrap items-center gap-2 rounded-component border border-line bg-white p-2">
+                  {hashtags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="inline-flex h-7 items-center gap-1 rounded-pill bg-paper px-2 text-xs font-label text-carbon"
+                    >
+                      {tag}
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setHashtags((current) =>
+                            current.filter((item) => item !== tag),
+                          )
+                        }
+                      >
+                        <XIcon size={13} />
+                      </button>
+                    </span>
                   ))}
-                </select>
-                {readonlyState ? <p className="mt-1 text-xs text-graphite">Este estado es de solo lectura.</p> : null}
-              </label>
+                  <input
+                    value={tagInput}
+                    onChange={(event) => setTagInput(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === ",") {
+                        event.preventDefault();
+                        addTag(tagInput);
+                      }
+                    }}
+                    onBlur={() => addTag(tagInput)}
+                    placeholder="#tag"
+                    className="h-8 min-w-[120px] flex-1 bg-transparent px-1 text-sm text-carbon outline-none placeholder:text-graphite"
+                  />
+                </div>
+              </div>
+            ) : null}
 
-              {estado === "programada" ? (
+            {!simple ? (
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="block">
+                  <span className="mb-1 block text-sm font-label text-carbon">
+                    Estado
+                  </span>
+                  <select
+                    value={estado}
+                    disabled={readonlyState}
+                    onChange={(event) =>
+                      setEstado(event.target.value as PiezaContenidoEstado)
+                    }
+                    className="w-full rounded-component border border-line bg-white px-3 py-2 text-base text-carbon outline-none transition-all duration-fast ease-fast focus:border-signal focus:ring-2 focus:ring-signal/20 disabled:bg-paper disabled:text-graphite"
+                  >
+                    {(readonlyState ? [estado] : EDITABLE_ESTADOS).map(
+                      (item) => (
+                        <option key={item} value={item}>
+                          {PIEZA_ESTADO_LABELS[item]}
+                        </option>
+                      ),
+                    )}
+                  </select>
+                  {readonlyState ? (
+                    <p className="mt-1 text-xs text-graphite">
+                      Este estado es de solo lectura.
+                    </p>
+                  ) : null}
+                </label>
+
+                {estado === "programada" ? (
+                  <Input
+                    label="Fecha programada"
+                    type="datetime-local"
+                    value={fechaProgramada}
+                    onChange={(event) => setFechaProgramada(event.target.value)}
+                  />
+                ) : (
+                  <div className="flex items-end">
+                    <Badge variant="ghost">Sin programación</Badge>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <button
+                    type="button"
+                    onClick={() => setAprobada(false)}
+                    className={cn(
+                      "rounded-md border px-3 py-2 text-left text-sm font-label",
+                      !aprobada
+                        ? "border-slate-400 bg-slate-100 text-carbon"
+                        : "border-line-soft bg-white text-graphite",
+                    )}
+                  >
+                    Borrador
+                    <p className="mt-1 text-xs font-normal text-graphite">
+                      No se automatiza la subida.
+                    </p>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAprobada(true)}
+                    className={cn(
+                      "rounded-md border px-3 py-2 text-left text-sm font-label",
+                      aprobada
+                        ? "border-success bg-success-light text-success"
+                        : "border-line-soft bg-white text-graphite",
+                    )}
+                  >
+                    Aprobada
+                    <p className="mt-1 text-xs font-normal text-graphite">
+                      Se sube automáticamente en la fecha indicada.
+                    </p>
+                  </button>
+                </div>
                 <Input
-                  label="Fecha programada"
+                  label="Fecha y hora de publicación"
                   type="datetime-local"
                   value={fechaProgramada}
+                  disabled={!aprobada}
                   onChange={(event) => setFechaProgramada(event.target.value)}
                 />
-              ) : (
-                <div className="flex items-end">
-                  <Badge variant="ghost">Sin programación</Badge>
-                </div>
-              )}
-            </div> : <div className="space-y-3">
-              <div className="grid gap-2 sm:grid-cols-2">
-                <button type="button" onClick={() => setAprobada(false)} className={cn("rounded-md border px-3 py-2 text-left text-sm font-label", !aprobada ? "border-slate-400 bg-slate-100 text-carbon" : "border-line-soft bg-white text-graphite")}>Borrador<p className="mt-1 text-xs font-normal text-graphite">No se automatiza la subida.</p></button>
-                <button type="button" onClick={() => setAprobada(true)} className={cn("rounded-md border px-3 py-2 text-left text-sm font-label", aprobada ? "border-success bg-success-light text-success" : "border-line-soft bg-white text-graphite")}>Aprobada<p className="mt-1 text-xs font-normal text-graphite">Se sube automáticamente en la fecha indicada.</p></button>
               </div>
-              <Input label="Fecha y hora de publicación" type="datetime-local" value={fechaProgramada} disabled={!aprobada} onChange={(event) => setFechaProgramada(event.target.value)} />
-            </div>}
+            )}
 
             <div className="flex justify-end gap-2 pt-2">
               <Button variant="ghost" onClick={onClose}>
