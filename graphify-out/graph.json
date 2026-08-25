@@ -54684,26 +54684,26 @@
       "source_location": "L1"
     },
     {
-      "id": "package_dependencies_higgsfield_client",
-      "label": "@higgsfield/client",
+      "id": "package_dependencies_xlsx",
+      "label": "xlsx",
       "_origin": "ast",
       "community": 303,
-      "community_name": "@higgsfield/client",
+      "community_name": "xlsx",
       "file_type": "code",
-      "norm_label": "@higgsfield/client",
+      "norm_label": "xlsx",
       "source_file": "package.json",
-      "source_location": "L15"
+      "source_location": "L35"
     },
     {
-      "id": "higgsfield_client",
-      "label": "@higgsfield/client",
+      "id": "xlsx",
+      "label": "xlsx",
       "_origin": "ast",
       "community": 303,
-      "community_name": "@higgsfield/client",
+      "community_name": "xlsx",
       "file_type": "concept",
-      "norm_label": "@higgsfield/client",
+      "norm_label": "xlsx",
       "source_file": "package.json",
-      "source_location": "L15"
+      "source_location": "L35"
     },
     {
       "id": "supabase_migrations_050_registrar_blyndtek_os_control_tecnico",
@@ -54714,6 +54714,61 @@
       "file_type": "code",
       "norm_label": "050_registrar_blyndtek_os_control_tecnico.sql",
       "source_file": "supabase/migrations/050_registrar_blyndtek_os_control_tecnico.sql",
+      "source_location": null
+    },
+    {
+      "id": "public_oportunidades_upsell",
+      "label": "public.oportunidades_upsell",
+      "_origin": "ast",
+      "community": 305,
+      "community_name": "public.oportunidades_upsell",
+      "file_type": "code",
+      "norm_label": "public.oportunidades_upsell",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "public_revisiones_cuenta",
+      "label": "public.revisiones_cuenta",
+      "_origin": "ast",
+      "community": 306,
+      "community_name": "public.revisiones_cuenta",
+      "file_type": "code",
+      "norm_label": "public.revisiones_cuenta",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "public_soporte_handoffs",
+      "label": "public.soporte_handoffs",
+      "_origin": "ast",
+      "community": 307,
+      "community_name": "public.soporte_handoffs",
+      "file_type": "code",
+      "norm_label": "public.soporte_handoffs",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "public_soporte_tickets",
+      "label": "public.soporte_tickets",
+      "_origin": "ast",
+      "community": 308,
+      "community_name": "public.soporte_tickets",
+      "file_type": "code",
+      "norm_label": "public.soporte_tickets",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "supabase_migrations_051_reparar_soporte_con_rls",
+      "label": "051_reparar_soporte_con_rls.sql",
+      "_origin": "ast",
+      "community": 309,
+      "community_name": "051_reparar_soporte_con_rls.sql",
+      "file_type": "code",
+      "norm_label": "051_reparar_soporte_con_rls.sql",
+      "source_file": "supabase/migrations/051_reparar_soporte_con_rls.sql",
       "source_location": null
     },
     {
@@ -62462,6 +62517,17 @@
       "source_location": "L14"
     },
     {
+      "id": "package_dependencies_higgsfield_client",
+      "label": "@higgsfield/client",
+      "_origin": "ast",
+      "community": 86,
+      "community_name": "dependencies",
+      "file_type": "code",
+      "norm_label": "@higgsfield/client",
+      "source_file": "package.json",
+      "source_location": "L15"
+    },
+    {
       "id": "package_dependencies_next",
       "label": "next",
       "_origin": "ast",
@@ -62561,15 +62627,15 @@
       "source_location": "L26"
     },
     {
-      "id": "package_dependencies_xlsx",
-      "label": "xlsx",
+      "id": "higgsfield_client",
+      "label": "@higgsfield/client",
       "_origin": "ast",
       "community": 86,
       "community_name": "dependencies",
-      "file_type": "code",
-      "norm_label": "xlsx",
+      "file_type": "concept",
+      "norm_label": "@higgsfield/client",
       "source_file": "package.json",
-      "source_location": "L35"
+      "source_location": "L15"
     },
     {
       "id": "package_json_next",
@@ -62669,17 +62735,6 @@
       "norm_label": "@vercel/speed-insights",
       "source_file": "package.json",
       "source_location": "L26"
-    },
-    {
-      "id": "xlsx",
-      "label": "xlsx",
-      "_origin": "ast",
-      "community": 86,
-      "community_name": "dependencies",
-      "file_type": "concept",
-      "norm_label": "xlsx",
-      "source_file": "package.json",
-      "source_location": "L35"
     },
     {
       "id": "app_api_wiki_seed_estandares_route",
@@ -223773,5 +223828,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "4e91e8ba5aee6ec3dc6a7317fbc22e28f2570860"
+  "built_at_commit": "6a5430f61a1cb2af1b6ef76a317062a17bd188b9"
 }

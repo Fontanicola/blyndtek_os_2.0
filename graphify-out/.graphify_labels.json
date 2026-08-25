@@ -302,6 +302,11 @@
   "300": "ChecklistQaSection",
   "301": "hub/overview/route.ts",
   "302": "PageSkeleton",
-  "303": "@higgsfield/client",
-  "304": "050_registrar_blyndtek_os_control_tecnico.sql"
+  "303": "xlsx",
+  "304": "050_registrar_blyndtek_os_control_tecnico.sql",
+  "305": "public.oportunidades_upsell",
+  "306": "public.revisiones_cuenta",
+  "307": "public.soporte_handoffs",
+  "308": "public.soporte_tickets",
+  "309": "051_reparar_soporte_con_rls.sql"
 }

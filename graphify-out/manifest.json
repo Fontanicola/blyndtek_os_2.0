@@ -4480,5 +4480,11 @@
     "seen": 1787627722.680898,
     "ast_hash": "5800a323ef66887f96e5b3269d93d308",
     "semantic_hash": ""
+  },
+  "supabase/migrations/051_reparar_soporte_con_rls.sql": {
+    "mtime": 1787628119.1136596,
+    "seen": 1787628195.821486,
+    "ast_hash": "921eef7f06f6e2cd48c84d3ad2b8c734",
+    "semantic_hash": ""
   }
 }
