@@ -27,6 +27,8 @@ El resultado del asset lock está en [`qa/g2/report.md`](qa/g2/report.md), con s
 
 Los resultados de movimiento están en [`qa/g3/report.md`](qa/g3/report.md) y el registro reproducible en [`generations/g3/results.json`](generations/g3/results.json). G4 debe escalar sólo las direcciones aprobadas y reconstruir el hero match cut con dos clips separados unidos en edición; no hay gasto adicional autorizado.
 
+El lote G4 está preparado en [`g4-production-plan.md`](g4-production-plan.md): tres blocking frames y doce clips finales divididos en dos sublotes, con un máximo propuesto de 202 créditos. Permanece sin ejecutar hasta recibir aprobación explícita.
+
 ## Gate anterior
 
 G0 pide aprobar sólo:
