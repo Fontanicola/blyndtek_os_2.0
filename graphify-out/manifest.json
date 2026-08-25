@@ -1386,9 +1386,9 @@
     "semantic_hash": "fcade8b1b94df11aff16d5f4908c3c29"
   },
   "app/api/sistemas/operaciones/route.ts": {
-    "mtime": 1787671260.5197442,
-    "seen": 1787671649.706563,
-    "ast_hash": "c2b8a939961c528ff97aabba6da96373",
+    "mtime": 1787680908.6882749,
+    "seen": 1787681272.710784,
+    "ast_hash": "6929511a8031585cc880038e3d3a1f02",
     "semantic_hash": ""
   },
   "app/api/sistemas/reportar-error/route.ts": {
@@ -2676,15 +2676,15 @@
     "semantic_hash": "11eebd666ff74bd5a4bd67322c955084"
   },
   "components/software/SoftwareDetailPage.tsx": {
-    "mtime": 1787671450.6203456,
-    "seen": 1787671649.706641,
-    "ast_hash": "1234e58c8e2e6d1d4d9492d75f71a6f0",
+    "mtime": 1787681132.2210045,
+    "seen": 1787681272.710869,
+    "ast_hash": "9f54841796a064e73d11e7c54a4762a6",
     "semantic_hash": ""
   },
   "components/software/SoftwarePage.tsx": {
-    "mtime": 1787671377.4300742,
-    "seen": 1787671649.706641,
-    "ast_hash": "ec759c8d749041b9b6c01983238ffcce",
+    "mtime": 1787681160.5381346,
+    "seen": 1787681272.710869,
+    "ast_hash": "b134a59dae684703b3e9eaf1535b60fd",
     "semantic_hash": ""
   },
   "components/soporte/SoporteClient.tsx": {
@@ -4509,6 +4509,12 @@
     "mtime": 1787671115.7312095,
     "seen": 1787671649.706723,
     "ast_hash": "8ac6164d9a4096b2b223cd8108c77c81",
+    "semantic_hash": ""
+  },
+  "components/software/SystemIdentity.tsx": {
+    "mtime": 1787680891.8619049,
+    "seen": 1787681272.71087,
+    "ast_hash": "3e9f88d5616538112eeaa20d2164b7bb",
     "semantic_hash": ""
   }
 }

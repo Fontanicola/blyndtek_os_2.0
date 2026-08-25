@@ -130,6 +130,7 @@ export async function GET(request: Request) {
       },
       sistemas: systemSummaries,
       incidentes: openIncidents.map((row) => ({ ...row, sistema_nombre: names.get(row.sistema_id) ?? "Sistema sin identificar" })),
+      incidentes_recientes: incidents.map((row) => ({ ...row, sistema_nombre: names.get(row.sistema_id) ?? "Sistema sin identificar" })),
       integraciones: Array.from(providerSummary.values()).sort((a, b) => a.proveedor.localeCompare(b.proveedor)),
       integraciones_detalle: integrations,
       guardias: guards,

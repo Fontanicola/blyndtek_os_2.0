@@ -2,37 +2,146 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { SystemIdentity, SystemLogo } from "@/components/software/SystemIdentity";
 import { Badge, Button, Card, EmptyState, PageSkeleton, Toolbar } from "@/components/ui";
-import { AlertTriangleIcon, BotIcon, CheckCircleIcon, ClockIcon, RefreshIcon, ServerIcon, UploadIcon, WrenchIcon } from "@/components/ui/icons";
+import {
+  BotIcon,
+  CheckCircleIcon,
+  ChevronRightIcon,
+  ClockIcon,
+  GlobeIcon,
+  LayersIcon,
+  RefreshIcon,
+  ServerIcon,
+  WrenchIcon
+} from "@/components/ui/icons";
 import { createClient } from "@/lib/supabase/client";
 import { formatearFechaDisplay } from "@/lib/utils/fechas";
 import type { SistemaDeploy, SistemaHealthCheck, SistemaIncidente } from "@/types/sistemas";
 import type { TechAction, TechGuard, TechIntegration } from "@/types/techOps";
 
 type FleetKpis = {
-  sistemas_totales: number; sistemas_saludables: number; sistemas_degradados: number; sistemas_caidos: number; sistemas_sin_datos: number;
-  errores_24h: number; incidentes_abiertos: number; p0_p1_abiertos: number; deploys_24h: number; change_failure_rate_30d: number | null;
-  mttr_minutos_30d: number | null; latencia_p95_ms: number | null; integraciones_conectadas: number; integraciones_totales: number;
-  ultima_guardia_estado: string | null; ultima_guardia_at: string | null;
+  sistemas_totales: number;
+  sistemas_saludables: number;
+  sistemas_degradados: number;
+  sistemas_caidos: number;
+  sistemas_sin_datos: number;
+  errores_24h: number;
+  incidentes_abiertos: number;
+  p0_p1_abiertos: number;
+  deploys_24h: number;
+  change_failure_rate_30d: number | null;
+  mttr_minutos_30d: number | null;
+  latencia_p95_ms: number | null;
+  integraciones_conectadas: number;
+  integraciones_totales: number;
+  ultima_guardia_estado: string | null;
+  ultima_guardia_at: string | null;
 };
+
 type SystemSummary = {
-  id: string; nombre: string; url_produccion: string | null; repositorio_github: string | null; estado_operativo: "ok" | "degradado" | "caido" | "sin_datos";
-  ultimo_check: SistemaHealthCheck | null; ultimo_evento_at: string | null; errores_24h: number; incidentes_abiertos: number; p0_p1_abiertos: number;
-  latencia_p95_ms: number | null; disponibilidad_30d: number | null; ultimo_deploy: SistemaDeploy | null; deploys_30d: number; deploys_fallidos_30d: number;
-  integraciones_conectadas: number; integraciones_totales: number; ultima_accion: TechAction | null; ultima_guardia: TechGuard | null;
+  id: string;
+  nombre: string;
+  url_produccion: string | null;
+  repositorio_github: string | null;
+  vercel_project_id: string | null;
+  estado_operativo: "ok" | "degradado" | "caido" | "sin_datos";
+  ultimo_check: SistemaHealthCheck | null;
+  ultimo_evento_at: string | null;
+  errores_24h: number;
+  incidentes_abiertos: number;
+  p0_p1_abiertos: number;
+  latencia_p95_ms: number | null;
+  disponibilidad_30d: number | null;
+  ultimo_deploy: SistemaDeploy | null;
+  deploys_30d: number;
+  deploys_fallidos_30d: number;
+  integraciones_conectadas: number;
+  integraciones_totales: number;
+  ultima_accion: TechAction | null;
+  ultima_guardia: TechGuard | null;
 };
+
 type OpsIncident = SistemaIncidente & { sistema_nombre: string };
 type ProviderSummary = { proveedor: string; total: number; conectadas: number; con_error: number };
 type OpsAction = TechAction & { sistema_nombre: string };
-type TimelineItem = { id: string; clase: "evento" | "accion" | "deploy" | "guardia"; sistema_id: string | null; sistema_nombre: string; estado: string; titulo: string; detalle: string; fecha: string; url: string | null };
-type OpsData = { generated_at: string; kpis: FleetKpis; sistemas: SystemSummary[]; incidentes: OpsIncident[]; integraciones: ProviderSummary[]; integraciones_detalle: TechIntegration[]; guardias: TechGuard[]; acciones: OpsAction[]; timeline: TimelineItem[] };
-type TimelineFilter = "todo" | TimelineItem["clase"];
+type TimelineItem = {
+  id: string;
+  clase: "evento" | "accion" | "deploy" | "guardia";
+  sistema_id: string | null;
+  sistema_nombre: string;
+  estado: string;
+  titulo: string;
+  detalle: string;
+  fecha: string;
+  url: string | null;
+};
+type OpsData = {
+  generated_at: string;
+  kpis: FleetKpis;
+  sistemas: SystemSummary[];
+  incidentes: OpsIncident[];
+  incidentes_recientes: OpsIncident[];
+  integraciones: ProviderSummary[];
+  integraciones_detalle: TechIntegration[];
+  guardias: TechGuard[];
+  acciones: OpsAction[];
+  timeline: TimelineItem[];
+};
+
+type View = "radar" | "incidentes" | "guardias" | "cobertura";
+type ResolutionStage = "detectado" | "diagnostico" | "preparado" | "verificado" | "resuelto" | "bloqueado";
+type StageFilter = "todo" | ResolutionStage;
+type WorkItem = {
+  id: string;
+  systemId: string | null;
+  systemName: string;
+  stage: ResolutionStage;
+  title: string;
+  detail: string | null;
+  severity: string | null;
+  date: string;
+  occurrences: number | null;
+  url: string | null;
+  kind: "incidente" | "accion";
+};
+
+const VIEWS: Array<{ id: View; label: string }> = [
+  { id: "radar", label: "Radar" },
+  { id: "incidentes", label: "Errores" },
+  { id: "guardias", label: "Codex" },
+  { id: "cobertura", label: "Cobertura" }
+];
+
+const FUNNEL_STAGES: Array<{ id: Exclude<ResolutionStage, "bloqueado">; label: string; hint: string; width: string }> = [
+  { id: "detectado", label: "Detectados", hint: "Esperan diagnóstico", width: "100%" },
+  { id: "diagnostico", label: "En diagnóstico", hint: "Causa en análisis", width: "89%" },
+  { id: "preparado", label: "Fix preparado", hint: "PR o cambio listo", width: "78%" },
+  { id: "verificado", label: "Verificados", hint: "Pruebas correctas", width: "67%" },
+  { id: "resuelto", label: "Resueltos", hint: "Producción estable", width: "56%" }
+];
 
 function statusMeta(status: SystemSummary["estado_operativo"]) {
   if (status === "ok") return { label: "Operativo", variant: "success" as const, dot: "bg-success" };
   if (status === "degradado") return { label: "Degradado", variant: "warning" as const, dot: "bg-warning" };
   if (status === "caido") return { label: "Caído", variant: "danger" as const, dot: "bg-danger" };
   return { label: "Sin datos", variant: "default" as const, dot: "bg-slate-400" };
+}
+
+function stateVariant(value: string) {
+  if (["ok", "saludable", "verificada", "desplegada", "READY", "info", "resuelto"].includes(value)) return "success" as const;
+  if (["error", "fatal", "fallida", "caido", "ERROR", "bloqueada", "revertida"].includes(value)) return "danger" as const;
+  if (["warning", "hallazgos", "degradado", "diagnosticando", "ejecutando", "preparada"].includes(value)) return "warning" as const;
+  return "default" as const;
+}
+
+function stageForAction(status: TechAction["estado"]): ResolutionStage {
+  if (status === "diagnosticando") return "diagnostico";
+  if (status === "preparada") return "preparado";
+  if (status === "verificada") return "verificado";
+  if (status === "desplegada") return "resuelto";
+  if (status === "bloqueada" || status === "fallida" || status === "revertida") return "bloqueado";
+  return "detectado";
 }
 
 function relativeTime(value: string | null | undefined) {
@@ -44,24 +153,12 @@ function relativeTime(value: string | null | undefined) {
   return `Hace ${Math.round(minutes / 1440)} d`;
 }
 
-function stateVariant(value: string) {
-  if (["ok", "saludable", "verificada", "desplegada", "READY", "info"].includes(value)) return "success" as const;
-  if (["error", "fatal", "fallida", "caido", "ERROR", "bloqueada"].includes(value)) return "danger" as const;
-  if (["warning", "hallazgos", "degradado", "diagnosticando", "ejecutando"].includes(value)) return "warning" as const;
-  return "default" as const;
-}
-
-function timelineIcon(item: TimelineItem) {
-  if (item.clase === "guardia") return BotIcon;
-  if (item.clase === "accion") return WrenchIcon;
-  if (item.clase === "deploy") return UploadIcon;
-  return item.estado === "error" || item.estado === "fatal" ? AlertTriangleIcon : CheckCircleIcon;
-}
-
 export function SoftwarePage() {
   const [ops, setOps] = useState<OpsData | null>(null);
+  const [view, setView] = useState<View>("radar");
+  const [selectedSystemId, setSelectedSystemId] = useState<string>("todo");
+  const [stageFilter, setStageFilter] = useState<StageFilter>("todo");
   const [search, setSearch] = useState("");
-  const [timelineFilter, setTimelineFilter] = useState<TimelineFilter>("todo");
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -78,7 +175,8 @@ export function SoftwarePage() {
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "No se pudo cargar el control técnico.");
     } finally {
-      setLoading(false); setRefreshing(false);
+      setLoading(false);
+      setRefreshing(false);
     }
   }, []);
 
@@ -90,87 +188,223 @@ export function SoftwarePage() {
       .on("postgres_changes", { event: "*", schema: "public", table: "sistemas_guardias" }, () => void load())
       .on("postgres_changes", { event: "*", schema: "public", table: "sistemas_acciones_tecnicas" }, () => void load())
       .on("postgres_changes", { event: "*", schema: "public", table: "sistemas_eventos_tecnicos" }, () => void load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "sistemas_incidentes" }, () => void load())
       .subscribe((status) => setLive(status === "SUBSCRIBED"));
     return () => { window.clearInterval(interval); void client.removeChannel(channel); };
   }, [load]);
 
-  const filteredSystems = useMemo(() => (ops?.sistemas ?? []).filter((system) => `${system.nombre} ${system.repositorio_github ?? ""}`.toLowerCase().includes(search.toLowerCase())), [ops, search]);
-  const filteredTimeline = useMemo(() => (ops?.timeline ?? []).filter((item) => timelineFilter === "todo" || item.clase === timelineFilter), [ops, timelineFilter]);
+  const scopedSystemIds = useMemo(() => new Set(selectedSystemId === "todo" ? (ops?.sistemas ?? []).map((system) => system.id) : [selectedSystemId]), [ops, selectedSystemId]);
+  const scopedSystems = useMemo(() => (ops?.sistemas ?? []).filter((system) => scopedSystemIds.has(system.id)), [ops, scopedSystemIds]);
+  const scopedActions = useMemo(() => (ops?.acciones ?? []).filter((action) => !action.sistema_id || scopedSystemIds.has(action.sistema_id)), [ops, scopedSystemIds]);
+  const scopedIncidents = useMemo(() => (ops?.incidentes_recientes ?? ops?.incidentes ?? []).filter((incident) => scopedSystemIds.has(incident.sistema_id)), [ops, scopedSystemIds]);
+  const scopedTimeline = useMemo(() => (ops?.timeline ?? []).filter((item) => !item.sistema_id || scopedSystemIds.has(item.sistema_id)), [ops, scopedSystemIds]);
 
-  if (loading) return <PageSkeleton rows={7} kpis={6} />;
+  const workItems = useMemo<WorkItem[]>(() => {
+    const linkedActions = new Map<string, OpsAction[]>();
+    for (const action of scopedActions) {
+      if (!action.incidente_id) continue;
+      linkedActions.set(action.incidente_id, [...(linkedActions.get(action.incidente_id) ?? []), action]);
+    }
+    const incidentItems = scopedIncidents.map((incident) => {
+      const latestAction = (linkedActions.get(incident.id) ?? []).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0];
+      return {
+        id: `incident-${incident.id}`,
+        systemId: incident.sistema_id,
+        systemName: incident.sistema_nombre,
+        stage: incident.resuelto ? "resuelto" as const : latestAction ? stageForAction(latestAction.estado) : "detectado" as const,
+        title: incident.titulo,
+        detail: incident.detalle,
+        severity: incident.severidad,
+        date: incident.ultima_ocurrencia_at ?? incident.created_at,
+        occurrences: incident.ocurrencias ?? 1,
+        url: incident.external_url ?? null,
+        kind: "incidente" as const
+      };
+    });
+    const actionItems = scopedActions.filter((action) => !action.incidente_id).map((action) => ({
+      id: `action-${action.id}`,
+      systemId: action.sistema_id,
+      systemName: action.sistema_nombre,
+      stage: stageForAction(action.estado),
+      title: action.titulo,
+      detail: action.detalle,
+      severity: null,
+      date: action.created_at,
+      occurrences: null,
+      url: action.external_url,
+      kind: "accion" as const
+    }));
+    return [...incidentItems, ...actionItems].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }, [scopedActions, scopedIncidents]);
+
+  const stageCounts = useMemo(() => workItems.reduce<Record<ResolutionStage, number>>((counts, item) => {
+    counts[item.stage] += 1;
+    return counts;
+  }, { detectado: 0, diagnostico: 0, preparado: 0, verificado: 0, resuelto: 0, bloqueado: 0 }), [workItems]);
+
+  if (loading) return <PageSkeleton rows={7} kpis={5} />;
   if (error && !ops) return <EmptyState icon={ServerIcon} titulo="No se pudo cargar el control técnico" descripcion={error} accion={{ label: "Reintentar", onClick: () => void load(true) }} />;
   if (!ops) return null;
 
-  const { kpis } = ops;
-  const coverage = kpis.integraciones_totales ? Math.round((kpis.integraciones_conectadas / kpis.integraciones_totales) * 100) : 0;
-  const needsAttention = kpis.sistemas_caidos > 0 || kpis.p0_p1_abiertos > 0;
-  const cards = [
-    { label: "Salud de flota", value: `${kpis.sistemas_saludables}/${kpis.sistemas_totales}`, hint: `${kpis.sistemas_degradados} degradados · ${kpis.sistemas_caidos} caídos`, tone: kpis.sistemas_caidos ? "text-danger" : "text-carbon" },
-    { label: "Incidentes abiertos", value: kpis.incidentes_abiertos, hint: `${kpis.p0_p1_abiertos} P0/P1`, tone: kpis.p0_p1_abiertos ? "text-danger" : "text-carbon" },
-    { label: "Errores últimas 24 h", value: kpis.errores_24h, hint: "Eventos correlacionados", tone: kpis.errores_24h ? "text-warning" : "text-carbon" },
-    { label: "Latencia p95", value: kpis.latencia_p95_ms === null ? "—" : `${kpis.latencia_p95_ms} ms`, hint: "Flota monitoreada", tone: "text-carbon" },
-    { label: "Change failure rate", value: kpis.change_failure_rate_30d === null ? "—" : `${kpis.change_failure_rate_30d}%`, hint: `${kpis.deploys_24h} deploys en 24 h`, tone: "text-carbon" },
-    { label: "Cobertura técnica", value: `${coverage}%`, hint: `${kpis.integraciones_conectadas}/${kpis.integraciones_totales} conexiones`, tone: "text-carbon" }
-  ];
+  const healthy = scopedSystems.filter((system) => system.estado_operativo === "ok").length;
+  const down = scopedSystems.filter((system) => system.estado_operativo === "caido").length;
+  const degraded = scopedSystems.filter((system) => system.estado_operativo === "degradado").length;
+  const errors24h = scopedSystems.reduce((sum, system) => sum + system.errores_24h, 0);
+  const openIncidents = scopedIncidents.filter((incident) => !incident.resuelto);
+  const urgentCount = openIncidents.filter((incident) => incident.severidad === "alta" || incident.severidad === "critica").length;
+  const coverageTotal = scopedSystems.reduce((sum, system) => sum + system.integraciones_totales, 0);
+  const coverageConnected = scopedSystems.reduce((sum, system) => sum + system.integraciones_conectadas, 0);
+  const coverage = coverageTotal ? Math.round((coverageConnected / coverageTotal) * 100) : 0;
+  const needsAttention = down > 0 || urgentCount > 0 || stageCounts.bloqueado > 0;
 
-  return <div className="space-y-5">
-    <div className="flex flex-wrap items-center justify-between gap-3 rounded-card border border-line-soft bg-white px-4 py-3">
-      <div className="flex min-w-0 items-center gap-3">
-        <span className={`relative flex h-3 w-3 shrink-0 rounded-full ${live ? "bg-success" : "bg-warning"}`}>{live ? <span className="absolute inset-0 animate-ping rounded-full bg-success opacity-40" /> : null}</span>
-        <div className="min-w-0"><p className="text-sm font-label text-carbon">{live ? "Control en tiempo real conectado" : "Actualización automática cada 30 segundos"}</p><p className="truncate text-xs text-graphite">Última consolidación: {formatearFechaDisplay(ops.generated_at)}</p></div>
+  function openStage(stage: Exclude<ResolutionStage, "bloqueado">) {
+    setStageFilter(stage);
+    setView("incidentes");
+  }
+
+  return (
+    <div className="space-y-4">
+      <section className="overflow-hidden rounded-card border border-line-soft bg-carbon text-white">
+        <div className="flex flex-wrap items-center justify-between gap-4 px-4 py-3.5 sm:px-5">
+          <div className="flex min-w-0 items-center gap-3">
+            <span className={`relative flex h-2.5 w-2.5 shrink-0 rounded-full ${live ? "bg-emerald-400" : "bg-amber-400"}`}>{live ? <span className="absolute inset-0 animate-ping rounded-full bg-emerald-300 opacity-50" /> : null}</span>
+            <div className="min-w-0">
+              <p className="text-sm font-label">{needsAttention ? "Guardia activa · requiere atención" : "Guardia activa · operación estable"}</p>
+              <p className="truncate text-xs text-white/55">Actualizado {relativeTime(ops.generated_at)} · refresco automático cada 30 s</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="hidden items-center -space-x-1.5 sm:flex">{ops.sistemas.map((system) => <SystemLogo key={system.id} name={system.nombre} size="xs" className="ring-2 ring-carbon" />)}</div>
+            <Button variant="secondary" size="sm" disabled={refreshing} onClick={() => void load()}><RefreshIcon className={refreshing ? "animate-spin" : ""} size={15} />Actualizar</Button>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 border-t border-white/10 sm:grid-cols-4">
+          <HeroMetric label="Sistemas operativos" value={`${healthy}/${scopedSystems.length}`} hint={`${degraded} degradados · ${down} caídos`} />
+          <HeroMetric label="Errores 24 h" value={String(errors24h)} hint="Agrupados por causa" danger={errors24h > 0} />
+          <HeroMetric label="P0 / P1 abiertos" value={String(urgentCount)} hint={`${openIncidents.length} incidentes activos`} danger={urgentCount > 0} />
+          <HeroMetric label="Cobertura" value={`${coverage}%`} hint={`${coverageConnected}/${coverageTotal} conectores`} />
+        </div>
+      </section>
+
+      <div className="flex flex-col gap-3 rounded-card border border-line-soft bg-white p-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex min-w-0 gap-1 overflow-x-auto pb-1 lg:pb-0">
+          <button type="button" onClick={() => setSelectedSystemId("todo")} className={`flex h-9 shrink-0 items-center gap-2 rounded-pill border px-3 text-xs font-label transition-colors ${selectedSystemId === "todo" ? "border-carbon bg-carbon text-white" : "border-line-soft bg-paper text-graphite hover:border-line"}`}><LayersIcon size={14} />Toda la flota</button>
+          {ops.sistemas.map((system) => <button key={system.id} type="button" onClick={() => setSelectedSystemId(system.id)} className={`flex h-9 shrink-0 items-center gap-2 rounded-pill border px-2.5 pr-3 text-xs font-label transition-colors ${selectedSystemId === system.id ? "border-signal bg-signal-light text-signal" : "border-line-soft bg-white text-graphite hover:border-line"}`}><SystemLogo name={system.nombre} size="xs" /><span>{system.nombre}</span><span className={`h-1.5 w-1.5 rounded-full ${statusMeta(system.estado_operativo).dot}`} /></button>)}
+        </div>
+        <nav className="grid shrink-0 grid-cols-4 rounded-component bg-paper p-1" aria-label="Vistas de control técnico">
+          {VIEWS.map((item) => <button key={item.id} type="button" onClick={() => setView(item.id)} className={`rounded-component px-3 py-1.5 text-xs font-label transition-colors ${view === item.id ? "bg-white text-carbon shadow-sm" : "text-graphite hover:text-carbon"}`}>{item.label}</button>)}
+        </nav>
       </div>
-      <Button variant="secondary" size="sm" disabled={refreshing} onClick={() => void load()}><RefreshIcon className={refreshing ? "animate-spin" : ""} size={16} />Actualizar</Button>
+
+      {view === "radar" ? <RadarView ops={ops} systems={scopedSystems} incidents={openIncidents} actions={scopedActions} timeline={scopedTimeline} counts={stageCounts} onOpenStage={openStage} onOpenIncidents={() => setView("incidentes")} onOpenGuards={() => setView("guardias")} /> : null}
+      {view === "incidentes" ? <ErrorsView items={workItems} counts={stageCounts} stageFilter={stageFilter} onStageFilter={setStageFilter} /> : null}
+      {view === "guardias" ? <CodexView guards={ops.guardias} actions={scopedActions} /> : null}
+      {view === "cobertura" ? <CoverageView systems={scopedSystems} integrations={ops.integraciones_detalle.filter((integration) => scopedSystemIds.has(integration.sistema_id))} search={search} onSearch={setSearch} /> : null}
+    </div>
+  );
+}
+
+function HeroMetric({ label, value, hint, danger = false }: { label: string; value: string; hint: string; danger?: boolean }) {
+  return <div className="border-r border-t border-white/10 px-4 py-3.5 last:border-r-0 sm:border-t-0 sm:px-5"><p className="text-[11px] text-white/55">{label}</p><p className={`mt-1 text-2xl font-title ${danger ? "text-amber-300" : "text-white"}`}>{value}</p><p className="mt-0.5 text-[11px] text-white/45">{hint}</p></div>;
+}
+
+function RadarView({ ops, systems, incidents, actions, timeline, counts, onOpenStage, onOpenIncidents, onOpenGuards }: { ops: OpsData; systems: SystemSummary[]; incidents: OpsIncident[]; actions: OpsAction[]; timeline: TimelineItem[]; counts: Record<ResolutionStage, number>; onOpenStage: (stage: Exclude<ResolutionStage, "bloqueado">) => void; onOpenIncidents: () => void; onOpenGuards: () => void }) {
+  const blockers = actions.filter((action) => action.estado === "bloqueada");
+  const attention = [
+    ...incidents.filter((incident) => incident.severidad === "critica" || incident.severidad === "alta").map((incident) => ({ id: `incident-${incident.id}`, systemName: incident.sistema_nombre, title: incident.titulo, detail: `${incident.ocurrencias ?? 1} ocurrencias`, date: incident.ultima_ocurrencia_at ?? incident.created_at, url: incident.external_url ?? null })),
+    ...blockers.map((action) => ({ id: `action-${action.id}`, systemName: action.sistema_nombre, title: action.titulo, detail: action.detalle ?? "Requiere una decisión", date: action.created_at, url: action.external_url }))
+  ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 5);
+  const latestGuard = ops.guardias[0];
+
+  return <div className="space-y-4">
+    <div className="grid gap-4 xl:grid-cols-[.82fr_1.18fr]">
+      <ErrorFunnel counts={counts} onOpenStage={onOpenStage} />
+      <Card padding="none" className="overflow-hidden">
+        <div className="flex items-center justify-between border-b border-line-soft px-4 py-3"><div><p className="font-label text-carbon">Atención ahora</p><p className="text-xs text-graphite">Sólo bloqueos y prioridades altas.</p></div><button type="button" onClick={onOpenIncidents} className="flex items-center gap-1 text-xs font-label text-signal">Ver todos<ChevronRightIcon size={14} /></button></div>
+        {attention.length ? <div className="divide-y divide-line-soft">{attention.map((item) => <AttentionRow key={item.id} {...item} />)}</div> : <div className="p-4"><EmptyState icon={CheckCircleIcon} titulo="Nada urgente" descripcion="No hay bloqueos ni incidentes de prioridad alta." /></div>}
+      </Card>
     </div>
 
-    <div className={`rounded-card border px-4 py-3 ${needsAttention ? "border-danger/20 bg-danger-light" : "border-success/20 bg-success-light"}`}>
-      <div className="flex items-start gap-3">{needsAttention ? <AlertTriangleIcon className="mt-0.5 shrink-0 text-danger" size={19} /> : <CheckCircleIcon className="mt-0.5 shrink-0 text-success" size={19} />}<div><p className="text-sm font-label text-carbon">{needsAttention ? "La flota requiere atención" : "Operación estable"}</p><p className="mt-0.5 text-xs text-graphite">{needsAttention ? `${kpis.sistemas_caidos} sistemas caídos y ${kpis.p0_p1_abiertos} incidentes prioritarios abiertos.` : "No hay sistemas caídos ni incidentes P0/P1 abiertos."}</p></div></div>
-    </div>
-
-    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6">{cards.map((item) => <Card key={item.label} padding="sm"><p className="text-xs text-graphite">{item.label}</p><p className={`mt-1 text-2xl font-title ${item.tone}`}>{item.value}</p><p className="mt-1 text-xs text-slate-500">{item.hint}</p></Card>)}</div>
-
-    <section className="space-y-3">
-      <div className="flex flex-wrap items-end justify-between gap-3"><div><p className="font-label text-carbon">Sistemas monitoreados</p><p className="mt-0.5 text-xs text-graphite">Salud, entregas, errores y cobertura por producto.</p></div><div className="w-full sm:w-72"><Toolbar searchValue={search} onSearchChange={setSearch} searchPlaceholder="Buscar sistema o repositorio" /></div></div>
-      {filteredSystems.length === 0 ? <EmptyState icon={ServerIcon} titulo="Sin sistemas para mostrar" descripcion="No encontramos sistemas con ese criterio." /> : <div className="grid gap-3 lg:grid-cols-2 xl:grid-cols-3">{filteredSystems.map((system) => <SystemCard key={system.id} system={system} />)}</div>}
+    <section className="space-y-2.5">
+      <div className="flex items-center justify-between"><div><p className="font-label text-carbon">Flota</p><p className="text-xs text-graphite">Una lectura rápida por sistema.</p></div><Badge variant={systems.every((system) => system.estado_operativo === "ok") ? "success" : "warning"}>{systems.length} sistemas</Badge></div>
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">{systems.map((system) => <SystemCard key={system.id} system={system} />)}</div>
     </section>
 
-    <div className="grid gap-4 xl:grid-cols-[1.35fr_.65fr]">
-      <Card padding="none"><div className="flex flex-wrap items-center justify-between gap-3 border-b border-line-soft px-4 py-3"><div><p className="font-label text-carbon">Actividad operativa</p><p className="text-xs text-graphite">Eventos, deploys, guardias y acciones de Codex.</p></div><div className="flex flex-wrap gap-1">{(["todo", "evento", "deploy", "guardia", "accion"] as TimelineFilter[]).map((filter) => <button key={filter} type="button" onClick={() => setTimelineFilter(filter)} className={`rounded-pill px-2.5 py-1 text-xs font-label capitalize ${timelineFilter === filter ? "bg-carbon text-white" : "bg-paper text-graphite hover:text-carbon"}`}>{filter}</button>)}</div></div><Timeline items={filteredTimeline.slice(0, 24)} /></Card>
-      <div className="space-y-4">
-        <GuardPanel guards={ops.guardias} />
-        <Card padding="sm"><div className="flex items-center justify-between"><p className="font-label text-carbon">Conectores</p><Badge variant={coverage >= 80 ? "success" : coverage >= 50 ? "warning" : "default"}>{coverage}%</Badge></div><div className="mt-3 space-y-2">{ops.integraciones.map((item) => <div key={item.proveedor} className="flex items-center justify-between gap-3"><span className="text-sm capitalize text-carbon">{item.proveedor}</span><div className="flex items-center gap-2"><div className="h-1.5 w-20 overflow-hidden rounded-pill bg-slate-100"><div className={`h-full rounded-pill ${item.con_error ? "bg-danger" : "bg-success"}`} style={{ width: `${item.total ? (item.conectadas / item.total) * 100 : 0}%` }} /></div><span className="w-8 text-right text-xs text-graphite">{item.conectadas}/{item.total}</span></div></div>)}</div></Card>
-      </div>
+    <div className="grid gap-4 xl:grid-cols-[.72fr_1.28fr]">
+      <Card padding="sm" className="border-signal/15 bg-signal-light/35">
+        <div className="flex items-center justify-between"><div className="flex items-center gap-2"><span className="flex h-8 w-8 items-center justify-center rounded-component bg-signal text-white"><BotIcon size={17} /></span><div><p className="font-label text-carbon">Última guardia Codex</p><p className="text-xs text-graphite">{latestGuard ? relativeTime(latestGuard.iniciada_at) : "Sin ejecuciones"}</p></div></div>{latestGuard ? <Badge variant={stateVariant(latestGuard.estado)}>{latestGuard.estado}</Badge> : null}</div>
+        {latestGuard ? <><p className="mt-4 line-clamp-4 text-sm leading-relaxed text-carbon">{latestGuard.resumen ?? "Guardia completada sin resumen."}</p><div className="mt-4 grid grid-cols-3 gap-2"><MiniMetric label="Sistemas" value={String(latestGuard.sistemas_revisados)} /><MiniMetric label="Hallazgos" value={String(latestGuard.incidentes_detectados)} danger={latestGuard.incidentes_detectados > 0} /><MiniMetric label="Acciones" value={String(latestGuard.acciones_ejecutadas)} /></div><button type="button" onClick={onOpenGuards} className="mt-4 flex items-center gap-1 text-xs font-label text-signal">Abrir registro completo<ChevronRightIcon size={14} /></button></> : <p className="mt-4 text-sm text-graphite">La próxima ejecución aparecerá acá.</p>}
+      </Card>
+      <ActivityFeed items={timeline.slice(0, 7)} />
     </div>
-
-    <div className="grid gap-4 xl:grid-cols-2"><IncidentPanel incidents={ops.incidentes} /><ActionPanel actions={ops.acciones} /></div>
   </div>;
+}
+
+function ErrorFunnel({ counts, onOpenStage }: { counts: Record<ResolutionStage, number>; onOpenStage: (stage: Exclude<ResolutionStage, "bloqueado">) => void }) {
+  return <Card padding="sm">
+    <div className="flex items-start justify-between gap-3"><div><p className="font-label text-carbon">Funnel de errores</p><p className="text-xs text-graphite">Del hallazgo a producción estable.</p></div>{counts.bloqueado ? <Badge variant="danger">{counts.bloqueado} bloqueados</Badge> : <Badge variant="success">Sin bloqueos</Badge>}</div>
+    <div className="mt-4 space-y-1.5">{FUNNEL_STAGES.map((stage, index) => <button key={stage.id} type="button" onClick={() => onOpenStage(stage.id)} className="group mx-auto flex min-h-11 items-center justify-between gap-3 rounded-component border border-line-soft bg-paper px-3 text-left transition-colors hover:border-signal/30 hover:bg-signal-light/30" style={{ width: stage.width }}><span className="flex items-center gap-2"><span className={`flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-label ${index === FUNNEL_STAGES.length - 1 ? "bg-success text-white" : "bg-white text-graphite"}`}>{index + 1}</span><span><span className="block text-xs font-label text-carbon">{stage.label}</span><span className="hidden text-[10px] text-graphite sm:block">{stage.hint}</span></span></span><span className="text-lg font-title text-carbon">{counts[stage.id]}</span></button>)}</div>
+    <p className="mt-3 text-center text-[10px] text-slate-500">Casos agrupados por causa raíz y acciones técnicas registradas.</p>
+  </Card>;
+}
+
+function AttentionRow({ systemName, title, detail, date, url }: { systemName: string; title: string; detail: string; date: string; url: string | null }) {
+  const content = <div className="flex items-start gap-3 px-4 py-3 transition-colors hover:bg-paper/40"><SystemLogo name={systemName} size="sm" /><div className="min-w-0 flex-1"><div className="flex items-center gap-2"><span className="truncate text-xs font-label text-danger">{systemName}</span><span className="ml-auto shrink-0 text-[10px] text-slate-400">{relativeTime(date)}</span></div><p className="mt-1 line-clamp-1 text-sm font-label text-carbon">{title}</p><p className="mt-0.5 line-clamp-1 text-xs text-graphite">{detail}</p></div>{url ? <ChevronRightIcon className="mt-2 shrink-0 text-slate-400" size={15} /> : null}</div>;
+  return url ? <a href={url} target="_blank" rel="noreferrer">{content}</a> : content;
 }
 
 function SystemCard({ system }: { system: SystemSummary }) {
   const status = statusMeta(system.estado_operativo);
-  const integrationCoverage = system.integraciones_totales ? Math.round((system.integraciones_conectadas / system.integraciones_totales) * 100) : 0;
-  return <Link href={`/software/${system.id}`} className="group block rounded-md border border-line-soft bg-white p-4 transition-colors hover:border-line hover:bg-paper/30">
-    <div className="flex items-start justify-between gap-3"><div className="min-w-0"><div className="flex items-center gap-2"><span className={`h-2.5 w-2.5 rounded-pill ${status.dot}`} /><p className="truncate font-label text-carbon group-hover:text-signal">{system.nombre}</p></div><p className="mt-1 truncate text-xs text-graphite">{system.repositorio_github ?? system.url_produccion ?? "Sin repositorio vinculado"}</p></div><Badge variant={status.variant}>{status.label}</Badge></div>
-    <div className="mt-4 grid grid-cols-4 gap-2"><MiniMetric label="Errores 24 h" value={String(system.errores_24h)} danger={system.errores_24h > 0} /><MiniMetric label="Incidentes" value={String(system.incidentes_abiertos)} danger={system.p0_p1_abiertos > 0} /><MiniMetric label="p95" value={system.latencia_p95_ms === null ? "—" : `${system.latencia_p95_ms}ms`} /><MiniMetric label="Cobertura" value={`${integrationCoverage}%`} /></div>
-    <div className="mt-4 flex items-center justify-between border-t border-line-soft pt-3 text-xs text-graphite"><span>{system.ultimo_deploy ? `Deploy ${system.ultimo_deploy.estado ?? "—"}` : "Sin deploy registrado"}</span><span>{relativeTime(system.ultimo_evento_at ?? system.ultimo_check?.checked_at)}</span></div>
+  const coverage = system.integraciones_totales ? Math.round((system.integraciones_conectadas / system.integraciones_totales) * 100) : 0;
+  return <Link href={`/software/${system.id}`} className="group block rounded-md border border-line-soft bg-white p-4 transition-all hover:-translate-y-0.5 hover:border-line hover:shadow-sm">
+    <div className="flex items-start justify-between gap-3"><SystemIdentity name={system.nombre} detail={system.repositorio_github ?? system.url_produccion} size="md" /><Badge variant={status.variant}><span className={`mr-1.5 h-1.5 w-1.5 rounded-full ${status.dot}`} />{status.label}</Badge></div>
+    <div className="mt-4 grid grid-cols-4 gap-2 border-t border-line-soft pt-3"><MiniMetric label="Errores" value={String(system.errores_24h)} danger={system.errores_24h > 0} /><MiniMetric label="Incidentes" value={String(system.incidentes_abiertos)} danger={system.p0_p1_abiertos > 0} /><MiniMetric label="p95" value={system.latencia_p95_ms === null ? "—" : `${system.latencia_p95_ms}ms`} /><MiniMetric label="Cobertura" value={`${coverage}%`} /></div>
+    <div className="mt-3 flex items-center justify-between text-[11px] text-graphite"><span>{system.ultimo_deploy ? `Deploy ${system.ultimo_deploy.estado ?? "—"}` : "Sin deploy registrado"}</span><span>{relativeTime(system.ultimo_evento_at ?? system.ultimo_check?.checked_at)}</span></div>
   </Link>;
 }
 
-function MiniMetric({ label, value, danger = false }: { label: string; value: string; danger?: boolean }) { return <div><p className={`text-sm font-label ${danger ? "text-danger" : "text-carbon"}`}>{value}</p><p className="mt-0.5 truncate text-[10px] text-graphite">{label}</p></div>; }
-
-function Timeline({ items }: { items: TimelineItem[] }) {
-  if (!items.length) return <EmptyState icon={ClockIcon} titulo="Sin actividad registrada" descripcion="Las próximas señales y guardias aparecerán acá." />;
-  return <div className="max-h-[640px] divide-y divide-line-soft overflow-y-auto">{items.map((item) => { const Icon = timelineIcon(item); return <div key={item.id} className="flex gap-3 px-4 py-3"><div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-paper"><Icon size={16} className={stateVariant(item.estado) === "danger" ? "text-danger" : item.clase === "guardia" || item.clase === "accion" ? "text-signal" : "text-graphite"} /></div><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><Badge variant={stateVariant(item.estado)}>{item.estado}</Badge><span className="text-xs font-label text-graphite">{item.sistema_nombre}</span><span className="ml-auto text-xs text-slate-400">{relativeTime(item.fecha)}</span></div><p className="mt-1 line-clamp-2 text-sm text-carbon">{item.titulo}</p><p className="mt-0.5 truncate text-xs text-graphite">{item.detalle}</p></div></div>; })}</div>;
+function MiniMetric({ label, value, danger = false }: { label: string; value: string; danger?: boolean }) {
+  return <div><p className={`text-sm font-label ${danger ? "text-danger" : "text-carbon"}`}>{value}</p><p className="mt-0.5 truncate text-[10px] text-graphite">{label}</p></div>;
 }
 
-function GuardPanel({ guards }: { guards: TechGuard[] }) {
-  const latest = guards[0];
-  return <Card padding="sm"><div className="flex items-center justify-between"><div className="flex items-center gap-2"><BotIcon className="text-signal" size={18} /><p className="font-label text-carbon">Guardia Codex</p></div>{latest ? <Badge variant={stateVariant(latest.estado)}>{latest.estado}</Badge> : <Badge>Sin ejecuciones</Badge>}</div>{latest ? <><p className="mt-3 line-clamp-3 text-sm text-carbon">{latest.resumen ?? "Ejecución registrada sin resumen."}</p><div className="mt-3 grid grid-cols-3 gap-2 rounded-component bg-paper p-3"><MiniMetric label="Sistemas" value={String(latest.sistemas_revisados)} /><MiniMetric label="Hallazgos" value={String(latest.incidentes_detectados)} danger={latest.incidentes_detectados > 0} /><MiniMetric label="Acciones" value={String(latest.acciones_ejecutadas)} /></div><p className="mt-3 text-xs text-graphite">{formatearFechaDisplay(latest.iniciada_at)}</p></> : <p className="mt-3 text-sm text-graphite">La próxima guardia quedará registrada con su ventana, hallazgos y acciones.</p>}</Card>;
+function ActivityFeed({ items }: { items: TimelineItem[] }) {
+  return <Card padding="none" className="overflow-hidden"><div className="flex items-center justify-between border-b border-line-soft px-4 py-3"><div><p className="font-label text-carbon">Pulso operativo</p><p className="text-xs text-graphite">Guardias, deploys y acciones en una sola línea.</p></div><ClockIcon className="text-slate-400" size={17} /></div>{items.length ? <div className="divide-y divide-line-soft">{items.map((item) => <div key={item.id} className="flex items-center gap-3 px-4 py-2.5"><SystemLogo name={item.sistema_nombre} size="xs" /><div className="min-w-0 flex-1"><div className="flex items-center gap-2"><span className="truncate text-xs font-label text-carbon">{item.sistema_nombre}</span><Badge variant={stateVariant(item.estado)} className="h-5">{item.estado}</Badge><span className="ml-auto shrink-0 text-[10px] text-slate-400">{relativeTime(item.fecha)}</span></div><p className="mt-0.5 truncate text-xs text-graphite">{item.titulo}</p></div></div>)}</div> : <EmptyState icon={ClockIcon} titulo="Sin actividad" descripcion="Todavía no hay señales en esta vista." />}</Card>;
 }
 
-function IncidentPanel({ incidents }: { incidents: OpsIncident[] }) {
-  return <Card padding="sm"><div className="flex items-center justify-between"><p className="font-label text-carbon">Incidentes activos</p><Badge variant={incidents.length ? "warning" : "success"}>{incidents.length}</Badge></div>{incidents.length ? <div className="mt-3 divide-y divide-line-soft">{incidents.slice(0, 8).map((incident) => <div key={incident.id} className="py-3"><div className="flex flex-wrap items-center gap-2"><Badge variant={incident.severidad === "critica" || incident.severidad === "alta" ? "danger" : "warning"}>{incident.severidad}</Badge><Link href={`/software/${incident.sistema_id}`} className="text-xs font-label text-signal underline underline-offset-2">{incident.sistema_nombre}</Link><span className="text-xs text-graphite">{incident.ocurrencias ?? 1}×</span></div><p className="mt-1 line-clamp-2 text-sm text-carbon">{incident.titulo}</p></div>)}</div> : <div className="mt-3"><EmptyState icon={CheckCircleIcon} titulo="Sin incidentes abiertos" descripcion="No hay causas raíz activas en la flota." /></div>}</Card>;
+function ErrorsView({ items, counts, stageFilter, onStageFilter }: { items: WorkItem[]; counts: Record<ResolutionStage, number>; stageFilter: StageFilter; onStageFilter: (stage: StageFilter) => void }) {
+  const visibleItems = items.filter((item) => stageFilter === "todo" || item.stage === stageFilter);
+  return <div className="grid gap-4 xl:grid-cols-[.72fr_1.28fr]">
+    <div className="space-y-4"><ErrorFunnel counts={counts} onOpenStage={onStageFilter} /><Card padding="sm"><div className="flex items-center gap-2"><BotIcon className="text-signal" size={18} /><p className="font-label text-carbon">Autonomía de Codex</p></div><div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-1"><AutonomyRule tone="success" title="Puedo ejecutar" text="Diagnóstico, fix de código, pruebas, preview, PR y despliegues reversibles de alta confianza." /><AutonomyRule tone="warning" title="Necesito aprobación" text="Secretos, DNS, permisos, autenticación, datos, esquema productivo y facturación." /></div></Card></div>
+    <Card padding="none" className="overflow-hidden"><div className="flex flex-wrap items-center justify-between gap-3 border-b border-line-soft px-4 py-3"><div><p className="font-label text-carbon">Cola de resolución</p><p className="text-xs text-graphite">Qué falla, dónde está y cuál es el próximo paso.</p></div><div className="flex flex-wrap gap-1"><button type="button" onClick={() => onStageFilter("todo")} className={`rounded-pill px-2.5 py-1 text-xs font-label ${stageFilter === "todo" ? "bg-carbon text-white" : "bg-paper text-graphite"}`}>Todos</button>{(["detectado", "diagnostico", "preparado", "verificado", "resuelto", "bloqueado"] as ResolutionStage[]).map((stage) => <button key={stage} type="button" onClick={() => onStageFilter(stage)} className={`rounded-pill px-2.5 py-1 text-xs font-label capitalize ${stageFilter === stage ? "bg-carbon text-white" : "bg-paper text-graphite"}`}>{stage}</button>)}</div></div>{visibleItems.length ? <div className="divide-y divide-line-soft">{visibleItems.slice(0, 40).map((item) => <WorkItemRow key={item.id} item={item} />)}</div> : <EmptyState icon={CheckCircleIcon} titulo="Sin casos en esta etapa" descripcion="Probá otra etapa del funnel." />}</Card>
+  </div>;
 }
 
-function ActionPanel({ actions }: { actions: OpsAction[] }) {
-  return <Card padding="sm"><div className="flex items-center justify-between"><div><p className="font-label text-carbon">Registro de acciones</p><p className="text-xs text-graphite">Diagnósticos y correcciones de Codex.</p></div><Badge variant="signal">{actions.length}</Badge></div>{actions.length ? <div className="mt-3 divide-y divide-line-soft">{actions.slice(0, 8).map((action) => <div key={action.id} className="py-3"><div className="flex flex-wrap items-center gap-2"><Badge variant={stateVariant(action.estado)}>{action.estado}</Badge><span className="text-xs font-label text-graphite">{action.sistema_nombre}</span><span className="ml-auto text-xs text-slate-400">{relativeTime(action.created_at)}</span></div><p className="mt-1 text-sm text-carbon">{action.titulo}</p>{action.commit_sha || action.branch ? <p className="mt-1 truncate font-mono text-xs text-graphite">{action.branch ?? ""}{action.branch && action.commit_sha ? " · " : ""}{action.commit_sha?.slice(0, 8) ?? ""}</p> : null}</div>)}</div> : <div className="mt-3"><EmptyState icon={WrenchIcon} titulo="Sin acciones registradas" descripcion="Las intervenciones de la guardia quedarán auditadas acá." /></div>}</Card>;
+function WorkItemRow({ item }: { item: WorkItem }) {
+  const content = <div className="flex items-start gap-3 px-4 py-3.5 transition-colors hover:bg-paper/35"><SystemLogo name={item.systemName} size="sm" /><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><Badge variant={item.stage === "resuelto" || item.stage === "verificado" ? "success" : item.stage === "bloqueado" ? "danger" : "warning"}>{item.stage}</Badge>{item.severity ? <span className="text-[10px] font-label uppercase tracking-wide text-graphite">{item.severity}</span> : null}<span className="text-xs font-label text-graphite">{item.systemName}</span><span className="ml-auto text-[10px] text-slate-400">{relativeTime(item.date)}</span></div><p className="mt-1.5 text-sm font-label text-carbon">{item.title}</p>{item.detail ? <p className="mt-0.5 line-clamp-2 text-xs leading-relaxed text-graphite">{item.detail}</p> : null}<div className="mt-1.5 flex items-center gap-3 text-[10px] text-slate-500"><span>{item.kind === "incidente" ? "Causa raíz" : "Acción técnica"}</span>{item.occurrences ? <span>{item.occurrences} ocurrencias</span> : null}</div></div>{item.url ? <ChevronRightIcon className="mt-2 shrink-0 text-slate-400" size={16} /> : null}</div>;
+  return item.url ? <a href={item.url} target="_blank" rel="noreferrer">{content}</a> : item.systemId ? <Link href={`/software/${item.systemId}`}>{content}</Link> : content;
+}
+
+function AutonomyRule({ tone, title, text }: { tone: "success" | "warning"; title: string; text: string }) {
+  return <div className={`rounded-component border p-3 ${tone === "success" ? "border-success/15 bg-success-light" : "border-warning/15 bg-warning-light"}`}><p className={`text-xs font-label ${tone === "success" ? "text-success" : "text-warning"}`}>{title}</p><p className="mt-1 text-xs leading-relaxed text-graphite">{text}</p></div>;
+}
+
+function CodexView({ guards, actions }: { guards: TechGuard[]; actions: OpsAction[] }) {
+  return <div className="grid gap-4 xl:grid-cols-[.76fr_1.24fr]">
+    <Card padding="none" className="overflow-hidden"><div className="border-b border-line-soft px-4 py-3"><div className="flex items-center gap-2"><BotIcon className="text-signal" size={18} /><p className="font-label text-carbon">Guardias</p></div><p className="mt-0.5 text-xs text-graphite">Cada revisión multiproyecto, con ventana y resultado.</p></div>{guards.length ? <div className="divide-y divide-line-soft">{guards.slice(0, 20).map((guard) => <div key={guard.id} className="px-4 py-3"><div className="flex items-center gap-2"><Badge variant={stateVariant(guard.estado)}>{guard.estado}</Badge><span className="ml-auto text-[10px] text-slate-400">{formatearFechaDisplay(guard.iniciada_at)}</span></div><p className="mt-2 line-clamp-3 text-sm leading-relaxed text-carbon">{guard.resumen ?? "Guardia sin resumen"}</p><div className="mt-2 flex gap-3 text-[10px] text-graphite"><span>{guard.sistemas_revisados} sistemas</span><span>{guard.incidentes_detectados} hallazgos</span><span>{guard.acciones_ejecutadas} acciones</span></div></div>)}</div> : <EmptyState icon={BotIcon} titulo="Sin guardias" descripcion="Las ejecuciones aparecerán acá." />}</Card>
+    <Card padding="none" className="overflow-hidden"><div className="border-b border-line-soft px-4 py-3"><div className="flex items-center gap-2"><WrenchIcon className="text-signal" size={18} /><p className="font-label text-carbon">Registro de acciones</p></div><p className="mt-0.5 text-xs text-graphite">Diagnóstico, código, validación, despliegue y rollback.</p></div>{actions.length ? <div className="divide-y divide-line-soft">{actions.slice(0, 40).map((action) => <ActionRow key={action.id} action={action} />)}</div> : <EmptyState icon={WrenchIcon} titulo="Sin acciones" descripcion="No hay intervenciones registradas en esta vista." />}</Card>
+  </div>;
+}
+
+function ActionRow({ action }: { action: OpsAction }) {
+  const content = <div className="flex items-start gap-3 px-4 py-3"><SystemLogo name={action.sistema_nombre} size="sm" /><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><Badge variant={stateVariant(action.estado)}>{action.estado}</Badge><span className="text-xs font-label text-graphite">{action.sistema_nombre}</span><span className="ml-auto text-[10px] text-slate-400">{relativeTime(action.created_at)}</span></div><p className="mt-1.5 text-sm font-label text-carbon">{action.titulo}</p>{action.detalle ? <p className="mt-0.5 line-clamp-2 text-xs leading-relaxed text-graphite">{action.detalle}</p> : null}{action.branch || action.commit_sha || action.deployment_id ? <p className="mt-1.5 truncate font-mono text-[10px] text-slate-500">{[action.branch, action.commit_sha?.slice(0, 8), action.deployment_id].filter(Boolean).join(" · ")}</p> : null}</div>{action.external_url ? <ChevronRightIcon className="mt-2 shrink-0 text-slate-400" size={16} /> : null}</div>;
+  return action.external_url ? <a href={action.external_url} target="_blank" rel="noreferrer">{content}</a> : content;
+}
+
+function CoverageView({ systems, integrations, search, onSearch }: { systems: SystemSummary[]; integrations: TechIntegration[]; search: string; onSearch: (value: string) => void }) {
+  const filtered = systems.filter((system) => `${system.nombre} ${system.repositorio_github ?? ""}`.toLowerCase().includes(search.toLowerCase()));
+  const providers = Array.from(new Set(integrations.map((integration) => integration.proveedor))).sort();
+  return <div className="space-y-4">
+    <div className="flex flex-wrap items-end justify-between gap-3"><div><p className="font-label text-carbon">Cobertura por sistema</p><p className="text-xs text-graphite">Qué puedo observar y operar hoy.</p></div><div className="w-full sm:w-72"><Toolbar searchValue={search} onSearchChange={onSearch} searchPlaceholder="Buscar sistema" /></div></div>
+    <div className="grid gap-3 lg:grid-cols-2 xl:grid-cols-3">{filtered.map((system) => { const systemIntegrations = integrations.filter((integration) => integration.sistema_id === system.id); return <Card key={system.id} padding="sm"><div className="flex items-start justify-between gap-3"><SystemIdentity name={system.nombre} detail={system.repositorio_github ?? system.url_produccion} size="md" /><Badge variant={statusMeta(system.estado_operativo).variant}>{statusMeta(system.estado_operativo).label}</Badge></div><div className="mt-4 grid grid-cols-2 gap-2">{providers.map((provider) => { const integration = systemIntegrations.find((item) => item.proveedor === provider); const connected = integration?.estado === "conectado"; const failed = integration?.estado === "error" || integration?.estado === "degradado"; return <div key={provider} className="flex items-center justify-between rounded-component border border-line-soft px-2.5 py-2"><span className="text-xs capitalize text-carbon">{provider}</span><span className={`h-2 w-2 rounded-full ${connected ? "bg-success" : failed ? "bg-danger" : "bg-slate-300"}`} title={integration?.estado ?? "no configurado"} /></div>; })}</div><div className="mt-4 flex items-center justify-between border-t border-line-soft pt-3 text-xs text-graphite"><span>{system.integraciones_conectadas}/{system.integraciones_totales} conectores</span>{system.url_produccion ? <a href={system.url_produccion} target="_blank" rel="noreferrer" className="flex items-center gap-1 font-label text-signal"><GlobeIcon size={13} />Producción</a> : null}</div></Card>; })}</div>
+  </div>;
 }
