@@ -2364,10 +2364,10 @@
     "semantic_hash": "fb7d7828fe38dc1234d96ce332431a95"
   },
   "components/observability/PostHogProvider.tsx": {
-    "mtime": 1787626193.5361342,
-    "seen": 1787626559.093557,
-    "ast_hash": "ec57ec8fdd765de71562f466be87b0e5",
-    "semantic_hash": "ec57ec8fdd765de71562f466be87b0e5"
+    "mtime": 1787627316.7475033,
+    "seen": 1787627722.680793,
+    "ast_hash": "fcd740ab36d66fab6599cef742dcd775",
+    "semantic_hash": ""
   },
   "components/outbound/KanbanColumn.tsx": {
     "mtime": 1787625743.4441895,
@@ -4473,6 +4473,12 @@
     "mtime": 1787627287.408193,
     "seen": 1787627299.879072,
     "ast_hash": "2c0ba642f4720f76c5669ddffd77cd15",
+    "semantic_hash": ""
+  },
+  "supabase/migrations/050_registrar_blyndtek_os_control_tecnico.sql": {
+    "mtime": 1787627694.9417682,
+    "seen": 1787627722.680898,
+    "ast_hash": "5800a323ef66887f96e5b3269d93d308",
     "semantic_hash": ""
   }
 }

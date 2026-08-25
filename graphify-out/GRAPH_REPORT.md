@@ -1,16 +1,16 @@
 # Graph Report - Blyndtek-OS-tech-control  (2026-08-25)
 
 ## Corpus Check
-- 737 files · ~428,695 words
+- 738 files · ~428,846 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 5364 nodes · 13672 edges · 304 communities (246 shown, 58 thin omitted)
+- 5365 nodes · 13672 edges · 305 communities (247 shown, 58 thin omitted)
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS · INFERRED: 54 edges (avg confidence: 0.85)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `d85f4bc8`
+- Built from commit: `4e91e8ba`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -312,7 +312,7 @@
 ## Import Cycles
 - None detected.
 
-## Communities (304 total, 58 thin omitted)
+## Communities (305 total, 58 thin omitted)
 
 ### Community 0 - "getCurrentUser"
 Cohesion: 0.03
@@ -1167,7 +1167,7 @@ Nodes (5): dynamic, GET(), numberValue(), ratio(), startFor()
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `createAdminClient()` connect `createAdminClient` to `getCurrentUser`, `require-admin.ts`, `modulos-catalogo/route.ts`, `foto/route.ts`, `checklist/generar/route.ts`, `chat/route.ts`, `analizar/route.ts`, `egresosRecurrentes.ts`, `[mes]/route.ts`, `hoyLocalString`, `diagnostico/route.ts`, `iniciar/route.ts`, `types/agentes.ts`, `roadmap/[token]/route.ts`, `FinanzasClient.tsx`, `types/wiki.ts`, `cronista-reportes.ts`, `cronista.ts`, `hub.ts`, `lib/cajas.ts`, `modulos-catalogo/[id]/route.ts`, `types/productos.ts`, `lib/notas.ts`, `TarjetasSeccion.tsx`, `getAdminUser`, `lib/leads.ts`, `lib/calendario.ts`, `generar-informe/route.ts`, `DiagnosticoSesionInterna.tsx`, `eventos-invitados/[id]/route.ts`, `[token]/imagen-sistema/route.ts`, `automatizaciones/[id]/route.ts`, `notas-etiquetas/route.ts`, `tech-ops.ts`, `procesar-respuesta/route.ts`, `features.ts`, `ReunionesClient`, `eventos/route.ts`, `mi-panel/metricas/route.ts`, `FasesEstadoKanban.tsx`, `producto-features/[id]/route.ts`, `tarjetas/route.ts`, `invitaciones.ts`, `fases/[id]/tiempo/route.ts`, `types/tareas.ts`, `calendly.ts`, `dashboard/route.ts`, `productos/[id]/features/route.ts`, `AgentesClient.tsx`, `carpetas.ts`, `diagnostico.ts`, `generar-imagen/route.ts`, `TransferenciaCajaModal.tsx`, `informe.ts`, `Json`, `crearOActualizarContrato.ts`, `types/auth.ts`, `propuesta/route.ts`, `preferencias-navegacion/route.ts`, `types/leads.ts`, `renderizar/route.ts`, `logServerError`, `types/notas.ts`, `handleCronistaReporte`, `suscripciones.ts`, `cobros.ts`, `ProductoPlanesModal.tsx`, `ai-dev/route.ts`, `cierres-mensuales/generar/route.ts`, `task-support.ts`, `etapa/route.ts`, `handoff/route.ts`, `equipo-comercial/page.tsx`?**
-  _High betweenness centrality (0.114) - this node is a cross-community bridge._
+  _High betweenness centrality (0.113) - this node is a cross-community bridge._
 - **Why does `getCurrentUser()` connect `getCurrentUser` to `modulos-catalogo/route.ts`, `require-admin.ts`, `lib/notas.ts`, `foto/route.ts`, `checklist/generar/route.ts`, `chat/route.ts`, `analizar/route.ts`, `createAdminClient`, `diagnostico/route.ts`, `iniciar/route.ts`, `types/agentes.ts`, `cronista-reportes.ts`, `FinanzasClient.tsx`, `types/wiki.ts`, `cronista.ts`, `hub.ts`, `modulos-catalogo/[id]/route.ts`, `getAdminUser`, `lib/leads.ts`, `command-center.ts`, `lib/calendario.ts`, `generar-informe/route.ts`, `DiagnosticoSesionInterna.tsx`, `eventos-invitados/[id]/route.ts`, `ReunionesClient`, `eventos/route.ts`, `mi-panel/metricas/route.ts`, `types/supabase.ts`, `hub/overview/route.ts`, `getMetaConfig`, `invitaciones.ts`, `fases/[id]/tiempo/route.ts`, `types/tareas.ts`, `calendly.ts`, `Breadcrumb.tsx`, `overview.ts`, `AgentesClient.tsx`, `carpetas.ts`, `whatsapp-intelligence.ts`, `meta/intelligence.ts`, `crearOActualizarContrato.ts`, `marketing/intelligence.ts`, `types/auth.ts`, `propuesta/route.ts`, `preferencias-navegacion/route.ts`, `types/leads.ts`, `logServerError`, `types/notas.ts`, `handleCronistaReporte`, `cobros.ts`, `cierres-mensuales/generar/route.ts`, `etapa/route.ts`, `equipo-comercial/page.tsx`?**
   _High betweenness centrality (0.066) - this node is a cross-community bridge._
 - **Why does `cn()` connect `cn` to `MiPanelClient.tsx`, `ClienteFicha.tsx`, `PiezasGrid`, `formatters.ts`, `ProyectoFicha`, `EventoModal.tsx`, `roadmap/[token]/route.ts`, `Dock.tsx`, `useContenido.ts`, `NotasLista.tsx`, `MarcaContentStudio.tsx`, `FinanzasClient.tsx`, `LeadCard.tsx`, `icons.tsx`, `PlanSemanalView.tsx`, `types/productos.ts`, `TarjetasSeccion.tsx`, `lib/leads.ts`, `ArchivosCompartidosClient`, `NotaEditor`, `cn.ts`, `ProyectosClient.tsx`, `Card`, `contenido.ts`, `PerfilClient.tsx`, `features.ts`, `CalendarioClient.tsx`, `FasesEstadoKanban.tsx`, `ChecklistQaSection`, `marketing/page.tsx`, `RunwayLab.tsx`, `ArchivosClient`, `TimelineProyectos.tsx`, `Button`, `ArchivosCompartidosClient.tsx`, `Breadcrumb.tsx`, `NotasClient.tsx`, `SaasClient.tsx`, `InboundClient.tsx`, `ArchivosClient.tsx`, `formatFecha`, `PerfilClient`, `Sidebar.tsx`, `diagnostico.ts`, `PiezaEditorModal.tsx`, `FaseCardExpandible.tsx`, `MarketingCommandCenterPanel.tsx`, `types/auth.ts`, `TareasKanban.tsx`, `ProyectoFicha.tsx`, `WikiClient.tsx`, `TesoreriaCard`, `RoadmapProductoKanban.tsx`, `equipo-comercial/page.tsx`, `RichTextEditor.tsx`?**

@@ -20372,7 +20372,7 @@
       "file_type": "code",
       "norm_label": "blyndtekposthogprovider()",
       "source_file": "components/observability/PostHogProvider.tsx",
-      "source_location": "L14"
+      "source_location": "L15"
     },
     {
       "id": "components_observability_posthogprovider_parsesamplerate",
@@ -20384,7 +20384,7 @@
       "file_type": "code",
       "norm_label": "parsesamplerate()",
       "source_file": "components/observability/PostHogProvider.tsx",
-      "source_location": "L9"
+      "source_location": "L10"
     },
     {
       "id": "components_ai_hub_configuracionagenteform_configuracionagenteform",
@@ -54704,6 +54704,17 @@
       "norm_label": "@higgsfield/client",
       "source_file": "package.json",
       "source_location": "L15"
+    },
+    {
+      "id": "supabase_migrations_050_registrar_blyndtek_os_control_tecnico",
+      "label": "050_registrar_blyndtek_os_control_tecnico.sql",
+      "_origin": "ast",
+      "community": 304,
+      "community_name": "050_registrar_blyndtek_os_control_tecnico.sql",
+      "file_type": "code",
+      "norm_label": "050_registrar_blyndtek_os_control_tecnico.sql",
+      "source_file": "supabase/migrations/050_registrar_blyndtek_os_control_tecnico.sql",
+      "source_location": null
     },
     {
       "id": "components_contenido_contenidostyles",
@@ -195191,13 +195202,24 @@
     },
     {
       "source": "components_observability_posthogprovider",
+      "target": "components_observability_posthogprovider_parsesamplerate",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "components/observability/PostHogProvider.tsx",
+      "source_location": "L10",
+      "weight": 1.0
+    },
+    {
+      "source": "components_observability_posthogprovider",
       "target": "components_observability_posthogprovider_blyndtekposthogprovider",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "components/observability/PostHogProvider.tsx",
-      "source_location": "L14",
+      "source_location": "L15",
       "weight": 1.0
     },
     {
@@ -195209,17 +195231,6 @@
       "confidence_score": 1.0,
       "source_file": "components/observability/PostHogProvider.tsx",
       "source_location": "L7",
-      "weight": 1.0
-    },
-    {
-      "source": "components_observability_posthogprovider",
-      "target": "components_observability_posthogprovider_parsesamplerate",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "components/observability/PostHogProvider.tsx",
-      "source_location": "L9",
       "weight": 1.0
     },
     {
@@ -223762,5 +223773,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "d85f4bc8366cb35cca2873bb5b52c34f321598a9"
+  "built_at_commit": "4e91e8ba5aee6ec3dc6a7317fbc22e28f2570860"
 }

@@ -302,5 +302,6 @@
   "300": "ChecklistQaSection",
   "301": "hub/overview/route.ts",
   "302": "PageSkeleton",
-  "303": "@higgsfield/client"
+  "303": "@higgsfield/client",
+  "304": "050_registrar_blyndtek_os_control_tecnico.sql"
 }
