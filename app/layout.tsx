@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
+import { BlyndtekPostHogProvider } from "@/components/observability/PostHogProvider";
 import "./globals.css";
 
 const inter = Inter({
@@ -39,7 +42,9 @@ export default function RootLayout({ children }: RootLayoutProps) {
         />
       </head>
       <body className={`${inter.className} bg-paper font-sans text-carbon antialiased`}>
-        {children}
+        <BlyndtekPostHogProvider>{children}</BlyndtekPostHogProvider>
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );

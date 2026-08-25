@@ -5,6 +5,7 @@ import {
   getCalendlyCurrentUser,
   getCalendlyWebhookSubscriptions
 } from "@/lib/calendly";
+import { logServerError } from "@/lib/observability/logger";
 
 export const runtime = "nodejs";
 
@@ -50,6 +51,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ data: { configured: true, webhook: created.resource ?? null } }, { status: 201 });
   } catch (error) {
     const message = error instanceof Error ? error.message : "No se pudo configurar Calendly.";
-    return NextResponse.json({ error: message }, { status: 500 });
+    logServerError("calendly.setup", error);
+    const isConfiguration = message.startsWith("Falta configurar CALENDLY_");
+    return NextResponse.json({ error: message, code: isConfiguration ? "integration_configuration" : "calendly_setup_failed" }, { status: isConfiguration ? 409 : 502 });
   }
 }
