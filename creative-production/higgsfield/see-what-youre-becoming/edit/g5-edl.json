@@ -1,0 +1,30 @@
+{
+  "title": "See What You're Becoming — G5 Rough Cut",
+  "timebase": 24,
+  "canvas": { "width": 1280, "height": 720 },
+  "duration_seconds": 60,
+  "clips": [
+    { "id": "S01", "file": "../generations/g1/motion-food-echo.mp4", "source_in": 0.35, "duration": 4.0, "purpose": "sonar-like abstract opening" },
+    { "id": "S02A", "file": "../generations/g4/food-macro-final.mp4", "source_in": 0.45, "duration": 2.0, "purpose": "flour as scale" },
+    { "id": "S02B", "file": "../generations/g4/metal-macro-final.mp4", "source_in": 0.35, "duration": 2.0, "purpose": "metal as horizon" },
+    { "id": "S02C", "file": "../generations/g4/film-macro-final.mp4", "source_in": 0.35, "duration": 2.0, "purpose": "film as sail" },
+    { "id": "S03A", "file": "../generations/g4/food-wide-final.mp4", "source_in": 0.55, "duration": 3.0, "purpose": "food operation scale" },
+    { "id": "S03B", "file": "../generations/g4/manufacturing-wide-final.mp4", "source_in": 0.55, "duration": 3.0, "purpose": "manufacturing scale" },
+    { "id": "S03C", "file": "../generations/g3/operational-wide-logistics.mp4", "source_in": 0.55, "duration": 2.0, "purpose": "logistics scale" },
+    { "id": "S04A", "file": "../generations/g3/human-action-food-tray.mp4", "source_in": 0.55, "duration": 3.0, "purpose": "hands and material" },
+    { "id": "S04B", "file": "../generations/g4/metal-measure-final.mp4", "source_in": 0.75, "duration": 3.0, "purpose": "physical measurement" },
+    { "id": "S04C", "file": "../generations/g1/motion-metal-to-pallet.mp4", "source_in": 0.55, "duration": 3.0, "purpose": "piece to pallet movement" },
+    { "id": "S05A", "file": "../generations/g3/fragmented-order.mp4", "source_in": 0.45, "duration": 4.0, "purpose": "one order, many surfaces" },
+    { "id": "S05B", "file": "../generations/g4/fragmented-idle-final.mp4", "source_in": 0.02, "duration": 4.0, "purpose": "idle operation" },
+    { "id": "S06A", "file": "../generations/g4/food-obstruction-final.mp4", "source_in": 0.55, "duration": 3.0, "purpose": "workflow obstruction" },
+    { "id": "S06B", "file": "../generations/g4/manufacturing-obstruction-final.mp4", "source_in": 0.55, "duration": 3.0, "purpose": "workaround" },
+    { "id": "S06C", "file": "../generations/g4/logistics-obstruction-final.mp4", "source_in": 0.55, "duration": 2.0, "purpose": "copying and delay" },
+    { "id": "S07A", "file": "../generations/g4/metal-measure-final.mp4", "source_in": 1.25, "duration": 3.0, "purpose": "measure what is real" },
+    { "id": "S07B", "file": "../generations/g3/human-action-food-tray.mp4", "source_in": 1.45, "duration": 3.0, "purpose": "operation first" },
+    { "id": "S07C", "file": "../generations/g3/operational-wide-logistics.mp4", "source_in": 1.55, "duration": 3.0, "purpose": "operation becomes legible" },
+    { "id": "S08A", "file": "../generations/g4/hero-food-edge-final.mp4", "source_in": 1.20, "duration": 1.7, "purpose": "hero food edge" },
+    { "id": "S08B", "file": "../generations/g4/hero-metal-edge-final.mp4", "source_in": 1.20, "duration": 1.7, "purpose": "hero metal edge hard cut" },
+    { "id": "S08C", "file": "../generations/g1/motion-metal-to-pallet.mp4", "source_in": 2.85, "duration": 1.6, "purpose": "hero pallet edge hard cut" },
+    { "id": "S09", "file": "cards/end-card.mp4", "source_in": 0.0, "duration": 3.0, "purpose": "official logo and campaign line" }
+  ]
+}
