@@ -21,6 +21,7 @@ export type MarketingHubOverview = {
       id: string; waId: string; leadId: string | null; contactName: string | null; status: string;
       unread: number; lastMessageAt: string | null;
       messages: Array<{ id: string; direction: "inbound" | "outbound"; type: string | null; status: string | null; text: string | null; timestamp: string }>;
+      analysis: null | { summary: string; intent: string; sentiment: string; urgency: string; topics: string[]; objections: string[]; buyingSignals: string[]; nextAction: string; suggestedReply: string | null; scoreAdjustment: number; confidence: number; model: string; analyzedAt: string; lastMessageId: string | null };
     }>;
   };
   instagram: {
