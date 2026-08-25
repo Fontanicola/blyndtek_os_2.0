@@ -26,6 +26,7 @@ pnpm-debug.log*
 .env
 .env.local
 .env.*.local
+.env.production.fresh
 
 # vercel
 .vercel
@@ -35,3 +36,8 @@ pnpm-debug.log*
 
 # typescript
 *.tsbuildinfo
+.env*.local
+
+# graphify: conservar el grafo vigente, no caches ni respaldos fechados
+/graphify-out/cache/
+/graphify-out/20*/

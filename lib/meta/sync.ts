@@ -1,4 +1,5 @@
 import { getMetaConfig } from "@/lib/meta/config";
+import { safelyGenerateMetaRecommendations } from "@/lib/meta/intelligence";
 import {
   getMetaAccount,
   getMetaAds,
@@ -20,7 +21,7 @@ function actionValue(actions: Array<{ action_type: string; value: string }> | un
     .reduce((total, action) => total + number(action.value), 0);
 }
 
-function mapInsight(row: MetaInsightApiRow, adAccountId: string) {
+function mapInsight(row: MetaInsightApiRow, adAccountId: string, currencyToUsd: number) {
   const leads = actionValue(row.actions, ["lead", "onsite_conversion.lead_grouped", "offsite_conversion.fb_pixel_lead"]);
   const linkClicks = actionValue(row.actions, ["link_click"]);
   const landingPageViews = actionValue(row.actions, ["landing_page_view"]);
@@ -35,7 +36,7 @@ function mapInsight(row: MetaInsightApiRow, adAccountId: string) {
     campaign_id: row.campaign_id || null,
     adset_id: row.adset_id || null,
     ad_id: row.ad_id || null,
-    spend: number(row.spend),
+    spend: number(row.spend) * currencyToUsd,
     impressions: number(row.impressions),
     reach: number(row.reach),
     frequency: number(row.frequency),
@@ -43,12 +44,14 @@ function mapInsight(row: MetaInsightApiRow, adAccountId: string) {
     link_clicks: linkClicks,
     landing_page_views: landingPageViews,
     leads,
-    video_plays_3s: actionValue(row.video_3_sec_watched_actions, ["video_view"]),
-    video_plays_15s: actionValue(row.video_15_sec_watched_actions, ["video_view"]),
+    // In Graph API v26, 3-second views are exposed as the video_view action and
+    // 15-second/completed views are exposed through the ThruPlay metric.
+    video_plays_3s: actionValue(row.actions, ["video_view"]),
+    video_plays_15s: actionValue(row.video_thruplay_watched_actions, ["video_view"]),
     ctr: number(row.ctr),
-    cpc: number(row.cpc),
-    cpm: number(row.cpm),
-    cost_per_lead: costPerLead || null,
+    cpc: number(row.cpc) * currencyToUsd,
+    cpm: number(row.cpm) * currencyToUsd,
+    cost_per_lead: costPerLead ? costPerLead * currencyToUsd : null,
     raw: row,
     synced_at: new Date().toISOString()
   };
@@ -157,7 +160,7 @@ export async function syncMetaAds(initiatedBy: string | null, triggerType: "manu
 
     if (insights.length > 0) {
       const { error } = await db.from("meta_insights_daily").upsert(
-        insights.map((row) => mapInsight(row, config.adAccountId)),
+        insights.map((row) => mapInsight(row, config.adAccountId, Number.isFinite(config.accountCurrencyToUsd) && config.accountCurrencyToUsd > 0 ? config.accountCurrencyToUsd : 1)),
         { onConflict: "ad_account_id,date_start,entity_level,entity_id" }
       );
       if (error) throw error;
@@ -169,7 +172,9 @@ export async function syncMetaAds(initiatedBy: string | null, triggerType: "manu
       records_adsets: adSets.length, records_ads: ads.length, records_insights: insights.length
     }).eq("id", run.id);
 
-    return { records, campaigns: campaigns.length, adSets: adSets.length, ads: ads.length, insights: insights.length };
+    const intelligence = await safelyGenerateMetaRecommendations();
+
+    return { records, campaigns: campaigns.length, adSets: adSets.length, ads: ads.length, insights: insights.length, intelligence };
   } catch (error) {
     const message = error instanceof Error ? error.message : "Error desconocido al sincronizar Meta.";
     await Promise.all([

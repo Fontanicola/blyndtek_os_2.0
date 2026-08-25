@@ -17,6 +17,10 @@ export function getMetaConfig() {
     graphApiVersion: process.env.META_GRAPH_API_VERSION!.trim(),
     businessId: process.env.META_BUSINESS_ID?.trim() || null,
     pageId: process.env.META_PAGE_ID?.trim() || null,
-    pixelId: process.env.META_PIXEL_ID?.trim() || null
+    pixelId: process.env.META_PIXEL_ID?.trim() || null,
+    instagramAccountId: process.env.META_INSTAGRAM_ACCOUNT_ID?.trim() || null,
+    writeEnabled: process.env.META_WRITE_ENABLED?.trim().toLowerCase() === "true",
+    tokenExpiresAt: process.env.META_TOKEN_EXPIRES_AT?.trim() || null,
+    accountCurrencyToUsd: Number(process.env.META_ACCOUNT_CURRENCY_TO_USD || "1")
   };
 }

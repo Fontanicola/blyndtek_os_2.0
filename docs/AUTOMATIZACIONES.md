@@ -12,6 +12,12 @@ Las funciones viven en `supabase/functions/`:
 
 Meta Ads usa una función Vercel separada: `GET /api/cron/meta-sync`, declarada en `vercel.json` a las 10:15 UTC. Vercel envía `Authorization: Bearer $CRON_SECRET`; la ejecución consulta Meta en modo lectura y registra el resultado en `meta_sync_runs`.
 
+Al finalizar una sincronización correcta, la Fase 2 recalcula recomendaciones contra `meta_guardrails`. El análisis es tolerante a fallos: si una regla falla, el sync de datos permanece válido y el error se registra server-side. Las recomendaciones nunca aplican cambios en Meta.
+
+La Fase 3 permite convertir una recomendación en una fila de `meta_action_queue` y someterla a aprobación. Incluso una acción aprobada permanece sin ejecutar: no existe cron de escritura ni permiso `ads_management` habilitado.
+
+La Fase 4 no agrega un cron de escritura. Un administrador puede simular una pausa aprobada y luego ejecutarla manualmente sólo si `META_WRITE_ENABLED=true`, `meta_execution_policy.execution_enabled=true`, `dry_run_only=false` y el token conserva `ads_management`. Reactivar y cambiar presupuestos siguen bloqueados.
+
 ### Comando de deploy
 
 ```bash

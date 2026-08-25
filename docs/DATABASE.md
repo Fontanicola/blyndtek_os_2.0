@@ -1295,6 +1295,11 @@ Nota: `usuarios` debe existir antes que `leads`, `proyectos`, `features`, `tarea
 - `meta_recommendations` registra hallazgos y acciones sugeridas; Fase 1 no aplica cambios en campañas.
 - `leads` incorpora email estructurado, UTMs completas, IDs de campaña/conjunto/anuncio/lead de Meta, `fbclid`/`fbc`/`fbp`, landing, versión de formulario y consentimiento.
 - Todas las tablas Meta tienen RLS: `admin` y `marketing` pueden leer; únicamente `admin` puede escribir mediante operaciones internas server-side.
+- `meta_guardrails` define los objetivos internos de performance y frescura usados por la Fase 2. No contiene credenciales ni ejecuta cambios sobre Meta.
+- `meta_recommendations` conserva última detección, cantidad de recurrencias, reconocimiento, notas y resolución para que cada alerta tenga seguimiento auditable.
+- `meta_action_queue` convierte recomendaciones en propuestas con riesgo, payload futuro, aprobación humana y trazabilidad. El estado `approved` no ejecuta Meta y nunca contiene secretos.
+- `meta_execution_policy` contiene el kill switch, modo simulación, allowlist y período de enfriamiento de la Fase 4.
+- `meta_action_executions` es el historial append-only de validaciones y mutaciones intentadas. Cada fila conserva payload saneado, estados anterior/posterior y error explícito.
 
 ### Tabla nueva
 

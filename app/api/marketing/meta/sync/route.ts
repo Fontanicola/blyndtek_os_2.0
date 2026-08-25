@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { syncMetaAds } from "@/lib/meta/sync";
+import { logServerError } from "@/lib/observability/logger";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -15,7 +16,8 @@ export async function POST() {
     return NextResponse.json({ data: result });
   } catch (error) {
     const message = error instanceof Error ? error.message : "No se pudo sincronizar Meta.";
+    logServerError("meta.sync.manual", error);
     const status = message.startsWith("Configuración incompleta") ? 409 : 500;
-    return NextResponse.json({ error: message }, { status });
+    return NextResponse.json({ error: message, code: status === 409 ? "integration_configuration" : "meta_sync_failed" }, { status });
   }
 }

@@ -1,3 +1,5 @@
+import * as Sentry from "@sentry/nextjs";
+
 type LogValue = string | number | boolean | null | undefined;
 
 type LogDetails = Record<string, LogValue>;
@@ -20,6 +22,10 @@ export function logServerEvent(scope: string, details: LogDetails = {}) {
 }
 
 export function logServerError(scope: string, error: unknown, details: LogDetails = {}) {
+  Sentry.captureException(error instanceof Error ? error : new Error(String(error)), {
+    tags: { scope },
+    extra: details
+  });
   console.error(JSON.stringify({
     level: "error",
     scope,

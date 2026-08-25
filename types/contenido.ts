@@ -36,7 +36,13 @@ export type PilarContenido = {
   created_at: string;
 };
 
-export type JsonValue = string | number | boolean | null | { [key: string]: JsonValue | undefined } | JsonValue[];
+export type JsonValue =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: JsonValue | undefined }
+  | JsonValue[];
 
 export type PlanSemanal = {
   id: string;
@@ -60,14 +66,10 @@ export type GeneracionAutomatica = {
 };
 
 export type PiezaContenidoEstado =
-  | "idea"
-  | "en_diseno"
-  | "lista"
-  | "programada"
-  | "publicada"
-  | "fallida";
+  "idea" | "en_diseno" | "lista" | "programada" | "publicada" | "fallida";
 
-export type PiezaContenidoTipo = "noticia" | "caso_uso" | "dato_rapido" | "reel" | "historia" | null;
+export type PiezaContenidoTipo =
+  "noticia" | "caso_uso" | "dato_rapido" | "reel" | "historia" | null;
 
 export type PiezaContenido = {
   id: string;
@@ -91,6 +93,11 @@ export type PiezaContenido = {
   publicado_at: string | null;
   meta_post_id: string | null;
   meta_error: string | null;
+  publication_attempts: number;
+  publication_locked_at: string | null;
+  publication_next_retry_at: string | null;
+  last_publication_attempt_at: string | null;
+  published_permalink: string | null;
   generado_con_ia: boolean;
   prompt_higgsfield: string | null;
   prompt_fondo: string | null;
@@ -108,7 +115,11 @@ export type PiezaContenido = {
 };
 
 export type WorkspaceContenido = {
-  strokes: Array<{ points: Array<{ x: number; y: number }>; color: string; width: number }>;
+  strokes: Array<{
+    points: Array<{ x: number; y: number }>;
+    color: string;
+    width: number;
+  }>;
   texts: Array<{ x: number; y: number; text: string; color: string }>;
 };
 
@@ -155,27 +166,39 @@ export type ContenidoDatabase = {
     Tables: {
       marcas_contenido: {
         Row: MarcaContenido;
-        Insert: Partial<MarcaContenido> & Pick<MarcaContenido, "nombre" | "slug">;
+        Insert: Partial<MarcaContenido> &
+          Pick<MarcaContenido, "nombre" | "slug">;
         Update: Partial<MarcaContenido>;
       };
       canales_contenido: {
         Row: CanalContenido;
-        Insert: Partial<CanalContenido> & Pick<CanalContenido, "marca_id" | "nombre" | "slug" | "plataforma">;
+        Insert: Partial<CanalContenido> &
+          Pick<CanalContenido, "marca_id" | "nombre" | "slug" | "plataforma">;
         Update: Partial<CanalContenido>;
       };
       contenido_feed_slots: {
         Row: FeedSlotContenido;
-        Insert: Partial<FeedSlotContenido> & Pick<FeedSlotContenido, "marca_id" | "plataforma" | "slot_orden">;
+        Insert: Partial<FeedSlotContenido> &
+          Pick<FeedSlotContenido, "marca_id" | "plataforma" | "slot_orden">;
         Update: Partial<FeedSlotContenido>;
       };
       planes_semanales: {
         Row: PlanSemanal;
-        Insert: Partial<PlanSemanal> & Pick<PlanSemanal, "marca_id" | "semana_inicio" | "tema_general" | "noticia_fuente" | "noticia_url">;
+        Insert: Partial<PlanSemanal> &
+          Pick<
+            PlanSemanal,
+            | "marca_id"
+            | "semana_inicio"
+            | "tema_general"
+            | "noticia_fuente"
+            | "noticia_url"
+          >;
         Update: Partial<PlanSemanal>;
       };
       pilares_contenido: {
         Row: PilarContenido;
-        Insert: Partial<PilarContenido> & Pick<PilarContenido, "marca_id" | "nombre">;
+        Insert: Partial<PilarContenido> &
+          Pick<PilarContenido, "marca_id" | "nombre">;
         Update: Partial<PilarContenido>;
       };
       piezas_contenido: {
@@ -185,17 +208,20 @@ export type ContenidoDatabase = {
       };
       generaciones_automaticas: {
         Row: GeneracionAutomatica;
-        Insert: Partial<GeneracionAutomatica> & Pick<GeneracionAutomatica, "estado">;
+        Insert: Partial<GeneracionAutomatica> &
+          Pick<GeneracionAutomatica, "estado">;
         Update: Partial<GeneracionAutomatica>;
       };
       marca_identidad_secciones: {
         Row: MarcaIdentidadSeccion;
-        Insert: Partial<MarcaIdentidadSeccion> & Pick<MarcaIdentidadSeccion, "marca_id" | "clave" | "titulo">;
+        Insert: Partial<MarcaIdentidadSeccion> &
+          Pick<MarcaIdentidadSeccion, "marca_id" | "clave" | "titulo">;
         Update: Partial<MarcaIdentidadSeccion>;
       };
       contenido_integraciones_sociales: {
         Row: IntegracionContenido;
-        Insert: Partial<IntegracionContenido> & Pick<IntegracionContenido, "marca_id" | "red" | "nombre_cuenta">;
+        Insert: Partial<IntegracionContenido> &
+          Pick<IntegracionContenido, "marca_id" | "red" | "nombre_cuenta">;
         Update: Partial<IntegracionContenido>;
       };
     };

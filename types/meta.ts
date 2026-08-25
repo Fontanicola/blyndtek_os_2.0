@@ -1,5 +1,6 @@
 export type MetaPeriod = "7d" | "30d" | "90d" | "year";
-export type MetaConnectionStatus = "not_configured" | "connected" | "degraded" | "error";
+export type MetaConnectionStatus =
+  "not_configured" | "connected" | "degraded" | "error";
 
 export type MetaKpis = {
   spend: number;
@@ -19,6 +20,8 @@ export type MetaKpis = {
   costPerLead: number | null;
   costPerQualifiedLead: number | null;
   cashRoas: number | null;
+  videoPlays3s: number;
+  videoPlays15s: number;
 };
 
 export type MetaTrendPoint = {
@@ -47,6 +50,15 @@ export type MetaCampaignRow = {
   cashRoas: number | null;
 };
 
+export type MetaAdSetRow = {
+  id: string;
+  campaignId: string;
+  name: string;
+  status: string;
+  optimizationGoal: string | null;
+  dailyBudget: number | null;
+};
+
 export type MetaCreativeRow = {
   id: string;
   adId: string;
@@ -63,6 +75,10 @@ export type MetaCreativeRow = {
   platformLeads: number;
   ctr: number;
   cpl: number | null;
+  videoPlays3s: number;
+  videoPlays15s: number;
+  hookRate: number | null;
+  holdRate: number | null;
 };
 
 export type MetaFunnelStage = {
@@ -86,10 +102,70 @@ export type MetaRun = {
 export type MetaRecommendation = {
   id: string;
   severity: "info" | "warning" | "critical";
+  status: "open" | "acknowledged";
+  ruleKey: string;
+  entityType: string | null;
+  entityId: string | null;
   title: string;
   rationale: string;
   recommendedAction: string;
   detectedAt: string;
+  lastDetectedAt: string;
+  occurrences: number;
+};
+
+export type MetaActionStatus =
+  | "draft"
+  | "pending_approval"
+  | "approved"
+  | "rejected"
+  | "cancelled"
+  | "executed"
+  | "failed";
+
+export type MetaAction = {
+  id: string;
+  recommendationId: string | null;
+  actionType: string;
+  entityType: string | null;
+  entityId: string | null;
+  title: string;
+  rationale: string;
+  proposedAction: string;
+  proposedPayload: Record<string, unknown>;
+  riskLevel: "low" | "medium" | "high";
+  status: MetaActionStatus;
+  requestedAt: string;
+  reviewedAt: string | null;
+  notes: string | null;
+  errorMessage: string | null;
+  simulatedAt: string | null;
+  simulationResult: Record<string, unknown> | null;
+  executedAt: string | null;
+  metaRequestId: string | null;
+};
+
+export type MetaExecutionPolicy = {
+  executionEnabled: boolean;
+  dryRunOnly: boolean;
+  allowPause: boolean;
+  allowResume: boolean;
+  allowBudgetChanges: boolean;
+  maxBudgetIncreasePct: number;
+  maxDailyBudgetUsd: number;
+  cooldownMinutes: number;
+  environmentWriteEnabled: boolean;
+};
+
+export type MetaGuardrails = {
+  targetCpl: number;
+  targetCpql: number;
+  targetCashRoas: number;
+  minLinkCtr: number;
+  maxFrequency: number;
+  maxAttributionGapPct: number;
+  minSpendForAlert: number;
+  staleSyncHours: number;
 };
 
 export type MetaOverview = {
@@ -99,16 +175,30 @@ export type MetaOverview = {
     adAccountId: string | null;
     lastSyncAt: string | null;
     lastError: string | null;
+    tokenExpiresAt: string | null;
     missingEnvironmentVariables: string[];
-    writeAccessEnabled: false;
+    writeAccessEnabled: boolean;
   };
   period: MetaPeriod;
   periodStart: string;
+  healthScore: number;
+  guardrails: MetaGuardrails;
   kpis: MetaKpis;
   trend: MetaTrendPoint[];
+  funnelLeads: Array<{
+    id: string;
+    name: string;
+    company: string;
+    stage: string;
+    campaign: string | null;
+    createdAt: string;
+  }>;
   campaigns: MetaCampaignRow[];
+  adSets: MetaAdSetRow[];
   creatives: MetaCreativeRow[];
   funnel: MetaFunnelStage[];
   recommendations: MetaRecommendation[];
+  actions: MetaAction[];
+  executionPolicy: MetaExecutionPolicy;
   runs: MetaRun[];
 };

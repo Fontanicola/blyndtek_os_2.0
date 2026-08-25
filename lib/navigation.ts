@@ -155,7 +155,7 @@ export const navigationItems: NavItem[] = [
     section: "entrega"
   },
   {
-    label: "Software",
+    label: "Control técnico",
     href: "/software",
     icon: createElement(ServerIcon),
     roles: ["admin"],

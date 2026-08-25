@@ -15,6 +15,7 @@ export type SistemaGestionado = {
   vercel_project_id: string | null;
   vercel_team_id: string | null;
   supabase_project_ref: string | null;
+  repositorio_github: string | null;
   stack: Json | null;
   version_patrones: string | null;
   estado: SistemaEstado;
@@ -53,6 +54,17 @@ export type SistemaIncidente = {
   resuelto_at: string | null;
   resuelto_por: string | null;
   created_at: string;
+  estado?: string;
+  fuente?: string;
+  fingerprint?: string | null;
+  ocurrencias?: number;
+  primera_ocurrencia_at?: string;
+  ultima_ocurrencia_at?: string;
+  ruta?: string | null;
+  deployment_id?: string | null;
+  commit_sha?: string | null;
+  external_url?: string | null;
+  metadata?: Json;
 };
 
 export type SistemaDeploy = {
@@ -77,6 +89,7 @@ export type SistemaCreateInput = {
   vercel_project_id?: string | null;
   vercel_team_id?: string | null;
   supabase_project_ref?: string | null;
+  repositorio_github?: string | null;
   stack?: Json | null;
   version_patrones?: string | null;
   estado?: SistemaEstado;

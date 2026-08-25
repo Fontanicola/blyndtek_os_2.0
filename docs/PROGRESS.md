@@ -6,6 +6,31 @@ Stack: Next.js 14 (App Router) · TypeScript estricto · Tailwind CSS · Supabas
 
 Fecha de inicio: 2026-06-25
 
+## Actualización 2026-08-24 — Centro de Control Meta Ads, Fase 4
+
+- Se agregó ejecución controlada de pausas para campañas, conjuntos y anuncios. Reactivar, crear anuncios y modificar presupuestos continúan fuera de la allowlist.
+- Toda ejecución exige que la acción esté aprobada, tenga una simulación válida, pase la verificación de pertenencia a la cuenta, respete el enfriamiento y reciba una confirmación escrita con su identificador.
+- Dos kill switches independientes protegen producción: `META_WRITE_ENABLED` en Vercel y `meta_execution_policy` en Postgres. La política productiva nace con `execution_enabled=false` y `dry_run_only=true`.
+- `meta_action_executions` registra simulaciones, bloqueos, errores y éxitos con estado anterior/posterior y referencia de Meta sin guardar credenciales.
+- El usuario de sistema recibió acceso parcial para administrar campañas; el token fue rotado con `ads_read` y `ads_management`, vigencia de 60 días y alerta automática 14 días antes.
+- No se pausó, reactivó ni modificó ninguna campaña durante la implementación o las pruebas.
+
+## Actualización 2026-08-24 — Centro de Control Meta Ads, Fase 3 segura
+
+- Se agregó una cola de acciones que transforma una recomendación en una propuesta operativa con entidad, riesgo, evidencia y acción concreta.
+- Admin y marketing pueden proponer acciones; sólo un administrador puede aprobarlas, rechazarlas o cancelar una ya aprobada.
+- Cada decisión conserva solicitante, revisor, fechas, notas y estado. El dashboard separa pendientes, aprobadas y el contador de cambios automáticos.
+- Aprobar no ejecuta la acción: `ads_management` continúa deshabilitado y la API devuelve explícitamente que no intentó modificar Meta.
+- La migración `040_meta_action_queue.sql` agrega RLS, unicidad para acciones activas por recomendación e índices de operación.
+
+## Actualización 2026-08-24 — Centro de Control Meta Ads, Fase 2
+
+- Se agregó inteligencia operativa persistente: nueve reglas detectan sincronización atrasada, pérdida de atribución, ausencia de calificados, CPL/CPQL/ROAS fuera de objetivo, campañas ineficientes y problemas de hook, retención o fatiga creativa.
+- Los objetivos viven en `meta_guardrails` y son editables sólo por administradores. Configuran CPL, CPQL, Cash ROAS, CTR, frecuencia, brecha de atribución, gasto mínimo y frescura máxima del sync.
+- Las recomendaciones ahora conservan estado, recurrencia, reconocimiento y resolución. Admin y marketing pueden reconocer o descartar; ninguna acción cambia Meta.
+- El dashboard muestra salud operativa, hook rate y hold rate por anuncio, permite recalcular alertas y mantiene trazabilidad completa.
+- La inteligencia se ejecuta después de cada sincronización. Un fallo del analizador queda registrado pero no invalida la lectura de Meta ni habilita escrituras.
+
 ## Actualización 2026-08-24 — Centro de Control Meta Ads, Fase 1
 
 - Se reemplazó la vista de atribución aislada por un centro de control con Resumen, Campañas, Creatividad, Embudo y Operación.
