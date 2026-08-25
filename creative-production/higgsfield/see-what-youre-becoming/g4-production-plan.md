@@ -38,3 +38,11 @@ Cost: **107.5 credits**.
 ## Gate
 
 G4 ends after temporal QA and logging. The resulting selects join G1 and G3 footage in an offline silent rough cut. Audio, upscale, pickups, adaptations and publication remain outside this approval.
+
+## Result
+
+- G4 completed on 2026-08-25 for exactly **202 credits**.
+- Sublot A passed with six of six usable clips.
+- Final balance: **414.36 credits**.
+- Five clips are direct selects; seven are usable with deterministic crop, screen, gauge or editorial repair.
+- The hero is now two stable source clips and must be aligned with one exact editorial cut in G5.

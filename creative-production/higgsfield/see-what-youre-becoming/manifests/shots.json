@@ -25,10 +25,10 @@
       "references": ["@style_food_macro", "@food_location_clean"],
       "prompt_file": "prompts/production/S02_SH01.txt",
       "success_criteria": ["Dry particulate flour", "Stable chute", "Slow optical push", "No solid morphing"],
-      "status": "blocked_by_g2",
-      "jobs": [],
-      "selects": [],
-      "qa_score": null
+      "status": "g4_select",
+      "jobs": ["fe4b676d-3f2a-4837-8ff6-2145324e9b8d"],
+      "selects": [{"job_id":"fe4b676d-3f2a-4837-8ff6-2145324e9b8d","timecode":"00:00.10-00:03.85","file":"generations/g4/food-macro-final.mp4"}],
+      "qa_score": 44
     },
     {
       "id": "S02_SH02",
@@ -39,10 +39,10 @@
       "references": ["@style_metal_macro", "@manufacturing_location_clean"],
       "prompt_file": "prompts/production/S02_SH02.txt",
       "success_criteria": ["Stable horizontal edge", "Sparks obey gravity", "Water droplets remain attached", "No text or marks"],
-      "status": "blocked_by_g2",
-      "jobs": [],
-      "selects": [],
-      "qa_score": null
+      "status": "g4_select",
+      "jobs": ["cac725f9-f688-40ac-974e-151b3a3fad1e"],
+      "selects": [{"job_id":"cac725f9-f688-40ac-974e-151b3a3fad1e","timecode":"00:00.10-00:03.85","file":"generations/g4/metal-macro-final.mp4"}],
+      "qa_score": 44
     },
     {
       "id": "S02_SH03",
@@ -53,10 +53,10 @@
       "references": ["@style_logistics_macro", "@logistics_location_clean"],
       "prompt_file": "prompts/production/S02_SH03.txt",
       "success_criteria": ["Film remains transparent and taut", "Blank kraft surface", "Physical grazing light", "No fake printing"],
-      "status": "blocked_by_g2",
-      "jobs": [],
-      "selects": [],
-      "qa_score": null
+      "status": "g4_select_partial",
+      "jobs": ["29152b42-a189-4372-8cbd-5151a2d0406e"],
+      "selects": [{"job_id":"29152b42-a189-4372-8cbd-5151a2d0406e","timecode":"00:00.10-00:03.70","file":"generations/g4/film-macro-final.mp4","restriction":"Avoid the foreground frame crossing."}],
+      "qa_score": 40
     },
     {
       "id": "S03_SH01",
@@ -67,10 +67,10 @@
       "references": ["@food_location_clean", "@operator_food"],
       "prompt_file": "prompts/production/S03_SH01.txt",
       "success_criteria": ["Clear left-to-right flow", "Small human scale", "Stable architecture", "Controlled highlights"],
-      "status": "blocked_by_g2",
-      "jobs": [],
-      "selects": [],
-      "qa_score": null
+      "status": "g4_select",
+      "jobs": ["9e3369cd-b659-459f-9f7d-3d34961aca6c"],
+      "selects": [{"job_id":"9e3369cd-b659-459f-9f7d-3d34961aca6c","timecode":"00:00.15-00:04.75","file":"generations/g4/food-wide-final.mp4"}],
+      "qa_score": 43
     },
     {
       "id": "S03_SH02",
@@ -81,10 +81,10 @@
       "references": ["@manufacturing_location_clean", "@operator_metal"],
       "prompt_file": "prompts/production/S03_SH02.txt",
       "success_criteria": ["Stable shop geometry", "One readable work route", "No signage", "No floating objects"],
-      "status": "blocked_by_g2",
-      "jobs": [],
-      "selects": [],
-      "qa_score": null
+      "status": "g4_select",
+      "jobs": ["8104680c-edaf-4331-b190-27da5cf0831c"],
+      "selects": [{"job_id":"8104680c-edaf-4331-b190-27da5cf0831c","timecode":"00:00.15-00:04.80","file":"generations/g4/manufacturing-wide-final.mp4"}],
+      "qa_score": 44
     },
     {
       "id": "S03_SH03",
@@ -135,10 +135,10 @@
       "references": ["@manufacturing_location_clean", "@metal_piece", "@operator_metal"],
       "prompt_file": "prompts/production/S04_SH02.txt",
       "success_criteria": ["One stable part", "Caliper contact is credible", "Hands remain anatomically correct", "No readable gauge number"],
-      "status": "blocked_by_g2",
-      "jobs": [],
-      "selects": [],
-      "qa_score": null
+      "status": "g4_repair_required",
+      "jobs": ["fff2d725-04f3-4070-aa8f-7b1c20233c14"],
+      "selects": [{"job_id":"fff2d725-04f3-4070-aa8f-7b1c20233c14","timecode":"00:00.15-00:04.70","file":"generations/g4/metal-measure-final.mp4","restriction":"Mask caliper face and watch before use."}],
+      "qa_score": 38
     },
     {
       "id": "S04_SH03",
@@ -184,10 +184,10 @@
       "references": ["@manufacturing_location_clean", "@logistics_location_clean"],
       "prompt_file": "prompts/production/S05_SH02.txt",
       "success_criteria": ["Two exact editorial cuts", "No object transforms", "Waiting reads without acting", "Geography remains coherent"],
-      "status": "blocked_by_g2",
-      "jobs": [],
-      "selects": [],
-      "qa_score": null
+      "status": "g4_select_partial",
+      "jobs": ["6dc33db2-7719-45cb-915a-caad6f6efa03"],
+      "selects": [{"job_id":"6dc33db2-7719-45cb-915a-caad6f6efa03","timecode":"00:00.15-00:03.80","file":"generations/g4/fragmented-idle-final.mp4","restriction":"Atmospheric insert only."}],
+      "qa_score": 39
     },
     {
       "id": "S06_SH01",
@@ -198,10 +198,10 @@
       "references": ["@food_location_clean", "@blank_screen_plate", "@operator_food"],
       "prompt_file": "prompts/production/S06_SH01.txt",
       "success_criteria": ["Work visibly pauses", "Screen remains blank and trackable", "No direct gaze", "No fake interface"],
-      "status": "blocked_by_g2",
-      "jobs": [],
-      "selects": [],
-      "qa_score": null
+      "status": "g4_select_screen_replacement_required",
+      "jobs": ["5ea750f3-ecc8-4ab2-8f0a-b7f4426d5c65", "31e0bbcc-a787-4e99-9111-c67e8730e7e5"],
+      "selects": [{"job_id":"31e0bbcc-a787-4e99-9111-c67e8730e7e5","timecode":"00:00.15-00:04.75","file":"generations/g4/food-obstruction-final.mp4","restriction":"Replace the tablet surface before use."}],
+      "qa_score": 42
     },
     {
       "id": "S06_SH02",
@@ -212,10 +212,10 @@
       "references": ["@manufacturing_location_clean", "@blank_order_set", "@operator_metal"],
       "prompt_file": "prompts/production/S06_SH02.txt",
       "success_criteria": ["One deliberate detour", "Part remains stable", "Support remains blank", "Camera remains physically planted"],
-      "status": "blocked_by_g2",
-      "jobs": [],
-      "selects": [],
-      "qa_score": null
+      "status": "g4_repair_required",
+      "jobs": ["88441866-c75f-49af-9caf-12adf21e5879", "54c44b4f-d98d-454d-9693-63378d220808"],
+      "selects": [{"job_id":"54c44b4f-d98d-454d-9693-63378d220808","timecode":"00:00.15-00:04.65","file":"generations/g4/manufacturing-obstruction-final.mp4","restriction":"Mask the caliper dial and keep the terminal blank."}],
+      "qa_score": 37
     },
     {
       "id": "S06_SH03",
@@ -226,10 +226,10 @@
       "references": ["@logistics_location_clean", "@blank_order_set", "@operator_logistics"],
       "prompt_file": "prompts/production/S06_SH03.txt",
       "success_criteria": ["Pallet stops with visible weight", "Operator hesitates without melodrama", "Blank support remains stable", "No text"],
-      "status": "blocked_by_g2",
-      "jobs": [],
-      "selects": [],
-      "qa_score": null
+      "status": "g4_select_screen_replacement_required",
+      "jobs": ["a9847ded-3eb5-4971-91e8-eadfce6dfcf6", "1322df61-6856-4a95-86fa-6a0fe84f718b"],
+      "selects": [{"job_id":"1322df61-6856-4a95-86fa-6a0fe84f718b","timecode":"00:00.15-00:04.75","file":"generations/g4/logistics-obstruction-final.mp4","restriction":"Replace the scanner surface before use."}],
+      "qa_score": 43
     },
     {
       "id": "S07_SH01",
@@ -254,17 +254,23 @@
       "references": ["@food_tray", "@metal_piece", "@food_location_clean", "@manufacturing_location_clean"],
       "prompt_file": "prompts/production/S08_SH01.txt",
       "success_criteria": ["One editorial match cut", "Edges align in position and speed", "No liquid morph", "Direction remains left-to-right"],
-      "status": "g3_reject_transition_partial_end_available",
-      "jobs": ["49e6e89b-1f0f-4340-a853-846480b97c09"],
+      "status": "g4_editorial_match_pending",
+      "jobs": ["49e6e89b-1f0f-4340-a853-846480b97c09", "05d1987a-a783-4c9d-83f5-1bae5455cfba", "bc1829aa-4a60-4ef1-b119-54018127f637"],
       "selects": [
         {
-          "job_id": "49e6e89b-1f0f-4340-a853-846480b97c09",
-          "timecode": "00:02.20-00:04.85",
-          "file": "generations/g3/hero-food-to-metal.mp4",
-          "restriction": "Final steel plate only; never use the morphing middle as the transition."
+          "job_id": "05d1987a-a783-4c9d-83f5-1bae5455cfba",
+          "timecode": "00:00.15-00:04.70",
+          "file": "generations/g4/hero-food-edge-final.mp4",
+          "restriction": "Reframe and retime to the shared match line in G5."
+        },
+        {
+          "job_id": "bc1829aa-4a60-4ef1-b119-54018127f637",
+          "timecode": "00:00.15-00:04.80",
+          "file": "generations/g4/hero-metal-edge-final.mp4",
+          "restriction": "Join to the food edge using one deterministic hard cut."
         }
       ],
-      "qa_score": 32
+      "qa_score": 41
     },
     {
       "id": "S08_SH02",

@@ -1,6 +1,6 @@
 # See what you’re becoming
 
-Estado: **G3 motion tests complete. Three directions selected; hero transition requires an edit-first repair.**
+Estado: **G4 production complete. Footage is ready for the first offline rough cut.**
 
 Película manifiesto de Blyndtek. No es un anuncio táctico, un tutorial de software ni un caso inventado. Su trabajo es instalar una idea de categoría y hacer que Blyndtek se perciba como la compañía que está cerrando la brecha tecnológica entre las grandes empresas y las Pymes de Latinoamérica.
 
@@ -19,6 +19,7 @@ Película manifiesto de Blyndtek. No es un anuncio táctico, un tutorial de soft
 - G1 visual proof: generado el 2026-08-25 por 36,08 créditos de Higgsfield.
 - G2 asset lock: completo; 16 still jobs generados por 7,56 créditos y selects registrados.
 - G3 pruebas de movimiento: completo; cuatro clips generados por 70 créditos, tres direcciones utilizables y un transition hard fail documentado.
+- G4 producción: completo; 3 blocking frames y 12 clips generados por 202 créditos. Cinco clips son selects directos y siete requieren una restricción o reparación determinística.
 - No se publicó nada.
 
 Revisá el resultado en [`qa/g1/report.md`](qa/g1/report.md) y el ledger completo en [`generations/g1/plan.json`](generations/g1/plan.json).
@@ -27,7 +28,7 @@ El resultado del asset lock está en [`qa/g2/report.md`](qa/g2/report.md), con s
 
 Los resultados de movimiento están en [`qa/g3/report.md`](qa/g3/report.md) y el registro reproducible en [`generations/g3/results.json`](generations/g3/results.json). G4 debe escalar sólo las direcciones aprobadas y reconstruir el hero match cut con dos clips separados unidos en edición; no hay gasto adicional autorizado.
 
-El lote G4 está preparado en [`g4-production-plan.md`](g4-production-plan.md): tres blocking frames y doce clips finales divididos en dos sublotes, con un máximo propuesto de 202 créditos. Permanece sin ejecutar hasta recibir aprobación explícita.
+El lote G4 y su resultado están documentados en [`g4-production-plan.md`](g4-production-plan.md), [`qa/g4/report.md`](qa/g4/report.md) y [`generations/g4/results.json`](generations/g4/results.json). El siguiente paso es G5: montar el rough cut offline, aplicar las máscaras obligatorias y detectar pickups reales antes de cualquier gasto adicional.
 
 ## Gate anterior
 

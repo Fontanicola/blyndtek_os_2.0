@@ -147,6 +147,33 @@
       "constraints": ["Silhouette or hands only", "Unbranded workwear", "No text on reflective elements"]
     },
     {
+      "tag": "@food_obstruction_blocking",
+      "type": "blocking",
+      "source": "generations/g4/blocking-food-obstruction.png",
+      "higgsfield_job_id": "5ea750f3-ecc8-4ab2-8f0a-b7f4426d5c65",
+      "status": "selected_g4_requires_screen_replacement",
+      "approved_by": null,
+      "constraints": ["Hands, tray and tablet stay fixed", "Replace every tablet surface in post", "Do not expose background control detail"]
+    },
+    {
+      "tag": "@manufacturing_obstruction_blocking",
+      "type": "blocking",
+      "source": "generations/g4/blocking-manufacturing-obstruction.png",
+      "higgsfield_job_id": "88441866-c75f-49af-9caf-12adf21e5879",
+      "status": "repair_required_g4",
+      "approved_by": null,
+      "constraints": ["Mask the caliper dial before use", "Keep the terminal blank", "Preserve hands and workbench geometry"]
+    },
+    {
+      "tag": "@logistics_obstruction_blocking",
+      "type": "blocking",
+      "source": "generations/g4/blocking-logistics-obstruction.png",
+      "higgsfield_job_id": "a9847ded-3eb5-4971-91e8-eadfce6dfcf6",
+      "status": "selected_g4_requires_screen_replacement",
+      "approved_by": null,
+      "constraints": ["Replace the scanner surface in post", "Preserve the left-to-right route", "No labels on load or jack"]
+    },
+    {
       "tag": "@sonar_post",
       "type": "graphics",
       "source": "postproduction",

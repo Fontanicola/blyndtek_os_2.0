@@ -1,11 +1,15 @@
 {
   "campaign": "see-what-youre-becoming",
   "gate": "G4_production_batch",
-  "status": "awaiting_credit_approval",
+  "status": "complete",
   "balance_checked": 616.36,
   "proposed_credit_cap": 202,
   "estimated_cost": 202,
   "projected_balance_after": 414.36,
+  "actual_cost": 202,
+  "balance_after": 414.36,
+  "completed_at": "2026-08-25T18:19:09Z",
+  "sublot_a_gate": "passed_6_of_6_usable",
   "stop_rule": "Review sublot A first. Stop before sublot B if fewer than four of six motion clips are usable or if the common visual world drifts.",
   "sublots": [
     {
@@ -36,5 +40,6 @@
       ]
     }
   ],
-  "approval_unlocks": "Generate these fifteen jobs only, with the sublot A stop rule. Then stop for G4 temporal QA and an offline rough-cut decision."
+  "gate_result": "Five direct video selects and seven constrained or repairable video selects are available. G5 may build the silent rough cut after applying mandatory screen and gauge masks.",
+  "approval_unlocks": "G5 offline rough cut using G1, G3 and G4 selects. No additional generation, audio, upscale, adaptation or publication is authorized."
 }
