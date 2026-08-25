@@ -1,0 +1,20 @@
+REFERENCE DEFINITIONS
+@operator: canonical operator.
+@warehouse: approved morning aisle.
+@order_folder: same kraft folder.
+@style_day: neutral morning pipeline.
+
+CONTINUITY LOCK
+The order continues along the established left-to-right axis. Operator retains same outfit and hair. Folder has not changed.
+
+TECHNICAL BLOCK
+Photoreal observational brand film, 16:9, 5 seconds generated for 4 useful seconds, 24 fps, 40mm lens at chest height, restrained lateral dolly matching the folder, natural morning light.
+
+SHOT
+The operator receives the same kraft folder from frame left, confirms one physical state with a single deliberate action, places it on a rolling cart and sends the cart toward frame right. She performs the task once, without copying it onto a second surface. Her pace remains normal and credible; this is clarity, not an impossibly perfect factory. Hold after the cart exits.
+
+SUCCESS CRITERIA
+Folder remains identical; one update action; correct hand contacts; motion left to right; no celebratory behavior; no generated text or third-party brand.
+
+SOUND
+Folder contact, one confirmation tone in post, cart wheels moving right, continuous warehouse room tone.

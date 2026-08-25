@@ -1,0 +1,20 @@
+REFERENCE DEFINITIONS
+@owner: canonical owner without jacket, sleeves still down.
+@owner_phone: clean trackable phone.
+@warehouse: approved central aisle.
+@style_dawn: same color and texture.
+
+CONTINUITY LOCK
+Owner walks left to right toward the operational table. Phone remains in his right hand. He has just turned on the lights.
+
+TECHNICAL BLOCK
+Photoreal observational brand film, 16:9, 4 seconds generated for 3 useful seconds, 24 fps, 50mm lens at shoulder height, gentle parallel tracking move, shallow but believable depth of field.
+
+SHOT
+Medium close profile. While walking, the owner glances down at the clean phone screen. His eyes scan once, his thumb stops before touching, his breathing becomes slightly shallower and his pace loses half a beat. He looks from the phone toward the warehouse without looking at camera. Keep the screen plane visible and stable for replacement in post.
+
+SUCCESS CRITERIA
+Same face and clothing; phone in right hand throughout; restrained eye and breath change; stable screen; movement left to right; no legible generated interface.
+
+SOUND
+Footsteps, two soft notification sounds added in post, continuous warehouse room tone.

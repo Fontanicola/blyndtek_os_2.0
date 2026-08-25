@@ -1,0 +1,109 @@
+{
+  "campaign": "la-empresa-a-oscuras",
+  "assets": [
+    {
+      "tag": "@style_dawn",
+      "type": "style",
+      "source": "references/style-dawn-approved.png",
+      "status": "planned",
+      "approved_by": null,
+      "constraints": ["observational", "natural pre-dawn light", "no teal-orange grade", "no corporate stock"]
+    },
+    {
+      "tag": "@style_day",
+      "type": "style",
+      "source": "references/style-day-approved.png",
+      "status": "planned",
+      "approved_by": null,
+      "constraints": ["same world as @style_dawn", "neutral morning daylight", "no magical transformation"]
+    },
+    {
+      "tag": "@owner",
+      "type": "character",
+      "source": "references/owner-sheet-approved.png",
+      "status": "planned",
+      "approved_by": null,
+      "constraints": ["fictional face", "one canonical identity", "gray-blue Oxford shirt", "no direct camera gaze"]
+    },
+    {
+      "tag": "@operator",
+      "type": "character",
+      "source": "references/operator-sheet-approved.png",
+      "status": "planned",
+      "approved_by": null,
+      "constraints": ["fictional face", "low tied hair", "desaturated blue work vest", "competent behavior"]
+    },
+    {
+      "tag": "@analyst",
+      "type": "character",
+      "source": "references/analyst-sheet-approved.png",
+      "status": "planned",
+      "approved_by": null,
+      "constraints": ["fictional face", "white matte shirt", "navy trousers", "observes before speaking"]
+    },
+    {
+      "tag": "@office",
+      "type": "location",
+      "source": "references/office-plate-approved.png",
+      "status": "planned",
+      "approved_by": null,
+      "constraints": ["glass office left of central aisle", "east window camera right", "clean trackable laptop surfaces"]
+    },
+    {
+      "tag": "@warehouse",
+      "type": "location",
+      "source": "references/warehouse-plate-approved.png",
+      "status": "planned",
+      "approved_by": null,
+      "constraints": ["small Argentine SME scale", "central aisle", "no visible third-party brands", "no random text"]
+    },
+    {
+      "tag": "@owner_phone",
+      "type": "prop",
+      "source": "references/owner-phone-approved.png",
+      "status": "planned",
+      "approved_by": null,
+      "constraints": ["black matte", "unbranded", "screen replaced in post"]
+    },
+    {
+      "tag": "@order_folder",
+      "type": "prop",
+      "source": "references/order-folder-approved.png",
+      "status": "planned",
+      "approved_by": null,
+      "constraints": ["kraft folder", "single abstract label", "no legible generated text"]
+    },
+    {
+      "tag": "@analyst_notebook",
+      "type": "prop",
+      "source": "references/analyst-notebook-approved.png",
+      "status": "planned",
+      "approved_by": null,
+      "constraints": ["A5 grid notebook", "mechanical pencil", "diagram graphics added in post when legible"]
+    },
+    {
+      "tag": "@clean_laptop",
+      "type": "prop",
+      "source": "references/clean-laptop-approved.png",
+      "status": "planned",
+      "approved_by": null,
+      "constraints": ["graphite", "unbranded", "clean trackable screen"]
+    },
+    {
+      "tag": "@dashboard",
+      "type": "interface",
+      "source": "edit/dashboard-recreation.fig-or-html",
+      "status": "planned",
+      "approved_by": null,
+      "constraints": ["created deterministically in post", "illustrative data label", "Blyndtek UI tokens", "no fabricated client data"]
+    },
+    {
+      "tag": "@logo",
+      "type": "brand",
+      "source": "public/Logo_Blyndtek_plataforma.svg",
+      "status": "existing",
+      "approved_by": "brand-manual",
+      "constraints": ["post-production only", "no 3D orca in same piece", "preserve aspect ratio and clear space"]
+    }
+  ]
+}

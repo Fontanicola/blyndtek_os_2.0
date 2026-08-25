@@ -1,0 +1,20 @@
+REFERENCE DEFINITIONS
+@owner: canonical owner, jacket removed, sleeves down.
+@operator: canonical operator at frame right.
+@warehouse: approved frontal blocking plate.
+@order_folder: stable folder on table.
+
+CONTINUITY LOCK
+Owner stands center-background at the table threshold. Operator remains frame right. A second responder is offscreen frame left. Eyelines preserve those positions. Phone is lowered in owner's right hand.
+
+TECHNICAL BLOCK
+Photoreal observational brand film, 16:9, 4.5 seconds generated for 3.5 useful seconds, 24 fps, 40mm lens at eye height, locked frontal blocking camera, deep enough focus to read positions, restrained practical light.
+
+SHOT
+The owner stops and asks a short question without looking at camera. The operator glances from the folder to him and starts an incomplete answer. He then turns only his eyes toward an offscreen voice at frame left, followed by a third response deeper in the warehouse. Nobody crosses position. Reactions overlap slightly, natural and contained. Generate clean mouth movement if possible, but plan to replace all dialogue in post.
+
+SUCCESS CRITERIA
+Stable spatial blocking; stable identities; three distinct eyeline sources; no broad gestures; no speaking to camera; folder stays on table; no position swaps.
+
+SOUND
+Room tone and placeholder natural speech cadence. Final Spanish dialogue will be recorded and synchronized in post.

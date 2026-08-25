@@ -1,0 +1,11 @@
+DETERMINISTIC POST-PRODUCTION SPECIFICATION — DO NOT GENERATE WITH A VIDEO MODEL
+
+Canvas: 3840×2160, 16:9, 24 fps, 3.5 seconds.
+Background: white.
+Logo: public/Logo_Blyndtek_plataforma.svg, original geometry and colors, clear space preserved.
+Headline: “Tu empresa opera a ciegas. Nosotros le instalamos la vista.”
+CTA: “Conocé cómo trabaja Blyndtek”.
+Color: navy #263a6d; celeste #dfeeff only as a restrained line/accent.
+Animation: 8–12 frame opacity/position ease, no logo deformation, no 3D orca, no glow.
+Audio: minimal resolved sting; voice-over finishes before the final 12-frame logo hold.
+Accessibility: subtitle-safe and mobile-legible; verify contrast and exact copy manually.

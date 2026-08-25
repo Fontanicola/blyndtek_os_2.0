@@ -1,0 +1,20 @@
+REFERENCE DEFINITIONS
+@analyst: canonical analyst with notebook and timer.
+@warehouse: approved central aisle and table geography.
+@analyst_notebook: stable A5 notebook.
+@style_day: same world under neutral morning light.
+
+CONTINUITY LOCK
+08:00. Analyst has been introduced through a physical doorway, not by appearing in place. She moves left to right following the same route as the order.
+
+TECHNICAL BLOCK
+Photoreal observational brand film, 16:9, 4.5 seconds generated for 3.5 useful seconds, 24 fps, 35mm lens at waist height, controlled backward dolly at walking speed, natural morning light from camera right.
+
+SHOT
+The analyst follows the actual order route through the central aisle. She starts a simple timer, watches where the folder changes hands, makes one mark in her notebook without stopping the workers, then looks toward the next station. Her movements are precise, calm and unobtrusive. No laptop presentation, no pointing at people, no sales posture.
+
+SUCCESS CRITERIA
+Stable analyst identity and outfit; plausible walking path; notebook and timer unchanged; physical hand contact; operator continues normal work; no logo or readable text.
+
+SOUND
+Footsteps, cart wheels, timer click, pencil, continuous morning warehouse ambience.
