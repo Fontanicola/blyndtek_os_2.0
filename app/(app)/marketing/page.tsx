@@ -44,6 +44,7 @@ import { cn } from "@/lib/cn";
 import type { MetaGuardrails, MetaOverview, MetaPeriod } from "@/types/meta";
 import { MarketingHubPanel } from "@/components/marketing/MarketingHubPanel";
 import { MarketingIntelligencePanel } from "@/components/marketing/MarketingIntelligencePanel";
+import { MarketingCommandCenterPanel } from "@/components/marketing/MarketingCommandCenterPanel";
 
 type Tab =
   | "resumen"
@@ -56,7 +57,10 @@ type Tab =
   | "instagram"
   | "whatsapp"
   | "acciones"
-  | "operacion";
+  | "operacion"
+  | "experimentos"
+  | "planificacion";
+type MarketingSection = "command" | "acquisition" | "content" | "conversations" | "operations";
 type Permissions = {
   canSync: boolean;
   canAnalyze: boolean;
@@ -80,18 +84,12 @@ type MetaEntitySelection = {
 };
 type MetaOperation = "pause" | "resume" | "rename" | "budget";
 
-const tabs: Array<{ value: Tab; label: string }> = [
-  { value: "resumen", label: "Resumen" },
-  { value: "web", label: "Web" },
-  { value: "leads", label: "Leads de pauta" },
-  { value: "inteligencia", label: "Inteligencia" },
-  { value: "campanas", label: "Campañas" },
-  { value: "creatividad", label: "Creatividad" },
-  { value: "embudo", label: "Embudo" },
-  { value: "instagram", label: "Instagram" },
-  { value: "whatsapp", label: "WhatsApp" },
-  { value: "acciones", label: "Acciones" },
-  { value: "operacion", label: "Operación" },
+const sections: Array<{ value: MarketingSection; label: string; defaultTab: Tab; tabs: Array<{ value: Tab; label: string }> }> = [
+  { value: "command", label: "Resumen ejecutivo", defaultTab: "resumen", tabs: [{ value: "resumen", label: "Centro de decisiones" }] },
+  { value: "acquisition", label: "Adquisición", defaultTab: "campanas", tabs: [{ value: "campanas", label: "Campañas" }, { value: "web", label: "Web" }, { value: "leads", label: "Leads" }, { value: "embudo", label: "Embudo" }] },
+  { value: "content", label: "Contenido", defaultTab: "creatividad", tabs: [{ value: "creatividad", label: "Creatividades" }, { value: "experimentos", label: "Laboratorio" }, { value: "instagram", label: "Instagram" }, { value: "planificacion", label: "Producción de Luli" }] },
+  { value: "conversations", label: "Conversaciones", defaultTab: "whatsapp", tabs: [{ value: "whatsapp", label: "WhatsApp" }, { value: "inteligencia", label: "Inteligencia de leads" }] },
+  { value: "operations", label: "Operación", defaultTab: "acciones", tabs: [{ value: "acciones", label: "Aprobaciones" }, { value: "operacion", label: "Alertas y control" }] },
 ];
 const periods: Array<{ value: MetaPeriod; label: string }> = [
   { value: "7d", label: "7 días" },
@@ -614,19 +612,23 @@ export default function MarketingPage() {
     if (kpis.qualifiedLeads === 0) return "Todavía sin leads calificados";
     return `${integer.format(kpis.qualifiedLeads)} leads con intención comercial`;
   }, [kpis]);
+  const currentSection =
+    sections.find((section) =>
+      section.tabs.some((item) => item.value === tab),
+    ) || sections[0]!;
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-4 sm:p-5">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex max-w-full items-center gap-1 overflow-x-auto rounded-card border border-line-soft bg-white p-1 shadow-sm">
-          {tabs.map((item) => (
+          {sections.map((item) => (
             <button
               key={item.value}
               type="button"
-              onClick={() => setTab(item.value)}
+              onClick={() => setTab(item.defaultTab)}
               className={cn(
                 "shrink-0 rounded-md px-3 py-2 text-sm font-label transition-colors",
-                tab === item.value
+                currentSection.value === item.value
                   ? "bg-signal text-white shadow-sm"
                   : "text-graphite hover:bg-paper hover:text-carbon",
               )}
@@ -694,6 +696,26 @@ export default function MarketingPage() {
         </div>
       </div>
 
+      {currentSection.tabs.length > 1 ? (
+        <div className="flex max-w-full items-center gap-1 overflow-x-auto border-b border-line-soft pb-2">
+          {currentSection.tabs.map((item) => (
+            <button
+              key={item.value}
+              type="button"
+              onClick={() => setTab(item.value)}
+              className={cn(
+                "shrink-0 rounded-md px-3 py-1.5 text-xs font-label transition-colors",
+                tab === item.value
+                  ? "bg-signal-light text-signal"
+                  : "text-graphite hover:bg-paper hover:text-carbon",
+              )}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+      ) : null}
+
       {error ? (
         <div className="flex items-start gap-3 rounded-md border border-danger/20 bg-danger-light px-4 py-3 text-sm text-danger">
           <AlertTriangleIcon className="mt-0.5 shrink-0" size={17} />
@@ -736,6 +758,16 @@ export default function MarketingPage() {
 
       {overview && tab === "resumen" ? (
         <>
+          <MarketingCommandCenterPanel period={period} mode="overview" />
+
+          <div className="flex items-center gap-3 pt-2">
+            <span className="h-px flex-1 bg-line-soft" />
+            <span className="text-[11px] font-label uppercase tracking-[0.16em] text-graphite">
+              Detalle operativo de Meta
+            </span>
+            <span className="h-px flex-1 bg-line-soft" />
+          </div>
+
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <MetricCard
               label="Salud operativa"
@@ -1442,6 +1474,14 @@ export default function MarketingPage() {
             </div>
           </div>
         </div>
+      ) : null}
+
+      {tab === "experimentos" ? (
+        <MarketingCommandCenterPanel period={period} mode="experiments" />
+      ) : null}
+
+      {tab === "planificacion" ? (
+        <MarketingCommandCenterPanel period={period} mode="planning" />
       ) : null}
 
       {overview && tab === "acciones" ? (

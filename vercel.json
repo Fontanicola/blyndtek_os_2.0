@@ -8,6 +8,10 @@
     {
       "path": "/api/cron/content-publish",
       "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/cron/marketing-command",
+      "schedule": "0 20 * * *"
     }
   ]
 }
