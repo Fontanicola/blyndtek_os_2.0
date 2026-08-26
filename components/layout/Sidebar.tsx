@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { UserAvatar } from "@/components/ui";
-import { ChevronDownIcon, EyeIcon, EyeOffIcon, LogoutIcon } from "@/components/ui/icons";
+import { EyeIcon, EyeOffIcon, LogoutIcon } from "@/components/ui/icons";
 import { cn } from "@/lib/cn";
 import { createClient } from "@/lib/supabase/client";
 import { navigationItems, navigationSections } from "@/lib/navigation";
@@ -61,172 +61,20 @@ function hasActiveItem(pathname: string, items: NavItem[]): boolean {
   return items.some((item) => isNavItemActive(pathname, item) || (item.children ? hasActiveItem(pathname, item.children) : false));
 }
 
-type NavigationRowProps = {
-  item: NavItem;
-  pathname: string;
-  collapsed: boolean;
-  mobile: boolean;
-  onClose?: () => void;
-  level?: number;
-};
-
-function NavigationRow({
-  item,
-  pathname,
-  collapsed,
-  mobile,
-  onClose,
-  level = 0
-}: NavigationRowProps) {
-  const hasChildren = Boolean(item.children?.length);
-
-  if (!item.href) {
-    return null;
-  }
-
-  const isParentActive = hasChildren && item.children?.some((child) => isNavItemActive(pathname, child));
-  const isActive = isNavItemActive(pathname, item) || isParentActive;
-
-  return (
-    <Link
-      href={item.href}
-      onClick={mobile ? onClose : undefined}
-      title={collapsed ? item.label : undefined}
-      className={cn(
-        "group relative z-10 mx-2 flex items-center gap-3 rounded-component px-3 py-2 no-underline transition-colors duration-fast ease-fast",
-        "[&_svg]:h-5 [&_svg]:w-5",
-        collapsed && "justify-center px-0",
-        level > 0 && !collapsed && "ml-4 w-[calc(100%-1.75rem)]",
-        isActive ? "bg-white/80 text-carbon" : "hover:bg-white/70"
-      )}
-    >
-      <span
-        className={cn(
-          "transition-colors duration-fast ease-fast",
-          isActive ? "text-signal" : "text-graphite group-hover:text-carbon",
-          item.iconClassName
-        )}
-      >
-        {item.icon}
-      </span>
-      {collapsed ? null : (
-        <span
-          className={cn(
-            "text-sm font-label transition-colors duration-fast ease-fast",
-            isActive ? "text-signal" : "text-graphite group-hover:text-carbon"
-          )}
-        >
-          {item.label}
-        </span>
-      )}
-    </Link>
-  );
+function MainModuleRow({ item, pathname, collapsed, mobile, onClose }: { item: NavItem; pathname: string; collapsed: boolean; mobile: boolean; onClose?: () => void }) {
+  const active = isNavItemActive(pathname, item) || Boolean(item.children?.some((child) => isNavItemActive(pathname, child) || child.children?.some((nested) => isNavItemActive(pathname, nested))));
+  const href = item.href ?? item.children?.find((child) => child.href)?.href;
+  const content = <><span className={cn("shrink-0 transition-colors", active ? "text-signal" : "text-graphite group-hover:text-carbon", "[&_svg]:h-5 [&_svg]:w-5")}>{item.icon}</span>{collapsed ? null : <span className={cn("text-sm font-label", active ? "text-signal" : "text-graphite group-hover:text-carbon")}>{item.label}</span>}</>;
+  const className = cn("group relative z-10 mx-2 flex items-center gap-3 rounded-component px-3 py-2 no-underline transition-colors duration-fast ease-fast", collapsed && "justify-center px-0", active ? "bg-white/80 text-carbon" : "hover:bg-white/70");
+  if (href) return <Link href={href} onClick={mobile ? onClose : undefined} title={collapsed ? item.label : undefined} className={className}>{content}</Link>;
+  return <div title={collapsed ? item.label : undefined} className={className}>{content}</div>;
 }
 
-type NavigationGroupProps = {
-  groupKey: string;
-  label: string;
-  icon: ReactNode;
-  items: NavItem[];
-  pathname: string;
-  collapsed: boolean;
-  mobile: boolean;
-  onClose?: () => void;
-  expanded: boolean;
-  onToggleExpanded: () => void;
-  iconClassName?: string;
-};
-
-function NestedNavigationGroup({ item, pathname, collapsed, mobile, onClose }: { item: NavItem; pathname: string; collapsed: boolean; mobile: boolean; onClose?: () => void }) {
-  const [expanded, setExpanded] = useState(true);
-  const isActive = isNavItemActive(pathname, item) || hasActiveItem(pathname, item.children ?? []);
-
-  return <div className="space-y-1">
-    <button type="button" onClick={() => setExpanded((current) => !current)} className={cn("group relative z-10 mx-2 flex w-[calc(100%-1rem)] items-center gap-3 rounded-component px-3 py-2 text-left", "[&_svg]:h-5 [&_svg]:w-5", isActive ? "bg-white/80 text-carbon" : "hover:bg-white/70", collapsed && "justify-center px-0")} aria-expanded={expanded} title={collapsed ? item.label : undefined}>
-      <span className={cn("text-graphite group-hover:text-carbon", isActive && "text-signal")}>{item.icon}</span>
-      {collapsed ? null : <span className={cn("text-sm font-label", isActive ? "text-signal" : "text-graphite group-hover:text-carbon")}>{item.label}</span>}
-      {!collapsed ? <ChevronDownIcon className={cn("ml-auto h-4 w-4 text-graphite transition-transform", expanded ? "rotate-180" : "")} /> : null}
-    </button>
-    {!collapsed && expanded ? <div className="space-y-1">{item.children?.map((child) => <NavigationRow key={child.href ?? child.label} item={child} pathname={pathname} collapsed={collapsed} mobile={mobile} onClose={onClose} level={1} />)}</div> : null}
+function MainSectionRow({ label, icon, active, collapsed }: { label: string; icon: ReactNode; active: boolean; collapsed: boolean }) {
+  return <div className={cn("group relative z-10 mx-2 flex items-center gap-3 rounded-component px-3 py-2 transition-colors duration-fast ease-fast", collapsed && "justify-center px-0", active ? "bg-white/80 text-carbon" : "hover:bg-white/70")} title={collapsed ? label : undefined}>
+    <span className={cn("shrink-0 transition-colors", active ? "text-signal" : "text-graphite group-hover:text-carbon", "[&_svg]:h-5 [&_svg]:w-5")}>{icon}</span>
+    {collapsed ? null : <span className={cn("text-sm font-label", active ? "text-signal" : "text-graphite group-hover:text-carbon")}>{label}</span>}
   </div>;
-}
-
-function NavigationGroup({
-  groupKey,
-  label,
-  icon,
-  items,
-  pathname,
-  collapsed,
-  mobile,
-  onClose,
-  expanded,
-  onToggleExpanded,
-  iconClassName
-}: NavigationGroupProps) {
-  const isActive = hasActiveItem(pathname, items);
-  const showChildren = !collapsed && expanded;
-
-  return (
-    <div className="relative">
-      <button
-        type="button"
-        onClick={onToggleExpanded}
-        title={collapsed ? label : undefined}
-        aria-expanded={expanded}
-        aria-controls={`${groupKey}-panel`}
-        className={cn(
-          "group relative z-10 mx-2 flex w-[calc(100%-1rem)] items-center gap-3 px-3 py-2 text-left transition-colors duration-fast ease-fast",
-          "[&_svg]:h-5 [&_svg]:w-5",
-          "rounded-component",
-          collapsed && "justify-center px-0",
-        isActive ? "bg-white/80 text-carbon" : "hover:bg-white/70"
-        )}
-      >
-        <span
-          className={cn(
-            "flex h-5 w-5 items-center justify-center transition-colors duration-fast ease-fast",
-            iconClassName,
-            isActive ? "text-carbon" : "text-graphite group-hover:text-carbon",
-          )}
-        >
-          {icon}
-        </span>
-        {collapsed ? null : (
-          <span
-            className={cn(
-              "text-sm font-label transition-colors duration-fast ease-fast",
-            isActive ? "text-signal" : "text-graphite group-hover:text-carbon"
-            )}
-          >
-            {label}
-          </span>
-        )}
-        {!collapsed ? (
-          <ChevronDownIcon
-            className={cn(
-              "ml-auto h-4 w-4 shrink-0 transition-transform duration-normal ease-normal",
-              "text-graphite",
-              expanded ? "rotate-180" : "rotate-0"
-            )}
-          />
-        ) : null}
-      </button>
-
-      {showChildren ? (
-        <div
-          id={`${groupKey}-panel`}
-          className="relative z-10 mt-1 grid grid-rows-[1fr] opacity-100 transition-[grid-template-rows,opacity,margin] duration-normal ease-normal"
-        >
-          <div className="min-h-0 overflow-hidden">
-            <div className="mx-2 space-y-1 rounded-card border border-line-soft/80 bg-white/45 px-2 py-2">
-              {items.map((item) => item.children?.length ? <NestedNavigationGroup key={item.href ?? item.label} item={item} pathname={pathname} collapsed={collapsed} mobile={mobile} onClose={onClose} /> : <NavigationRow key={item.href ?? item.label} item={item} pathname={pathname} collapsed={collapsed} mobile={mobile} onClose={onClose} level={1} />)}
-            </div>
-          </div>
-        </div>
-      ) : null}
-    </div>
-  );
 }
 
 export function Sidebar({
@@ -243,7 +91,6 @@ export function Sidebar({
   const supabase = createClient();
   const menuRef = useRef<HTMLDivElement | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [expandedParents, setExpandedParents] = useState<Record<string, boolean>>({});
   const [focusPreference, setFocusPreference] = useState<PreferenciaNavegacion | null>(null);
   const visibleItems = useMemo(
     () => filterItems(navigationItems, usuario?.rol ?? null),
@@ -295,24 +142,6 @@ export function Sidebar({
     document.addEventListener("mousedown", handlePointerDown);
     return () => document.removeEventListener("mousedown", handlePointerDown);
   }, []);
-
-  useEffect(() => {
-    const nextExpanded: Record<string, boolean> = {};
-    const activeTopLevel = topLevelItems.find((item) => hasActiveItem(pathname, [item]));
-    const activeSection = navigationSections.find((section) =>
-      visibleItems.some((item) => item.section === section.key && (isActivePath(pathname, item.href) || (item.children ? hasActiveItem(pathname, item.children) : false)))
-    );
-
-    if (activeTopLevel?.children?.length) {
-      nextExpanded[activeTopLevel.label] = true;
-    }
-
-    if (activeSection) {
-      nextExpanded[activeSection.key] = true;
-    }
-
-    setExpandedParents(nextExpanded);
-  }, [pathname, visibleItems, topLevelItems]);
 
   async function handleLogout() {
     if (!usuario) {
@@ -377,36 +206,7 @@ export function Sidebar({
           {topLevelItems.length > 0 ? (
             <div className="space-y-1">
               {topLevelItems.map((item) => (
-                item.children?.length ? (
-                  <NavigationGroup
-                    key={item.label}
-                    groupKey={item.label}
-                    label={item.label}
-                    icon={item.icon}
-                    items={item.children}
-                    pathname={pathname}
-                    collapsed={collapsed}
-                    mobile={mobile}
-                    onClose={onClose}
-                    expanded={expandedParents[item.label] ?? false}
-                    onToggleExpanded={() =>
-                      setExpandedParents((current) => ({
-                        ...current,
-                        [item.label]: !current[item.label]
-                      }))
-                    }
-                    iconClassName={item.iconClassName}
-                  />
-                ) : (
-                  <NavigationRow
-                    key={item.href ?? item.label}
-                    item={item}
-                    pathname={pathname}
-                    collapsed={collapsed}
-                    mobile={mobile}
-                    onClose={onClose}
-                  />
-                )
+                <MainModuleRow key={item.href ?? item.label} item={item} pathname={pathname} collapsed={collapsed} mobile={mobile} onClose={onClose} />
               ))}
             </div>
           ) : null}
@@ -421,22 +221,11 @@ export function Sidebar({
             return (
               <div key={section.key}>
                 {!collapsed ? <div className={topLevelItems.length > 0 || index > 0 ? "pt-3" : "pt-1"} /> : null}
-                <NavigationGroup
-                  groupKey={section.key}
+                <MainSectionRow
                   label={section.label}
                   icon={section.icon}
-                  items={sectionItems}
-                  pathname={pathname}
+                  active={sectionItems.some((item) => hasActiveItem(pathname, [item]))}
                   collapsed={collapsed}
-                  mobile={mobile}
-                  onClose={onClose}
-                  expanded={expandedParents[section.key] ?? true}
-                  onToggleExpanded={() =>
-                    setExpandedParents((current) => ({
-                      ...current,
-                      [section.key]: !current[section.key]
-                    }))
-                  }
                 />
               </div>
             );
