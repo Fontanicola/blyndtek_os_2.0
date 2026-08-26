@@ -5,7 +5,7 @@ import { Badge, Button, Card, Input, Modal } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { CAJA_COLOR_OPTIONS, getCajaLightBg } from "@/lib/cajas";
 import { chartTheme } from "@/lib/charts/chartTheme";
-import { formatFecha, formatUSD } from "@/lib/utils/formatters";
+import { formatARS, formatFecha } from "@/lib/utils/formatters";
 import type { CreateCobroInput } from "@/types/cobros";
 import type { Caja } from "@/types/cajas";
 import type { Cliente } from "@/types/clientes";
@@ -81,7 +81,7 @@ function CajaCard({ item, onOpen }: { item: TesoreriaCajaBalance; onOpen?: (item
           </div>
         </div>
         <Badge variant={balanceVariant(item.balance)} className="max-w-full shrink-0">
-          {formatUSD(item.balance)}
+          {formatARS(item.balance)}
         </Badge>
       </div>
 
@@ -89,13 +89,13 @@ function CajaCard({ item, onOpen }: { item: TesoreriaCajaBalance; onOpen?: (item
         <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(0,auto)] items-center gap-3">
           <span className="truncate text-graphite">Cobrado</span>
           <span className="min-w-0 text-right font-label leading-tight text-success [overflow-wrap:anywhere]">
-            {formatUSD(item.total_cobrado)}
+            {formatARS(item.total_cobrado)}
           </span>
         </div>
         <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(0,auto)] items-center gap-3">
           <span className="truncate text-graphite">Egresado</span>
           <span className="min-w-0 text-right font-label leading-tight text-danger [overflow-wrap:anywhere]">
-            {formatUSD(item.total_egresado)}
+            {formatARS(item.total_egresado)}
           </span>
         </div>
         <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(0,auto)] items-center gap-3 border-t border-line-soft pt-3">
@@ -106,7 +106,7 @@ function CajaCard({ item, onOpen }: { item: TesoreriaCajaBalance; onOpen?: (item
               item.balance >= 0 ? "text-signal" : "text-danger"
             )}
           >
-            {formatUSD(item.balance)}
+            {formatARS(item.balance)}
           </span>
         </div>
 
@@ -355,7 +355,7 @@ function GestionarCajasModal({
               label="Nombre"
               value={nuevoNombre}
               onChange={(event) => setNuevoNombre(event.target.value)}
-              placeholder="Caja ahorro USD"
+              placeholder="Caja ahorro pesos"
             />
 
             <div className="space-y-1">
@@ -431,7 +431,7 @@ export function TesoreriaCard({
             <p className="text-sm text-graphite">Dónde está la plata que ya entró y cómo se compone por caja.</p>
           </div>
           <div className="flex items-center gap-2">
-            <Badge variant={data ? balanceVariant(data.balance_total) : "default"}>{formatUSD(data?.balance_total ?? 0)}</Badge>
+            <Badge variant={data ? balanceVariant(data.balance_total) : "default"}>{formatARS(data?.balance_total ?? 0)}</Badge>
             <Button variant="primary" size="sm" onClick={() => openTransferModal()}>
               Transferir
             </Button>
@@ -445,7 +445,7 @@ export function TesoreriaCard({
           <Card padding="md" className="space-y-3 bg-paper">
             <p className="text-xs font-label text-graphite">Balance total</p>
             <p className={cn("text-3xl font-title", (data?.balance_total ?? 0) >= 0 ? "text-signal" : "text-danger")}>
-              {formatUSD(data?.balance_total ?? 0)}
+              {formatARS(data?.balance_total ?? 0)}
             </p>
             <p className="text-sm text-graphite">Incluye caja inicial más balances por caja y sin asignar.</p>
           </Card>
@@ -454,7 +454,7 @@ export function TesoreriaCard({
             <p className="text-xs font-label text-graphite">Caja inicial</p>
             <div className="flex flex-wrap items-end gap-3">
               <Input
-                label="Caja inicial"
+                label="Caja inicial en pesos"
                 type="number"
                 value={cajaInicialDraft}
                 onChange={(event) => onCajaInicialDraftChange(event.target.value)}

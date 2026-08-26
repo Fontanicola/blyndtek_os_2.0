@@ -10,10 +10,10 @@ import { useClientes } from "@/lib/hooks/useClientes";
 import { addMonths, buildMonthlyFinancialSeries, formatMonthKey, formatMonthLabel, isCobroVencido, startOfMonth } from "@/lib/finanzas";
 import { getMonthHistoryItems } from "@/lib/finanzas/egresosRecurrentes";
 import { fechaInputAString, fechaStringAFechaLocal, hoyLocalString } from "@/lib/utils/fechas";
-import { formatUSD } from "@/lib/utils/formatters";
+import { formatARS, formatUSD } from "@/lib/utils/formatters";
 import { useProyectos } from "@/lib/hooks/useProyectos";
 import { useFinanzas } from "@/lib/hooks/useFinanzas";
-import { ArrowLeftIcon, ArrowRightIcon, WalletIcon } from "@/components/ui/icons";
+import { ArrowLeftIcon, ArrowRightIcon, RefreshIcon, WalletIcon } from "@/components/ui/icons";
 import type { Cobro } from "@/types/cobros";
 import type { Egreso } from "@/types/egresos";
 import type { Suscripcion } from "@/types/suscripciones";
@@ -271,6 +271,8 @@ export function FinanzasClient({ cotizaciones, asesorFinancieroAnalisis, cierres
     [egresosDelMes]
   );
   const totalEgresosMes = useMemo(() => egresosDelMes.reduce((total, egreso) => total + egreso.monto, 0), [egresosDelMes]);
+  const totalEgresosRecurrentesMes = useMemo(() => egresosRecurrentesDelMes.reduce((total, egreso) => total + egreso.monto, 0), [egresosRecurrentesDelMes]);
+  const totalEgresosNoRecurrentesMes = useMemo(() => egresosNoRecurrentesDelMes.reduce((total, egreso) => total + egreso.monto, 0), [egresosNoRecurrentesDelMes]);
   const totalEgresosMesAnterior = useMemo(
     () => egresos.filter((egreso) => egreso.fecha?.startsWith(`${egresosPreviousMonth}-`)).reduce((total, egreso) => total + egreso.monto, 0),
     [egresos, egresosPreviousMonth]
@@ -618,19 +620,19 @@ export function FinanzasClient({ cotizaciones, asesorFinancieroAnalisis, cierres
           <div className="grid gap-4 md:grid-cols-3">
             <MetricaCard
               label="Cobrado este mes"
-              value={formatUSD(ingresosCobradosMes)}
+              value={formatARS(ingresosCobradosMes)}
               icono={<FinanzasIcon />}
               colorIcono="success"
             />
             <MetricaCard
               label="Pendiente este mes"
-              value={formatUSD(ingresosPendientesMes)}
+              value={formatARS(ingresosPendientesMes)}
               icono={<FinanzasIcon />}
               colorIcono={ingresosPendientesMes > 0 ? "warning" : "graphite"}
             />
             <MetricaCard
               label="Con atraso"
-              value={formatUSD(ingresosVencidosMes)}
+              value={formatARS(ingresosVencidosMes)}
               icono={<BellIcon />}
               colorIcono={ingresosVencidosMes > 0 ? "danger" : "graphite"}
             />
@@ -668,15 +670,17 @@ export function FinanzasClient({ cotizaciones, asesorFinancieroAnalisis, cierres
             </div>
           </Card>
 
-          <div className="grid gap-4 md:grid-cols-3">
-            <MetricaCard label="Pagado este mes" value={formatUSD(pagadoMes)} icono={<WalletIcon />} colorIcono="success" />
-            <MetricaCard label="Pendiente este mes" value={formatUSD(pendienteMes)} icono={<WalletIcon />} colorIcono="warning" />
+          <div className="grid gap-4 md:grid-cols-5">
+            <MetricaCard label="Pagado este mes (pesos)" value={formatARS(pagadoMes)} icono={<WalletIcon />} colorIcono="success" />
+            <MetricaCard label="Pendiente este mes (pesos)" value={formatARS(pendienteMes)} icono={<WalletIcon />} colorIcono="warning" />
+            <MetricaCard label="Recurrentes (pesos)" value={formatARS(totalEgresosRecurrentesMes)} icono={<RefreshIcon />} colorIcono="signal" />
+            <MetricaCard label="No recurrentes (pesos)" value={formatARS(totalEgresosNoRecurrentesMes)} icono={<WalletIcon />} colorIcono="danger" />
             <MetricaCard
               label="Desvío vs. mes anterior"
               value={desvioMesPct == null ? "Sin base" : `${desvioMesPct >= 0 ? "+" : ""}${desvioMesPct.toFixed(1)}%`}
               icono={<FinanzasIcon />}
               colorIcono={desvioMesPct == null ? "graphite" : desvioMesPct > 0 ? "danger" : desvioMesPct < 0 ? "success" : "graphite"}
-              description={`${formatUSD(totalEgresosMes)} vs. ${formatUSD(totalEgresosMesAnterior)}`}
+              description={`${formatARS(totalEgresosMes)} vs. ${formatARS(totalEgresosMesAnterior)}`}
             />
           </div>
 
@@ -744,7 +748,7 @@ export function FinanzasClient({ cotizaciones, asesorFinancieroAnalisis, cierres
 
           {vencidoMes > 0 ? (
             <Card padding="sm" className="border-danger/30 bg-danger-light">
-              <p className="text-sm text-danger">Hay {formatUSD(vencidoMes)} en egresos con atraso dentro de {egresosMonthLabel}.</p>
+              <p className="text-sm text-danger">Hay {formatARS(vencidoMes)} en egresos con atraso dentro de {egresosMonthLabel}.</p>
             </Card>
           ) : null}
         </div>

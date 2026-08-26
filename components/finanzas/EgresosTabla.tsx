@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import { Badge, EmptyState, DataTable, DataTableBody, DataTableCell, DataTableHead, DataTableHeader, DataTableRow, RowActions } from "@/components/ui";
 import { GlobeIcon, LandmarkIcon, MegaphoneIcon, MoreHorizontalIcon, RefreshIcon, ServerIcon, UsersIcon, WalletIcon, WrenchIcon } from "@/components/ui/icons";
 import { formatCajaLabel } from "@/lib/cajas";
-import { formatFecha, formatUSD } from "@/lib/utils/formatters";
+import { formatARS, formatFecha } from "@/lib/utils/formatters";
 import { fechaStringAFechaLocal } from "@/lib/utils/fechas";
 import { cn } from "@/lib/cn";
 import type { Caja } from "@/types/cajas";
@@ -30,7 +30,7 @@ export function EgresosTabla({ egresos, cajas = [], onEdit, onDelete, onTogglePa
               <DataTableCell><span className="inline-flex min-w-0 items-center gap-2 truncate text-carbon"><Icon size={15} className="shrink-0 text-graphite" /><span className="truncate">{category.label}</span></span></DataTableCell>
               <DataTableCell>{onTogglePagado ? <button type="button" onClick={() => void onTogglePagado(egreso)} title={egreso.pagado ? "Marcar como pendiente" : "Marcar como pagado"}><Badge variant={egreso.pagado ? "success" : "warning"}>{egreso.pagado ? "Pagado" : "Pendiente"}</Badge></button> : <Badge variant={egreso.pagado ? "success" : "warning"}>{egreso.pagado ? "Pagado" : "Pendiente"}</Badge>}</DataTableCell>
               <DataTableCell><Badge variant="default">{formatCajaLabel(egreso.cuenta_medio, cajas)}</Badge></DataTableCell>
-              <DataTableCell className="whitespace-nowrap font-label text-carbon">{formatUSD(egreso.monto)}</DataTableCell>
+              <DataTableCell className="whitespace-nowrap font-label text-carbon">{formatARS(egreso.monto)}</DataTableCell>
               <DataTableCell className="whitespace-nowrap">{formatFecha(egreso.fecha)}</DataTableCell>
               {showRecurrenteColumn ? <DataTableCell>{egreso.recurrente ? "Sí" : "No"}</DataTableCell> : null}
               <DataTableCell className="text-right"><RowActions actions={[...(onEdit ? [{ kind: "edit" as const, label: "Editar", onClick: () => onEdit(egreso) }] : []), ...(onDelete ? [{ kind: "destructive" as const, label: "Eliminar", onClick: async () => { if (window.confirm(egreso.recurrente_config_id ? "¿Eliminar este egreso y detener su recurrencia?" : "¿Eliminar este egreso?")) await onDelete(egreso); } }] : [])]} /></DataTableCell>
@@ -39,7 +39,7 @@ export function EgresosTabla({ egresos, cajas = [], onEdit, onDelete, onTogglePa
           </DataTableBody>
         </DataTable>
       </div>
-      <div className="border-t border-line-soft px-4 py-3 text-right text-sm text-graphite">Total egresos: <span className="font-label text-carbon">{formatUSD(total)}</span></div>
+      <div className="border-t border-line-soft px-4 py-3 text-right text-sm text-graphite">Total: <strong className="font-label text-carbon">{formatARS(total)}</strong></div>
     </div>
   </div>;
 }

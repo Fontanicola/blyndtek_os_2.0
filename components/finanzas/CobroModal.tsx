@@ -140,7 +140,7 @@ export function CobroModal({
         />
         <Input label="Concepto" value={concepto} onChange={(event) => setConcepto(event.target.value)} />
         <div className="grid gap-4 md:grid-cols-2">
-          <Input label="Monto" type="number" value={monto} onChange={(event) => setMonto(event.target.value)} />
+          <Input label="Monto en pesos" type="number" min="0" step="1" value={monto} onChange={(event) => setMonto(event.target.value)} />
           <div className="space-y-1">
             <label className="text-sm font-label text-carbon">Tipo</label>
             <select

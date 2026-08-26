@@ -7,7 +7,7 @@ import { cn } from "@/lib/cn";
 import { formatCajaLabel } from "@/lib/cajas";
 import { isCobroVencido } from "@/lib/finanzas";
 import { formatearFechaDisplay } from "@/lib/utils/fechas";
-import { formatUSD } from "@/lib/utils/formatters";
+import { formatARS } from "@/lib/utils/formatters";
 import { labelEstado } from "@/lib/ui/labels";
 import type { Caja } from "@/types/cajas";
 import type { Cobro, EstadoCobro } from "@/types/cobros";
@@ -135,7 +135,7 @@ export function CobrosTabla({ cobros, cajas = [], onMarkCobrado, onNew, onEdit }
                     </DataTableCell>
                     <DataTableCell>{getTipoLabel(cobro.tipo)}</DataTableCell>
                     <DataTableCell className="whitespace-nowrap">{formatearFechaDisplay(cobro.fecha_emision)}</DataTableCell>
-                    <DataTableCell className="whitespace-nowrap font-label text-carbon">{formatUSD(cobro.monto)}</DataTableCell>
+                    <DataTableCell className="whitespace-nowrap font-label text-carbon">{formatARS(cobro.monto)}</DataTableCell>
                     <DataTableCell className="whitespace-nowrap">{formatearFechaDisplay(cobro.fecha_vencimiento)}</DataTableCell>
                     <DataTableCell>
                       {cobro.caja_id

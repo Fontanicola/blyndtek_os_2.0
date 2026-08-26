@@ -4,6 +4,7 @@ import { syncInstagram } from "@/lib/meta/instagram";
 import { syncMetaAds } from "@/lib/meta/sync";
 import { refreshMarketingIntelligence } from "@/lib/marketing/intelligence";
 import { analyzePendingWhatsappConversations } from "@/lib/marketing/whatsapp-intelligence";
+import { logServerError } from "@/lib/observability/logger";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -72,6 +73,7 @@ export async function GET(request: NextRequest) {
       data: { ...result, instagram, intelligence, whatsapp },
     });
   } catch (error) {
+    logServerError("meta.sync.cron", error);
     return NextResponse.json(
       {
         error:
@@ -79,7 +81,7 @@ export async function GET(request: NextRequest) {
             ? error.message
             : "No se pudo sincronizar Meta.",
       },
-      { status: 500 },
+      { status: 502 },
     );
   }
 }

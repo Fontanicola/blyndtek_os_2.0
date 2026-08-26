@@ -156,7 +156,7 @@ export function TransferenciaCajaModal({
 
         <div className="grid gap-4 md:grid-cols-2">
           <Input
-            label="Monto"
+            label="Monto en pesos"
             type="number"
             inputMode="decimal"
             min="0"

@@ -39,7 +39,6 @@ type PublicLeadBody = {
   rol?: unknown;
   urgencia?: unknown;
   referrer?: unknown;
-  visitor_id?: unknown;
   web_session_id?: unknown;
 };
 
@@ -133,15 +132,6 @@ function isValidEmail(email: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
-function pathFromUrl(value: string) {
-  if (!value) return null;
-  try {
-    return new URL(value).pathname.slice(0, 300);
-  } catch {
-    return null;
-  }
-}
-
 function buildNotas(email: string, mensajeInicial: string, details: string[]) {
   return [`Email: ${email}`, mensajeInicial ? `Mensaje inicial: ${mensajeInicial}` : null, ...details]
     .filter(Boolean)
@@ -216,7 +206,6 @@ export async function POST(request: NextRequest) {
   const fbp = asTrimmedString(body.fbp);
   const landingUrl = asTrimmedString(body.landing_url);
   const formularioVersion = asTrimmedString(body.formulario_version);
-  const visitorId = asTrimmedString(body.visitor_id);
   const webSessionId = asTrimmedString(body.web_session_id);
   const eventId = randomUUID();
 
@@ -233,36 +222,6 @@ export async function POST(request: NextRequest) {
   }
 
   const supabase = createUntypedAdminClient();
-  if (webSessionId && visitorId) {
-    const { data: existingSession } = await supabase
-      .from("web_sessions")
-      .select("started_at,visitor_id,utm_source,utm_medium,utm_campaign,utm_content,utm_term,meta_campaign_id,meta_adset_id,meta_ad_id,fbclid,landing_url,landing_path,referrer")
-      .eq("id", webSessionId)
-      .maybeSingle();
-    const sessionTimestamp = new Date().toISOString();
-    const { error: sessionError } = await supabase.from("web_sessions").upsert({
-      id: webSessionId,
-      visitor_id: existingSession?.visitor_id || visitorId,
-      started_at: existingSession?.started_at || sessionTimestamp,
-      last_seen_at: sessionTimestamp,
-      landing_url: landingUrl || existingSession?.landing_url || null,
-      landing_path: existingSession?.landing_path || pathFromUrl(landingUrl),
-      referrer: asTrimmedString(body.referrer) || existingSession?.referrer || null,
-      utm_source: utmSource || existingSession?.utm_source || null,
-      utm_medium: utmMedium || existingSession?.utm_medium || null,
-      utm_campaign: utmCampaign || existingSession?.utm_campaign || null,
-      utm_content: utmContent || existingSession?.utm_content || null,
-      utm_term: utmTerm || existingSession?.utm_term || null,
-      meta_campaign_id: metaCampaignId || existingSession?.meta_campaign_id || null,
-      meta_adset_id: metaAdsetId || existingSession?.meta_adset_id || null,
-      meta_ad_id: metaAdId || existingSession?.meta_ad_id || null,
-      fbclid: fbclid || existingSession?.fbclid || null,
-      updated_at: sessionTimestamp,
-    }, { onConflict: "id" });
-    if (sessionError) {
-      return NextResponse.json({ error: sessionError.message }, { status: 500, headers });
-    }
-  }
   const details = [
     asTrimmedString(body.cantidad_empleados) ? `Empleados: ${asTrimmedString(body.cantidad_empleados)}` : "",
     asTrimmedString(body.rol) ? `Rol: ${asTrimmedString(body.rol)}` : "",
