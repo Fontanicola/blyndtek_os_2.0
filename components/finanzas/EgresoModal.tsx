@@ -115,7 +115,7 @@ export function EgresoModal({
               ))}
             </select>
           </div>
-          <Input label="Monto" type="number" value={monto} onChange={(event) => setMonto(event.target.value)} />
+          <Input label="Monto en pesos" type="number" min="0" step="1" value={monto} onChange={(event) => setMonto(event.target.value)} />
         </div>
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-1">

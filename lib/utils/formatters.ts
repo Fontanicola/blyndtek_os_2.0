@@ -11,6 +11,16 @@ export function formatUSD(amount: number): string {
   return `$${formatter.format(amount)} USD`;
 }
 
+/** Formato monetario para los movimientos operativos expresados en pesos argentinos. */
+export function formatARS(amount: number): string {
+  return new Intl.NumberFormat("es-AR", {
+    style: "currency",
+    currency: "ARS",
+    minimumFractionDigits: Number.isInteger(amount) ? 0 : 2,
+    maximumFractionDigits: Number.isInteger(amount) ? 0 : 2
+  }).format(amount);
+}
+
 export function formatFecha(fecha: string | null | undefined): string {
   if (!fecha) {
     return "Sin fecha";

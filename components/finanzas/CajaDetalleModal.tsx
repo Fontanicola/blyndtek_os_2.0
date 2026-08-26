@@ -7,7 +7,7 @@ import { formatMonthLabel } from "@/lib/finanzas";
 import { useCajaMovimientos } from "@/lib/hooks/useCajaMovimientos";
 import { cn } from "@/lib/cn";
 import { fechaInputAString, hoyLocalString } from "@/lib/utils/fechas";
-import { formatFecha, formatUSD } from "@/lib/utils/formatters";
+import { formatARS, formatFecha } from "@/lib/utils/formatters";
 import type { Caja } from "@/types/cajas";
 import type { CobroModalInput } from "@/components/finanzas/CobroModal";
 import type { CreateEgresoInput } from "@/types/egresos";
@@ -133,7 +133,7 @@ function KpiMiniCard({
           tone === "success" ? "text-success" : tone === "danger" ? "text-danger" : "text-signal"
         )}
       >
-        {formatUSD(value)}
+        {formatARS(value)}
       </p>
     </Card>
   );
@@ -173,7 +173,7 @@ function MovimientoRow({ movimiento }: { movimiento: MovimientoCaja }) {
 
           <p className={cn("shrink-0 text-sm font-title", isIngreso ? "text-success" : "text-danger")}>
             {isIngreso ? "+" : "-"}
-            {formatUSD(movimiento.monto)}
+            {formatARS(movimiento.monto)}
           </p>
         </div>
       </div>
