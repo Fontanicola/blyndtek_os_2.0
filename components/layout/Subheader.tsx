@@ -42,15 +42,15 @@ function SubheaderItem({ item, pathname, depth = 0 }: { item: NavItem; pathname:
   const active = isActivePath(pathname, item.href, item.exact) || item.children?.some((child) => isActivePath(pathname, child.href, child.exact) || child.children?.some((nested) => isActivePath(pathname, nested.href, nested.exact)));
 
   return (
-    <div className={cn("space-y-1", depth > 0 && "ml-3")}> 
+    <div className={cn("flex items-center gap-1", depth > 0 && "ml-2")}> 
       {item.href ? (
-        <Link href={item.href} className={cn("flex items-center gap-3 rounded-component px-3 py-2 text-sm font-label transition-colors duration-fast ease-fast", active ? "bg-white/15 text-white" : "text-white/70 hover:bg-white/10 hover:text-white")}>
+          <Link href={item.href} className={cn("flex items-center gap-2 rounded-component px-3 py-2 text-sm font-label transition-colors duration-fast ease-fast", active ? "bg-white/15 text-white" : "text-white/70 hover:bg-white/10 hover:text-white")}>
           <span className="shrink-0 [&_svg]:h-5 [&_svg]:w-5">{item.icon}</span><span>{item.label}</span>
         </Link>
       ) : (
-        <div className="flex items-center gap-3 px-3 py-2 text-sm font-label text-white/55"><span className="shrink-0 [&_svg]:h-5 [&_svg]:w-5">{item.icon}</span><span>{item.label}</span></div>
+        <div className="flex items-center gap-2 px-3 py-2 text-sm font-label text-white/55"><span className="shrink-0 [&_svg]:h-5 [&_svg]:w-5">{item.icon}</span><span>{item.label}</span></div>
       )}
-      {hasChildren ? <div className="space-y-1 border-l border-white/15 pl-2">{item.children?.map((child) => <SubheaderItem key={child.href ?? child.label} item={child} pathname={pathname} depth={depth + 1} />)}</div> : null}
+      {hasChildren ? <div className="flex items-center border-l border-white/15 pl-1">{item.children?.map((child) => <SubheaderItem key={child.href ?? child.label} item={child} pathname={pathname} depth={depth + 1} />)}</div> : null}
     </div>
   );
 }
@@ -77,12 +77,13 @@ export function Subheader({ usuario }: SubheaderProps) {
   if (!context) return null;
 
   return (
-    <aside className={cn("relative hidden h-screen shrink-0 overflow-visible bg-signal text-white shadow-[6px_0_18px_rgba(15,23,42,0.08)] transition-[width,opacity] duration-normal ease-normal md:block", open ? "w-60" : "w-0")} aria-label={`Subnavegación de ${context.label}`}>
-      <div className={cn("h-full w-60 overflow-y-auto px-3 py-6 transition-transform duration-normal ease-normal", open ? "translate-x-0 opacity-100" : "-translate-x-4 opacity-0 pointer-events-none")}>
-        <div className="mb-5 flex items-center gap-3 border-b border-white/15 px-3 pb-4"><span className="[&_svg]:h-5 [&_svg]:w-5">{context.icon}</span><span className="text-base font-label text-white">{context.label}</span></div>
-        <nav className="space-y-1">{context.items.map((item) => <SubheaderItem key={item.href ?? item.label} item={item} pathname={pathname} />)}</nav>
+    <div className={cn("relative z-20 hidden shrink-0 overflow-visible bg-signal text-white shadow-[0_6px_18px_rgba(15,23,42,0.08)] transition-[max-height,opacity] duration-normal ease-normal md:block", open ? "max-h-32 opacity-100" : "max-h-0 opacity-100")} aria-label={`Subnavegación de ${context.label}`}>
+      <div className={cn("flex min-h-16 items-center gap-6 px-6 py-2 transition-[transform,opacity] duration-normal ease-normal", open ? "translate-y-0 opacity-100" : "-translate-y-3 pointer-events-none opacity-0")}>
+        <div className="flex shrink-0 items-center gap-2 border-r border-white/15 pr-6"><span className="[&_svg]:h-5 [&_svg]:w-5">{context.icon}</span><span className="text-sm font-label text-white">{context.label}</span></div>
+        <nav className="flex min-w-0 flex-wrap items-center gap-1">{context.items.map((item) => <SubheaderItem key={item.href ?? item.label} item={item} pathname={pathname} />)}</nav>
+        <button type="button" onClick={toggle} aria-label="Cerrar subnavegación" title="Cerrar subnavegación" className="ml-auto flex h-9 w-9 shrink-0 items-center justify-center rounded-component text-white/75 transition-colors duration-fast ease-fast hover:bg-white/10 hover:text-white"><ArrowLeftIcon size={16} /></button>
       </div>
-      <button type="button" onClick={toggle} aria-label={open ? "Cerrar subnavegación" : "Abrir subnavegación"} title={open ? "Cerrar subnavegación" : "Abrir subnavegación"} className={cn("absolute top-24 z-40 flex h-14 w-7 items-center justify-center rounded-r-component bg-signal text-white shadow-md transition-[right,left] duration-normal ease-normal hover:bg-signal-hover", open ? "-right-7" : "left-0")}>{open ? <ArrowLeftIcon size={16} /> : <ArrowRightIcon size={16} />}</button>
-    </aside>
+      <button type="button" onClick={toggle} aria-label="Abrir subnavegación" title="Abrir subnavegación" className={cn("absolute left-3 top-0 z-40 flex h-8 w-9 items-center justify-center rounded-b-component bg-signal text-white shadow-md transition-[opacity,transform] duration-normal ease-normal hover:bg-signal-hover", open ? "pointer-events-none -translate-y-2 opacity-0" : "translate-y-0 opacity-100")}><ArrowRightIcon size={16} /></button>
+    </div>
   );
 }
