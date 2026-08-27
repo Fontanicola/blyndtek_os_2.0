@@ -21,6 +21,7 @@ import {
   OutboundIcon,
   PaletteIcon,
   SaasIcon,
+  SearchIcon,
   ServerIcon,
   NotasIcon,
   SparklesIcon,
@@ -130,6 +131,13 @@ export const navigationItems: NavItem[] = [
     label: "La Operación",
     href: "/marketing/newsletter",
     icon: createElement(BookOpenIcon),
+    roles: ["admin", "marketing"],
+    section: "comercial"
+  },
+  {
+    label: "SEO",
+    href: "/seo",
+    icon: createElement(SearchIcon),
     roles: ["admin", "marketing"],
     section: "comercial"
   },
