@@ -1,5 +1,12 @@
 # Módulo SEO y visibilidad en IA
 
+## Estado de implementación — 27 de agosto de 2026
+
+- UI publicada en `https://sistema.blyndtek.com/seo` y verificada en escritorio y móvil.
+- Migración `048_seo_visibility.sql` aplicada al proyecto productivo `blyndtek_os_2.0` (`gyspazxpnzwkzrqlikqw`) después de una ejecución completa con `ROLLBACK`.
+- Verificación posterior: 11 tablas SEO, 11 con RLS habilitado, 22 políticas, 7 fuentes iniciales y 7 prompts de control.
+- Search Console, GA4 y Bing continúan sin conexión verificable; sus métricas permanecen como “sin datos”.
+
 ## Principios
 
 - Search Console, GA4, Bing y PageSpeed son fuentes; Blyndtek OS conserva histórico, contexto y decisiones.
