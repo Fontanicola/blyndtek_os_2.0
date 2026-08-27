@@ -64,6 +64,7 @@ export const navigationItems: NavItem[] = [
       { label: "LinkedIn", icon: createElement(LinkedinIcon), roles: ["admin", "marketing"], section: "top-level", children: [
         { label: "Feed", href: "/marca/linkedin/feed", icon: createElement(GridIcon), roles: ["admin", "marketing"], section: "top-level" }
       ] },
+      { label: "Producción", href: "/contenido", icon: createElement(FileTextIcon), roles: ["admin", "marketing"], section: "top-level" },
       { label: "Calendario", href: "/marca/calendario", icon: createElement(CalendarioIcon), roles: ["admin", "marketing"], section: "top-level" },
       { label: "Identidad de marca", href: "/marca/identidad", icon: createElement(FileTextIcon), roles: ["admin", "marketing"], section: "top-level" }
     ]
@@ -121,6 +122,13 @@ export const navigationItems: NavItem[] = [
     section: "comercial"
   },
   {
+    label: "Equipo comercial",
+    href: "/equipo-comercial",
+    icon: createElement(OutboundIcon),
+    roles: ["admin"],
+    section: "comercial"
+  },
+  {
     label: "Marketing",
     href: "/marketing",
     icon: createElement(BarChartIcon),
@@ -128,7 +136,7 @@ export const navigationItems: NavItem[] = [
     section: "comercial"
   },
   {
-    label: "La Operación",
+    label: "Newsletter",
     href: "/marketing/newsletter",
     icon: createElement(BookOpenIcon),
     roles: ["admin", "marketing"],
@@ -139,13 +147,6 @@ export const navigationItems: NavItem[] = [
     href: "/seo",
     icon: createElement(SearchIcon),
     roles: ["admin", "marketing"],
-    section: "comercial"
-  },
-  {
-    label: "Contenido",
-    href: "/contenido",
-    icon: createElement(FileTextIcon),
-    roles: [],
     section: "comercial"
   },
   {
@@ -170,23 +171,16 @@ export const navigationItems: NavItem[] = [
     section: "entrega"
   },
   {
-    label: "Control técnico",
-    href: "/software",
-    icon: createElement(ServerIcon),
-    roles: ["admin"],
-    section: "entrega"
-  },
-  {
-    label: "Soporte",
-    href: "/soporte",
-    icon: createElement(LifeBuoyIcon),
-    roles: ["admin", "miembro", "comercial"],
-    section: "entrega"
-  },
-  {
     label: "Tareas",
     href: "/tareas",
     icon: createElement(TareasIcon),
+    roles: ["admin", "miembro", "comercial", "marketing"],
+    section: "entrega"
+  },
+  {
+    label: "Reuniones",
+    href: "/reuniones",
+    icon: createElement(VideoIcon),
     roles: ["admin", "miembro", "comercial", "marketing"],
     section: "entrega"
   },
@@ -198,10 +192,17 @@ export const navigationItems: NavItem[] = [
     section: "entrega"
   },
   {
-    label: "Reuniones",
-    href: "/reuniones",
-    icon: createElement(VideoIcon),
-    roles: ["admin", "miembro", "comercial", "marketing"],
+    label: "Soporte",
+    href: "/soporte",
+    icon: createElement(LifeBuoyIcon),
+    roles: ["admin", "miembro", "comercial"],
+    section: "entrega"
+  },
+  {
+    label: "Control técnico",
+    href: "/software",
+    icon: createElement(ServerIcon),
+    roles: ["admin"],
     section: "entrega"
   },
   {
@@ -243,13 +244,6 @@ export const navigationItems: NavItem[] = [
     label: "SaaS",
     href: "/saas",
     icon: createElement(SaasIcon),
-    roles: ["admin"],
-    section: "control"
-  },
-  {
-    label: "Equipo comercial",
-    href: "/equipo-comercial",
-    icon: createElement(OutboundIcon),
     roles: ["admin"],
     section: "control"
   },
