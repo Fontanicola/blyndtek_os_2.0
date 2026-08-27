@@ -1,0 +1,162 @@
+{
+  "campaign": "la-empresa-a-oscuras",
+  "master_duration_seconds": 45,
+  "shots": [
+    {
+      "id": "S01_SH01",
+      "purpose": "Abrir con una señal de dependencia antes de ver al dueño",
+      "duration_seconds": 2.5,
+      "aspect_ratio": "16:9",
+      "model": "Seedance 2.0 or current equivalent",
+      "references": ["@style_dawn", "@office", "@owner_phone"],
+      "prompt_file": "prompts/S01_SH01.txt",
+      "success_criteria": ["phone remains unchanged", "single believable vibration", "darkness is natural, not horror", "clean screen for post"],
+      "status": "planned",
+      "jobs": [], "selects": [], "qa_score": null
+    },
+    {
+      "id": "S01_SH02",
+      "purpose": "Establecer empresa, protagonista y geografía",
+      "duration_seconds": 3,
+      "aspect_ratio": "16:9",
+      "model": "Seedance 2.0 or current equivalent",
+      "references": ["@style_dawn", "@owner", "@office", "@warehouse", "@owner_phone"],
+      "prompt_file": "prompts/S01_SH02.txt",
+      "success_criteria": ["owner identity stable", "office left and warehouse right", "one practical light row turns on", "no triumphant entrance"],
+      "status": "planned",
+      "jobs": [], "selects": [], "qa_score": null
+    },
+    {
+      "id": "S02_SH01",
+      "purpose": "Mostrar que una parte de la operación vive en mensajes",
+      "duration_seconds": 3,
+      "aspect_ratio": "16:9",
+      "model": "Seedance 2.0 or current equivalent",
+      "references": ["@style_dawn", "@owner", "@owner_phone", "@warehouse"],
+      "prompt_file": "prompts/S02_SH01.txt",
+      "success_criteria": ["phone stays in right hand", "owner microreaction is restrained", "screen remains trackable", "walking direction left to right"],
+      "status": "planned",
+      "jobs": [], "selects": [], "qa_score": null
+    },
+    {
+      "id": "S02_SH02",
+      "purpose": "Demostrar la duplicación del mismo pedido entre soportes",
+      "duration_seconds": 3.5,
+      "aspect_ratio": "16:9",
+      "model": "Seedance 2.0 or current equivalent",
+      "references": ["@style_dawn", "@operator", "@warehouse", "@order_folder", "@clean_laptop"],
+      "prompt_file": "prompts/S02_SH02.txt",
+      "success_criteria": ["one clear transfer action", "folder and laptop do not mutate", "operator appears competent", "generated text is not legible"],
+      "status": "planned",
+      "jobs": [], "selects": [], "qa_score": null
+    },
+    {
+      "id": "S02_SH03",
+      "purpose": "Fijar posiciones y hacer visible que nadie posee la respuesta completa",
+      "duration_seconds": 3.5,
+      "aspect_ratio": "16:9",
+      "model": "Seedance 2.0 or current equivalent",
+      "references": ["@style_dawn", "@owner", "@operator", "@warehouse", "@order_folder"],
+      "prompt_file": "prompts/S02_SH03.txt",
+      "success_criteria": ["blocking remains stable", "owner never looks at camera", "dialogue can be replaced in post", "eyelines point to three different information sources"],
+      "status": "planned",
+      "jobs": [], "selects": [], "qa_score": null
+    },
+    {
+      "id": "S02_SH04",
+      "purpose": "Cerrar la tensión en el rostro del dueño sin melodrama",
+      "duration_seconds": 3,
+      "aspect_ratio": "16:9",
+      "model": "Cinema Studio Video or current high-control equivalent",
+      "references": ["@style_dawn", "@owner", "@warehouse"],
+      "prompt_file": "prompts/S02_SH04.txt",
+      "success_criteria": ["stable facial identity", "one breath and jaw microgesture", "credible eyeline change", "no tears or exaggerated frustration"],
+      "status": "planned",
+      "jobs": [], "selects": [], "qa_score": null
+    },
+    {
+      "id": "S03_SH01",
+      "purpose": "Introducir el método de Blyndtek mediante observación física",
+      "duration_seconds": 3.5,
+      "aspect_ratio": "16:9",
+      "model": "Seedance 2.0 or current equivalent",
+      "references": ["@style_day", "@analyst", "@warehouse", "@analyst_notebook"],
+      "prompt_file": "prompts/S03_SH01.txt",
+      "success_criteria": ["analyst walks a plausible route", "timer and notebook remain stable", "no presentation or sales behavior", "light direction matches prior scene"],
+      "status": "planned",
+      "jobs": [], "selects": [], "qa_score": null
+    },
+    {
+      "id": "S03_SH02",
+      "purpose": "Probar visualmente qué significa medir la operación",
+      "duration_seconds": 3.5,
+      "aspect_ratio": "16:9",
+      "model": "Seedance 2.0 or current equivalent",
+      "references": ["@style_day", "@analyst", "@operator", "@order_folder", "@analyst_notebook"],
+      "prompt_file": "prompts/S03_SH02.txt",
+      "success_criteria": ["three exact insert actions separated by edit points", "hands remain anatomically credible", "props do not change", "no readable generated text"],
+      "status": "planned",
+      "jobs": [], "selects": [], "qa_score": null
+    },
+    {
+      "id": "S03_SH03",
+      "purpose": "Transformar observaciones dispersas en un mapa comprensible",
+      "duration_seconds": 3.5,
+      "aspect_ratio": "16:9",
+      "model": "Cinema Studio Video or current high-control equivalent",
+      "references": ["@style_day", "@analyst", "@owner", "@analyst_notebook", "@clean_laptop"],
+      "prompt_file": "prompts/S03_SH03.txt",
+      "success_criteria": ["overhead geography is stable", "owner and analyst hands remain separated", "clean match-cut surface", "diagram details may be composited in post"],
+      "status": "planned",
+      "jobs": [], "selects": [], "qa_score": null
+    },
+    {
+      "id": "S04_SH01",
+      "purpose": "Revelar una vista común sin presentar una pantalla mágica",
+      "duration_seconds": 4,
+      "aspect_ratio": "16:9",
+      "model": "Seedance 2.0 or current equivalent",
+      "references": ["@style_day", "@owner", "@analyst", "@office", "@clean_laptop", "@dashboard"],
+      "prompt_file": "prompts/S04_SH01.txt",
+      "success_criteria": ["same owner and analyst identities", "screen plane is trackable", "owner points once and decides", "dashboard is added in post"],
+      "status": "planned",
+      "jobs": [], "selects": [], "qa_score": null
+    },
+    {
+      "id": "S04_SH02",
+      "purpose": "Demostrar que el pedido avanza con una sola actualización visible",
+      "duration_seconds": 4,
+      "aspect_ratio": "16:9",
+      "model": "Seedance 2.0 or current equivalent",
+      "references": ["@style_day", "@operator", "@warehouse", "@order_folder"],
+      "prompt_file": "prompts/S04_SH02.txt",
+      "success_criteria": ["movement remains left to right", "folder stays identical", "single update action", "no celebration or artificial perfection"],
+      "status": "planned",
+      "jobs": [], "selects": [], "qa_score": null
+    },
+    {
+      "id": "S04_SH03",
+      "purpose": "Cerrar el arco humano con comprensión y control sobrios",
+      "duration_seconds": 4.5,
+      "aspect_ratio": "16:9",
+      "model": "Cinema Studio Video or current high-control equivalent",
+      "references": ["@style_day", "@owner", "@office", "@warehouse"],
+      "prompt_file": "prompts/S04_SH03.txt",
+      "success_criteria": ["owner identity stable", "subtle exhale instead of smile", "warehouse geography readable behind glass", "end frame holds for transition"],
+      "status": "planned",
+      "jobs": [], "selects": [], "qa_score": null
+    },
+    {
+      "id": "S05_SH01",
+      "purpose": "Firmar la promesa y ofrecer un único siguiente paso",
+      "duration_seconds": 3.5,
+      "aspect_ratio": "16:9",
+      "model": "Deterministic post-production",
+      "references": ["@logo"],
+      "prompt_file": "prompts/S05_SH01.txt",
+      "success_criteria": ["official logo unchanged", "exact approved copy", "clear space preserved", "no 3D orca"],
+      "status": "planned",
+      "jobs": [], "selects": [], "qa_score": null
+    }
+  ]
+}

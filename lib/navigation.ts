@@ -127,6 +127,13 @@ export const navigationItems: NavItem[] = [
     section: "comercial"
   },
   {
+    label: "La Operación",
+    href: "/marketing/newsletter",
+    icon: createElement(BookOpenIcon),
+    roles: ["admin", "marketing"],
+    section: "comercial"
+  },
+  {
     label: "Contenido",
     href: "/contenido",
     icon: createElement(FileTextIcon),

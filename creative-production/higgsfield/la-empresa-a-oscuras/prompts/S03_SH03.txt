@@ -1,0 +1,21 @@
+REFERENCE DEFINITIONS
+@analyst: canonical sleeves and hands.
+@owner: canonical owner, sleeves now rolled once.
+@analyst_notebook: stable notebook.
+@clean_laptop: clean screen for later composition.
+@style_day: approved morning look.
+
+CONTINUITY LOCK
+Both stand at the same analysis table. Analyst is left, owner right. Notebook lies center and laptop beyond it. Their hands remain in their respective halves.
+
+TECHNICAL BLOCK
+Photoreal overhead three-quarter commercial shot, 16:9, 4.5 seconds generated for 3.5 useful seconds, 24 fps, physical 50mm lens on a fixed overhead arm, neutral morning light, soft contact shadows.
+
+SHOT
+The analyst places three small abstract paper markers in a simple left-to-right path, then slides the open notebook toward the owner. His right index finger stops beside one connection without touching her hand. Beyond the notebook, the graphite laptop holds a blank, perfectly stable trackable screen. End on a still composition designed for a match cut into the dashboard.
+
+SUCCESS CRITERIA
+Stable geography and props; anatomically correct separated hands; one clear path; no generated readable diagram; clean laptop plane; two-second final hold.
+
+SOUND
+Paper markers, notebook slide, soft fingertip contact, room tone thinning for the match cut.

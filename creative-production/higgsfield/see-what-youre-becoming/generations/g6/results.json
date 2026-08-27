@@ -1,0 +1,63 @@
+{
+  "gate": "G6",
+  "approved_by": "Felipe",
+  "approved_at": "2026-08-25",
+  "approved_credit_cap": 7.55,
+  "balance_before": 414.36,
+  "balance_after": 394.81,
+  "actual_balance_delta": 19.55,
+  "billing_discrepancy": {
+    "status": "documented",
+    "description": "The official preflight returned 1 credit for the 60-second Bytedance Video Upscale Pro request. The account balance indicates a 13-credit charge for that job, producing a 12-credit variance above preflight and approval.",
+    "additional_generation_stopped": true
+  },
+  "jobs": [
+    {
+      "purpose": "final English voiceover",
+      "model": "Inworld Text to Speech",
+      "job_type": "inworld_text_to_speech",
+      "voice": "Malcolm (en)",
+      "job_id": "33981235-e47d-45d2-a14c-b856b650a5e4",
+      "prompt_file": "../../prompts/g6/final-voiceover.txt",
+      "estimated_cost": 2.0,
+      "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GPcG7QBT9gFgRPcU6mHRH1pw0B/hf_20260825_183910_33981235-e47d-45d2-a14c-b856b650a5e4.wav",
+      "local_file": "../../audio/g6/final-voiceover.wav",
+      "status": "completed"
+    },
+    {
+      "purpose": "original 60-second score",
+      "model": "Sonilo Music",
+      "job_type": "sonilo_music",
+      "job_id": "530d3d11-4b09-49e6-bc6f-855c03de4d90",
+      "prompt_file": "../../prompts/g6/final-score.txt",
+      "estimated_cost": 3.75,
+      "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GPcG7QBT9gFgRPcU6mHRH1pw0B/hf_20260825_183928_530d3d11-4b09-49e6-bc6f-855c03de4d90.m4a",
+      "local_file": "../../audio/g6/final-score.m4a",
+      "status": "completed"
+    },
+    {
+      "purpose": "opening sonic signature",
+      "model": "Seed Audio 1.0",
+      "job_type": "seed_audio",
+      "job_id": "0b91a8f0-e7d1-43b3-a540-59419c178bc0",
+      "prompt_file": "../../prompts/g6/sonic-signature.txt",
+      "estimated_cost": 0.8,
+      "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GPcG7QBT9gFgRPcU6mHRH1pw0B/hf_20260825_184001_0b91a8f0-e7d1-43b3-a540-59419c178bc0.wav",
+      "local_file": "../../audio/g6/sonic-signature.wav",
+      "status": "completed"
+    },
+    {
+      "purpose": "1080p picture master",
+      "model": "Bytedance Video Upscale Pro",
+      "job_type": "bytedance_video_upscale",
+      "job_id": "e7361516-f7ee-45a8-9571-6561a99026f2",
+      "input": "../../edit/exports/g5-picture-lock-clean.mp4",
+      "params": { "fps": 24, "model_version": "pro", "preset": "aigc", "resolution": "1080p" },
+      "estimated_cost": 1.0,
+      "actual_cost_inferred_from_balance": 13.0,
+      "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GPcG7QBT9gFgRPcU6mHRH1pw0B/hf_20260825_184031_e7361516-f7ee-45a8-9571-6561a99026f2.mp4",
+      "local_file": "picture-lock-1080p-upscaled.mp4",
+      "status": "completed"
+    }
+  ]
+}

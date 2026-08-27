@@ -74,6 +74,12 @@ export function IdentidadMarcaForm({ marca, onSaved }: IdentidadMarcaFormProps) 
         )}
       </div>
 
+      <div className="rounded-component border border-signal/20 bg-signal-soft px-4 py-3">
+        <p className="text-xs font-label text-graphite">Tagline maestro</p>
+        <p className="mt-1 text-lg font-medium tracking-[-0.01em] text-signal">Making complex work simple.</p>
+        <p className="mt-1 text-xs text-graphite">Firma institucional fija · inglés · sentence case · punto final.</p>
+      </div>
+
       <div className="grid gap-4 lg:grid-cols-2">
         {FIELDS.map((field) => (
           <label key={field.key} className="block">

@@ -1,0 +1,193 @@
+{
+  "campaign": "see-what-youre-becoming",
+  "gate": "G2_asset_lock",
+  "assets": [
+    {
+      "tag": "@style_food_macro",
+      "type": "style",
+      "source": "generations/g1/food-macro-v2.png",
+      "higgsfield_job_id": "43ecd7b5-ace1-4046-b55b-9db9b92023ee",
+      "status": "approved_g1",
+      "approved_by": "Felipe",
+      "constraints": ["Preserve dry granular flour", "Preserve black negative space", "No generated text"]
+    },
+    {
+      "tag": "@style_metal_macro",
+      "type": "style",
+      "source": "generations/g1/manufacturing-macro.png",
+      "higgsfield_job_id": "f8508c54-817b-4aa7-9dfc-814ba7e152a7",
+      "status": "approved_g1",
+      "approved_by": "Felipe",
+      "constraints": ["Preserve horizontal edge", "Keep restrained sparks", "No labels or marks"]
+    },
+    {
+      "tag": "@style_logistics_macro",
+      "type": "style",
+      "source": "generations/g1/logistics-macro-v3.png",
+      "higgsfield_job_id": "bc9ac26f-4fc2-49ff-bc75-536957a47215",
+      "status": "approved_g1",
+      "approved_by": "Felipe",
+      "constraints": ["Blank kraft carton", "Visible transparent stretch film", "No printing"]
+    },
+    {
+      "tag": "@food_location_raw",
+      "type": "location",
+      "source": "generations/g1/food-wide.png",
+      "higgsfield_job_id": "c3ac081c-e185-4b7a-8b6a-692142951b1e",
+      "status": "repair_planned",
+      "approved_by": null,
+      "constraints": ["Preserve architecture", "Recover practical highlights", "Remove all accidental markings"]
+    },
+    {
+      "tag": "@manufacturing_location_raw",
+      "type": "location",
+      "source": "generations/g1/manufacturing-wide.png",
+      "higgsfield_job_id": "a894919d-8bcd-4486-bf4e-7fc156ddf1b8",
+      "status": "repair_planned",
+      "approved_by": null,
+      "constraints": ["Remove fake signage", "Remove suspended scrap", "Preserve geometry and lighting"]
+    },
+    {
+      "tag": "@logistics_location_raw",
+      "type": "location",
+      "source": "generations/g1/logistics-wide.png",
+      "higgsfield_job_id": "1381a7a4-b984-44dc-ab58-8ba6446a6a3f",
+      "status": "repair_planned",
+      "approved_by": null,
+      "constraints": ["Remove fake marks", "Simplify worker grouping", "Preserve doorway depth"]
+    },
+    {
+      "tag": "@food_location_clean",
+      "type": "location",
+      "source": "generations/g2/food-location-clean.png",
+      "higgsfield_job_id": "1d29b297-e8bd-4519-976b-5bcc667adab3",
+      "status": "selected_g2_requires_grade",
+      "approved_by": null,
+      "constraints": ["Same architecture as raw plate", "Trackable clean surfaces", "No blown highlights"]
+    },
+    {
+      "tag": "@manufacturing_location_clean",
+      "type": "location",
+      "source": "generations/g2/manufacturing-location-clean.png",
+      "higgsfield_job_id": "ffe46fce-64e2-42ab-be65-8dedccc822bb",
+      "status": "selected_g2_requires_screen_mask",
+      "approved_by": null,
+      "constraints": ["Same architecture as raw plate", "No text or suspended artifacts", "Trackable clean surfaces"]
+    },
+    {
+      "tag": "@logistics_location_clean",
+      "type": "location",
+      "source": "generations/g2/logistics-location-clean.png",
+      "higgsfield_job_id": "e26ad0d1-9c46-436a-a2e6-2b3be6ce3f43",
+      "status": "selected_g2",
+      "approved_by": null,
+      "constraints": ["Same architecture as raw plate", "Blank pillars and cartons", "Clear left-to-right route"]
+    },
+    {
+      "tag": "@food_tray",
+      "type": "prop",
+      "source": "generations/g2/food-tray.png",
+      "higgsfield_job_id": "f880bb48-c587-4c4e-bed5-074ce9aad570",
+      "status": "selected_prop_only",
+      "approved_by": null,
+      "constraints": ["Unbranded stainless tray", "Straight horizontal leading edge", "No food branding"]
+    },
+    {
+      "tag": "@metal_piece",
+      "type": "prop",
+      "source": "generations/g2/operator-metal-blocking-v2.png",
+      "higgsfield_job_id": "a4dc05fb-9ad0-4749-b77c-47f0cffcc624",
+      "status": "selected_g2_requires_caliper_mask",
+      "approved_by": null,
+      "constraints": ["One stable machined piece", "Straight edge matches food tray", "No serial number"]
+    },
+    {
+      "tag": "@blank_order_set",
+      "type": "prop",
+      "source": "generations/g2/blank-order-set-v2.png",
+      "higgsfield_job_id": "296ad291-68bb-440b-82f9-4a8b6f9a340a",
+      "status": "selected_g2",
+      "approved_by": null,
+      "constraints": ["Three blank supports", "No readable data", "Large simple shapes for later compositing"]
+    },
+    {
+      "tag": "@blank_screen_plate",
+      "type": "interface",
+      "source": "generations/g2/blank-order-set-v2.png",
+      "higgsfield_job_id": "296ad291-68bb-440b-82f9-4a8b6f9a340a",
+      "status": "selected_g2",
+      "approved_by": null,
+      "constraints": ["Dark matte screen", "No generated UI", "Four corner tracking points added only in post"]
+    },
+    {
+      "tag": "@operator_food",
+      "type": "character",
+      "source": "generations/g2/operator-food-blocking-v2.png",
+      "higgsfield_job_id": "2da96001-ffb4-4ec5-bdf2-6b2a1b4da702",
+      "status": "selected_g2_partial_identity",
+      "approved_by": null,
+      "constraints": ["Hands and torso only", "Unbranded light workwear", "No direct gaze"]
+    },
+    {
+      "tag": "@operator_metal",
+      "type": "character",
+      "source": "generations/g2/operator-metal-blocking-v2.png",
+      "higgsfield_job_id": "a4dc05fb-9ad0-4749-b77c-47f0cffcc624",
+      "status": "selected_g2_partial_identity",
+      "approved_by": null,
+      "constraints": ["Hands and torso only", "Dark matte gloves", "No direct gaze"]
+    },
+    {
+      "tag": "@operator_logistics",
+      "type": "character",
+      "source": "generations/g2/operator-logistics-blocking-v2.png",
+      "higgsfield_job_id": "202ccf35-53d5-4682-a6c3-3ad2e1798c04",
+      "status": "selected_g2_requires_jack_label_mask",
+      "approved_by": null,
+      "constraints": ["Silhouette or hands only", "Unbranded workwear", "No text on reflective elements"]
+    },
+    {
+      "tag": "@food_obstruction_blocking",
+      "type": "blocking",
+      "source": "generations/g4/blocking-food-obstruction.png",
+      "higgsfield_job_id": "5ea750f3-ecc8-4ab2-8f0a-b7f4426d5c65",
+      "status": "selected_g4_requires_screen_replacement",
+      "approved_by": null,
+      "constraints": ["Hands, tray and tablet stay fixed", "Replace every tablet surface in post", "Do not expose background control detail"]
+    },
+    {
+      "tag": "@manufacturing_obstruction_blocking",
+      "type": "blocking",
+      "source": "generations/g4/blocking-manufacturing-obstruction.png",
+      "higgsfield_job_id": "88441866-c75f-49af-9caf-12adf21e5879",
+      "status": "repair_required_g4",
+      "approved_by": null,
+      "constraints": ["Mask the caliper dial before use", "Keep the terminal blank", "Preserve hands and workbench geometry"]
+    },
+    {
+      "tag": "@logistics_obstruction_blocking",
+      "type": "blocking",
+      "source": "generations/g4/blocking-logistics-obstruction.png",
+      "higgsfield_job_id": "a9847ded-3eb5-4971-91e8-eadfce6dfcf6",
+      "status": "selected_g4_requires_screen_replacement",
+      "approved_by": null,
+      "constraints": ["Replace the scanner surface in post", "Preserve the left-to-right route", "No labels on load or jack"]
+    },
+    {
+      "tag": "@sonar_post",
+      "type": "graphics",
+      "source": "postproduction",
+      "status": "planned_offline",
+      "approved_by": null,
+      "constraints": ["Physical light response only", "No visible digital wave", "Navy and light-blue exact values in post"]
+    },
+    {
+      "tag": "@end_card",
+      "type": "brand",
+      "source": "official_svg_plus_postproduction",
+      "status": "planned_offline",
+      "approved_by": null,
+      "constraints": ["Official horizontal logo", "English line only", "No 3D orca"]
+    }
+  ]
+}

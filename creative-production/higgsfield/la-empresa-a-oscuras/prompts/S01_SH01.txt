@@ -1,0 +1,19 @@
+REFERENCE DEFINITIONS
+@style_dawn: approved restrained pre-dawn visual language.
+@office: approved glass office plate, east window camera right.
+@owner_phone: black matte unbranded phone with a clean trackable screen.
+
+CONTINUITY LOCK
+06:17 in the same office. No person visible. The phone lies face up near the lower-right third and never changes shape or position except for vibration.
+
+TECHNICAL BLOCK
+Photoreal observational brand film, 16:9, 4 seconds generated for 2.5 seconds useful, 24 fps, physical 65mm close-focus lens at desk height, locked camera, natural blue street spill and one weak practical reflection, soft contrast, realistic motion blur, no music.
+
+SHOT
+The empty office holds still for half a second. The phone produces one short physically credible vibration against the wood and settles. Nothing else moves except a barely perceptible light change outside. Its screen remains dark and clean for post-production replacement. Leave 16-frame still handles before and after the movement.
+
+SUCCESS CRITERIA
+One vibration only; identical phone; credible contact and shadow; natural low light; no horror styling; no readable text, logo, hand or floating graphics.
+
+SOUND
+Quiet office room tone, distant refrigerator compressor, one dry phone vibration.
