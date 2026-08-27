@@ -66,10 +66,10 @@ const competitors = [
 ] as const;
 
 const actions = [
-  ["Verificar propiedad de Search Console", "Crítico", "Baja", "Felipe / Admin", "Etiqueta publicada"],
-  ["Crear propiedad y flujo GA4 de Blyndtek", "Crítico", "Media", "Admin", "Pendiente de acceso"],
+  ["Validar primeros datos de GSC, GA4 y Bing", "Alto", "Baja", "SEO", "Programada a 48 h"],
+  ["Medir lead y newsletter_subscribe en GA4", "Alto", "Baja", "SEO", "Eventos clave configurados"],
   ["Publicar política de crawlers", "Alto", "Baja", "SEO", "Implementada en código"],
-  ["Solicitar indexación de páginas comerciales", "Alto", "Baja", "SEO", "Bloqueada por GSC"],
+  ["Solicitar indexación de páginas comerciales", "Alto", "Baja", "SEO", "GSC conectado"],
   ["Reforzar enlaces a casos y artículos", "Medio", "Media", "Editorial", "Sugerida"],
 ] as const;
 
@@ -116,6 +116,14 @@ export function SeoModule({ liveData }: SeoModuleProps) {
   const latestRuns = latestRunAt ? liveData.aiRuns.filter((run) => run.run_at === latestRunAt) : [];
   const mentionCount = latestRuns.filter((run) => run.mentions_blyndtek).length;
   const engineCount = new Set(latestRuns.map((run) => run.engine)).size;
+  const sourceByKey = new Map(liveData.sources.map((source) => [source.source_key, source]));
+  const gscConnected = sourceByKey.get("google_search_console")?.status === "connected";
+  const ga4Connected = sourceByKey.get("ga4")?.status === "connected";
+  const bingConnected = sourceByKey.get("bing_webmaster")?.status === "connected";
+  const criticalSourceCount = ["google_search_console", "ga4", "bing_webmaster"].filter((key) => {
+    const status = sourceByKey.get(key)?.status;
+    return status === "error" || status === "not_configured" || !status;
+  }).length;
   const promptById = new Map(liveData.prompts.map((prompt) => [prompt.id, prompt]));
   const sourceRows = liveData.sources.map((source) => {
     const variant = source.status === "connected" ? "success" : source.status === "error" || source.status === "not_configured" ? "danger" : "warning";
@@ -154,14 +162,14 @@ export function SeoModule({ liveData }: SeoModuleProps) {
       {tab === "resumen" ? (
         <>
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <Metric label="Clics orgánicos" value="—" note="Search Console sin acceso" />
+            <Metric label="Clics orgánicos" value="—" note={gscConnected ? "Search Console conectado · datos iniciales en procesamiento" : "Search Console sin acceso"} />
             <Metric label="Impresiones" value="—" note="No se interpreta como cero" />
             <Metric label="URLs técnicas válidas" value="32/32" note="Status, canonical, H1 y robots correctos" />
             <Metric label="Lighthouse móvil" value="88" note="LCP 3,9 s · SEO 100 · A11y 100 · producción" />
             <Metric label="Top 3 / 5 / 10 / 20" value="—" note="Requiere contexto de país y dispositivo" />
-            <Metric label="Conversiones orgánicas" value="—" note="GA4 y tracking pendientes" />
+            <Metric label="Conversiones orgánicas" value="—" note={ga4Connected ? "GA4 conectado · lead y suscripción configurados como eventos clave" : "GA4 y tracking pendientes"} />
             <Metric label="Menciones en IA" value={latestRuns.length ? `${mentionCount}/${latestRuns.length}` : "—"} note={latestRuns.length ? `${engineCount} motores · ${liveData.prompts.length} prompts · Argentina` : "Primera ronda de control pendiente"} />
-            <Metric label="Alertas críticas" value="2" note="GSC y GA4 sin conexión verificable" />
+            <Metric label="Alertas críticas" value={String(criticalSourceCount)} note={criticalSourceCount ? "Hay fuentes prioritarias sin conexión verificable" : "GSC, GA4 y Bing conectados; datos iniciales en procesamiento"} />
           </div>
 
           <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
@@ -169,8 +177,8 @@ export function SeoModule({ liveData }: SeoModuleProps) {
               <SectionTitle note="No se grafican ceros artificiales">Evolución orgánica</SectionTitle>
               <div className="flex min-h-[240px] flex-col items-center justify-center rounded-md border border-dashed border-line bg-paper/45 px-6 text-center">
                 <BarChartIcon className="text-graphite/50" size={36} />
-                <p className="mt-3 font-label text-carbon">Histórico pendiente de fuente</p>
-                <p className="mt-2 max-w-md text-sm leading-6 text-graphite">Al conectar Search Console se mostrarán clics, impresiones, CTR, posiciones y rangos comparables.</p>
+                <p className="mt-3 font-label text-carbon">Histórico inicial en procesamiento</p>
+                <p className="mt-2 max-w-md text-sm leading-6 text-graphite">Search Console ya está conectado. Cuando complete su procesamiento se mostrarán clics, impresiones, CTR, posiciones y rangos comparables.</p>
               </div>
             </Card>
             <Card padding="lg">
@@ -245,15 +253,15 @@ export function SeoModule({ liveData }: SeoModuleProps) {
       {tab === "acciones" ? (
         <Card padding="lg">
           <SectionTitle>Cola priorizada</SectionTitle>
-          <DataTable><DataTableHeader><DataTableRow><DataTableHead>Problema / acción</DataTableHead><DataTableHead>Impacto</DataTableHead><DataTableHead>Esfuerzo</DataTableHead><DataTableHead>Responsable</DataTableHead><DataTableHead>Estado</DataTableHead></DataTableRow></DataTableHeader><DataTableBody>{actions.map((row) => <DataTableRow key={row[0]}>{row.map((cell, index) => <DataTableCell key={`${row[0]}-${cell}`} className={index === 0 ? "min-w-[280px] font-medium text-carbon" : "min-w-[130px]"}>{index === 1 ? <Badge variant={cell === "Crítico" ? "danger" : cell === "Alto" ? "warning" : "default"}>{cell}</Badge> : cell}</DataTableCell>)}</DataTableRow>)}</DataTableBody></DataTable>
+          <DataTable><DataTableHeader><DataTableRow><DataTableHead>Problema / acción</DataTableHead><DataTableHead>Impacto</DataTableHead><DataTableHead>Esfuerzo</DataTableHead><DataTableHead>Responsable</DataTableHead><DataTableHead>Estado</DataTableHead></DataTableRow></DataTableHeader><DataTableBody>{actions.map((row) => <DataTableRow key={row[0]}>{row.map((cell, index) => <DataTableCell key={`${row[0]}-${cell}`} className={index === 0 ? "min-w-[280px] font-medium text-carbon" : "min-w-[130px]"}>{index === 1 ? <Badge variant={cell === "Alto" ? "warning" : "default"}>{cell}</Badge> : cell}</DataTableCell>)}</DataTableRow>)}</DataTableBody></DataTable>
         </Card>
       ) : null}
 
       {tab === "alertas" ? (
         <div className="grid gap-4 md:grid-cols-2">
-          <Card padding="lg" className="border-warning/25"><div className="flex gap-3"><AlertTriangleIcon className="mt-0.5 text-warning" /><div><Badge variant="warning">Pendiente</Badge><h2 className="mt-3 font-label text-carbon">Search Console listo para verificar</h2><p className="mt-2 text-sm leading-6 text-graphite">La etiqueta ya está publicada en producción; falta confirmar la propiedad dentro de Google.</p></div></div></Card>
-          <Card padding="lg" className="border-danger/25"><div className="flex gap-3"><AlertTriangleIcon className="mt-0.5 text-danger" /><div><Badge variant="danger">Crítica</Badge><h2 className="mt-3 font-label text-carbon">GA4 de Blyndtek no verificable</h2><p className="mt-2 text-sm leading-6 text-graphite">No existe evidencia accesible de sesiones, conversiones o referidos de IA del dominio.</p></div></div></Card>
-          <Card padding="lg"><div className="flex gap-3"><GlobeIcon className="mt-0.5 text-warning" /><div><Badge variant="warning">Advertencia</Badge><h2 className="mt-3 font-label text-carbon">Bing Webmaster sin sesión</h2><p className="mt-2 text-sm leading-6 text-graphite">No se pueden enviar sitemap ni leer consultas y backlinks de Bing.</p></div></div></Card>
+          <Card padding="lg" className={gscConnected ? "border-success/25" : "border-warning/25"}><div className="flex gap-3">{gscConnected ? <CheckCircleIcon className="mt-0.5 text-success" /> : <AlertTriangleIcon className="mt-0.5 text-warning" />}<div><Badge variant={gscConnected ? "success" : "warning"}>{gscConnected ? "Conectado" : "Pendiente"}</Badge><h2 className="mt-3 font-label text-carbon">Google Search Console</h2><p className="mt-2 text-sm leading-6 text-graphite">{gscConnected ? "Propiedad verificada y sitemap correcto; el informe de rendimiento está en procesamiento inicial." : "La propiedad todavía no tiene una conexión verificable."}</p></div></div></Card>
+          <Card padding="lg" className={ga4Connected ? "border-success/25" : "border-danger/25"}><div className="flex gap-3">{ga4Connected ? <CheckCircleIcon className="mt-0.5 text-success" /> : <AlertTriangleIcon className="mt-0.5 text-danger" />}<div><Badge variant={ga4Connected ? "success" : "danger"}>{ga4Connected ? "Conectado" : "Crítica"}</Badge><h2 className="mt-3 font-label text-carbon">Google Analytics 4</h2><p className="mt-2 text-sm leading-6 text-graphite">{ga4Connected ? "Propiedad, flujo web y eventos clave configurados; falta completar la ventana inicial de recepción." : "No existe evidencia accesible de sesiones o conversiones del dominio."}</p></div></div></Card>
+          <Card padding="lg" className={bingConnected ? "border-success/25" : undefined}><div className="flex gap-3">{bingConnected ? <CheckCircleIcon className="mt-0.5 text-success" /> : <GlobeIcon className="mt-0.5 text-warning" />}<div><Badge variant={bingConnected ? "success" : "warning"}>{bingConnected ? "Conectado" : "Advertencia"}</Badge><h2 className="mt-3 font-label text-carbon">Bing Webmaster Tools</h2><p className="mt-2 text-sm leading-6 text-graphite">{bingConnected ? "Sitio y sitemap importados desde GSC; Bing está procesando el rastreo inicial." : "No se pueden leer consultas, backlinks ni estado del sitemap."}</p></div></div></Card>
           <Card padding="lg"><div className="flex gap-3"><CheckCircleIcon className="mt-0.5 text-success" /><div><Badge variant="success">Correcto</Badge><h2 className="mt-3 font-label text-carbon">Base técnica pública sana</h2><p className="mt-2 text-sm leading-6 text-graphite">32 URLs verificadas sin status, canonical, H1, alt text o enlaces rotos detectados.</p></div></div></Card>
         </div>
       ) : null}
