@@ -44,13 +44,13 @@ function SubheaderItem({ item, pathname, depth = 0 }: { item: NavItem; pathname:
   return (
     <div className={cn("flex items-center gap-1", depth > 0 && "ml-2")}> 
       {item.href ? (
-          <Link href={item.href} className={cn("flex items-center gap-2 rounded-component px-3 py-2 text-sm font-label transition-colors duration-fast ease-fast", active ? "bg-white/15 text-white" : "text-white/70 hover:bg-white/10 hover:text-white")}>
+          <Link href={item.href} className={cn("flex items-center gap-2 rounded-component px-3 py-2 text-sm font-label transition-colors duration-fast ease-fast", active ? "bg-white/80 text-carbon" : "text-graphite hover:bg-white/70 hover:text-carbon")}>
           <span className="shrink-0 [&_svg]:h-5 [&_svg]:w-5">{item.icon}</span><span>{item.label}</span>
         </Link>
       ) : (
-        <div className="flex items-center gap-2 px-3 py-2 text-sm font-label text-white/55"><span className="shrink-0 [&_svg]:h-5 [&_svg]:w-5">{item.icon}</span><span>{item.label}</span></div>
+        <div className="flex items-center gap-2 px-3 py-2 text-sm font-label text-graphite"><span className="shrink-0 [&_svg]:h-5 [&_svg]:w-5">{item.icon}</span><span>{item.label}</span></div>
       )}
-      {hasChildren ? <div className="flex items-center border-l border-white/15 pl-1">{item.children?.map((child) => <SubheaderItem key={child.href ?? child.label} item={child} pathname={pathname} depth={depth + 1} />)}</div> : null}
+      {hasChildren ? <div className="flex items-center border-l border-line-soft pl-1">{item.children?.map((child) => <SubheaderItem key={child.href ?? child.label} item={child} pathname={pathname} depth={depth + 1} />)}</div> : null}
     </div>
   );
 }
