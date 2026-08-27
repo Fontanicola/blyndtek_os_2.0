@@ -5,7 +5,9 @@
 - UI publicada en `https://sistema.blyndtek.com/seo` y verificada en escritorio y móvil.
 - Migración `048_seo_visibility.sql` aplicada al proyecto productivo `blyndtek_os_2.0` (`gyspazxpnzwkzrqlikqw`) después de una ejecución completa con `ROLLBACK`.
 - Verificación posterior: 11 tablas SEO, 11 con RLS habilitado, 22 políticas, 7 fuentes iniciales y 7 prompts de control.
-- Search Console, GA4 y Bing continúan sin conexión verificable; sus métricas permanecen como “sin datos”.
+- La etiqueta de verificación de la propiedad `https://www.blyndtek.com/` está publicada; falta la confirmación final dentro de Search Console.
+- Se guardó la primera ronda real de visibilidad en IA: 28 respuestas, 4 motores, 7 prompts y 0 menciones de Blyndtek. El módulo lee estos registros desde Supabase.
+- GA4 y Bing continúan sin conexión verificable; sus métricas permanecen como “sin datos”.
 
 ## Principios
 
