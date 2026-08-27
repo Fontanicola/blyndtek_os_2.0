@@ -212,7 +212,7 @@ export function MarcaWorkspace({ nombreUsuario }: MarcaWorkspaceProps) {
           <p className="text-sm font-label text-signal">Criterio de trabajo</p>
           <h2 className="mt-2 font-title text-lg text-carbon">Una marca, varios canales, una sola dirección.</h2>
           <p className="mt-2 text-sm leading-6 text-graphite">
-            Cada publicación debería reforzar la misma identidad: qué hace Blyndtek, para quién y por qué una PyME debería confiar en su transformación digital.
+            Cada publicación debería reforzar la misma identidad: qué hace Blyndtek, para quién y cómo convierte trabajo complejo en una operación simple de entender y ejecutar.
           </p>
           <Link href="/contenido" className="mt-4 inline-flex items-center gap-2 text-sm font-label text-signal underline underline-offset-2">
             Revisar identidad y piezas <ArrowRightIcon size={16} />

@@ -1,0 +1,45 @@
+{
+  "campaign": "see-what-youre-becoming",
+  "gate": "G4_production_batch",
+  "status": "complete",
+  "balance_checked": 616.36,
+  "proposed_credit_cap": 202,
+  "estimated_cost": 202,
+  "projected_balance_after": 414.36,
+  "actual_cost": 202,
+  "balance_after": 414.36,
+  "completed_at": "2026-08-25T18:19:09Z",
+  "sublot_a_gate": "passed_6_of_6_usable",
+  "stop_rule": "Review sublot A first. Stop before sublot B if fewer than four of six motion clips are usable or if the common visual world drifts.",
+  "sublots": [
+    {
+      "key": "G4A_visual_backbone",
+      "estimated_cost": 94.5,
+      "jobs": [
+        {"key": "food-macro-final", "shot_id": "S02_SH01", "type": "video", "model": "seedance_2_0_fast", "start_job_id": "43ecd7b5-ace1-4046-b55b-9db9b92023ee", "duration": 4, "resolution": "720p", "cost": 14},
+        {"key": "metal-macro-final", "shot_id": "S02_SH02", "type": "video", "model": "seedance_2_0_fast", "start_job_id": "f8508c54-817b-4aa7-9dfc-814ba7e152a7", "duration": 4, "resolution": "720p", "cost": 14},
+        {"key": "film-macro-final", "shot_id": "S02_SH03", "type": "video", "model": "seedance_2_0_fast", "start_job_id": "bc9ac26f-4fc2-49ff-bc75-536957a47215", "duration": 4, "resolution": "720p", "cost": 14},
+        {"key": "food-wide-final", "shot_id": "S03_SH01", "type": "video", "model": "seedance_2_0_fast", "start_job_id": "1d29b297-e8bd-4519-976b-5bcc667adab3", "duration": 5, "resolution": "720p", "cost": 17.5},
+        {"key": "manufacturing-wide-final", "shot_id": "S03_SH02", "type": "video", "model": "seedance_2_0_fast", "start_job_id": "ffe46fce-64e2-42ab-be65-8dedccc822bb", "duration": 5, "resolution": "720p", "cost": 17.5},
+        {"key": "metal-measure-final", "shot_id": "S04_SH02", "type": "video", "model": "seedance_2_0_fast", "start_job_id": "a4dc05fb-9ad0-4749-b77c-47f0cffcc624", "duration": 5, "resolution": "720p", "cost": 17.5}
+      ]
+    },
+    {
+      "key": "G4B_friction_and_hero",
+      "estimated_cost": 107.5,
+      "jobs": [
+        {"key": "blocking-food-obstruction", "shot_id": "S06_SH01", "type": "image", "model": "nano_banana_pro", "reference_job_ids": ["2da96001-ffb4-4ec5-bdf2-6b2a1b4da702", "296ad291-68bb-440b-82f9-4a8b6f9a340a"], "resolution": "2k", "cost": 2},
+        {"key": "blocking-manufacturing-obstruction", "shot_id": "S06_SH02", "type": "image", "model": "nano_banana_pro", "reference_job_ids": ["a4dc05fb-9ad0-4749-b77c-47f0cffcc624", "ffe46fce-64e2-42ab-be65-8dedccc822bb"], "resolution": "2k", "cost": 2},
+        {"key": "blocking-logistics-obstruction", "shot_id": "S06_SH03", "type": "image", "model": "nano_banana_pro", "reference_job_ids": ["202ccf35-53d5-4682-a6c3-3ad2e1798c04", "e26ad0d1-9c46-436a-a2e6-2b3be6ce3f43"], "resolution": "2k", "cost": 2},
+        {"key": "fragmented-idle-final", "shot_id": "S05_SH02", "type": "video", "model": "seedance_2_0_fast", "start_job_id": "ffe46fce-64e2-42ab-be65-8dedccc822bb", "duration": 4, "resolution": "720p", "cost": 14},
+        {"key": "food-obstruction-final", "shot_id": "S06_SH01", "type": "video", "model": "seedance_2_0_fast", "start_source": "blocking-food-obstruction", "duration": 5, "resolution": "720p", "cost": 17.5},
+        {"key": "manufacturing-obstruction-final", "shot_id": "S06_SH02", "type": "video", "model": "seedance_2_0_fast", "start_source": "blocking-manufacturing-obstruction", "duration": 5, "resolution": "720p", "cost": 17.5},
+        {"key": "logistics-obstruction-final", "shot_id": "S06_SH03", "type": "video", "model": "seedance_2_0_fast", "start_source": "blocking-logistics-obstruction", "duration": 5, "resolution": "720p", "cost": 17.5},
+        {"key": "hero-food-edge-final", "shot_id": "S08_SH01_A", "type": "video", "model": "seedance_2_0_fast", "start_job_id": "f880bb48-c587-4c4e-bed5-074ce9aad570", "duration": 5, "resolution": "720p", "cost": 17.5},
+        {"key": "hero-metal-edge-final", "shot_id": "S08_SH01_B", "type": "video", "model": "seedance_2_0_fast", "start_job_id": "f8508c54-817b-4aa7-9dfc-814ba7e152a7", "duration": 5, "resolution": "720p", "cost": 17.5}
+      ]
+    }
+  ],
+  "gate_result": "Five direct video selects and seven constrained or repairable video selects are available. G5 may build the silent rough cut after applying mandatory screen and gauge masks.",
+  "approval_unlocks": "G5 offline rough cut using G1, G3 and G4 selects. No additional generation, audio, upscale, adaptation or publication is authorized."
+}

@@ -5,7 +5,7 @@ import { createUntypedAdminClient } from "@/lib/supabase/admin";
 export const runtime = "nodejs";
 
 const ALLOWED_ORIGINS = new Set(["https://blyndtek.com", "https://www.blyndtek.com"]);
-const EVENT_NAMES = new Set(["page_view", "engaged_session", "scroll_depth", "form_start", "form_submit", "lead", "whatsapp_click", "calendly_click", "cta_click"]);
+const EVENT_NAMES = new Set(["page_view", "engaged_session", "scroll_depth", "form_start", "form_submit", "newsletter_subscribe", "lead", "whatsapp_click", "calendly_click", "cta_click"]);
 
 type AnalyticsBody = Record<string, unknown>;
 

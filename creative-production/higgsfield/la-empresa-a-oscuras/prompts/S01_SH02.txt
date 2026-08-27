@@ -1,0 +1,20 @@
+REFERENCE DEFINITIONS
+@style_dawn: approved pre-dawn look.
+@owner: canonical owner identity and wardrobe.
+@office and @warehouse: approved connected location plates.
+@owner_phone: stable black phone.
+
+CONTINUITY LOCK
+Owner arrives wearing the canonical shirt under a dark charcoal jacket. Phone begins on the office desk and ends in his right hand. Office remains left, central aisle center, warehouse right.
+
+TECHNICAL BLOCK
+Photoreal observational brand film, 16:9, 4 seconds generated for 3 useful seconds, 24 fps, 35mm lens, camera at chest height on a restrained slow lateral dolly right, natural pre-dawn light, credible practical fluorescent response.
+
+SHOT
+From a clear three-quarter establishing angle, the owner unlocks the office, crosses one step into frame, picks up the phone with his right hand and switches on a single row of practical lights leading toward the warehouse. He pauses for a fraction after feeling the phone vibration, then continues left to right. His entrance is habitual, not heroic. Preserve clear walking geography and editable handles.
+
+SUCCESS CRITERIA
+Stable identity, jacket and phone; one light row only; physically plausible switch and hand contact; no direct camera gaze; no smile; no generated signage or text.
+
+SOUND
+Key, lock, cloth movement, light relay, low warehouse machinery beginning in the distance.

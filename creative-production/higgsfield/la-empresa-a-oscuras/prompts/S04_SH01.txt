@@ -1,0 +1,21 @@
+REFERENCE DEFINITIONS
+@owner and @analyst: canonical identities and current wardrobe.
+@office: approved morning plate.
+@clean_laptop: stable screen plane.
+@dashboard: exact deterministic UI added after generation.
+@style_day: approved morning pipeline.
+
+CONTINUITY LOCK
+Owner sits frame right, analyst stands or sits frame left, both on same side of the screen axis. Owner sleeves rolled once. Warehouse remains visible beyond office glass.
+
+TECHNICAL BLOCK
+Photoreal observational brand film, 16:9, 5 seconds generated for 4 useful seconds, 24 fps, 50mm lens at seated eye height, almost imperceptible dolly in, neutral natural key from camera right, screen exposure suitable for replacement.
+
+SHOT
+The clean laptop screen is angled clearly toward both people. The owner tracks one point on the screen, pauses, points once with his right index finger and turns his eyes toward the real warehouse beyond the glass as if connecting information to the operation. The analyst watches the same point and remains still. No smile, nodding performance or magical screen light. Maintain a clean planar screen for tracking.
+
+SUCCESS CRITERIA
+Stable faces, sleeves and seating; single pointing gesture; shared eyeline; trackable screen; no generated UI or logo; believable screen light.
+
+SOUND
+Quiet office tone, one soft interface confirmation added in post, distant warehouse motion.

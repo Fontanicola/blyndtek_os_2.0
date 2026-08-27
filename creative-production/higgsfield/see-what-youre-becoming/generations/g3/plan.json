@@ -1,0 +1,68 @@
+{
+  "campaign": "see-what-youre-becoming",
+  "gate": "G3_motion_families",
+  "status": "complete",
+  "balance_checked": 686.36,
+  "proposed_credit_cap": 70,
+  "estimated_cost": 70,
+  "actual_cost": 70,
+  "balance_after": 616.36,
+  "completed_at": "2026-08-25T17:39:04Z",
+  "jobs": [
+    {
+      "key": "operational-wide-logistics",
+      "shot_id": "S03_SH03",
+      "model": "seedance_2_0_fast",
+      "start_job_id": "e26ad0d1-9c46-436a-a2e6-2b3be6ce3f43",
+      "duration": 5,
+      "resolution": "720p",
+      "cost": 17.5,
+      "job_id": "e3c730da-f486-48af-8444-e301efd14638",
+      "status": "completed",
+      "decision": "select",
+      "purpose": "Validate stable architecture, a weighted route and restrained wide-camera motion."
+    },
+    {
+      "key": "human-action-food-tray",
+      "shot_id": "S04_SH01",
+      "model": "seedance_2_0_fast",
+      "start_job_id": "2da96001-ffb4-4ec5-bdf2-6b2a1b4da702",
+      "duration": 5,
+      "resolution": "720p",
+      "cost": 17.5,
+      "job_id": "14c05f77-3a3a-4e68-b38f-1051949a70cc",
+      "status": "completed",
+      "decision": "select",
+      "purpose": "Validate hand contact, object weight and one controlled operational action."
+    },
+    {
+      "key": "fragmented-order",
+      "shot_id": "S05_SH01",
+      "model": "seedance_2_0_fast",
+      "start_job_id": "296ad291-68bb-440b-82f9-4a8b6f9a340a",
+      "duration": 5,
+      "resolution": "720p",
+      "cost": 17.5,
+      "job_id": "de7027c3-bd02-40a4-926f-e20bdd63d0a6",
+      "status": "completed",
+      "decision": "select_partial",
+      "purpose": "Validate the no-one-sees-the-whole beat on blank compositing surfaces."
+    },
+    {
+      "key": "hero-food-to-metal",
+      "shot_id": "S08_SH01",
+      "model": "seedance_2_0_fast",
+      "start_job_id": "f880bb48-c587-4c4e-bed5-074ce9aad570",
+      "end_job_id": "f8508c54-817b-4aa7-9dfc-814ba7e152a7",
+      "duration": 5,
+      "resolution": "720p",
+      "cost": 17.5,
+      "job_id": "49e6e89b-1f0f-4340-a853-846480b97c09",
+      "status": "completed",
+      "decision": "reject_transition_select_final_plate",
+      "purpose": "Complete the missing first half of the hero transition system."
+    }
+  ],
+  "gate_result": "Three motion directions are viable. The hero transition requires an edit-first repair because the generated middle behaves as a morph.",
+  "approval_unlocks": "G4 may scale the logistics and tray motion families, use the fragmented-order clip only with deterministic screen replacement, and rebuild the hero match cut as two separately generated shots joined in the edit."
+}

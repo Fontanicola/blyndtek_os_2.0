@@ -1,0 +1,19 @@
+REFERENCE DEFINITIONS
+@analyst and @operator: canonical identities.
+@order_folder and @analyst_notebook: approved props.
+@style_day: neutral morning pipeline.
+
+CONTINUITY LOCK
+Same operational table and positions. Analyst remains frame left, operator frame right. All diagrams and readable marks are composited later.
+
+TECHNICAL BLOCK
+Photoreal precision montage source, 16:9, 4.5 seconds generated for 3.5 useful seconds, 24 fps, physical 75mm macro-capable lens, stable camera with three clearly separated insert actions and 12-frame handles.
+
+SHOT
+Create three clean sequential inserts: first, the analyst places a small paper marker beside the folder at a handoff; second, her thumb stops the simple timer while the operator continues working; third, the analyst draws one short connecting line in the grid notebook. Each action finishes and holds before the next. Hands never overlap or merge. Keep marks abstract and non-readable.
+
+SUCCESS CRITERIA
+Three editable moments; correct hands; props remain identical; convincing contact shadows; no readable data, floating overlay or unnecessary camera movement.
+
+SOUND
+Paper tape contact, timer click, pencil on grid paper, warehouse ambience linking all inserts.

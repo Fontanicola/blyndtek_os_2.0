@@ -1,0 +1,21 @@
+REFERENCE DEFINITIONS
+@operator: canonical operator.
+@warehouse: approved operational table plate.
+@order_folder: stable kraft folder.
+@clean_laptop: stable graphite laptop with blank screen.
+@style_dawn: same early light.
+
+CONTINUITY LOCK
+Operator stands on the right side of the operational table. Folder travels left to right. Laptop stays fixed. Owner is not visible in this insert.
+
+TECHNICAL BLOCK
+Photoreal observational brand film, 16:9, 4.5 seconds generated for 3.5 useful seconds, 24 fps, 65mm lens at table height, very slow push-in, motivated mixed pre-dawn and practical light.
+
+SHOT
+The competent operator opens the kraft folder, reads one abstract line, copies a short mark onto a paper sheet, then places two fingers on the laptop trackpad to enter the same information again. The action is routine and efficient, not clumsy. Keep every prop large, separate and physically stable. The paper and screen contain only blurred abstract blocks for deterministic graphics in post.
+
+SUCCESS CRITERIA
+Exactly one transfer sequence; correct hands; unchanged folder and laptop; no readable text; no frustration acting; clean cut points between paper and laptop actions.
+
+SOUND
+Folder flap, paper drag, pen stroke, two restrained keyboard taps.
