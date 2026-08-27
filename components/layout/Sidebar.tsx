@@ -70,11 +70,13 @@ function MainModuleRow({ item, pathname, collapsed, mobile, onClose }: { item: N
   return <div title={collapsed ? item.label : undefined} className={className}>{content}</div>;
 }
 
-function MainSectionRow({ label, icon, active, collapsed }: { label: string; icon: ReactNode; active: boolean; collapsed: boolean }) {
-  return <div className={cn("group relative z-10 mx-2 flex items-center gap-3 rounded-component px-3 py-2 transition-colors duration-fast ease-fast", collapsed && "justify-center px-0", active ? "bg-white/80 text-carbon" : "hover:bg-white/70")} title={collapsed ? label : undefined}>
-    <span className={cn("shrink-0 transition-colors", active ? "text-signal" : "text-graphite group-hover:text-carbon", "[&_svg]:h-5 [&_svg]:w-5")}>{icon}</span>
-    {collapsed ? null : <span className={cn("text-sm font-label", active ? "text-signal" : "text-graphite group-hover:text-carbon")}>{label}</span>}
-  </div>;
+function MainSectionRow({ label, icon, href, active, collapsed, mobile, onClose }: { label: string; icon: ReactNode; href?: string; active: boolean; collapsed: boolean; mobile: boolean; onClose?: () => void }) {
+  const content = <><span className={cn("shrink-0 transition-colors", active ? "text-signal" : "text-graphite group-hover:text-carbon", "[&_svg]:h-5 [&_svg]:w-5")}>{icon}</span>{collapsed ? null : <span className={cn("text-sm font-label", active ? "text-signal" : "text-graphite group-hover:text-carbon")}>{label}</span>}</>;
+  const className = cn("group relative z-10 mx-2 flex items-center gap-3 rounded-component px-3 py-2 no-underline transition-colors duration-fast ease-fast", collapsed && "justify-center px-0", active ? "bg-white/80 text-carbon" : "hover:bg-white/70");
+
+  if (href) return <Link href={href} onClick={mobile ? onClose : undefined} title={collapsed ? label : undefined} className={className}>{content}</Link>;
+
+  return <div title={collapsed ? label : undefined} className={className}>{content}</div>;
 }
 
 export function Sidebar({
@@ -224,8 +226,11 @@ export function Sidebar({
                 <MainSectionRow
                   label={section.label}
                   icon={section.icon}
+                  href={sectionItems.find((item) => item.href)?.href}
                   active={sectionItems.some((item) => hasActiveItem(pathname, [item]))}
                   collapsed={collapsed}
+                  mobile={mobile}
+                  onClose={onClose}
                 />
               </div>
             );
