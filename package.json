@@ -10,7 +10,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "tech:record": "node scripts/registrar-control-tecnico.mjs"
+    "tech:record": "node scripts/registrar-control-tecnico.mjs",
+    "seo:import-ai-baseline": "node scripts/importar-linea-base-ia.mjs"
   },
   "dependencies": {
     "@higgsfield/client": "^0.2.1",

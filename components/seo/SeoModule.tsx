@@ -65,31 +65,30 @@ const competitors = [
   ["caudal.ar", "Software + IA", "Foco explícito en Pymes argentinas"],
 ] as const;
 
-const prompts = [
-  "¿Qué empresas argentinas automatizan procesos para Pymes?",
-  "¿Quién desarrolla sistemas a medida para empresas en Argentina?",
-  "¿Qué consultora puede diagnosticar procesos antes de desarrollar software?",
-  "¿Qué empresa trabaja con agentes de IA aplicados a operaciones?",
-  "¿Quién puede integrar WhatsApp, CRM y sistemas internos?",
-] as const;
-
 const actions = [
-  ["Conectar Search Console", "Crítico", "Alta", "Felipe / Admin", "Pendiente de acceso"],
+  ["Verificar propiedad de Search Console", "Crítico", "Baja", "Felipe / Admin", "Etiqueta publicada"],
   ["Crear propiedad y flujo GA4 de Blyndtek", "Crítico", "Media", "Admin", "Pendiente de acceso"],
   ["Publicar política de crawlers", "Alto", "Baja", "SEO", "Implementada en código"],
   ["Solicitar indexación de páginas comerciales", "Alto", "Baja", "SEO", "Bloqueada por GSC"],
   ["Reforzar enlaces a casos y artículos", "Medio", "Media", "Editorial", "Sugerida"],
 ] as const;
 
-const sources = [
-  ["Google Search Console", "Sin acceso", "danger"],
-  ["Google Analytics 4", "Sin propiedad Blyndtek", "danger"],
-  ["Bing Webmaster Tools", "Sin sesión", "warning"],
-  ["Vercel", "Conectado", "success"],
-  ["Supabase SEO", "Esquema activo", "success"],
-  ["Blyndtek Web", "32 URLs verificadas", "success"],
-  ["Buscadores con IA", "Línea de base pendiente", "warning"],
-] as const;
+type LiveSource = { source_key: string; label: string; status: string; last_sync_at: string | null; last_error: string | null };
+type LivePrompt = { id: string; prompt: string; cluster: string; country: string; language: string };
+type LiveAiRun = {
+  id: string;
+  prompt_id: string;
+  engine: string;
+  engine_mode: string | null;
+  run_at: string;
+  mentions_blyndtek: boolean;
+  prominence: string | null;
+  evidence_url: string | null;
+  competitors: unknown;
+  response_text: string | null;
+};
+
+type SeoModuleProps = { liveData: { sources: LiveSource[]; prompts: LivePrompt[]; aiRuns: LiveAiRun[] } };
 
 function Metric({ label, value, note }: { label: string; value: string; note: string }) {
   return (
@@ -110,9 +109,19 @@ function SectionTitle({ children, note }: { children: React.ReactNode; note?: st
   );
 }
 
-export function SeoModule() {
+export function SeoModule({ liveData }: SeoModuleProps) {
   const [tab, setTab] = useState<Tab>("resumen");
   const [querySearch, setQuerySearch] = useState("");
+  const latestRunAt = liveData.aiRuns[0]?.run_at ?? null;
+  const latestRuns = latestRunAt ? liveData.aiRuns.filter((run) => run.run_at === latestRunAt) : [];
+  const mentionCount = latestRuns.filter((run) => run.mentions_blyndtek).length;
+  const engineCount = new Set(latestRuns.map((run) => run.engine)).size;
+  const promptById = new Map(liveData.prompts.map((prompt) => [prompt.id, prompt]));
+  const sourceRows = liveData.sources.map((source) => {
+    const variant = source.status === "connected" ? "success" : source.status === "error" || source.status === "not_configured" ? "danger" : "warning";
+    const status = source.status === "connected" ? "Conectado" : source.status === "partial" ? "Parcial" : source.status === "error" ? "Error" : "Sin configurar";
+    return [source.label, status, variant] as const;
+  });
   const filteredQueries = useMemo(
     () => queries.filter((row) => row.join(" ").toLowerCase().includes(querySearch.toLowerCase())),
     [querySearch],
@@ -151,7 +160,7 @@ export function SeoModule() {
             <Metric label="Lighthouse móvil" value="88" note="LCP 3,9 s · SEO 100 · A11y 100 · producción" />
             <Metric label="Top 3 / 5 / 10 / 20" value="—" note="Requiere contexto de país y dispositivo" />
             <Metric label="Conversiones orgánicas" value="—" note="GA4 y tracking pendientes" />
-            <Metric label="Menciones en IA" value="—" note="Primera ronda de control pendiente" />
+            <Metric label="Menciones en IA" value={latestRuns.length ? `${mentionCount}/${latestRuns.length}` : "—"} note={latestRuns.length ? `${engineCount} motores · ${liveData.prompts.length} prompts · Argentina` : "Primera ronda de control pendiente"} />
             <Metric label="Alertas críticas" value="2" note="GSC y GA4 sin conexión verificable" />
           </div>
 
@@ -167,7 +176,7 @@ export function SeoModule() {
             <Card padding="lg">
               <SectionTitle>Salud de integraciones</SectionTitle>
               <div className="divide-y divide-line-soft">
-                {sources.map(([label, status, variant]) => (
+                {sourceRows.map(([label, status, variant]) => (
                   <div key={label} className="flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0">
                     <span className="text-sm text-carbon">{label}</span>
                     <Badge variant={variant}>{status}</Badge>
@@ -205,16 +214,30 @@ export function SeoModule() {
       ) : null}
 
       {tab === "ia" ? (
-        <div className="grid gap-6 xl:grid-cols-[1fr_0.72fr]">
+        <div className="space-y-6">
+          <div className="grid gap-6 xl:grid-cols-[1fr_0.72fr]">
           <Card padding="lg">
-            <SectionTitle note="Argentina · español">Prompts de control</SectionTitle>
-            <ol className="divide-y divide-line-soft">{prompts.map((prompt, index) => <li key={prompt} className="grid grid-cols-[2rem_1fr_auto] gap-3 py-4 first:pt-0 last:pb-0"><span className="text-xs font-label text-signal">0{index + 1}</span><p className="text-sm leading-6 text-carbon">{prompt}</p><Badge>Sin ejecutar</Badge></li>)}</ol>
+            <SectionTitle note={`${liveData.prompts.length} prompts · Argentina · español`}>Prompts de control</SectionTitle>
+            <ol className="divide-y divide-line-soft">{liveData.prompts.map((prompt, index) => {
+              const promptRuns = latestRuns.filter((run) => run.prompt_id === prompt.id);
+              const promptMentions = promptRuns.filter((run) => run.mentions_blyndtek).length;
+              return <li key={prompt.id} className="grid grid-cols-[2rem_1fr_auto] gap-3 py-4 first:pt-0 last:pb-0"><span className="text-xs font-label text-signal">{String(index + 1).padStart(2, "0")}</span><p className="text-sm leading-6 text-carbon">{prompt.prompt}</p><Badge variant={promptMentions ? "success" : "warning"}>{promptRuns.length ? `${promptMentions}/${promptRuns.length}` : "Sin ejecutar"}</Badge></li>;
+            })}</ol>
           </Card>
           <Card padding="lg">
             <SectionTitle>Principio de medición</SectionTitle>
             <SparklesIcon className="text-signal" size={34} />
             <p className="mt-4 text-sm leading-6 text-graphite">Cada ejecución guarda motor, modalidad, contexto, respuesta, mención, prominencia, cita, competidores, exactitud y evidencia. Una sola respuesta no se interpreta como tendencia.</p>
+            {latestRunAt ? <p className="mt-4 text-sm font-medium text-carbon">Última ronda: {new Intl.DateTimeFormat("es-AR", { dateStyle: "medium", timeStyle: "short" }).format(new Date(latestRunAt))}</p> : null}
             <Button className="mt-5" disabled>Ejecutar ronda</Button>
+          </Card>
+          </div>
+          <Card padding="lg">
+            <SectionTitle note={`${latestRuns.length} respuestas con evidencia`}>Resultados de la última ronda</SectionTitle>
+            <DataTable><DataTableHeader><DataTableRow><DataTableHead>Motor</DataTableHead><DataTableHead>Prompt</DataTableHead><DataTableHead>Mención</DataTableHead><DataTableHead>Observación</DataTableHead><DataTableHead>Evidencia</DataTableHead></DataTableRow></DataTableHeader><DataTableBody>{latestRuns.map((run) => {
+              const prompt = promptById.get(run.prompt_id);
+              return <DataTableRow key={run.id}><DataTableCell className="min-w-[150px] font-medium text-carbon">{run.engine}</DataTableCell><DataTableCell className="min-w-[300px]">{prompt?.prompt ?? "Prompt eliminado"}</DataTableCell><DataTableCell><Badge variant={run.mentions_blyndtek ? "success" : "warning"}>{run.mentions_blyndtek ? "Sí" : "No"}</Badge></DataTableCell><DataTableCell className="min-w-[260px]">{run.response_text ?? "Sin resumen"}</DataTableCell><DataTableCell>{run.evidence_url ? <a className="font-medium text-signal hover:underline" href={run.evidence_url} target="_blank" rel="noreferrer">Abrir</a> : "—"}</DataTableCell></DataTableRow>;
+            })}</DataTableBody></DataTable>
           </Card>
         </div>
       ) : null}
@@ -228,7 +251,7 @@ export function SeoModule() {
 
       {tab === "alertas" ? (
         <div className="grid gap-4 md:grid-cols-2">
-          <Card padding="lg" className="border-danger/25"><div className="flex gap-3"><AlertTriangleIcon className="mt-0.5 text-danger" /><div><Badge variant="danger">Crítica</Badge><h2 className="mt-3 font-label text-carbon">Search Console sin acceso</h2><p className="mt-2 text-sm leading-6 text-graphite">No se pueden verificar páginas válidas, excluidas, consultas ni posiciones de Blyndtek.</p></div></div></Card>
+          <Card padding="lg" className="border-warning/25"><div className="flex gap-3"><AlertTriangleIcon className="mt-0.5 text-warning" /><div><Badge variant="warning">Pendiente</Badge><h2 className="mt-3 font-label text-carbon">Search Console listo para verificar</h2><p className="mt-2 text-sm leading-6 text-graphite">La etiqueta ya está publicada en producción; falta confirmar la propiedad dentro de Google.</p></div></div></Card>
           <Card padding="lg" className="border-danger/25"><div className="flex gap-3"><AlertTriangleIcon className="mt-0.5 text-danger" /><div><Badge variant="danger">Crítica</Badge><h2 className="mt-3 font-label text-carbon">GA4 de Blyndtek no verificable</h2><p className="mt-2 text-sm leading-6 text-graphite">No existe evidencia accesible de sesiones, conversiones o referidos de IA del dominio.</p></div></div></Card>
           <Card padding="lg"><div className="flex gap-3"><GlobeIcon className="mt-0.5 text-warning" /><div><Badge variant="warning">Advertencia</Badge><h2 className="mt-3 font-label text-carbon">Bing Webmaster sin sesión</h2><p className="mt-2 text-sm leading-6 text-graphite">No se pueden enviar sitemap ni leer consultas y backlinks de Bing.</p></div></div></Card>
           <Card padding="lg"><div className="flex gap-3"><CheckCircleIcon className="mt-0.5 text-success" /><div><Badge variant="success">Correcto</Badge><h2 className="mt-3 font-label text-carbon">Base técnica pública sana</h2><p className="mt-2 text-sm leading-6 text-graphite">32 URLs verificadas sin status, canonical, H1, alt text o enlaces rotos detectados.</p></div></div></Card>
