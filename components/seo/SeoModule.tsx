@@ -86,6 +86,7 @@ const sources = [
   ["Google Analytics 4", "Sin propiedad Blyndtek", "danger"],
   ["Bing Webmaster Tools", "Sin sesión", "warning"],
   ["Vercel", "Conectado", "success"],
+  ["Supabase SEO", "Esquema activo", "success"],
   ["Blyndtek Web", "32 URLs verificadas", "success"],
   ["Buscadores con IA", "Línea de base pendiente", "warning"],
 ] as const;
