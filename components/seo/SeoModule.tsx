@@ -88,7 +88,31 @@ type LiveAiRun = {
   response_text: string | null;
 };
 
-type SeoModuleProps = { liveData: { sources: LiveSource[]; prompts: LivePrompt[]; aiRuns: LiveAiRun[] } };
+type LiveSnapshot = {
+  snapshot_date: string;
+  clicks: number | null;
+  impressions: number | null;
+  ctr: number | null;
+  average_position: number | null;
+  conversions: number | null;
+  metadata: Record<string, unknown>;
+};
+
+type SeoModuleProps = {
+  liveData: { sources: LiveSource[]; prompts: LivePrompt[]; aiRuns: LiveAiRun[]; snapshot: LiveSnapshot | null };
+};
+
+function formatSnapshotDate(value: string | null | undefined) {
+  if (!value) return "sin fecha";
+  const [year, month, day] = value.split("-");
+  const monthLabel = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"][Number(month) - 1];
+  return monthLabel ? `${Number(day)} ${monthLabel} ${year}` : value;
+}
+
+function metadataString(metadata: Record<string, unknown> | undefined, key: string) {
+  const value = metadata?.[key];
+  return typeof value === "string" ? value : null;
+}
 
 function Metric({ label, value, note }: { label: string; value: string; note: string }) {
   return (
@@ -116,6 +140,12 @@ export function SeoModule({ liveData }: SeoModuleProps) {
   const latestRuns = latestRunAt ? liveData.aiRuns.filter((run) => run.run_at === latestRunAt) : [];
   const mentionCount = latestRuns.filter((run) => run.mentions_blyndtek).length;
   const engineCount = new Set(latestRuns.map((run) => run.engine)).size;
+  const snapshot = liveData.snapshot;
+  const snapshotDate = formatSnapshotDate(snapshot?.snapshot_date);
+  const gscDataDate = metadataString(snapshot?.metadata, "gsc_data_date");
+  const gscDateNote = gscDataDate ? `Datos de Search Console del ${formatSnapshotDate(gscDataDate)}` : "Última medición disponible";
+  const hasOrganicSignal = snapshot?.clicks != null && snapshot?.impressions != null;
+  const organicAttributionAvailable = metadataString(snapshot?.metadata, "ga4_organic_attribution") !== "not_yet_available";
   const sourceByKey = new Map(liveData.sources.map((source) => [source.source_key, source]));
   const gscConnected = sourceByKey.get("google_search_console")?.status === "connected";
   const ga4Connected = sourceByKey.get("ga4")?.status === "connected";
@@ -155,30 +185,30 @@ export function SeoModule({ liveData }: SeoModuleProps) {
         </div>
         <div className="flex items-center gap-2 text-xs text-graphite">
           <Badge variant="warning">Medición parcial</Badge>
-          <span>Base 27 ago 2026</span>
+          <span>Base {snapshotDate}</span>
         </div>
       </div>
 
       {tab === "resumen" ? (
         <>
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <Metric label="Clics orgánicos" value="—" note={gscConnected ? "Search Console conectado · datos iniciales en procesamiento" : "Search Console sin acceso"} />
-            <Metric label="Impresiones" value="—" note="No se interpreta como cero" />
+            <Metric label="Clics orgánicos" value={snapshot?.clicks == null ? "—" : String(snapshot.clicks)} note={hasOrganicSignal ? gscDateNote : gscConnected ? "Search Console conectado · datos iniciales en procesamiento" : "Search Console sin acceso"} />
+            <Metric label="Impresiones" value={snapshot?.impressions == null ? "—" : String(snapshot.impressions)} note={hasOrganicSignal ? gscDateNote : "No se interpreta como cero"} />
             <Metric label="URLs técnicas válidas" value="32/32" note="Status, canonical, H1 y robots correctos" />
             <Metric label="Lighthouse móvil" value="88" note="LCP 3,9 s · SEO 100 · A11y 100 · producción" />
             <Metric label="Top 3 / 5 / 10 / 20" value="—" note="Requiere contexto de país y dispositivo" />
-            <Metric label="Conversiones orgánicas" value="—" note={ga4Connected ? "GA4 conectado · lead y suscripción configurados como eventos clave" : "GA4 y tracking pendientes"} />
+            <Metric label="Conversiones orgánicas" value={snapshot?.conversions != null && organicAttributionAvailable ? String(snapshot.conversions) : "—"} note={snapshot?.conversions != null && !organicAttributionAvailable ? `GA4 registró ${snapshot.conversions} eventos clave totales; la atribución orgánica aún no está disponible` : ga4Connected ? "GA4 conectado · lead y suscripción configurados como eventos clave" : "GA4 y tracking pendientes"} />
             <Metric label="Menciones en IA" value={latestRuns.length ? `${mentionCount}/${latestRuns.length}` : "—"} note={latestRuns.length ? `${engineCount} motores · ${liveData.prompts.length} prompts · Argentina` : "Primera ronda de control pendiente"} />
             <Metric label="Alertas críticas" value={String(criticalSourceCount)} note={criticalSourceCount ? "Hay fuentes prioritarias sin conexión verificable" : "GSC, GA4 y Bing conectados; datos iniciales en procesamiento"} />
           </div>
 
           <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
             <Card padding="lg">
-              <SectionTitle note="No se grafican ceros artificiales">Evolución orgánica</SectionTitle>
+              <SectionTitle note={hasOrganicSignal ? gscDateNote : "No se grafican ceros artificiales"}>Evolución orgánica</SectionTitle>
               <div className="flex min-h-[240px] flex-col items-center justify-center rounded-md border border-dashed border-line bg-paper/45 px-6 text-center">
                 <BarChartIcon className="text-graphite/50" size={36} />
-                <p className="mt-3 font-label text-carbon">Histórico inicial en procesamiento</p>
-                <p className="mt-2 max-w-md text-sm leading-6 text-graphite">Search Console ya está conectado. Cuando complete su procesamiento se mostrarán clics, impresiones, CTR, posiciones y rangos comparables.</p>
+                <p className="mt-3 font-label text-carbon">{hasOrganicSignal ? "Primera señal oficial disponible" : "Histórico inicial en procesamiento"}</p>
+                <p className="mt-2 max-w-md text-sm leading-6 text-graphite">{hasOrganicSignal ? `${snapshot.clicks} clics · ${snapshot.impressions} impresiones · ${snapshot.ctr ?? 0}% CTR · posición media ${snapshot.average_position ?? "—"}. Todavía no hay volumen suficiente para interpretar tendencia.` : "Search Console ya está conectado. Cuando complete su procesamiento se mostrarán clics, impresiones, CTR, posiciones y rangos comparables."}</p>
               </div>
             </Card>
             <Card padding="lg">
