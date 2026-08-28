@@ -94,7 +94,10 @@ async function renderPdf(request: NextRequest, token: string) {
   doc.font("DMSansBold").fontSize(8.5).fillColor(INK).text(result.cta_etiqueta, MARGIN + 27, 745, { width: 206, align: "center", link: ctaUrl, underline: false });
   doc.link(MARGIN + 18, 738, 224, 22, ctaUrl);
 
-  doc.font("DMSans").fontSize(7.5).fillColor(MUTED).text("Estimación orientativa basada en los datos ingresados. Blyndtek · sistema.blyndtek.com", MARGIN, 802, { width: WIDTH, align: "center" });
+  const originalBottomMargin = doc.page.margins.bottom;
+  doc.page.margins.bottom = 0;
+  doc.font("DMSans").fontSize(7.5).fillColor(MUTED).text("Estimación orientativa basada en los datos ingresados. Blyndtek · sistema.blyndtek.com", MARGIN, 810, { width: WIDTH, align: "center", lineBreak: false });
+  doc.page.margins.bottom = originalBottomMargin;
   doc.end();
 
   await db.from("marketing_touchpoints").upsert({
