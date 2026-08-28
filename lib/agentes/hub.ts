@@ -119,6 +119,17 @@ type CronistaReporteRow = {
   updated_at: string;
 };
 
+type SupabaseQueryError = {
+  code?: string | null;
+  message?: string | null;
+};
+
+function isMissingCronistaReportesTable(error: SupabaseQueryError | null | undefined) {
+  if (!error) return false;
+  const missingRelation = error.code === "42P01" || error.code === "PGRST205";
+  return missingRelation && (error.message ?? "").includes("reportes_cronista");
+}
+
 function monthKey(date = new Date()) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
 }
@@ -443,7 +454,15 @@ export async function fetchAgentesFeed(supabase: SupabaseClient<AgentesDatabase>
         .limit(fetchLimit)
     ]);
 
-  const errors = [analysesError, checklistError, aiDevError, contentGenerationsError, closuresError, cronistaError, cronistaReportesError].filter(Boolean);
+  const errors = [
+    analysesError,
+    checklistError,
+    aiDevError,
+    contentGenerationsError,
+    closuresError,
+    cronistaError,
+    isMissingCronistaReportesTable(cronistaReportesError) ? null : cronistaReportesError
+  ].filter(Boolean);
   if (errors.length > 0) {
     throw new Error(errors[0]?.message ?? "No se pudo cargar la actividad de los agentes.");
   }
@@ -527,7 +546,14 @@ export async function fetchAgentesCostoTotal(
       .gte("updated_at", periodStartIso)
   ]);
 
-  const errors = [analysesError, aiDevError, contentError, closuresError, cronistaError, cronistaReportesError].filter(Boolean);
+  const errors = [
+    analysesError,
+    aiDevError,
+    contentError,
+    closuresError,
+    cronistaError,
+    isMissingCronistaReportesTable(cronistaReportesError) ? null : cronistaReportesError
+  ].filter(Boolean);
   if (errors.length > 0) {
     throw new Error(errors[0]?.message ?? "No se pudo calcular el costo de IA.");
   }
@@ -673,7 +699,14 @@ export async function fetchAgentesCostoHistorico(
       .gte("updated_at", periodStartIso)
   ]);
 
-  const errors = [analysesResult.error, aiDevResult.error, contentResult.error, closuresResult.error, cronistaResult.error, cronistaReportesResult.error].filter(Boolean);
+  const errors = [
+    analysesResult.error,
+    aiDevResult.error,
+    contentResult.error,
+    closuresResult.error,
+    cronistaResult.error,
+    isMissingCronistaReportesTable(cronistaReportesResult.error) ? null : cronistaReportesResult.error
+  ].filter(Boolean);
   if (errors.length > 0) {
     throw new Error(errors[0]?.message ?? "No se pudo cargar el histórico de costos.");
   }
