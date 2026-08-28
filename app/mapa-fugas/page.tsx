@@ -4,8 +4,8 @@ import { Clock3, CopyCheck, Route, SearchCheck } from "lucide-react";
 import { MapaFugasForm } from "@/components/marketing/MapaFugasForm";
 
 export const metadata: Metadata = {
-  title: "Mapa de fugas operativas | Blyndtek",
-  description: "Detectá dónde se repite información, se pierden horas y aparecen errores dentro de un proceso.",
+  title: "Diagnóstico MAPA | Blyndtek",
+  description: "Calculá cuántas horas pierde un proceso por recargas, esperas y correcciones, y descargá tu resultado.",
   robots: { index: false, follow: false }
 };
 
@@ -27,13 +27,13 @@ export default function MapaFugasPage() {
             <section>
               <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-medium text-[#BDD3FF]">
                 <Route className="h-3.5 w-3.5" aria-hidden="true" />
-                Diagnóstico práctico · 7–10 minutos
+                Diagnóstico interactivo · resultado inmediato
               </div>
               <h1 className="mt-6 max-w-3xl text-4xl font-semibold leading-[1.02] tracking-[-0.055em] sm:text-6xl">
                 Encontrá dónde se fuga el tiempo de tu operación.
               </h1>
               <p className="mt-6 max-w-2xl text-base leading-7 text-[#B7C3D8] sm:text-lg">
-                Mapeá un solo proceso y detectá recargas, esperas y correcciones antes de sumar otra herramienta o reemplazar lo que ya usás.
+                Medí un solo proceso, descubrí cuántas horas pierde por recargas, esperas y correcciones, y llevate un PDF con el resultado.
               </p>
 
               <div className="mt-8 grid gap-3 sm:grid-cols-3">
@@ -47,7 +47,7 @@ export default function MapaFugasPage() {
               </div>
 
               <div className="mt-8 border-l-2 border-[#6F9DFF] pl-4 text-sm leading-6 text-[#B7C3D8]">
-                No intenta mapear toda la empresa. Elegís pedidos, presupuestos, cobranzas u otro proceso y la hoja calcula las horas mensuales y los puntos de fuga.
+                No necesitás descargar ni completar planillas. Respondés unas preguntas, ves la fuga dominante y recibís una recomendación concreta para empezar.
               </div>
             </section>
 
